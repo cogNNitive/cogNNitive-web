@@ -24,7 +24,7 @@ import {
   validateSceneKinds,
 } from '../scripts/lib/kinds.mjs';
 import { loadPresetIndex } from '../scripts/lib/presets.mjs';
-import { resolve } from '../scripts/lib/video-scope.mjs';
+import { resolve } from '../scripts/lib/cascade.mjs';
 
 const seriesDoc = `---
 level: 3

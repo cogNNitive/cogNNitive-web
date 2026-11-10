@@ -7825,6 +7825,7 @@ function parseConceptSection2(conceptName, content) {
   const nodes = [];
   const lines = content.split("\n");
   let current = null;
+  let currentHasProperty = false;
   let descriptionLines = [];
   const leadingLines = [];
   let seenElement = false;
@@ -7868,6 +7869,7 @@ function parseConceptSection2(conceptName, content) {
     });
     descriptionLines = [];
     seenElement = true;
+    currentHasProperty = false;
     return node;
   };
   const conceptFields = {};
@@ -7881,8 +7883,14 @@ function parseConceptSection2(conceptName, content) {
       continue;
     }
     if (current) {
+      if (!currentHasProperty && /^\s*<!--.*-->\s*$/.test(line)) {
+        current.rawLeading = current.rawLeading ?? [];
+        current.rawLeading.push(line.trim());
+        continue;
+      }
       const prop = parsePropertyLine2(line);
       if (prop !== null) {
+        currentHasProperty = true;
         if (prop[0] === "slug") {
           current.slug = String(prop[1]);
           current.slugExplicit = true;
@@ -8213,6 +8221,10 @@ function serializeKnowledge2(model) {
     lines.push(`${hashes} NN ${node.type}: ${node.name}`);
     if (node.slugExplicit && node.slug)
       lines.push(`slug:: ${node.slug}`);
+    if (node.rawLeading) {
+      for (const leading of node.rawLeading)
+        lines.push(leading);
+    }
     for (const [k, v] of Object.entries(node.fields)) {
       const value = v;
       const raw = value === v ? node.rawFields?.[k] : void 0;
@@ -8916,6 +8928,9 @@ function extractBlueprintSchema(parsed) {
     const fieldDescription = asString(el.fields["description"]);
     if (fieldDescription)
       field.description = fieldDescription;
+    const optionsFrom = asString(el.fields["options_from"]);
+    if (optionsFrom)
+      field.options_from = optionsFrom;
     if (scope === "concept" && owner) {
       const list = fieldsByConcept.get(owner);
       if (list) {
@@ -9836,12 +9851,12 @@ function parseSpecName(name) {
 }
 async function getMarkdownFiles(dir) {
   const { readdir: readdir6 } = await import("node:fs/promises");
-  const { join: join15 } = await import("node:path");
+  const { join: join16 } = await import("node:path");
   const files = [];
   try {
     const entries = await readdir6(dir, { withFileTypes: true });
     for (const entry of entries) {
-      const fullPath = join15(dir, entry.name);
+      const fullPath = join16(dir, entry.name);
       if (entry.isDirectory()) {
         if (entry.name === "node_modules" || entry.name.startsWith("."))
           continue;
@@ -9934,7 +9949,7 @@ async function findLocalSpec(specsDir, reqName) {
 }
 async function findSpecInPackageDir(dir, base) {
   const { readdir: readdir6 } = await import("node:fs/promises");
-  const { join: join15 } = await import("node:path");
+  const { join: join16 } = await import("node:path");
   try {
     const entries = await readdir6(dir, { withFileTypes: true });
     const files = entries.filter((e) => e.isFile() && /\.(md|markdown)$/i.test(e.name)).map((e) => e.name);
@@ -9942,20 +9957,20 @@ async function findSpecInPackageDir(dir, base) {
       return null;
     const specNN = files.find((f) => f.toLowerCase() === "spec_nn.md");
     if (specNN)
-      return join15(dir, specNN);
+      return join16(dir, specNN);
     const baseV = files.find((f) => f.toLowerCase().startsWith(`${base.toLowerCase()}_v_`));
     if (baseV)
-      return join15(dir, baseV);
+      return join16(dir, baseV);
     const baseNN = files.find((f) => f.toLowerCase() === `${base.toLowerCase()}_nn.md`);
     if (baseNN)
-      return join15(dir, baseNN);
+      return join16(dir, baseNN);
     const specMd = files.find((f) => f.toLowerCase() === "spec.md");
     if (specMd)
-      return join15(dir, specMd);
+      return join16(dir, specMd);
     const baseMd = files.find((f) => f.toLowerCase() === `${base.toLowerCase()}.md`);
     if (baseMd)
-      return join15(dir, baseMd);
-    return join15(dir, files[0]);
+      return join16(dir, baseMd);
+    return join16(dir, files[0]);
   } catch (err) {
     if (err?.code !== "ENOENT") {
       console.warn(`[resolver] Failed to scan package dir ${dir}: ${err}`);
@@ -9969,22 +9984,22 @@ function isDirectSpecEntryName(filePath, base) {
 }
 async function packageDirOf(rootDir, base) {
   const { readdir: readdir6 } = await import("node:fs/promises");
-  const { join: join15 } = await import("node:path");
-  const direct = join15(rootDir, "specs", "bluepriNNts", base);
+  const { join: join16 } = await import("node:path");
+  const direct = join16(rootDir, "specs", "bluepriNNts", base);
   try {
-    const entries = await readdir6(join15(rootDir, "specs", "bluepriNNts"), { withFileTypes: true });
+    const entries = await readdir6(join16(rootDir, "specs", "bluepriNNts"), { withFileTypes: true });
     const match = entries.find((e) => e.isDirectory() && e.name.toLowerCase() === base);
-    return match ? join15(rootDir, "specs", "bluepriNNts", match.name) : direct;
+    return match ? join16(rootDir, "specs", "bluepriNNts", match.name) : direct;
   } catch {
     return direct;
   }
 }
 async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
   const { readdir: readdir6, readFile: readFile10 } = await import("node:fs/promises");
-  const { join: join15 } = await import("node:path");
-  const { homedir: homedir2 } = await import("node:os");
-  const globalDir = options?.globalDir ?? process.env.INNFO_GLOBAL_DIR ?? join15(homedir2(), ".agents", "bluepriNNts");
-  const skillsDir = options?.skillsDir ?? process.env.INNFO_SKILLS_DIR ?? join15(homedir2(), ".agents", "skills");
+  const { join: join16 } = await import("node:path");
+  const { homedir: homedir3 } = await import("node:os");
+  const globalDir = options?.globalDir ?? process.env.INNFO_GLOBAL_DIR ?? join16(homedir3(), ".agents", "bluepriNNts");
+  const skillsDir = options?.skillsDir ?? process.env.INNFO_SKILLS_DIR ?? join16(homedir3(), ".agents", "skills");
   const parsed = parseSpecName(reqName);
   const base = parsed.base;
   const targetVersion = reqVersion ? normalizeVersion(reqVersion) : parsed.version;
@@ -10011,7 +10026,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
     if (targetVersion) {
       for (const d of verDirs) {
         if (normalizeVersion(d.name) === targetVersion) {
-          matchDir = join15(wsPackageBaseDir, d.name);
+          matchDir = join16(wsPackageBaseDir, d.name);
           matchVer = targetVersion;
           break;
         }
@@ -10022,7 +10037,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
         const v = normalizeVersion(d.name);
         if (!bestVer || compareDottedVersions(v, bestVer) > 0) {
           bestVer = v;
-          matchDir = join15(wsPackageBaseDir, d.name);
+          matchDir = join16(wsPackageBaseDir, d.name);
           matchVer = v;
         }
       }
@@ -10045,7 +10060,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
       console.warn(`[resolver] Failed to scan package tier dir: ${err}`);
     }
   }
-  const flatSearchDirs = [join15(rootDir, "specs")];
+  const flatSearchDirs = [join16(rootDir, "specs")];
   for (const dir of flatSearchDirs) {
     const matchFile = await findLocalSpec(dir, reqName);
     if (matchFile) {
@@ -10061,7 +10076,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
       };
     }
   }
-  const globalBaseDir = join15(globalDir, base);
+  const globalBaseDir = join16(globalDir, base);
   try {
     const entries = await readdir6(globalBaseDir, { withFileTypes: true });
     const verDirs = entries.filter((e) => e.isDirectory() && isVersionDirName(e.name));
@@ -10070,7 +10085,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
     if (targetVersion) {
       for (const d of verDirs) {
         if (normalizeVersion(d.name) === targetVersion) {
-          matchDir = join15(globalBaseDir, d.name);
+          matchDir = join16(globalBaseDir, d.name);
           matchVer = targetVersion;
           break;
         }
@@ -10081,7 +10096,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
         const v = normalizeVersion(d.name);
         if (!bestVer || compareDottedVersions(v, bestVer) > 0) {
           bestVer = v;
-          matchDir = join15(globalBaseDir, d.name);
+          matchDir = join16(globalBaseDir, d.name);
           matchVer = v;
         }
       }
@@ -10135,7 +10150,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
     const skillEntries = await readdir6(skillsDir, { withFileTypes: true });
     const skillDirs = skillEntries.filter((e) => e.isDirectory()).map((e) => e.name);
     for (const skillName of skillDirs) {
-      const skillPkgBase = join15(skillsDir, skillName, "bluepriNNts", base);
+      const skillPkgBase = join16(skillsDir, skillName, "bluepriNNts", base);
       try {
         const entries = await readdir6(skillPkgBase, { withFileTypes: true });
         const verDirs = entries.filter((e) => e.isDirectory() && isVersionDirName(e.name));
@@ -10144,7 +10159,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
         if (targetVersion) {
           for (const d of verDirs) {
             if (normalizeVersion(d.name) === targetVersion) {
-              matchDir = join15(skillPkgBase, d.name);
+              matchDir = join16(skillPkgBase, d.name);
               matchVer = targetVersion;
               break;
             }
@@ -10155,7 +10170,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
             const v = normalizeVersion(d.name);
             if (!bestVer || compareDottedVersions(v, bestVer) > 0) {
               bestVer = v;
-              matchDir = join15(skillPkgBase, d.name);
+              matchDir = join16(skillPkgBase, d.name);
               matchVer = v;
             }
           }
@@ -10174,7 +10189,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
           }
         }
       } catch {
-        const matchFile = await findLocalSpec(join15(skillsDir, skillName, "bluepriNNts"), reqName) || await findLocalSpec(join15(skillsDir, skillName), reqName);
+        const matchFile = await findLocalSpec(join16(skillsDir, skillName, "bluepriNNts"), reqName) || await findLocalSpec(join16(skillsDir, skillName), reqName);
         if (matchFile) {
           const content = await readFile10(matchFile, "utf-8").catch(() => "");
           const v = targetVersion || versionFromFrontmatter(content) || "0.1.0";
@@ -13197,7 +13212,37 @@ function extractInstanceProblems2(change) {
   }
   return problems;
 }
-var CHANGE_OPS2, BUMP_LEVELS;
+function reviewGateProblems3(change) {
+  if (change.op !== "review_gate")
+    return [];
+  const problems = [];
+  const id = change.id;
+  if (!change.gate || String(change.gate).trim() === "") {
+    problems.push(`change "${id}": review_gate requires "gate"`);
+  }
+  if (!change.verdict || !GATE_VERDICTS.includes(change.verdict)) {
+    problems.push(`change "${id}": review_gate "verdict" must be one of ${GATE_VERDICTS.join(", ")}`);
+  }
+  if (typeof change.reviewed_hash !== "string" || !HEX64.test(change.reviewed_hash)) {
+    problems.push(`change "${id}": review_gate requires "reviewed_hash" as a 64-char lowercase hex sha256`);
+  }
+  if (change.plan_hash !== void 0 && (typeof change.plan_hash !== "string" || !HEX64.test(change.plan_hash))) {
+    problems.push(`change "${id}": review_gate "plan_hash" must be a 64-char lowercase hex sha256`);
+  }
+  const allowed = /* @__PURE__ */ new Set(["gate", "verdict", "reviewed_hash", "plan_hash", "notes"]);
+  for (const key of change.rawKeys || []) {
+    if (!allowed.has(key)) {
+      problems.push(`change "${id}": review_gate declares undeclared key "${key}"`);
+    }
+  }
+  for (const key of ["from", "to", "base_hash", "fields", "slug", "concept", "name", "evidence"]) {
+    if (change[key] !== void 0) {
+      problems.push(`change "${id}": review_gate must not carry "${key}"`);
+    }
+  }
+  return problems;
+}
+var CHANGE_OPS2, BUMP_LEVELS, GATE_VERDICTS, HEX64;
 var init_types2 = __esm({
   "iNNfo/packages/nn-core/dist/changeset/types.js"() {
     "use strict";
@@ -13222,9 +13267,12 @@ var init_types2 = __esm({
       "produce_artifact",
       "repin_blueprint",
       "rename_field",
-      "set_field_default"
+      "set_field_default",
+      "review_gate"
     ];
     BUMP_LEVELS = ["patch", "minor", "major"];
+    GATE_VERDICTS = ["approved", "needs-change"];
+    HEX64 = /^[0-9a-f]{64}$/;
   }
 });
 
@@ -13391,6 +13439,18 @@ function parseChangeset2(rawContent) {
       case "evidence":
         currentChange.evidence = stripQuotes2(rawVal);
         break;
+      case "gate":
+        currentChange.gate = stripQuotes2(rawVal);
+        break;
+      case "verdict":
+        currentChange.verdict = stripQuotes2(rawVal);
+        break;
+      case "reviewed_hash":
+        currentChange.reviewed_hash = stripQuotes2(rawVal);
+        break;
+      case "plan_hash":
+        currentChange.plan_hash = stripQuotes2(rawVal);
+        break;
       case "blueprint_name":
         currentChange.blueprint_name = stripQuotes2(rawVal);
         break;
@@ -13448,6 +13508,8 @@ function parseChangeset2(rawContent) {
         break;
       }
       default:
+        currentChange.rawKeys = currentChange.rawKeys ?? [];
+        currentChange.rawKeys.push(key);
         break;
     }
   }
@@ -13466,6 +13528,14 @@ function parseChangeset2(rawContent) {
   if (extractProblems.length > 0) {
     throw new Error(`Invalid extract_instance change: ${extractProblems.join("; ")}`);
   }
+  const hasGate = changes.some((c) => c.op === "review_gate");
+  if (hasGate) {
+    for (const key of ["author_kind", "origin", "reviewer"]) {
+      if (frontmatter[key] === void 0 || frontmatter[key] === null) {
+        throw new Error(`Invalid review_gate changeset: missing frontmatter "${key}" (required for verdicts)`);
+      }
+    }
+  }
   return {
     frontmatter,
     changes,
@@ -13479,6 +13549,7 @@ var init_parser3 = __esm({
     import_yaml13 = __toESM(require_dist(), 1);
     init_types2();
     init_sourceRef();
+    init_types2();
     CHANGESET_FRONTMATTER_INVALID2 = "CHANGESET_FRONTMATTER_INVALID";
   }
 });
@@ -15027,10 +15098,11 @@ function matchesElement(e, target) {
     return true;
   return false;
 }
-function coerceFieldValue(existing, incoming) {
+function coerceFieldValue(existing, incoming, def) {
   if (typeof incoming !== "string")
     return incoming;
-  if (typeof existing === "number") {
+  const declared2 = def?.type;
+  if (declared2 === "number" || declared2 === void 0 && typeof existing === "number") {
     const trimmed = incoming.trim();
     if (trimmed !== "") {
       const asNumber2 = Number(trimmed);
@@ -15039,7 +15111,7 @@ function coerceFieldValue(existing, incoming) {
     }
     return incoming;
   }
-  if (typeof existing === "boolean") {
+  if (declared2 === "boolean" || declared2 === void 0 && typeof existing === "boolean") {
     const lower = incoming.trim().toLowerCase();
     if (lower === "true")
       return true;
@@ -15142,24 +15214,26 @@ function updateField(model, args, schema) {
       parsedVal = parsePropertyValue2(trimmed);
     }
   }
+  let fieldDef;
   if (schema && foundConcept) {
     const conceptObj = schema.concepts?.find((c) => c.name.toLowerCase() === foundConcept.toLowerCase());
-    let fieldDef = conceptObj?.fields?.find((f) => f.name.toLowerCase() === fieldName.toLowerCase());
+    fieldDef = conceptObj?.fields?.find((f) => f.name.toLowerCase() === fieldName.toLowerCase());
     if (!fieldDef && Array.isArray(schema.fields)) {
       fieldDef = schema.fields.find((f) => f.name.toLowerCase() === fieldName.toLowerCase() && (!f.concept || f.concept === "*" || (Array.isArray(f.concept) ? f.concept.some((c) => c.toLowerCase() === foundConcept.toLowerCase()) : String(f.concept).toLowerCase() === foundConcept.toLowerCase())));
     }
-    if (fieldDef) {
-      const diags = validateFieldValue(fieldDef, parsedVal, `${foundConcept}.${fieldName}`);
-      const errors = diags.filter((d) => d.severity === "error");
-      if (errors.length > 0) {
-        return {
-          success: false,
-          errors: errors.map((e) => ({ path: e.path, message: e.message }))
-        };
-      }
+  }
+  const coercedVal = coerceFieldValue(foundElement.fields[fieldName], parsedVal, fieldDef);
+  if (fieldDef) {
+    const diags = validateFieldValue(fieldDef, coercedVal, `${foundConcept}.${fieldName}`);
+    const errors = diags.filter((d) => d.severity === "error");
+    if (errors.length > 0) {
+      return {
+        success: false,
+        errors: errors.map((e) => ({ path: e.path, message: e.message }))
+      };
     }
   }
-  foundElement.fields[fieldName] = coerceFieldValue(foundElement.fields[fieldName], parsedVal);
+  foundElement.fields[fieldName] = coercedVal;
   if (foundElement.rawFields && fieldName in foundElement.rawFields) {
     delete foundElement.rawFields[fieldName];
   }
@@ -16194,6 +16268,16 @@ var init_fs_source_resolver = __esm({
   }
 });
 
+// iNNfo/packages/nn-core/dist/console/locate-writer.js
+var import_node_path9, DEV_ROOT_MARKER;
+var init_locate_writer = __esm({
+  "iNNfo/packages/nn-core/dist/console/locate-writer.js"() {
+    "use strict";
+    import_node_path9 = require("node:path");
+    DEV_ROOT_MARKER = (0, import_node_path9.join)("iNNfo", "specs", "bluepriNNts", "console", "artifact_shell.html");
+  }
+});
+
 // iNNfo/packages/nn-core/dist/console/output-path.js
 var init_output_path = __esm({
   "iNNfo/packages/nn-core/dist/console/output-path.js"() {
@@ -16343,6 +16427,7 @@ var init_console = __esm({
     init_element_history();
     init_files_inventory();
     init_fs_source_resolver();
+    init_locate_writer();
     init_output_path();
     init_payload_builder();
     init_schema_resolution();
@@ -16413,6 +16498,73 @@ var init_cognitivize2 = __esm({
   }
 });
 
+// iNNfo/packages/nn-core/dist/changeset/gates.js
+function isGateUnit(value) {
+  return value === "model" || value === "element";
+}
+function declarationMap(raw) {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw))
+    return {};
+  return raw;
+}
+function gateDeclarationProblems(change, rawDeclarations) {
+  if (change.op !== "review_gate")
+    return [];
+  const id = change.id;
+  const name = typeof change.gate === "string" ? change.gate.trim() : "";
+  const declarations = declarationMap(rawDeclarations);
+  const declared2 = name !== "" && Object.prototype.hasOwnProperty.call(declarations, name);
+  if (!declared2) {
+    return [
+      `${GATE_UNDECLARED}: change "${id}": the bluepriNNt of "${change.target}" declares no gate "${name}"`
+    ];
+  }
+  const unit = declarations[name];
+  if (!isGateUnit(unit)) {
+    return [
+      `${GATE_TARGET_INVALID}: change "${id}": gate "${name}" declares an unknown unit (expected "model" or "element")`
+    ];
+  }
+  const isElementTarget = change.target.includes("@");
+  if (unit === "element" && !isElementTarget) {
+    return [
+      `${GATE_TARGET_INVALID}: change "${id}": gate "${name}" accepts an element target (<model>@<element>), not the model "${change.target}"`
+    ];
+  }
+  if (unit === "model" && isElementTarget) {
+    return [
+      `${GATE_TARGET_INVALID}: change "${id}": gate "${name}" accepts a model target, not the element address "${change.target}"`
+    ];
+  }
+  return [];
+}
+function reviewGateProvenanceProblems(changes, frontmatter) {
+  if (!changes.some((c) => c.op === "review_gate"))
+    return [];
+  const problems = [];
+  const authorKind = typeof frontmatter.author_kind === "string" ? frontmatter.author_kind.trim() : "";
+  const origin = typeof frontmatter.origin === "string" ? frontmatter.origin.trim() : "";
+  if (authorKind !== "human" || origin !== "console") {
+    problems.push(`${GATE_NOT_HUMAN}: a changeset with a review_gate must be authored by a human in the console (author_kind: human, origin: console); got author_kind: "${authorKind}" and origin: "${origin}"`);
+  }
+  const reviewer = typeof frontmatter.reviewer === "string" ? frontmatter.reviewer.trim() : "";
+  if (reviewer === "" || reviewer.toLowerCase() === DEFAULT_REVIEWER) {
+    problems.push(`${GATE_REVIEWER_REQUIRED}: a changeset with a review_gate must name a reviewer (a person, not the default "${DEFAULT_REVIEWER}")`);
+  }
+  return problems;
+}
+var GATE_UNDECLARED, GATE_TARGET_INVALID, GATE_NOT_HUMAN, GATE_REVIEWER_REQUIRED, DEFAULT_REVIEWER;
+var init_gates = __esm({
+  "iNNfo/packages/nn-core/dist/changeset/gates.js"() {
+    "use strict";
+    GATE_UNDECLARED = "GATE_UNDECLARED";
+    GATE_TARGET_INVALID = "GATE_TARGET_INVALID";
+    GATE_NOT_HUMAN = "GATE_NOT_HUMAN";
+    GATE_REVIEWER_REQUIRED = "GATE_REVIEWER_REQUIRED";
+    DEFAULT_REVIEWER = "reviewer";
+  }
+});
+
 // iNNfo/packages/nn-core/dist/changeset/utils.js
 function escapeRegex2(str3) {
   return str3.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -16460,16 +16612,25 @@ function canonicalizeChangeItem2(change) {
   }
   return result;
 }
-function computeProposalSha2(changes) {
+function computeProposalSha2(changes, frontmatter) {
   const canonicalItems = changes.map(canonicalizeChangeItem2);
   const serialized = JSON.stringify(canonicalItems);
-  return (0, import_node_crypto2.createHash)("sha256").update(serialized, "utf8").digest("hex").toLowerCase();
+  const hash = (0, import_node_crypto2.createHash)("sha256").update(serialized, "utf8");
+  if (frontmatter && (frontmatter.author_kind !== void 0 || frontmatter.origin !== void 0 || frontmatter.reviewer !== void 0)) {
+    const markers = {};
+    for (const key of ["author_kind", "origin", "reviewer"]) {
+      if (frontmatter[key] !== void 0)
+        markers[key] = frontmatter[key];
+    }
+    hash.update("\n:::provenance:::\n").update(JSON.stringify(markers));
+  }
+  return hash.digest("hex").toLowerCase();
 }
 function verifyProposalSha(doc) {
   if (!doc.frontmatter?.proposal_sha)
     return false;
   const expectedSha = doc.frontmatter.proposal_sha.trim().toLowerCase();
-  const computedSha = computeProposalSha2(doc.changes);
+  const computedSha = computeProposalSha2(doc.changes, doc.frontmatter);
   return expectedSha === computedSha;
 }
 var import_node_crypto2, EXECUTION_FACT_KEYS2, PROPOSAL_KEYS2;
@@ -16499,7 +16660,11 @@ var init_hasher = __esm({
       "evidence",
       "blueprint_name",
       "blueprint_url",
-      "knowledge_version"
+      "knowledge_version",
+      "gate",
+      "verdict",
+      "reviewed_hash",
+      "plan_hash"
     ];
   }
 });
@@ -16720,9 +16885,9 @@ var init_serializer2 = __esm({
 
 // iNNfo/packages/nn-core/dist/changeset/lock.js
 async function acquireLock(rootDir, changesetName, timeoutMs = 6e4) {
-  const lockDir = (0, import_node_path9.join)(rootDir, "changes");
+  const lockDir = (0, import_node_path10.join)(rootDir, "changes");
   await (0, import_promises2.mkdir)(lockDir, { recursive: true });
-  const lockPath = (0, import_node_path9.join)(lockDir, ".lock");
+  const lockPath = (0, import_node_path10.join)(lockDir, ".lock");
   const payload = {
     pid: process.pid,
     timestamp: Date.now(),
@@ -16793,12 +16958,12 @@ async function acquireLock(rootDir, changesetName, timeoutMs = 6e4) {
   err.code = "CONCURRENT_APPLY_ACTIVE";
   throw err;
 }
-var import_promises2, import_node_path9;
+var import_promises2, import_node_path10;
 var init_lock = __esm({
   "iNNfo/packages/nn-core/dist/changeset/lock.js"() {
     "use strict";
     import_promises2 = require("node:fs/promises");
-    import_node_path9 = require("node:path");
+    import_node_path10 = require("node:path");
   }
 });
 
@@ -17173,7 +17338,7 @@ async function scanHistory(changesDir, maxScan) {
   for (const filename of files) {
     let content;
     try {
-      content = await (0, import_promises3.readFile)((0, import_node_path10.join)(changesDir, filename), "utf-8");
+      content = await (0, import_promises3.readFile)((0, import_node_path11.join)(changesDir, filename), "utf-8");
     } catch {
       continue;
     }
@@ -17273,12 +17438,12 @@ async function checkStaleTarget2(changesDir, modelSlug, elementSlug, baseVersion
   }
   return { stale: false };
 }
-var import_promises3, import_node_path10;
+var import_promises3, import_node_path11;
 var init_history = __esm({
   "iNNfo/packages/nn-core/dist/changeset/history.js"() {
     "use strict";
     import_promises3 = require("node:fs/promises");
-    import_node_path10 = require("node:path");
+    import_node_path11 = require("node:path");
     init_parser3();
     init_versionStatus();
     init_slug();
@@ -17587,6 +17752,7 @@ var init_changeset = __esm({
   "iNNfo/packages/nn-core/dist/changeset/index.js"() {
     "use strict";
     init_types2();
+    init_gates();
     init_evidence();
     init_resolved_target();
     init_utils();
@@ -17967,16 +18133,16 @@ var init_scoped_procedures = __esm({
 
 // iNNfo/packages/nn-mcp/src/tools/path-guard.ts
 function isInsideRoot(rootDir, candidate) {
-  const abs = (0, import_node_path11.resolve)(rootDir, candidate);
-  const rel = (0, import_node_path11.relative)((0, import_node_path11.resolve)(rootDir), abs);
-  return rel !== "" && !rel.startsWith("..") && !(0, import_node_path11.isAbsolute)(rel);
+  const abs = (0, import_node_path12.resolve)(rootDir, candidate);
+  const rel = (0, import_node_path12.relative)((0, import_node_path12.resolve)(rootDir), abs);
+  return rel !== "" && !rel.startsWith("..") && !(0, import_node_path12.isAbsolute)(rel);
 }
 function isSafeRelativeId(id) {
   if (!id) return false;
   const normalized = id.replace(/\\/g, "/");
   if (normalized.split("/").includes("..")) return false;
   if (normalized.startsWith("/")) return false;
-  if ((0, import_node_path11.isAbsolute)(id)) return false;
+  if ((0, import_node_path12.isAbsolute)(id)) return false;
   if (/^[a-zA-Z]:[/\\]/.test(id)) return false;
   if (/^[/\\]{2}/.test(id)) return false;
   return true;
@@ -17994,23 +18160,23 @@ function isDriveContained(rootDir, candidate) {
   const path = normalizeDrivePath(candidate);
   return path.length > root.length && path.toLowerCase().startsWith(`${root.toLowerCase()}/`);
 }
-var import_node_path11;
+var import_node_path12;
 var init_path_guard = __esm({
   "iNNfo/packages/nn-mcp/src/tools/path-guard.ts"() {
     "use strict";
-    import_node_path11 = require("node:path");
+    import_node_path12 = require("node:path");
   }
 });
 
 // iNNfo/packages/nn-mcp/src/tools/resolver-node.ts
 function defaultCacheDir() {
-  return process.env.INNFO_CACHE_DIR ?? (0, import_node_path12.join)((0, import_node_os.tmpdir)(), "innfo-specs");
+  return process.env.INNFO_CACHE_DIR ?? (0, import_node_path13.join)((0, import_node_os.tmpdir)(), "innfo-specs");
 }
 function isLocalPath(url) {
   if (!url) return false;
   if (url.startsWith("http://") || url.startsWith("https://")) return false;
   if (url.startsWith("file://")) return true;
-  if ((0, import_node_path12.isAbsolute)(url)) return true;
+  if ((0, import_node_path13.isAbsolute)(url)) return true;
   if (/^[a-zA-Z]:[/\\]/.test(url)) return true;
   if (url.startsWith(".") || url.endsWith(".md") || url.includes("/") || url.includes("\\"))
     return true;
@@ -18032,16 +18198,16 @@ function toLocalFilePath(url, rootDir) {
     return isDriveContained(rootDir, candidate) ? candidate : null;
   }
   if (!rootDir) {
-    return (0, import_node_path12.isAbsolute)(candidate) ? null : candidate;
+    return (0, import_node_path13.isAbsolute)(candidate) ? null : candidate;
   }
-  const resolved = (0, import_node_path12.isAbsolute)(candidate) ? candidate : (0, import_node_path12.join)(rootDir, candidate);
+  const resolved = (0, import_node_path13.isAbsolute)(candidate) ? candidate : (0, import_node_path13.join)(rootDir, candidate);
   return isInsideRoot(rootDir, resolved) ? resolved : null;
 }
 function resolveAuthToken() {
   const env = process.env.COGNNITIVE_TOKEN;
   if (env && env.trim()) return env.trim();
   try {
-    const credPath = process.env.COGNNITIVE_CREDENTIALS ?? (0, import_node_path12.join)((0, import_node_os.homedir)(), ".agents", "credentials.json");
+    const credPath = process.env.COGNNITIVE_CREDENTIALS ?? (0, import_node_path13.join)((0, import_node_os.homedir)(), ".agents", "credentials.json");
     const raw = (0, import_node_fs8.readFileSync)(credPath, "utf-8");
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed.token === "string" && parsed.token.trim()) return parsed.token.trim();
@@ -18085,8 +18251,8 @@ function canonicalSpecFilename(requestName, content) {
 async function writeStagedTree(stagingDir, subdir, files) {
   if (!files) return;
   for (const [rel, content] of Object.entries(files)) {
-    const dest = (0, import_node_path12.join)(stagingDir, subdir, rel);
-    await (0, import_promises4.mkdir)((0, import_node_path12.join)(dest, ".."), { recursive: true });
+    const dest = (0, import_node_path13.join)(stagingDir, subdir, rel);
+    await (0, import_promises4.mkdir)((0, import_node_path13.join)(dest, ".."), { recursive: true });
     await (0, import_promises4.writeFile)(dest, content, "utf-8");
   }
 }
@@ -18096,8 +18262,8 @@ function uniqueSuffix() {
 async function hydrateBlueprintPackageAtomically(rootDir, base, version, payload, opts) {
   const pkg = typeof payload === "string" ? { spec: payload } : payload;
   const verSegment = `V_${normalizeVersion(version).replace(/\./g, "-")}`;
-  const templatesBase = opts?.baseDir ?? (0, import_node_path12.join)(rootDir, "specs", "bluepriNNts");
-  const targetPkgDir = (0, import_node_path12.join)(templatesBase, base, verSegment);
+  const templatesBase = opts?.baseDir ?? (0, import_node_path13.join)(rootDir, "specs", "bluepriNNts");
+  const targetPkgDir = (0, import_node_path13.join)(templatesBase, base, verSegment);
   try {
     const existing = await (0, import_promises4.readdir)(targetPkgDir);
     if (existing.length > 0) {
@@ -18108,14 +18274,14 @@ async function hydrateBlueprintPackageAtomically(rootDir, base, version, payload
       console.warn(`[resolver-node] Failed to inspect package dir ${targetPkgDir}: ${err}`);
     }
   }
-  const baseBlueprintsDir = (0, import_node_path12.join)(templatesBase, base);
+  const baseBlueprintsDir = (0, import_node_path13.join)(templatesBase, base);
   await (0, import_promises4.mkdir)(baseBlueprintsDir, { recursive: true });
-  const stagingDir = (0, import_node_path12.join)(baseBlueprintsDir, `.staging-${uniqueSuffix()}`);
+  const stagingDir = (0, import_node_path13.join)(baseBlueprintsDir, `.staging-${uniqueSuffix()}`);
   await (0, import_promises4.mkdir)(stagingDir, { recursive: true });
   const specFileName = SPEC_FILENAME2;
   const namedFileName = `${base}_${verSegment}_NN.md`;
-  await (0, import_promises4.writeFile)((0, import_node_path12.join)(stagingDir, specFileName), pkg.spec, "utf-8");
-  await (0, import_promises4.writeFile)((0, import_node_path12.join)(stagingDir, namedFileName), pkg.spec, "utf-8");
+  await (0, import_promises4.writeFile)((0, import_node_path13.join)(stagingDir, specFileName), pkg.spec, "utf-8");
+  await (0, import_promises4.writeFile)((0, import_node_path13.join)(stagingDir, namedFileName), pkg.spec, "utf-8");
   await writeStagedTree(stagingDir, "procedures", pkg.procedures);
   await writeStagedTree(stagingDir, "samples", pkg.samples);
   await writeStagedTree(stagingDir, "assets", pkg.assets);
@@ -18222,7 +18388,7 @@ async function atomicWriteFile(path, content) {
 }
 async function saveSpecOnce(specsDir, filename, content) {
   await (0, import_promises4.mkdir)(specsDir, { recursive: true });
-  const path = (0, import_node_path12.join)(specsDir, filename);
+  const path = (0, import_node_path13.join)(specsDir, filename);
   try {
     await (0, import_promises4.readFile)(path, "utf-8");
     return;
@@ -18236,10 +18402,10 @@ async function saveSpecOnce(specsDir, filename, content) {
 async function resolveParentChainNode(rootDir, parentUrl, parentName, options = {}) {
   const maxDepth = options.maxDepth ?? MAX_DEPTH_DEFAULT;
   const timeout = options.timeout ?? 1e4;
-  const specsDir = (0, import_node_path12.join)(rootDir, "specs");
+  const specsDir = (0, import_node_path13.join)(rootDir, "specs");
   const cacheDir = options.inPlace === true ? specsDir : options.cacheDir ?? defaultCacheDir();
   const writeDir = cacheDir;
-  const blueprintsBaseDir = (0, import_node_path12.join)(cacheDir, "bluepriNNts");
+  const blueprintsBaseDir = (0, import_node_path13.join)(cacheDir, "bluepriNNts");
   const specs = /* @__PURE__ */ new Map();
   const chain = [];
   const freshness = /* @__PURE__ */ new Map();
@@ -18430,14 +18596,14 @@ async function resolveIncludesInto(specs, specsDir, timeout, seen = /* @__PURE__
     }
   }
 }
-var import_node_crypto3, import_promises4, import_node_fs8, import_node_path12, import_node_url, import_node_os, MAX_DEPTH_DEFAULT, BlueprintAuthError, stagingCounter, IncompleteSkillsTreeError;
+var import_node_crypto3, import_promises4, import_node_fs8, import_node_path13, import_node_url, import_node_os, MAX_DEPTH_DEFAULT, BlueprintAuthError, stagingCounter, IncompleteSkillsTreeError;
 var init_resolver_node = __esm({
   "iNNfo/packages/nn-mcp/src/tools/resolver-node.ts"() {
     "use strict";
     import_node_crypto3 = require("node:crypto");
     import_promises4 = require("node:fs/promises");
     import_node_fs8 = require("node:fs");
-    import_node_path12 = require("node:path");
+    import_node_path13 = require("node:path");
     init_path_guard();
     import_node_url = require("node:url");
     import_node_os = require("node:os");
@@ -18552,14 +18718,14 @@ async function collectDomainFiles(dir, rootDir, relPaths, opts, depth = 0) {
       if (entry.name.startsWith(".")) continue;
       const skip = opts?.includeSpecs ? ["node_modules", ".git", "dist", ".spec-cache", "backups", "archive"] : ["node_modules", ".git", "dist", ".spec-cache", "specs", "backups", "archive"];
       if (skip.includes(nameLower)) continue;
-      const child = (0, import_node_path13.join)(dir, entry.name);
+      const child = (0, import_node_path14.join)(dir, entry.name);
       if (isDomainRoot2(child)) continue;
       await collectDomainFiles(child, rootDir, relPaths, opts, depth + 1);
       continue;
     }
     if (!entry.isFile()) continue;
     if (entry.name.startsWith(".")) continue;
-    const rel = (0, import_node_path13.relative)(rootDir, (0, import_node_path13.join)(dir, entry.name)).replace(/\\/g, "/");
+    const rel = (0, import_node_path14.relative)(rootDir, (0, import_node_path14.join)(dir, entry.name)).replace(/\\/g, "/");
     relPaths.push(rel);
   }
 }
@@ -18595,7 +18761,7 @@ async function findDocument(rootDir, bare, excluded, opts) {
   const lower = bare.toLowerCase();
   const strip = (p) => p.replace(/\.md$/i, "").replace(/(_NN)+$/i, "").toLowerCase();
   const hits = relPaths.filter((rel) => {
-    if (excluded.has((0, import_node_path13.join)(rootDir, rel))) return false;
+    if (excluded.has((0, import_node_path14.join)(rootDir, rel))) return false;
     if (!/\.md$/i.test(rel) && rel.toLowerCase() !== lower) return false;
     const base = rel.split("/").pop() ?? rel;
     if (strip(rel) === lower || !lower.includes("/") && strip(base) === lower) return true;
@@ -18607,9 +18773,9 @@ async function findDocument(rootDir, bare, excluded, opts) {
   });
   if (hits.length === 0) return null;
   if (hits.length > 1) {
-    throw new ModelIdError("DUPLICATE_MODEL_ID", bare, hits.map((h) => (0, import_node_path13.join)(rootDir, h)));
+    throw new ModelIdError("DUPLICATE_MODEL_ID", bare, hits.map((h) => (0, import_node_path14.join)(rootDir, h)));
   }
-  return (0, import_node_path13.join)(rootDir, hits[0]);
+  return (0, import_node_path14.join)(rootDir, hits[0]);
 }
 async function resolveBlueprintWithCache(rootDir, url, name, options) {
   let cache = null;
@@ -18634,11 +18800,11 @@ async function resolveBlueprintWithCache(rootDir, url, name, options) {
   const freshness = cache?.freshness?.get(name) ?? null;
   return { template, cache, resolveInclude, freshness };
 }
-var import_node_path13, import_promises6, ModelIdError;
+var import_node_path14, import_promises6, ModelIdError;
 var init_spec = __esm({
   "iNNfo/packages/nn-mcp/src/tools/spec.ts"() {
     "use strict";
-    import_node_path13 = require("node:path");
+    import_node_path14 = require("node:path");
     init_dist();
     init_scoped_procedures();
     import_promises6 = require("node:fs/promises");
@@ -18666,6 +18832,7 @@ var init_spec = __esm({
 // scripts/core-mirrors/coNNtent.ts
 var coNNtent_exports = {};
 __export(coNNtent_exports, {
+  NO_OPEN_ENV: () => NO_OPEN_ENV,
   buildScopeChain: () => buildScopeChain,
   computeProposalSha: () => computeProposalSha,
   driftReport: () => driftReport,
@@ -18682,8 +18849,11 @@ __export(coNNtent_exports, {
   loadElementChains: () => loadElementChains,
   loadScopeProcedures: () => loadScopeProcedures,
   parseChangeset: () => parseChangeset,
+  parseFrontmatter: () => parseFrontmatter,
   parseKnowledge: () => parseKnowledge,
+  parseYaml: () => parseYaml,
   resolve: () => resolve3,
+  resolveConsoleModulePath: () => resolveConsoleModulePath2,
   resolveProcedures: () => resolveProcedures,
   serializeChangeset: () => serializeChangeset,
   serializeKnowledge: () => serializeKnowledge,
@@ -19102,6 +19272,7 @@ function parseConceptSection(conceptName, content) {
   const nodes = [];
   const lines = content.split("\n");
   let current = null;
+  let currentHasProperty = false;
   let descriptionLines = [];
   const leadingLines = [];
   let seenElement = false;
@@ -19145,6 +19316,7 @@ function parseConceptSection(conceptName, content) {
     });
     descriptionLines = [];
     seenElement = true;
+    currentHasProperty = false;
     return node;
   };
   const conceptFields = {};
@@ -19158,8 +19330,14 @@ function parseConceptSection(conceptName, content) {
       continue;
     }
     if (current) {
+      if (!currentHasProperty && /^\s*<!--.*-->\s*$/.test(line)) {
+        current.rawLeading = current.rawLeading ?? [];
+        current.rawLeading.push(line.trim());
+        continue;
+      }
       const prop = parsePropertyLine(line);
       if (prop !== null) {
+        currentHasProperty = true;
         if (prop[0] === "slug") {
           current.slug = String(prop[1]);
           current.slugExplicit = true;
@@ -19465,6 +19643,9 @@ function serializeKnowledge(model) {
     const hashes = "#".repeat(hDepth);
     lines.push(`${hashes} NN ${node.type}: ${node.name}`);
     if (node.slugExplicit && node.slug) lines.push(`slug:: ${node.slug}`);
+    if (node.rawLeading) {
+      for (const leading of node.rawLeading) lines.push(leading);
+    }
     for (const [k, v] of Object.entries(node.fields)) {
       const value = v;
       const raw = value === v ? node.rawFields?.[k] : void 0;
@@ -20923,7 +21104,8 @@ var CHANGE_OPS = [
   "produce_artifact",
   "repin_blueprint",
   "rename_field",
-  "set_field_default"
+  "set_field_default",
+  "review_gate"
 ];
 function isChangeStatus(val) {
   return typeof val === "string" && ["proposed", "applied", "partially_applied", "rejected", "conflict"].includes(val);
@@ -21107,7 +21289,11 @@ var PROPOSAL_KEYS = [
   "evidence",
   "blueprint_name",
   "blueprint_url",
-  "knowledge_version"
+  "knowledge_version",
+  "gate",
+  "verdict",
+  "reviewed_hash",
+  "plan_hash"
 ];
 function canonicalizeValue(val) {
   if (val === null || val === void 0) return void 0;
@@ -21136,10 +21322,18 @@ function canonicalizeChangeItem(change) {
   }
   return result;
 }
-function computeProposalSha(changes) {
+function computeProposalSha(changes, frontmatter) {
   const canonicalItems = changes.map(canonicalizeChangeItem);
   const serialized = JSON.stringify(canonicalItems);
-  return (0, import_node_crypto.createHash)("sha256").update(serialized, "utf8").digest("hex").toLowerCase();
+  const hash = (0, import_node_crypto.createHash)("sha256").update(serialized, "utf8");
+  if (frontmatter && (frontmatter.author_kind !== void 0 || frontmatter.origin !== void 0 || frontmatter.reviewer !== void 0)) {
+    const markers = {};
+    for (const key of ["author_kind", "origin", "reviewer"]) {
+      if (frontmatter[key] !== void 0) markers[key] = frontmatter[key];
+    }
+    hash.update("\n:::provenance:::\n").update(JSON.stringify(markers));
+  }
+  return hash.digest("hex").toLowerCase();
 }
 
 // iNNfo/packages/nn-core/src/changeset/parser.ts
@@ -21304,6 +21498,18 @@ function parseChangeset(rawContent) {
       case "evidence":
         currentChange.evidence = stripQuotes(rawVal);
         break;
+      case "gate":
+        currentChange.gate = stripQuotes(rawVal);
+        break;
+      case "verdict":
+        currentChange.verdict = stripQuotes(rawVal);
+        break;
+      case "reviewed_hash":
+        currentChange.reviewed_hash = stripQuotes(rawVal);
+        break;
+      case "plan_hash":
+        currentChange.plan_hash = stripQuotes(rawVal);
+        break;
       case "blueprint_name":
         currentChange.blueprint_name = stripQuotes(rawVal);
         break;
@@ -21357,6 +21563,8 @@ function parseChangeset(rawContent) {
         break;
       }
       default:
+        currentChange.rawKeys = currentChange.rawKeys ?? [];
+        currentChange.rawKeys.push(key);
         break;
     }
   }
@@ -21374,6 +21582,14 @@ function parseChangeset(rawContent) {
   const extractProblems = changes.flatMap(extractInstanceProblems);
   if (extractProblems.length > 0) {
     throw new Error(`Invalid extract_instance change: ${extractProblems.join("; ")}`);
+  }
+  const hasGate = changes.some((c) => c.op === "review_gate");
+  if (hasGate) {
+    for (const key of ["author_kind", "origin", "reviewer"]) {
+      if (frontmatter[key] === void 0 || frontmatter[key] === null) {
+        throw new Error(`Invalid review_gate changeset: missing frontmatter "${key}" (required for verdicts)`);
+      }
+    }
   }
   return {
     frontmatter,
@@ -21805,10 +22021,6 @@ init_dist();
 init_dist();
 init_domain_index();
 
-// iNNfo/packages/nn-mcp/src/tools/dev-checkout.ts
-var import_node_path14 = require("node:path");
-var DEV_ROOT_MARKER = (0, import_node_path14.join)("iNNfo", "specs", "bluepriNNts", "console", "artifact_shell.html");
-
 // iNNfo/packages/nn-mcp/src/tools/move-referrers.ts
 var import_promises7 = require("node:fs/promises");
 var import_node_path15 = require("node:path");
@@ -21988,6 +22200,8 @@ var DEFAULT_WORKSPACE_IGNORE = /* @__PURE__ */ new Set([
 ]);
 
 // iNNfo/packages/nn-mcp/src/tools/apply-change.ts
+var NON_MUTATING_OPS = /* @__PURE__ */ new Set(["comment", "review_gate"]);
+var isNonMutating = (op) => NON_MUTATING_OPS.has(op);
 function parseVersion(v) {
   const m = v.trim().match(/^V?_?(\d+)[-.](\d+)[-.](\d+)$/i);
   if (!m) return null;
@@ -22340,6 +22554,26 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         errors: [{ path: relChangesetPath, message: `CHANGESET_REJECTED: ${recorded}`, code: "CHANGESET_REJECTED" }]
       };
     }
+    const gateShapeProblems = csDoc.changes.flatMap(reviewGateProblems3);
+    if (gateShapeProblems.length > 0) {
+      return recordRejection(
+        gateShapeProblems.map((message) => ({
+          path: relChangesetPath,
+          message,
+          code: message.split(":")[0]
+        }))
+      );
+    }
+    const governanceProblems = reviewGateProvenanceProblems(csDoc.changes, csDoc.frontmatter);
+    if (governanceProblems.length > 0) {
+      return recordRejection(
+        governanceProblems.map((message) => ({
+          path: relChangesetPath,
+          message,
+          code: message.split(":")[0]
+        }))
+      );
+    }
     if (wasRejected) {
       csDoc.frontmatter.status = "proposed";
       delete csDoc.frontmatter.resolution;
@@ -22349,14 +22583,14 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           delete c.resolution;
         }
       }
-      csDoc.frontmatter.proposal_sha = computeProposalSha2(csDoc.changes);
+      csDoc.frontmatter.proposal_sha = computeProposalSha2(csDoc.changes, csDoc.frontmatter);
     }
     if (!csDoc.frontmatter.proposal_sha) {
-      csDoc.frontmatter.proposal_sha = computeProposalSha2(csDoc.changes);
+      csDoc.frontmatter.proposal_sha = computeProposalSha2(csDoc.changes, csDoc.frontmatter);
     }
     if (!verifyProposalSha(csDoc)) {
       if (csDoc.frontmatter.status === "conflict") {
-        csDoc.frontmatter.proposal_sha = computeProposalSha2(csDoc.changes);
+        csDoc.frontmatter.proposal_sha = computeProposalSha2(csDoc.changes, csDoc.frontmatter);
       } else {
         return {
           success: false,
@@ -22429,6 +22663,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
     }
     const citationResolver = createFsSourceResolver(rootDir);
     for (const change of csDoc.changes) {
+      if (change.op === "review_gate") continue;
       if (!change.evidence) {
         return recordRejection(
           [
@@ -22715,7 +22950,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       plannedConcepts.set(toId.toLowerCase(), subtree.concept);
     }
     for (const [index, change] of csDoc.changes.entries()) {
-      if (change.op === "comment" || change.op === "add_model" || change.op === "produce_artifact") continue;
+      if (isNonMutating(change.op) || change.op === "add_model" || change.op === "produce_artifact") continue;
       const targetModel = parseTargetAddress(change.target).modelSlug;
       const createdAt = addModelIndex.get(targetModel.toLowerCase());
       if (createdAt !== void 0 && createdAt > index) {
@@ -22817,7 +23052,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           message: `MODEL_EXISTS: model "${change.target}" already exists; add_model never overwrites or repairs a model`
         });
         for (const other of csDoc.changes) {
-          if (other.id === change.id || other.op === "comment" || other.op === "produce_artifact") continue;
+          if (other.id === change.id || isNonMutating(other.op) || other.op === "produce_artifact") continue;
           if (parseTargetAddress(other.target).modelSlug.toLowerCase() !== key) continue;
           blockedChanges.set(other.id, {
             code: "DEPENDS_ON_CONFLICTED_CHANGE",
@@ -23104,6 +23339,30 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         }
       }
     }
+    for (const change of csDoc.changes) {
+      if (change.op !== "review_gate") continue;
+      const { modelSlug } = parseTargetAddress(change.target);
+      const entry = loadedModels.get(modelSlug.toLowerCase());
+      if (!entry) continue;
+      let gates;
+      try {
+        const { template } = await resolveBlueprintForKnowledge(rootDir, entry.model);
+        gates = template?.frontmatter?.gates;
+      } catch {
+        gates = void 0;
+      }
+      const problems = gateDeclarationProblems(change, gates);
+      if (problems.length > 0) {
+        return recordRejection(
+          problems.map((message) => ({
+            path: change.target,
+            message,
+            code: message.split(":")[0]
+          })),
+          change.id
+        );
+      }
+    }
     const loadedModelAsts = /* @__PURE__ */ new Map();
     for (const [, v] of loadedModels) {
       loadedModelAsts.set(v.modelSlug, v.model);
@@ -23134,10 +23393,10 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       referenceConflicts,
       blockedChanges
     );
-    const actionableClean = cleanSubset.filter((c) => c.op !== "comment");
+    const actionableClean = cleanSubset.filter((c) => !isNonMutating(c.op));
     if (actionableClean.length === 0 && conflictedSubset.length > 0) {
       for (const change of csDoc.changes) {
-        if (change.op === "comment") continue;
+        if (isNonMutating(change.op)) continue;
         change.status = "conflict";
         const diag = conflictDiagnostics.get(change.id);
         change.resolution = diag ? diag.message : change.resolution || "Precondition failed";
@@ -23203,7 +23462,13 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
     }
     for (const change of cleanSubset) {
-      if (change.op === "comment") continue;
+      if (isNonMutating(change.op)) {
+        if (change.op === "review_gate") {
+          change.status = "applied";
+          change.resolution = `Recorded verdict "${String(change.verdict ?? "")}" for gate "${String(change.gate ?? "")}"`;
+        }
+        continue;
+      }
       if (change.op === "produce_artifact") {
         change.status = "applied";
         change.resolution = `Recorded artifact ${change.target}`;
@@ -23567,8 +23832,8 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       throw err;
     }
     const createdModelIds = Array.from(loadedModels.values()).filter((entry) => entry.created).map((entry) => entry.modelSlug);
-    const totalActionable = csDoc.changes.filter((c) => c.op !== "comment").length;
-    const cleanAppliedCount = cleanSubset.filter((c) => c.op !== "comment").length;
+    const totalActionable = csDoc.changes.filter((c) => !isNonMutating(c.op)).length;
+    const cleanAppliedCount = cleanSubset.filter((c) => !isNonMutating(c.op)).length;
     const overallStatus = cleanAppliedCount === totalActionable ? "applied" : "partially_applied";
     const batchId = displayStem2((0, import_node_path17.basename)(resolvedChangesetPath));
     csDoc.frontmatter.status = overallStatus;
@@ -23627,8 +23892,38 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
     await lockHandle.release();
   }
 }
+
+// iNNfo/packages/nn-core/src/console/locate-writer.ts
+var import_node_fs9 = require("node:fs");
+var import_node_os2 = require("node:os");
+var import_node_path18 = require("node:path");
+var import_node_url2 = require("node:url");
+var import_meta = {};
+var DEV_ROOT_MARKER2 = (0, import_node_path18.join)("iNNfo", "specs", "bluepriNNts", "console", "artifact_shell.html");
+var EXPORT_MODULE = "export-console.mjs";
+var NO_OPEN_ENV = "INNFO_CONSOLE_NO_OPEN";
+function devCheckoutRoot(opts = {}) {
+  const requires = opts.requires ?? [];
+  let dir = opts.startDir ?? (0, import_node_path18.dirname)((0, import_node_url2.fileURLToPath)(import_meta.url));
+  for (; ; ) {
+    if ((0, import_node_fs9.existsSync)((0, import_node_path18.join)(dir, DEV_ROOT_MARKER2)) && requires.every((rel) => (0, import_node_fs9.existsSync)((0, import_node_path18.join)(dir, rel)))) return dir;
+    const parent = (0, import_node_path18.dirname)(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
+}
+function resolveConsoleModulePath2(opts = {}) {
+  const env = opts.env ?? process.env;
+  const candidates = [];
+  if (env.INNFO_CONSOLE_DIR) candidates.push((0, import_node_path18.join)(env.INNFO_CONSOLE_DIR, EXPORT_MODULE));
+  const devRoot = opts.devRoot === void 0 ? devCheckoutRoot({ requires: [(0, import_node_path18.join)("scripts", EXPORT_MODULE)] }) : opts.devRoot;
+  if (devRoot && (0, import_node_fs9.existsSync)((0, import_node_path18.join)(devRoot, DEV_ROOT_MARKER2))) candidates.push((0, import_node_path18.join)(devRoot, "scripts", EXPORT_MODULE));
+  candidates.push((0, import_node_path18.join)(opts.home ?? (0, import_node_os2.homedir)(), ".agents", "console", EXPORT_MODULE));
+  return candidates.find((candidate) => (0, import_node_fs9.existsSync)(candidate)) ?? null;
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  NO_OPEN_ENV,
   buildScopeChain,
   computeProposalSha,
   driftReport,
@@ -23645,8 +23940,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
   loadElementChains,
   loadScopeProcedures,
   parseChangeset,
+  parseFrontmatter,
   parseKnowledge,
+  parseYaml,
   resolve,
+  resolveConsoleModulePath,
   resolveProcedures,
   serializeChangeset,
   serializeKnowledge,

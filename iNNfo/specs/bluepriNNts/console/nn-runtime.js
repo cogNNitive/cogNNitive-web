@@ -21,7 +21,7 @@
   // by the export gate so the user must enter a real one before exporting.
   var DEFAULT_REVIEWER_NAME = 'reviewer'
   var MODEL_VERSION_PATTERN = /^V_\d+-\d+-\d+$/
-  var ITEM_KINDS = ['correction', 'comment', 'new', 'delete']
+  var ITEM_KINDS = ['correction', 'comment', 'new', 'delete', 'verdict']
   // Values the `is:` filter operator understands (see matchAtom).
   var KNOWN_IS_VALUES = ['draft', 'reviewed', 'changed']
   var activeState = null
@@ -2747,7 +2747,7 @@
         },
         {
           domId: 'el-' + String(element.id || ''),
-          modelId: modelId || element.modelId || '',
+          modelId: (element && element.modelId) || modelId || '',
           collapsible: true,
           open: focusId != null && String(element.id || '') === String(focusId),
           lazy: Array.isArray(elements) && elements.length > 20,
@@ -2855,7 +2855,7 @@
         var pill = UI.Ku(
           'element',
           {
-            model: modelId || element.modelId || '',
+            model: (element && element.modelId) || modelId || '',
             id: element.id,
             label: element.name || element.id || '',
             concept: element.concept,
@@ -2902,7 +2902,7 @@
           },
           {
             doc: doc,
-            modelId: modelId || element.modelId || '',
+            modelId: (element && element.modelId) || modelId || '',
             concept: cMeta,
             onClick: function () {
               renderRefDialog(doc, element)
@@ -3099,7 +3099,7 @@
       if (element._draft) tr.classList.add('nn-element-table-draft')
 
       var rowCMeta = conceptMetaOf(conceptList, element.concept)
-      var rowModel = modelId || element.modelId || ''
+      var rowModel = (element && element.modelId) || modelId || ''
       var nameTd = el('td', 'nn-element-table-name')
       var elBadge =
         UI && typeof UI.Ku === 'function'
@@ -3527,10 +3527,11 @@
     // Binds the file slug and source; a declared id that differs is rejected.
     function registrar(id, source) {
       return function (def) {
-        if (def && def.id !== undefined && def.id !== id) {
+        var viewId = def && def.id !== undefined ? def.id : id
+        if (def && def.id !== undefined && def.id !== id && !def.id.startsWith(id + '-')) {
           reject(id, [source], 'view "' + id + '": declared id "' + def.id + '" does not match the file slug')
         }
-        return register(Object.assign({}, def, { id: id, source: source }))
+        return register(Object.assign({}, def, { id: viewId, source: source }))
       }
     }
 
@@ -3613,6 +3614,54 @@
   function consoleScopeOf(meta) {
     var scope = meta && meta.consoleScope
     return isObject(scope) && nonEmptyString(scope.view) ? scope.view : ''
+  }
+
+  // The full console scope: a view id, a model allow-list, a read-only flag and a
+  // human label. `writeConsole` writes it into `meta.consoleScope` (console-scope).
+  function consoleScopeMeta(meta) {
+    var scope = isObject(meta && meta.consoleScope) ? meta.consoleScope : {}
+    var models = Array.isArray(scope.models)
+      ? scope.models
+          .map(function (m) {
+            return String(m == null ? '' : m).trim()
+          })
+          .filter(function (m) {
+            return m !== ''
+          })
+      : []
+    return {
+      view: nonEmptyString(scope.view) ? String(scope.view) : '',
+      models: models,
+      readOnly: scope.readOnly === true,
+      label: nonEmptyString(scope.label) ? String(scope.label) : '',
+    }
+  }
+
+  // The draft store is keyed per scope so two scoped consoles sharing a domain id do
+  // not share drafts (console-scope).
+  function draftStoreId(baseId, scope) {
+    var id = String(baseId == null ? '' : baseId)
+    if (scope && scope.view) id += '::view:' + scope.view
+    if (scope && Array.isArray(scope.models) && scope.models.length > 0) {
+      id += '::models:' + scope.models.join(',')
+    }
+    return id
+  }
+
+  /** Read-only consoles never offer an edit control. */
+  function applyReadOnlyControls(doc) {
+    var selectors = [
+      '#nn-review-dock button',
+      '[data-nn-edit]',
+      '.nn-card-edit',
+      '[data-nn-propose]',
+      '#nn-edit',
+      '.nn-review-actions button',
+    ]
+    selectors.forEach(function (sel) {
+      var nodes = doc.querySelectorAll(sel)
+      for (var i = 0; i < nodes.length; i++) nodes[i].disabled = true
+    })
   }
 
   // Built-in tabs, registered per boot (they are not in the registry).
@@ -3717,9 +3766,13 @@
       bootErrors.push({ id: id, sources: sources, reason: reason })
     }
     var scopedView = consoleScopeOf(opts.meta)
-    if (scopedView && shell.explorer) shell.explorer.classList.remove('active')
+    if (scopedView && shell.explorer) {
+      shell.explorer.classList.remove('active')
+      if (shell.explorer.parentNode) shell.explorer.parentNode.removeChild(shell.explorer)
+    }
     registry.list().forEach(function (v) {
       if (scopedView && v.id !== scopedView) return
+      if (!scopedView && v.kind === 'readonly' && v.id === 'conntent-delivery') return
       var clash = tabs.filter(function (t) {
         return t.id === v.id
       })[0]
@@ -3873,7 +3926,31 @@
                 throw new Error('cannot propose: a correction needs a proposed value')
               }
             }
+            // A verdict is a gate decision, not a field write: it names the gate, its
+            // outcome and the content hash the reviewer saw (never computed here).
+            if (p.kind === 'verdict') {
+              if (!nonEmptyString(p.gate)) throw new Error('cannot propose: a verdict needs a gate')
+              if (p.verdict !== 'approved' && p.verdict !== 'needs-change') {
+                throw new Error('cannot propose: a verdict must be approved or needs-change')
+              }
+              if (!/^[0-9a-f]{64}$/.test(String(p.reviewed_hash || ''))) {
+                throw new Error('cannot propose: a verdict needs the 64-hex reviewed_hash of the content it reviews')
+              }
+              if (p.verdict === 'needs-change' && !nonEmptyString(p.notes)) {
+                throw new Error('cannot propose: needs-change needs a reason')
+              }
+              if (p.plan_hash !== undefined && p.plan_hash !== null && p.plan_hash !== '' && !/^[0-9a-f]{64}$/.test(String(p.plan_hash))) {
+                throw new Error('cannot propose: plan_hash must be 64 hex characters')
+              }
+            }
             var payload = { kind: p.kind, proposed: p.proposed, comment: p.comment }
+            if (p.kind === 'verdict') {
+              payload.gate = p.gate
+              payload.verdict = p.verdict
+              payload.reviewed_hash = p.reviewed_hash
+              payload.notes = p.notes
+              if (p.plan_hash) payload.plan_hash = p.plan_hash
+            }
             if (p.kind === 'correction') {
               // Same source the modal path uses (kuModalTarget): name and
               // description live on the element, other fields under fields.
@@ -6335,6 +6412,31 @@
     var d = isObject(draft) ? draft : {}
     var id = oneLine(d.id || 'c-' + String(index + 1).padStart(2, '0'))
     var model = oneLine(d.knowledge_id || fallbackModel || 'model')
+    // A verdict is not a mutation: it records a human decision on a gate. It carries no
+    // evidence (its authority is the changeset frontmatter) and never a base_hash.
+    if (d.kind === 'verdict' || d.op === 'review_gate') {
+      var gate = oneLine(d.gate || 'script')
+      var verdict = oneLine(d.verdict || 'approved')
+      var reviewedHash = oneLine(d.reviewed_hash || '')
+      var planHash = d.plan_hash ? oneLine(d.plan_hash) : ''
+      if (gate === 'budget' && !planHash) planHash = reviewedHash
+      // A scene verdict targets `<file stem>@<scene slug>`; a budget verdict targets the
+      // episode model itself (there is no element_slug).
+      var verdictTarget = oneLine(
+        d.target || (d.element_slug ? model + '@' + d.element_slug : d.knowledge_id || fallbackModel || 'model'),
+      )
+      var verdictLines = [
+        '## NN Change: ' + id,
+        'op:: review_gate',
+        'target:: ' + verdictTarget,
+        'gate:: ' + gate,
+        'verdict:: ' + verdict,
+        'reviewed_hash:: ' + reviewedHash,
+      ]
+      if (planHash) verdictLines.push('plan_hash:: ' + planHash)
+      if (d.notes) verdictLines.push('notes:: ' + oneLine(d.notes))
+      return verdictLines.join('\n')
+    }
     // The element part of a target is always the element slug: never the display
     // name or the element id (the engine resolves slugs, and every payload element
     // carries one).
@@ -6423,6 +6525,38 @@
     return blocks
   }
 
+  /** The first reason a verdict draft cannot be exported, or null. */
+  function verdictDraftProblem(drafts) {
+    for (var i = 0; i < drafts.length; i++) {
+      var d = drafts[i]
+      if (!d || (d.kind !== 'verdict' && d.op !== 'review_gate')) continue
+      var id = d.id || 'c-' + String(i + 1).padStart(2, '0')
+      if (!d.reviewed_hash) return 'review_gate change "' + id + '" requires reviewed_hash'
+      if (d.gate === 'preview' && !d.plan_hash) {
+        return 'preview verdict "' + id + '" requires plan_hash (the scene slice hash)'
+      }
+      if (d.gate === 'budget' && !(d.plan_hash || d.reviewed_hash)) {
+        return 'budget verdict "' + id + '" requires the episode plan hash'
+      }
+    }
+    return null
+  }
+
+  /** Build a verdict draft the view hands to the store (console-side validation only). */
+  function verdictDraft(input) {
+    var d = isObject(input) ? input : {}
+    return {
+      kind: 'verdict',
+      id: d.id,
+      gate: String(d.gate || 'script'),
+      target: String(d.target || d.knowledge_id || ''),
+      verdict: String(d.verdict || 'approved'),
+      reviewed_hash: String(d.reviewed_hash || ''),
+      plan_hash: d.plan_hash ? String(d.plan_hash) : '',
+      notes: d.notes ? String(d.notes) : '',
+    }
+  }
+
   function serializeChangesetMarkdown(meta, drafts, fallbackModel) {
     // The stamped version is the changes bluepriNNt version the payload was built
     // against (core's canonical registry); composeExport refuses to export without it.
@@ -6439,15 +6573,15 @@
       'status: proposed',
       'title: ' + JSON.stringify(title),
       'author: ' + JSON.stringify(author),
-      '---',
-      '',
-      '# NN index',
-      '',
-      '* [[Change]]',
-      '',
-      '# NN Change',
-      '',
     ]
+    // A file carrying a verdict needs the human markers the engine checks.
+    var hasVerdict = drafts.some(function (d) {
+      return d && (d.kind === 'verdict' || d.op === 'review_gate')
+    })
+    if (hasVerdict) {
+      lines.push('author_kind: human', 'origin: console', 'reviewer: ' + JSON.stringify(author))
+    }
+    lines.push('---', '', '# NN index', '', '* [[Change]]', '', '# NN Change', '')
     var modelName = fallbackModel || meta.source_knowledge || 'model'
     var blocks = []
     drafts.forEach(function (d, i) {
@@ -6477,6 +6611,10 @@
 
     if (!reviewer || reviewer === DEFAULT_REVIEWER_NAME) {
       return { ok: false, errors: ['Reviewer identifier is required.'] }
+    }
+    var verdictProblem = verdictDraftProblem(drafts)
+    if (verdictProblem) {
+      return { ok: false, errors: [verdictProblem] }
     }
 
     var text = serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
@@ -6522,6 +6660,10 @@
     if (!reviewer || reviewer === DEFAULT_REVIEWER_NAME) {
       return { ok: false, errors: ['Reviewer identifier is required.'] }
     }
+    var verdictProblem = verdictDraftProblem(drafts)
+    if (verdictProblem) {
+      return { ok: false, errors: [verdictProblem] }
+    }
 
     var stamp = stampFromDate(state && state.exportedAt ? new Date(state.exportedAt) : new Date())
     var changesetMd = serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
@@ -6551,6 +6693,32 @@
       }).join('') +
       '</ul>'
     errorContainer.style.display = 'block'
+  }
+
+  // Direct write to a connected domaiNN folder (console-changes-direct-write, D-C2).
+  // The download path stays the fallback; these two calls are what the view wires to a
+  // "Connect folder" control.
+  function fsaWriter() {
+    var root = typeof window !== 'undefined' ? window : null
+    var api = root && root.nnFsa
+    if (!api) return null
+    return api.createWriter({ win: root, store: api.createIndexedDbStore() })
+  }
+
+  function connectFolder(workspaceId) {
+    var writer = fsaWriter()
+    if (!writer) return Promise.resolve({ ok: false, reason: 'fsa-unavailable' })
+    return writer.connect(String(workspaceId || ''))
+  }
+
+  function writeChangesetToFolder(workspaceId, reviewer, changesetText) {
+    var writer = fsaWriter()
+    if (!writer) return Promise.resolve({ ok: false, reason: 'fsa-unavailable' })
+    return writer.writeChangeset({
+      workspaceId: String(workspaceId || ''),
+      reviewer: reviewer,
+      text: changesetText,
+    })
   }
 
   function downloadChangesetExport(doc, state) {
@@ -7214,10 +7382,26 @@
     var schema = slots.schema
     var model = slots.model
     var meta = isObject(model.meta) ? model.meta : {}
+    var consoleScope = consoleScopeMeta(meta)
+    if (consoleScope.readOnly && active.documentElement) {
+      active.documentElement.setAttribute('data-nn-readonly', 'true')
+    }
     // Change A: install the model-ownership resolver so a `derived` model's units
     // offer no edit pencil (ui-kit unitEditability). Keyed by model id and title.
     var ownershipByModel = {}
     var modelList = Array.isArray(meta.models) ? meta.models : []
+    if (consoleScope.models.length > 0) {
+      var wantedModels = consoleScope.models.map(function (m) {
+        return m.toLowerCase()
+      })
+      modelList = modelList.filter(function (mm) {
+        if (!mm) return false
+        var key = String(mm.id != null ? mm.id : mm.slug != null ? mm.slug : mm.title || '').toLowerCase()
+        return wantedModels.indexOf(key) !== -1
+      })
+      // Every downstream consumer (picker, reference index, banner) sees the scope.
+      meta.models = modelList
+    }
     modelList.forEach(function (mm) {
       if (!mm) return
       if (mm.id != null) ownershipByModel[String(mm.id)] = mm.ownership || 'authored'
@@ -7303,7 +7487,7 @@
       store: Review.createDraftStore(
         typeof localStorage !== 'undefined' ? localStorage : null,
         // A domain console keys its drafts by the stable domain id, never by content.
-        String(meta.domainId || baseId) + (scopedView ? '::view:' + scopedView : ''),
+        String(meta.domainId || baseId) + (scopedView ? '::view:' + scopedView : '') + (consoleScope.models.length > 0 ? '::models:' + consoleScope.models.join(',') : ''),
         {
           initialDrafts: Array.isArray(model.drafts) ? model.drafts : [],
           onError: function (err) {
@@ -7939,7 +8123,9 @@
     }
     onHash()
 
-    return { ok: true, needs: config.needs, elements: elements.length, controller: state.controller, registry: registry, state: state }
+    if (consoleScope.readOnly) applyReadOnlyControls(active)
+
+    return { ok: true, needs: config.needs, elements: elements.length, controller: state.controller, registry: registry, state: state, scope: consoleScope }
   }
 
   function autoBoot() {
@@ -7974,6 +8160,8 @@
     slugify: slugify,
     slugifyReviewer: slugifyReviewer,
     stampFromDate: stampFromDate,
+    consoleScopeMeta: consoleScopeMeta,
+    draftStoreId: draftStoreId,
     getReviewerName: getReviewerName,
     setReviewerName: setReviewerName,
     parseConfig: parseConfig,
@@ -8024,14 +8212,16 @@
     ensureFeedbackUi: ensureFeedbackUi,
     composeExport: composeExport,
     composeChangesetExport: composeChangesetExport,
+    verdictDraft: verdictDraft,
     downloadChangesetExport: downloadChangesetExport,
+    connectFolder: connectFolder,
+    writeChangesetToFolder: writeChangesetToFolder,
     copyChangesetPrompt: copyChangesetPrompt,
     saveSnapshot: saveSnapshot,
     copyAgentPrompt: copyAgentPrompt,
     composeAgentPrompt: composeAgentPrompt,
     mountNavbarActions: mountNavbarActions,
-    boot: boot,
-    fieldDefOf: fieldDefOf,
+    boot: boot,    fieldDefOf: fieldDefOf,
   }
 
   return PUBLIC_API

@@ -14,7 +14,10 @@
   var STORE_PREFIX = 'nn-console:v4:'
   var STORE_VERSION = 4
   var BASE_HASH_PATTERN = /^[0-9a-f]{16}$/
-  var ITEM_KINDS = ['correction', 'comment', 'new', 'delete']
+  var ITEM_KINDS = ['correction', 'comment', 'new', 'delete', 'verdict']
+  // A verdict is a decision on a gate, not a mutation: it carries the gate, its outcome and
+  // the hash of the content that was reviewed, never a `base_hash`.
+  var VERDICTS = ['approved', 'needs-change']
 
   function isObject(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -101,6 +104,13 @@
     if (d.original !== undefined) draft.original = d.original
     if (d.proposed !== undefined) draft.proposed = d.proposed
     if (d.comment !== undefined && d.comment !== null) draft.comment = String(d.comment)
+    // Verdict keys: the gate, its outcome, the reviewed content hash and, for a preview or
+    // budget approval, the plan slice hash the reviewer saw.
+    if (d.gate != null && d.gate !== '') draft.gate = String(d.gate)
+    if (d.verdict != null && d.verdict !== '') draft.verdict = String(d.verdict)
+    if (d.reviewed_hash != null && d.reviewed_hash !== '') draft.reviewed_hash = String(d.reviewed_hash)
+    if (d.plan_hash != null && d.plan_hash !== '') draft.plan_hash = String(d.plan_hash)
+    if (d.notes != null && d.notes !== '') draft.notes = String(d.notes)
     if (d.sources !== undefined && d.sources !== null) {
       draft.sources = Array.isArray(d.sources) ? deepCopy(d.sources) : d.sources
     }
@@ -262,6 +272,18 @@
           if (missing.length) {
             throw new TypeError('nnReview.createDraftStore: new draft requires ' + missing.join(', '))
           }
+        } else if (raw.kind === 'verdict') {
+          // The target is the scene, addressed by its model and slug; the content hash it
+          // reviews is `reviewed_hash`, so `base_hash` is neither needed nor meaningful.
+          var noVerdict = ['knowledge_id', 'element_slug', 'gate', 'verdict', 'reviewed_hash'].filter(function (key) {
+            return raw[key] == null || raw[key] === ''
+          })
+          if (noVerdict.length) {
+            throw new TypeError('nnReview.createDraftStore: verdict draft requires ' + noVerdict.join(', '))
+          }
+          if (VERDICTS.indexOf(String(raw.verdict)) === -1) {
+            throw new TypeError('nnReview.createDraftStore: verdict must be one of ' + VERDICTS.join(', '))
+          }
         } else if (!isMatrix && (!raw.element_id || !raw.base_hash)) {
           throw new TypeError('nnReview.createDraftStore: element_id and base_hash required')
         }
@@ -306,6 +328,9 @@
     var byId = isObject(elementsById) ? elementsById : {}
     // A proposed new element has no target in the model yet, so it cannot be stale.
     if (d.kind === 'new') return false
+    // A verdict's authorisation is `reviewed_hash`, checked by the engine against the
+    // content it is applied to; there is no element `base_hash` to compare here.
+    if (d.kind === 'verdict') return false
     // Matrix-cell drafts have no element hash to compare against.
     if (d.matrix) return false
     var el = byId[d.element_id]
@@ -589,6 +614,27 @@
       }
       var el = elementsById[anchorData.elementId]
       if (!el) return null
+      // A verdict targets a scene and records a gate decision. It carries no `base_hash`:
+      // its authority is the reviewed content hash the payload published.
+      if (payload.kind === 'verdict') {
+        var verdictDraft = {
+          element_id: anchorData.elementId,
+          concept: el.concept,
+          element: el.name || el.id,
+          kind: 'verdict',
+          knowledge_id: el.modelId || meta.modelId,
+          element_slug: el.slug,
+          gate: payload.gate,
+          verdict: payload.verdict,
+          reviewed_hash: payload.reviewed_hash,
+        }
+        if (payload.plan_hash) verdictDraft.plan_hash = payload.plan_hash
+        if (payload.notes) verdictDraft.notes = String(payload.notes)
+        var savedVerdict = store.addDraft(verdictDraft)
+        showChangeToast()
+        refreshCount()
+        return savedVerdict
+      }
       var draft = {
         element_id: anchorData.elementId,
         concept: el.concept,

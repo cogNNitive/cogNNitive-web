@@ -16,7 +16,6 @@ title: "Video Defaults"
 ## NN Video Defaults: Defaults
 
 slug:: defaults
-voice:: default
 voice_model:: minimax/speech-2.8-hd
 image_model:: wavespeed-ai/z-image/turbo
 image_size:: 1024x1024
@@ -26,7 +25,9 @@ transition:: none
 fit:: cover
 frame:: neutral
 output_formats:: [1920x1920, 1080x1920, 1920x1080, 1080x1080]
-script_review:: required
+review_gates:: [script, preview]
+captions:: off
+thumbnail_formats:: [2560x1440, 1080x1920]
 components:: [title=title, lower-third=lower-third, caption=caption, quote=quote, watermark=watermark, b-roll=b-roll]
 
 The blueprint-level `Video Defaults`: every cascade parameter's baseline value, shipped in

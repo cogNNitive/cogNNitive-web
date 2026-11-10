@@ -36,3 +36,20 @@ test('the root registers its timeline and loads gsap', () => {
   assert.match(indexHtml, /gsap\.min\.js/);
   assert.match(indexHtml, /window\.__timelines\["demo"\]/);
 });
+
+test('every overlay host carries data-width and data-height equal to master size and is stacked above scene hosts', () => {
+  const f = fixture();
+  f.tracks.overlays = [
+    {
+      id: 'watermark-overlay',
+      type: 'watermark',
+      fromFrame: 0,
+      durationInFrames: 90,
+      config: { text: 'Watermark test' },
+    },
+  ];
+  const { indexHtml } = buildProject(f);
+  assert.match(indexHtml, /<div id="watermark-overlay"[^>]*data-width="1080"[^>]*data-height="1080"/);
+  assert.match(indexHtml, /id="watermark-overlay"[^>]*style="[^"]*z-index:\s*(?:2\d\d|[3-9]\d\d|\d{4,})/);
+});
+

@@ -53,15 +53,21 @@ test('the pipeline primitives are modules, not one CLI file', () => {
 });
 
 test('produce drives the modules directly', () => {
-  const produce = read('scripts/produce.mjs');
+  const cli = read('scripts/produce.mjs');
+  const pipeline = read('scripts/lib/pipeline.mjs');
 
   assert.match(
-    produce,
-    /from '\.\/lib\/render\.mjs'/,
-    'produce imports the renderer from lib/render.mjs',
+    pipeline,
+    /from '\.\/render\.mjs'/,
+    'the pipeline imports the renderer from lib/render.mjs',
+  );
+  assert.match(
+    cli,
+    /from '\.\/lib\/pipeline\.mjs'/,
+    'produce.mjs is a CLI over lib/pipeline.mjs',
   );
   assert.doesNotMatch(
-    produce,
+    `${cli}${pipeline}`,
     /video-engine-cli/,
     'produce must not import the retired engine CLI',
   );

@@ -1,7 +1,7 @@
 ---
 name: nn-conntent
 description: |
-  iNNfo-native skill for authoring, compiling, and rendering cogNNitive Video scripts inside a workspace's Series/Video hierarchy. Lowers the structured model into a deterministic Composition Manifest, emits a HyperFrames project from it, measures duration with ffprobe, and renders headlessly via the pinned HyperFrames CLI; also supports thumbnail composition. Triggers: video script, cognnitive video, hyperframes, series script, nn-conntent, coNNtent blueprint, finalize video, render video script.
+  iNNfo-native skill for authoring, compiling, and rendering cogNNitive Video scripts inside a workspace's Series/Video hierarchy. Lowers the structured model into a deterministic Composition Manifest, emits a HyperFrames project from it, measures duration with ffprobe, and renders headlessly via the pinned HyperFrames CLI; also supports thumbnail composition. This is the one skill that triggers for a coNNtent domaiNN: an episode, a series, a frame, a character or the production pipeline. Triggers: coNNtent domaiNN, coNNtent episode, series script, frame, character, produce episode, video script, cognnitive video, hyperframes, nn-conntent, coNNtent blueprint, finalize video, render video script.
 version: "V_0-15-11"
 last_updated: 2026-10-31
 license: MIT
@@ -33,6 +33,19 @@ Provides end-to-end video script authoring, deterministic TTS/media asset synthe
 ## 0. Activation Gate
 
 Execute the canonical activation gate defined in `nn-preflight` (session greeting + deterministic preflight integrity check), same as every other cogNNitive skill.
+
+## 0b. Entry point: detect the state, then propose one procedure
+
+In a coNNtent domaiNN, before anything else, run `detectState(root)` from
+`scripts/lib/detect-state.mjs`. It reads the domaiNN's files (never conversation memory)
+and returns the one procedure that comes next — or the layout rejection when the folder
+predates this contract, in which case do not migrate: propose Set up the Domain in a new
+folder.
+
+Propose that procedure and ask for confirmation; the person may choose another one. The
+six procedures, their steps and the tool of each step live in
+`procedures/usage_procedures_NN.md`: point to it, do not restate it. Detection is
+stateless, so after a procedure completes run `detectState` again and propose the next.
 
 ## 1. Engine Architecture & HyperFrames Pipeline
 
@@ -67,13 +80,15 @@ simply skipped and the package defaults apply.
 This skill owns **authoring, validating, compiling, rendering, and producing** one episode inside a Series folder. The single entry point is:
 
 ```bash
-node scripts/produce.mjs <episode-dir> [--approve <plan_hash>] [--dry-run]
+node scripts/produce.mjs <episode-dir> [--dry-run] [--no-open]
 ```
 
 `produce` runs the whole pipeline in order — intake, review gate, `status:: approved`, estimate,
 budget gate, compile + render, delivery formats, `status:: produced` — and returns a predictable
 exit code: `0` produced, `10` stopped for review, `11` stopped for budget, `1` error. Every stage
-below is what `produce` does; the primitive commands are for debugging a single stage.
+below is what `produce` does; the primitive commands are for debugging a single stage. Every exit
+regenerates the domaiNN console, and opens it only when the exit needs a human (`10`, `11`, `12`);
+`--no-open` (or `INNFO_CONSOLE_NO_OPEN=1`) keeps the browser closed.
 
 1. **Author** the episode's Level-3 kNNowledge document (adopting the `coNNtent` blueprint, following the Series' `includes` blueprint and its scope document plus its `Preset` elements; see `references/series-template-convention.md`). Allowed Field names and `type::` values are read from the `coNNtent` blueprint at run time — never restated as prose.
 1b. **Review Gate** (the Episode document is the record; the console view is the UI):
@@ -94,7 +109,7 @@ below is what `produce` does; the primitive commands are for debugging a single 
    ```bash
    node scripts/asset-cost-estimator.mjs <script_NN.md> --out <episode-dir>/asset_plan.md
    ```
-   *Model ids come from the documents (layer, scene, video, Scene Kind presets, Series, domain, blueprint): no flag supplies one, so the estimator and `compile` cannot disagree. Present provider options (WaveSpeed AI, Replicate, OpenAI, Local/Free), quality tiers, and itemized per-scene cost estimates to the user before proceeding. Items already in the cache are priced $0 (marked `cached`), so the total is what the run will charge. The plan is stamped with a `plan_hash`, and it warns when a model price is older than the staleness threshold. The spending decision is the Episode's `status::` plus, when the estimate exceeds the Episode's `budget::`, an explicit `--approve <plan_hash>`; a price or model change produces a different hash, so a stale approval cannot be replayed. A domain-level `daily_budget::` is a rolling 24h ceiling that `--approve` never bypasses. There is no approval file. NEVER self-approve: the human decides, and the agent never invents a hash. Talking avatars (InfiniteTalk lip-sync, the costliest call) MUST be produced with `scripts/synthesize-avatar.mjs`, never with ad-hoc API or MCP calls: only that script puts them under the budget, daily cap and ledger. Preview uncached billable work with `compile --dry-run`. Budget, the 24h cap, model allow/block lists and the ledger live in `video-guard.json` — see `references/cost-guardrails.md`.*
+   *Model ids come from the documents (layer, scene, video, Scene Kind presets, Series, domain, blueprint): no flag supplies one, so the estimator and `compile` cannot disagree. Present provider options (WaveSpeed AI, Replicate, OpenAI, Local/Free), quality tiers, and itemized per-scene cost estimates to the user before proceeding. Items already in the cache are priced $0 (marked `cached`), so the total is what the run will charge. The plan is stamped with a `plan_hash`, and it warns when a model price is older than the staleness threshold. Spend is authorized only by applied human console verdicts: the `script` and `preview` gates per scene, and an inserted episode-level `budget` gate when the plan exceeds `budget::` without a preview verdict. There is no `--approve` flag and no approval file: a price or model change produces a different hash, so a stale verdict cannot be replayed. A domain-level `daily_budget::` is a rolling 24h ceiling that no verdict bypasses. NEVER self-approve: the human decides in the console, and the agent never invents a hash. Talking avatars (InfiniteTalk lip-sync, the costliest call) MUST be produced with `scripts/synthesize-avatar.mjs`, never with ad-hoc API or MCP calls: only that script puts them under the budget, daily cap and ledger. Preview uncached billable work with `produce --dry-run`. Budget, the 24h cap, model allow/block lists and prices live in the catalog and cascade fields — see `references/cost-guardrails.md`.*
 4. **Ensure the Render Runtime (consent-gated, idempotent)**:
    ```bash
    node scripts/ensure-hyperframes.mjs
@@ -125,7 +140,7 @@ below is what `produce` does; the primitive commands are for debugging a single 
    *`render-thumbnail.mjs` is the only Phase B thumbnail tool. When `--series <dir>` is passed (or a series is found by walking from `--out`), the subtitle and badge default to the Series `title`; explicit `--subtitle`/`--badge` win.*
 8. **Produce (formats + status)**:
    ```bash
-   node scripts/produce.mjs <episode-dir> [--approve <plan_hash>] [--dry-run]
+   node scripts/produce.mjs <episode-dir> [--dry-run] [--no-open]
    ```
    *`produce` derives the delivery files from the master — `<slug>_1080x1920.mp4`, `<slug>_1920x1080.mp4` and `<slug>_1080x1080.mp4` according to `output_formats` — writes the chapters into `description.md`, sets `master::` and `thumbnail::` on the Video element, and moves the Episode to `status:: produced`. A format with no preset is `unsupported-format`, never a guess. It never writes a manifest by hand: `compile` owns `hyperframes/manifest.json`.*
 9. **Housekeeping (optional)**:

@@ -60,6 +60,35 @@ export function parseCatalog(text) {
   return { providers: collect('Provider'), models: collect('Model'), voices: collect('Voice') };
 }
 
+/** Error codes for catalog Voice validation (D-K6). */
+export const VOICE_LANGUAGE_REQUIRED = 'voice-language-required';
+export const INVALID_LANGUAGE_CODE = 'invalid-language-code';
+
+/**
+ * Validates every catalog Voice carries a required `language` as an ISO 639-1 lowercase
+ * two-letter code (conntent-model-catalog "Blueprint Ships A Dated Reference Catalog").
+ * @param {{ voices: Record<string, { slug?: string, language?: string }> }} parsed
+ * @returns {true}
+ */
+export function validateCatalogVoices(parsed) {
+  for (const [slug, voice] of Object.entries(parsed?.voices || {})) {
+    const lang = voice?.language;
+    if (lang === undefined || lang === null || String(lang).trim() === '') {
+      const err = new Error(`voice-language-required: catalog Voice "${slug}" must declare a language (ISO 639-1 lowercase two-letter code)`);
+      err.code = VOICE_LANGUAGE_REQUIRED;
+      throw err;
+    }
+    if (!/^[a-z]{2}$/.test(String(lang).trim().toLowerCase())) {
+      const err = new Error(
+        `invalid-language-code: catalog Voice "${slug}" declares language "${lang}"; use the ISO 639-1 lowercase two-letter code (for example es or en)`,
+      );
+      err.code = INVALID_LANGUAGE_CODE;
+      throw err;
+    }
+  }
+  return true;
+}
+
 /** A Model must be complete enough to be priced, allowed and called. */
 const REQUIRED_MODEL_FIELDS = ['provider', 'api_id', 'capability', 'adapter', 'price', 'price_unit', 'price_date'];
 
@@ -167,6 +196,95 @@ export function loadMergedCatalog({ domainRoot, referencePath = REFERENCE_CATALO
   const reference = parseCatalog(fs.readFileSync(referencePath, 'utf8'));
   const overlayDoc = overlay === undefined ? loadOverlay(domainRoot) : overlay;
   return mergeCatalog(reference, overlayDoc);
+}
+
+/** The merged catalog's voices as the registry the TTS layer expects (slug -> voice). */
+export function voiceRegistryOf(catalog) {
+  const out = {};
+  for (const [slug, voice] of Object.entries((catalog && catalog.voices) || {})) {
+    if (!voice || !voice.voice_id) continue;
+    out[slug] = { voice_id: voice.voice_id, language: voice.language, pending: false };
+  }
+  return out;
+}
+
+/** Error code when a catalog model declares `capability:: video` (D-K7). */
+export const UNSUPPORTED_CAPABILITY = 'unsupported-capability';
+
+/** Error codes for voice-language validation (D-K6). */
+export const LANGUAGE_VOICE_MISMATCH = 'voice-language-mismatch';
+export const UNKNOWN_VOICE = 'unknown-voice';
+export const MISSING_VOICE = 'missing-voice';
+
+/**
+ * Enforces that a narrated scene has a resolved Voice before spend; there is no package
+ * default `voice` (Q4). A scene with no narration needs no voice.
+ * @param {{ narration?: string, voiceSlug: string | null | undefined }} input
+ * @returns {true}
+ */
+export function assertVoiceResolved({ narration, voiceSlug }) {
+  const hasNarration = String(narration || '').trim() !== '';
+  const hasVoice = typeof voiceSlug === 'string' && String(voiceSlug).trim() !== '';
+  if (hasNarration && !hasVoice) {
+    const err = new Error(
+      'missing-voice: the scene has narration but no resolved voice; declare `voice::` on the scene, series, character or domain before spend',
+    );
+    err.code = MISSING_VOICE;
+    throw err;
+  }
+  return true;
+}
+
+/**
+ * Validates the resolved Voice against the episode's language before spend: the Voice's
+ * `language` MUST equal the episode `language`, and the slug MUST exist in the catalog.
+ * (capability conntent-model-catalog "Voices Carry A Language And Must Match The
+ * Episode".)
+ * @param {{ voices: Record<string, { slug?: string, language?: string }>, language: string, voiceSlug: string }} input
+ * @returns {true}
+ */
+export function validateVoiceLanguage({ voices, language, voiceSlug }) {
+  const entry = voices && Object.hasOwn(voices, voiceSlug) ? voices[voiceSlug] : null;
+  if (!entry) {
+    const err = new Error(`unknown-voice: no Voice "${voiceSlug}" in the merged catalog`);
+    err.code = UNKNOWN_VOICE;
+    throw err;
+  }
+  const voiceLang = String(entry.language || '').toLowerCase().trim();
+  const epLang = String(language || '').toLowerCase().trim();
+  if (voiceLang !== epLang) {
+    const err = new Error(
+      `voice-language-mismatch: Voice "${voiceSlug}" is ${voiceLang || '(no language)'} but the episode is ${epLang}`,
+    );
+    err.code = LANGUAGE_VOICE_MISMATCH;
+    throw err;
+  }
+  return true;
+}
+
+/**
+ * Builds the merged catalog from model arrays and rejects any `capability:: video`
+ * model before spend. (capability conntent-model-catalog "Video Capability Is Not
+ * Supported Yet".) Each model is `{ slug, capability, ... }`.
+ * @param {{ reference?: Array<{slug: string, capability: string}> , overlay?: Array<{slug: string, capability: string}> }} input
+ */
+export function buildMergedCatalog({ reference = [], overlay = [] } = {}) {
+  for (const model of [...reference, ...overlay]) {
+    if (String(model.capability || '').toLowerCase() === 'video') {
+      const err = new Error(
+        `generated video clips are not supported yet: model "${model.slug}" declares capability:: video. ` +
+          `Remove it from the catalog or use a tts/image/avatar model.`,
+      );
+      err.code = UNSUPPORTED_CAPABILITY;
+      throw err;
+    }
+  }
+  const toModels = (arr) =>
+    arr.reduce((acc, m) => {
+      acc[m.slug] = { ...m };
+      return acc;
+    }, {});
+  return mergeCatalog({ models: toModels(reference), providers: {}, voices: {} }, { models: toModels(overlay), providers: {}, voices: {} });
 }
 
 /** The catalog's `sizes` for an image model, used to validate `image_size`. */

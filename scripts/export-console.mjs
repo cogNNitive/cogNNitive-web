@@ -50,6 +50,25 @@ const here = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(here, '..')
 const repoConsoleDir = join(repoRoot, 'iNNfo', 'specs', 'bluepriNNts', 'console')
 
+/** Lazily loads the coNNtent layout checker, or null when that blueprint is not present. */
+async function loadLayoutChecker() {
+  const layoutUrl = new URL(
+    '../iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/layout.mjs',
+    import.meta.url,
+  ).href
+  try {
+    return await import(layoutUrl)
+  } catch {
+    return null
+  }
+}
+
+/** True when the filename is a coNNtent bluepriNNt instance document (from the naming contract). */
+function isCoNNtentDoc(name) {
+  const parsed = payloadHelper.parseName ? payloadHelper.parseName(name) : null
+  return Boolean(parsed && parsed.kind === 'nn' && /_coNNtent$/i.test(parsed.stem))
+}
+
 const SHELL_FILENAME = 'artifact_shell.html'
 const LEGACY_SHELL_FILENAME = 'artifact_blueprint.html'
 
@@ -114,9 +133,10 @@ function loadPayloadHelper(consoleDir) {
 async function ensureAssets() {
   const consoleDir = resolveConsoleDir()
   const shellPath = findShell(consoleDir) || join(consoleDir, SHELL_FILENAME)
-  const bundlePath = ['nn-console.bundle.js', 'nn-console.bundle.js']
-    .map((name) => join(consoleDir, name))
-    .find((p) => existsSync(p)) || join(consoleDir, 'nn-console.bundle.js')
+  const bundlePath =
+    ['nn-console.bundle.js', 'nn-console.bundle.js']
+      .map((name) => join(consoleDir, name))
+      .find((p) => existsSync(p)) || join(consoleDir, 'nn-console.bundle.js')
   if (!existsSync(shellPath)) {
     throw new ConsoleExportError(
       `Console assets not found: ${shellPath}\n` +
@@ -222,9 +242,15 @@ function parseArgs(argv) {
 async function findModelFiles(dir) {
   const out = []
   const skip = new Set(['node_modules', '.git', '.cogNNitive', 'artifacts', 'dist', 'docs'])
-  // `series/<s>/assets/` is the pre-V_0-15-0 episode layout: the contract says those folders
-  // are ignored and reorganised by hand, so the console must not list them next to the
-  // real `episodes/` documents (it produced two models per episode, with colliding slugs).
+  // A legacy episode layout under `series/<s>/assets/` is rejected by coNNtent `layout.mjs`,
+  // not silently skipped (task 1a.4). Only a domaiNN that actually contains coNNtent
+  // documents gets these coNNtent-specific warnings; unrelated blueprints never do. The
+  // warnings are emitted lazily on the first coNNtent document, and the legacy folder is
+  // still skipped so a legacy document is never listed as a real episode next to the real
+  // `episodes/` ones.
+  const layout = await loadLayoutChecker()
+  let legacyFindings = null // computed lazily, only when a coNNtent document is seen
+  let warnedLegacy = false
   const LEGACY_EPISODE = /(^|[\\/])series[\\/][^\\/]+[\\/]assets([\\/]|$)/
   async function walk(d) {
     let entries
@@ -245,6 +271,18 @@ async function findModelFiles(dir) {
         !payloadHelper.isSidecarName(e.name)
       ) {
         out.push(join(d, e.name))
+        // Emit the coNNtent legacy findings only once a coNNtent document is actually seen.
+        if (!warnedLegacy && layout && isCoNNtentDoc(e.name)) {
+          warnedLegacy = true
+          try {
+            legacyFindings = layout.assertLayout(dir)
+          } catch {
+            legacyFindings = null
+          }
+          for (const f of legacyFindings ?? []) {
+            process.stderr.write(`WARNING: [export-console] ${f.path}: ${f.message}\n`)
+          }
+        }
       }
     }
   }
@@ -524,11 +562,7 @@ function injectSlots(shell, config, schema, model, viewData) {
       (_m, open, close) => `${open}\n${serialize(json)}\n${close}`,
     )
   return slot(
-    slot(
-      slot(slot(shell, 'nn-config', config), 'nn-schema', schema),
-      'nn-model',
-      model,
-    ),
+    slot(slot(slot(shell, 'nn-config', config), 'nn-schema', schema), 'nn-model', model),
     'nn-view-data',
     viewData || {},
   )
@@ -670,7 +704,9 @@ function rebaseModelAssets(model, outDirAbs, rootAbs, schema) {
 
 /** Console HTML for one model: the bundle name is injected so each console loads its own pinned bundle. */
 function renderConsole(shell, bundleName, config, payload, outDirAbs, rootAbs) {
-  const pinned = bundleName ? shell.replace(/\.\/(?:nn|innfo)-console\.bundle\.js/, `./${bundleName}`) : shell
+  const pinned = bundleName
+    ? shell.replace(/\.\/(?:nn|innfo)-console\.bundle\.js/, `./${bundleName}`)
+    : shell
   const model =
     outDirAbs && rootAbs
       ? rebaseModelAssets(payload.model, outDirAbs, rootAbs, payload.schema)
@@ -682,7 +718,8 @@ function renderConsole(shell, bundleName, config, payload, outDirAbs, rootAbs) {
 
 /** Platform command that opens `file` in the default browser, or null when unsupported. */
 export function openCommandFor(platform, file) {
-  if (platform === 'win32') return { command: 'rundll32', args: ['url.dll,FileProtocolHandler', file] }
+  if (platform === 'win32')
+    return { command: 'rundll32', args: ['url.dll,FileProtocolHandler', file] }
   if (platform === 'darwin') return { command: 'open', args: [file] }
   if (platform === 'linux') return { command: 'xdg-open', args: [file] }
   return null
@@ -705,11 +742,17 @@ async function openConsole(file, { open, launcher, platform }) {
   if (!open) return { opened: false }
   const cmd = openCommandFor(platform, file)
   if (!cmd) {
-    return { opened: false, openError: `Opening a browser is not supported on platform "${platform}".` }
+    return {
+      opened: false,
+      openError: `Opening a browser is not supported on platform "${platform}".`,
+    }
   }
   // Defence in depth: refuse shell-significant characters instead of launching.
   if (platform === 'win32' && /[&^%|<>"]/.test(file)) {
-    return { opened: false, openError: `Refusing to open a path with shell-significant characters: ${file}` }
+    return {
+      opened: false,
+      openError: `Refusing to open a path with shell-significant characters: ${file}`,
+    }
   }
   try {
     await (launcher ?? defaultLauncher)(cmd.command, cmd.args)
@@ -761,9 +804,7 @@ function versionsOf(modelSummaries) {
 
 /** `<file>.<ext>_sidecar_NN.md` — detection and subject mapping come from the naming contract. */
 function isSidecarRel(rel) {
-  return payloadHelper && payloadHelper.isSidecarPath
-    ? payloadHelper.isSidecarPath(rel)
-    : false
+  return payloadHelper && payloadHelper.isSidecarPath ? payloadHelper.isSidecarPath(rel) : false
 }
 
 /**
@@ -776,7 +817,8 @@ function isBuildOutputRel(rel) {
   const base = posix.split('/').pop() || ''
   if (/\.(jsonl|ndjson)$/i.test(base)) return true
   if (/^domaiNN_console.*\.html$/i.test(base)) return true
-  if (/\.html$/i.test(base) && /_(console|view)$/i.test(posix.split('/').slice(-2, -1)[0] || '')) return true
+  if (/\.html$/i.test(base) && /_(console|view)$/i.test(posix.split('/').slice(-2, -1)[0] || ''))
+    return true
   return /^\w+_console\.html$/i.test(base)
 }
 
@@ -853,13 +895,7 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
   const elements = options.elements || []
   const changesets = options.changesets || []
 
-  const scanDirs = [
-    'sources',
-    'assets',
-    'evidence',
-    'artifacts',
-    'conversations',
-  ]
+  const scanDirs = ['sources', 'assets', 'evidence', 'artifacts', 'conversations']
   const inventory = []
   const artifactsList = []
   const sourceFilesList = []
@@ -925,7 +961,11 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
           for (const cit of list) {
             const raw = cit.path || cit.href
             if (raw) {
-              citationPaths.push({ norm: normalizeCitationPath(raw), excerpt: cit.excerpt, unitId: el.id })
+              citationPaths.push({
+                norm: normalizeCitationPath(raw),
+                excerpt: cit.excerpt,
+                unitId: el.id,
+              })
             }
           }
         }
@@ -970,23 +1010,27 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
       continue
     }
 
-    const mimeType = payloadHelper && payloadHelper.mimeTypeFromPath
-      ? payloadHelper.mimeTypeFromPath(rel)
-      : 'application/octet-stream'
+    const mimeType =
+      payloadHelper && payloadHelper.mimeTypeFromPath
+        ? payloadHelper.mimeTypeFromPath(rel)
+        : 'application/octet-stream'
 
-    const category = payloadHelper && payloadHelper.classifyFileCategory
-      ? payloadHelper.classifyFileCategory(rel)
-      : 'source'
+    const category =
+      payloadHelper && payloadHelper.classifyFileCategory
+        ? payloadHelper.classifyFileCategory(rel)
+        : 'source'
 
-    const isSourceLike = payloadHelper && payloadHelper.isSourceLike
-      ? payloadHelper.isSourceLike(category)
-      : category === 'source'
+    const isSourceLike =
+      payloadHelper && payloadHelper.isSourceLike
+        ? payloadHelper.isSourceLike(category)
+        : category === 'source'
 
     // Sidecar detection: the canonical `<rel>_sidecar_NN.md` companion.
     let sidecar = undefined
-    const companionSidecarRel = payloadHelper && payloadHelper.sidecarPathFor
-      ? payloadHelper.sidecarPathFor(rel)
-      : rel + '_sidecar_NN.md'
+    const companionSidecarRel =
+      payloadHelper && payloadHelper.sidecarPathFor
+        ? payloadHelper.sidecarPathFor(rel)
+        : rel + '_sidecar_NN.md'
     const companionSidecarPath = sidecarFilesMap.get(rel)
     if (companionSidecarPath) {
       let sidecarContent = ''
@@ -995,9 +1039,15 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
       } catch {
         // unreadable
       }
-      sidecar = payloadHelper && payloadHelper.parseAndValidateSidecar
-        ? payloadHelper.parseAndValidateSidecar(sidecarContent, companionSidecarRel, sha256)
-        : { path: companionSidecarRel, exists: true, valid: false, error: 'Sidecar helpers unavailable' }
+      sidecar =
+        payloadHelper && payloadHelper.parseAndValidateSidecar
+          ? payloadHelper.parseAndValidateSidecar(sidecarContent, companionSidecarRel, sha256)
+          : {
+              path: companionSidecarRel,
+              exists: true,
+              valid: false,
+              error: 'Sidecar helpers unavailable',
+            }
     } else if ((isSourceLike || category === 'asset') && !payloadHelper.isMirrorFile(rel)) {
       sidecar = { path: companionSidecarRel, exists: false, valid: false }
     }
@@ -1006,7 +1056,12 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
     let citationsCount = 0
     let excerptCount = 0
     for (const c of citationPaths) {
-      if (c.norm === rel || rel.endsWith('/' + c.norm) || c.norm.endsWith('/' + rel) || basename(c.norm) === basename(rel)) {
+      if (
+        c.norm === rel ||
+        rel.endsWith('/' + c.norm) ||
+        c.norm.endsWith('/' + rel) ||
+        basename(c.norm) === basename(rel)
+      ) {
         citationsCount++
         if (c.excerpt) excerptCount++
       }
@@ -1015,7 +1070,12 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
     // Cross-reference changes
     let changesCount = 0
     for (const ev of changeEvidencePaths) {
-      if (ev === rel || rel.endsWith('/' + ev) || ev.endsWith('/' + rel) || basename(ev) === basename(rel)) {
+      if (
+        ev === rel ||
+        rel.endsWith('/' + ev) ||
+        ev.endsWith('/' + rel) ||
+        basename(ev) === basename(rel)
+      ) {
         changesCount++
       }
     }
@@ -1026,9 +1086,10 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
     // are never inlined, and the whole payload shares one preview budget.
     let snippet = undefined
     let snippetTruncated = false
-    const textMime = payloadHelper && payloadHelper.isTextMime
-      ? payloadHelper.isTextMime(mimeType)
-      : mimeType.startsWith('text/')
+    const textMime =
+      payloadHelper && payloadHelper.isTextMime
+        ? payloadHelper.isTextMime(mimeType)
+        : mimeType.startsWith('text/')
     if (textMime && st.size > 0 && snippetBudget > 0) {
       const want = Math.min(st.size, snippetCharCap(), snippetBudget)
       try {
@@ -1078,7 +1139,9 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
   const catalogPath = join(root, 'sources', 'sources_NN.md')
   if (existsSync(catalogPath)) {
     try {
-      synchronizations = payloadHelper.readSynchronizations(await readFile(catalogPath, 'utf8')).synchronizations
+      synchronizations = payloadHelper.readSynchronizations(
+        await readFile(catalogPath, 'utf8'),
+      ).synchronizations
     } catch {
       // an unreadable catalog declares nothing
     }
@@ -1086,25 +1149,32 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
   const origins = payloadHelper.buildOrigins(synchronizations, inventory)
 
   // Reverse lineage
-  const lineage = payloadHelper && payloadHelper.resolveArtifactReverseLineage
-    ? payloadHelper.resolveArtifactReverseLineage(artifactsList, elements, changesets, sourceFilesList)
-    : {}
+  const lineage =
+    payloadHelper && payloadHelper.resolveArtifactReverseLineage
+      ? payloadHelper.resolveArtifactReverseLineage(
+          artifactsList,
+          elements,
+          changesets,
+          sourceFilesList,
+        )
+      : {}
 
   // Stats
-  const stats = payloadHelper && payloadHelper.calculateFilesStats
-    ? payloadHelper.calculateFilesStats(inventory)
-    : {
-        totalFiles: inventory.length,
-        totalBytes: inventory.reduce((a, b) => a + (b.size || 0), 0),
-        categoryCounts: { source: 0, asset: 0, evidence: 0, artifact: 0, unclassified: 0 },
-        storageByCategory: { source: 0, asset: 0, evidence: 0, artifact: 0, unclassified: 0 },
-        sourceCoverageRate: 1,
-        uncitedSourceCount: 0,
-        sidecarMissingCount: 0,
-        sidecarInvalidCount: 0,
-        sidecarMismatchCount: 0,
-        excerptCount: 0,
-      }
+  const stats =
+    payloadHelper && payloadHelper.calculateFilesStats
+      ? payloadHelper.calculateFilesStats(inventory)
+      : {
+          totalFiles: inventory.length,
+          totalBytes: inventory.reduce((a, b) => a + (b.size || 0), 0),
+          categoryCounts: { source: 0, asset: 0, evidence: 0, artifact: 0, unclassified: 0 },
+          storageByCategory: { source: 0, asset: 0, evidence: 0, artifact: 0, unclassified: 0 },
+          sourceCoverageRate: 1,
+          uncitedSourceCount: 0,
+          sidecarMissingCount: 0,
+          sidecarInvalidCount: 0,
+          sidecarMismatchCount: 0,
+          excerptCount: 0,
+        }
 
   return {
     inventory,
@@ -1130,12 +1200,14 @@ export async function writeConsole(opts = {}) {
   const {
     rootDir,
     scope = 'domain',
-    view = null,
     open = true,
     launcher,
     platform = process.platform,
     log = () => {},
   } = opts
+  const scopeObj = typeof scope === 'object' && scope !== null ? scope : {}
+  let view = opts.view ?? null
+  if (!view && typeof scopeObj.view === 'string' && scopeObj.view) view = scopeObj.view
   if (!rootDir) throw new ConsoleExportError('writeConsole needs a rootDir.', 'ROOT_REQUIRED')
   const root = resolve(rootDir)
   const { consoleDir, shellPath, bundlePath } = await ensureAssets()
@@ -1149,6 +1221,20 @@ export async function writeConsole(opts = {}) {
   if (!wholeDomain) {
     if (Array.isArray(scope.selected)) {
       selected = scope.selected
+    } else if (Array.isArray(scopeObj.models)) {
+      const wanted = new Set(scopeObj.models.map(String))
+      selected = models.filter(
+        (m) =>
+          wanted.has(String(m.name)) ||
+          wanted.has(basename(m.filePath).replace(/\.[^/.]+$/, '')) ||
+          (m.id !== undefined && wanted.has(String(m.id))),
+      )
+      if (selected.length === 0) {
+        throw new ConsoleExportError(
+          `No model in ${JSON.stringify(scopeObj.models)} found in ${root}.`,
+          'MODEL_NOT_FOUND',
+        )
+      }
     } else if (typeof scope.model === 'string') {
       const wanted = scope.model
       selected = models.filter(
@@ -1202,10 +1288,12 @@ export async function writeConsole(opts = {}) {
   // ~/.agents/console and the packages are installed beside it in ~/.agents/bluepriNNts.
   const packagesDir =
     process.env.INNFO_BLUEPRINTS_DIR ||
-    (consoleDir === repoConsoleDir ? dirname(consoleDir) : join(homedir(), '.agents', 'bluepriNNts'))
-  const uiCssPath = ['nn-ui.css', 'nn-ui.css']
-    .map((name) => join(consoleDir, name))
-    .find((p) => existsSync(p)) || join(consoleDir, 'nn-ui.css')
+    (consoleDir === repoConsoleDir
+      ? dirname(consoleDir)
+      : join(homedir(), '.agents', 'bluepriNNts'))
+  const uiCssPath =
+    ['nn-ui.css', 'nn-ui.css'].map((name) => join(consoleDir, name)).find((p) => existsSync(p)) ||
+    join(consoleDir, 'nn-ui.css')
   if (!existsSync(uiCssPath)) {
     throw new ConsoleExportError(
       `${uiCssPath} not found; the console inlines its CSS.`,
@@ -1260,7 +1348,11 @@ export async function writeConsole(opts = {}) {
   }
   let preparedAssets
   try {
-    preparedAssets = viewsLib.assertInlinable(resolvedShell, { bundle, css: uiCss, views: domainViews })
+    preparedAssets = viewsLib.assertInlinable(resolvedShell, {
+      bundle,
+      css: uiCss,
+      views: domainViews,
+    })
   } catch (err) {
     throw new ConsoleExportError(err.message, 'VIEWS_INVALID')
   }
@@ -1270,7 +1362,11 @@ export async function writeConsole(opts = {}) {
   // from disk at runtime, so the console stays static and offline.
   let viewData
   try {
-    viewData = await viewsLib.collectViewData({ views: domainViews, rootDir: root, models: payloadModels })
+    viewData = await viewsLib.collectViewData({
+      views: domainViews,
+      rootDir: root,
+      models: payloadModels,
+    })
   } catch (err) {
     throw new ConsoleExportError(err.message, 'VIEW_DATA_INVALID')
   }
@@ -1357,11 +1453,14 @@ export async function writeConsole(opts = {}) {
       procedures: modelSchemaResolution.procedures,
     })
     if (payload && payload.model) {
-      changesBlueprintVersion = (payload.model.meta && payload.model.meta.changesBlueprintVersion) || changesBlueprintVersion
+      changesBlueprintVersion =
+        (payload.model.meta && payload.model.meta.changesBlueprintVersion) ||
+        changesBlueprintVersion
       for (const s of (payload.model.meta && payload.model.meta.sources) || []) {
         if (typeof s === 'string' && s) domainSources.add(s)
       }
-      const mTitle = (payload.model.meta && (payload.model.meta.title || payload.model.meta.model)) || modelStem
+      const mTitle =
+        (payload.model.meta && (payload.model.meta.title || payload.model.meta.model)) || modelStem
       const mId = (payload.model.meta && payload.model.meta.modelId) || modelStem
       const modelConcepts = new Set()
       // Element ids are only unique inside one model; the console keys drafts,
@@ -1436,8 +1535,7 @@ export async function writeConsole(opts = {}) {
         family: blueprintFamily,
         version: (m.fm && m.fm.knowledge_version) || null,
         sha256: (payload.model.meta && payload.model.meta.sha256) || computeSha256(m.content),
-        citationsResolvedAt:
-          (payload.model.meta && payload.model.meta.citationsResolvedAt) || null,
+        citationsResolvedAt: (payload.model.meta && payload.model.meta.citationsResolvedAt) || null,
         sources: (payload.model.meta && payload.model.meta.sources) || [],
         changeCount: changeCount,
         ownership: (payload.model.meta && payload.model.meta.ownership) || 'authored',
@@ -1481,7 +1579,10 @@ export async function writeConsole(opts = {}) {
         [payload.schema.matrices, seenMatrixDecls, allMatrixDecls],
       ]) {
         for (const d of Array.isArray(list) ? list : []) {
-          const key = d && d.name ? `${(d.declaredBy && d.declaredBy.family) || ''}\u0000${String(d.name).toLowerCase()}` : ''
+          const key =
+            d && d.name
+              ? `${(d.declaredBy && d.declaredBy.family) || ''}\u0000${String(d.name).toLowerCase()}`
+              : ''
           if (!key || seen.has(key)) continue
           seen.add(key)
           out.push(d)
@@ -1547,7 +1648,13 @@ export async function writeConsole(opts = {}) {
           fields,
           markers,
           ...(Object.keys(citations).length ? { citations } : {}),
-          hash: payloadHelper.computeElementHash({ concept: 'Change', name, description, fields, markers }),
+          hash: payloadHelper.computeElementHash({
+            concept: 'Change',
+            name,
+            description,
+            fields,
+            markers,
+          }),
           modelId: CHANGES_MODEL_ID,
           modelTitle: CHANGES_MODEL_TITLE,
           modelFile: '<changes>',
@@ -1575,6 +1682,50 @@ export async function writeConsole(opts = {}) {
         elementCount: changeUnitCount,
       })
       scopeModelIds.push(CHANGES_MODEL_ID)
+    }
+  }
+
+  // A field may declare `options_from:: models:<capability>` or `options_from:: voices`: its
+  // picklist is this domaiNN's own catalog (the Model/Voice elements the export already
+  // carries), never a hard-coded tier list (conntent-domain-console, "Picklists come from
+  // the catalog"). Models are offered by `api_id` -- what the engine documents, the plan
+  // stamps and the cost ledger records -- filtered by the capability the field consumes;
+  // Voices by slug, the registry key the TTS layer resolves, and only when the voice has a
+  // provider id. An empty picklist leaves the field as free text: a select with no options
+  // is worse than a text box.
+  function catalogOptionValues(concept, capability) {
+    const wanted = String(capability || '').toLowerCase()
+    const out = new Set()
+    for (const el of allElements) {
+      if (!el || String(el.concept) !== concept) continue
+      const fields = el.fields || {}
+      if (concept === 'Model') {
+        if (!(fields.allowed === true || fields.allowed === 'true')) continue
+        if (wanted && String(fields.capability || '').toLowerCase() !== wanted) continue
+      }
+      if (concept === 'Voice' && !fields.voice_id) continue
+      const value =
+        concept === 'Model'
+          ? fields.api_id || fields.slug || el.slug || el.name
+          : el.slug || fields.slug || el.name
+      if (value) out.add(String(value))
+    }
+    return [...out].sort()
+  }
+  for (const f of allFields) {
+    if (!f || !f.options_from) continue
+    const [kind, capability] = String(f.options_from).split(':')
+    const concept =
+      kind.trim().toLowerCase() === 'models'
+        ? 'Model'
+        : kind.trim().toLowerCase() === 'voices'
+          ? 'Voice'
+          : null
+    if (!concept) continue
+    const options = catalogOptionValues(concept, capability)
+    if (options.length > 0) {
+      f.type = 'select'
+      f.options = options
     }
   }
 
@@ -1628,9 +1779,7 @@ export async function writeConsole(opts = {}) {
           modelCount: modelSummaries.length,
           sourceCount: domainSources.size,
         },
-        ...(omitChanges
-          ? { changesOmitted: { count: changeCount, bytes: changesBytes } }
-          : {}),
+        ...(omitChanges ? { changesOmitted: { count: changeCount, bytes: changesBytes } } : {}),
       },
       elements: allElements,
       matrices: allMatrices,
@@ -1647,12 +1796,61 @@ export async function writeConsole(opts = {}) {
   // widen it before adding the optional scope.
   /** @type {Record<string, unknown>} */
   const payloadMeta = domainPayload.model.meta
+  const stagingDir =
+    opts.stagingDir || opts.staging || scopeObj.stagingDir || scopeObj.staging || null
+  const isDelivery =
+    view === 'conntent-delivery' ||
+    Boolean(scopeObj.delivery) ||
+    Boolean(stagingDir) ||
+    (typeof scopeObj.outFile === 'string' && /(?:^|\/)deliveries\/v\d+\//.test(scopeObj.outFile))
+
+  // For delivery view, sanitize internal operating data (costs, budget, ledger, image prompts)
+  if (isDelivery) {
+    domainPayload.model.elements = domainPayload.model.elements.filter((el) => {
+      const c = String(el.concept || '').toLowerCase()
+      return !['ledger', 'cost', 'spend', 'budget'].some((k) => c.includes(k))
+    })
+    const STRIP_FIELD_RE =
+      /^(cost|costs|budget|budgets|spend|ledger|prompt|image_prompt|prompts|negative_prompt)$/i
+    for (const el of domainPayload.model.elements) {
+      if (el.fields && typeof el.fields === 'object') {
+        for (const k of Object.keys(el.fields)) {
+          if (STRIP_FIELD_RE.test(k)) delete el.fields[k]
+        }
+      }
+    }
+    if (domainPayload.viewData) {
+      const stripData = (obj) => {
+        if (!obj || typeof obj !== 'object') return
+        for (const k of Object.keys(obj)) {
+          if (STRIP_FIELD_RE.test(k)) {
+            delete obj[k]
+          } else if (typeof obj[k] === 'object') {
+            stripData(obj[k])
+          }
+        }
+      }
+      stripData(domainPayload.viewData)
+    }
+    if (domainPayload.model && domainPayload.model.meta) {
+      const meta = /** @type {Record<string, any>} */ (domainPayload.model.meta)
+      delete meta.ledger
+      delete meta.costs
+      delete meta.budget
+    }
+  }
+
+  const readOnly = scopeObj.readOnly === true
   if (scoped) {
-    const scope = { models: [...scopeModelIds].sort(), label: scopeLabelOf(selected) }
-    if (view) scope.view = view
-    payloadMeta.consoleScope = scope
-  } else if (view) {
-    payloadMeta.consoleScope = { view: view }
+    const scopeMeta = { models: [...scopeModelIds].sort(), label: scopeLabelOf(selected) }
+    if (view) scopeMeta.view = view
+    if (readOnly) scopeMeta.readOnly = true
+    payloadMeta.consoleScope = scopeMeta
+  } else if (view || readOnly) {
+    payloadMeta.consoleScope = {
+      ...(view ? { view } : { view: '' }),
+      ...(readOnly ? { readOnly: true } : {}),
+    }
   }
 
   // Output location. A console (whole-domaiNN or model-scoped) owns ONE stable file
@@ -1662,18 +1860,56 @@ export async function writeConsole(opts = {}) {
   let familyDir = null
   let familyKey = null
   let relativePath = null
-  if (view) {
+  if (isDelivery) {
+    familyDir = null
+    familyKey = null
+    if (typeof scopeObj.outFile === 'string' && scopeObj.outFile) {
+      const abs = resolve(root, scopeObj.outFile)
+      if (!isInsideRoot(abs, root)) {
+        throw new ConsoleExportError(`outFile must resolve inside ${root}.`, 'OUTFILE_INVALID')
+      }
+      relativePath = relative(root, abs).replace(/\\/g, '/')
+    } else {
+      relativePath = payloadHelper.consoleOutputPath(
+        scopeObj.delivery ? { delivery: scopeObj.delivery } : scope,
+      )
+    }
+  } else if (view) {
     familyKey = scoped ? `${view}-${scopeKey}_view` : `${view}_view`
     familyDir = `artifacts/${familyKey}`
   } else {
     relativePath = payloadHelper.consoleOutputPath(wholeDomain ? 'domain' : { model: scopeKey })
+  }
+  // A caller may pin the exact file (for example the delivery HTML inside
+  // deliveries/v<N>/); it must stay inside the domaiNN.
+  if (typeof scopeObj.outFile === 'string' && scopeObj.outFile && !isDelivery) {
+    const abs = resolve(root, scopeObj.outFile)
+    if (!isInsideRoot(abs, root)) {
+      throw new ConsoleExportError(`outFile must resolve inside ${root}.`, 'OUTFILE_INVALID')
+    }
+    familyDir = null
+    familyKey = null
+    relativePath = relative(root, abs).replace(/\\/g, '/')
+  }
+
+  const finalAbsPath = relativePath ? join(root, relativePath) : null
+  if (isDelivery && finalAbsPath && existsSync(finalAbsPath) && !stagingDir) {
+    return {
+      path: finalAbsPath,
+      relativePath,
+      status: 'error',
+      error: `Delivery console already exists at ${relativePath}; deliveries are immutable`,
+      knowledgeVersions: versionsOf(modelSummaries),
+      opened: false,
+    }
   }
 
   const outDirAbs = familyDir ? join(root, familyDir) : dirname(join(root, relativePath))
   const buildHtml = (generated) => {
     domainPayload.model.meta.generated = generated
     let rendered = renderConsole(resolvedShell, null, config, domainPayload, outDirAbs, root)
-    if (omitChanges) rendered = injectChangesNotice(rendered, { count: changeCount, bytes: changesBytes })
+    if (omitChanges)
+      rendered = injectChangesNotice(rendered, { count: changeCount, bytes: changesBytes })
     let html = viewsLib.inlineConsoleAssets(rendered, preparedAssets)
     if (!html.includes('data-theme=')) {
       html = html.replace('<html lang="en">', '<html lang="en" data-theme="light">')
@@ -1685,7 +1921,8 @@ export async function writeConsole(opts = {}) {
   const budgetOf = (rendered) =>
     viewsLib.evaluateSizeBudget({
       bundle: bytes(preparedAssets.bundleScript) + bytes(preparedAssets.css),
-      models: bytes(JSON.stringify(domainPayload.schema)) + bytes(JSON.stringify(domainPayload.model)),
+      models:
+        bytes(JSON.stringify(domainPayload.schema)) + bytes(JSON.stringify(domainPayload.model)),
       views: preparedAssets.viewScripts.reduce((sum, script) => sum + bytes(script), 0),
       total: bytes(rendered),
     })
@@ -1710,7 +1947,8 @@ export async function writeConsole(opts = {}) {
     }
   }
   if (budget.status === 'fail') throw new ConsoleExportError(budget.message, 'CONSOLE_TOO_LARGE')
-  if (budget.status === 'warn') process.stderr.write(`WARNING: [export-console] ${budget.message}\n`)
+  if (budget.status === 'warn')
+    process.stderr.write(`WARNING: [export-console] ${budget.message}\n`)
   log(budget.breakdown)
 
   const inputs = payloadModels.map((m) => relative(root, m.filePath).replace(/\\/g, '/'))
@@ -1721,8 +1959,21 @@ export async function writeConsole(opts = {}) {
 
   if (!familyDir) {
     // Stable file: replaced through a temp file + rename, only when the bytes move.
-    absPath = join(root, relativePath)
+    const stagingDirAbs = stagingDir ? resolve(root, stagingDir) : null
+    absPath = stagingDirAbs ? join(stagingDirAbs, basename(relativePath)) : finalAbsPath
     relPath = relativePath
+
+    if (isDelivery && finalAbsPath && existsSync(finalAbsPath)) {
+      return {
+        path: finalAbsPath,
+        relativePath: relPath,
+        status: 'error',
+        error: `Delivery console already exists at ${relativePath}; deliveries are immutable`,
+        knowledgeVersions,
+        opened: false,
+      }
+    }
+
     let isUnchanged = false
     if (!slimmed && existsSync(absPath)) {
       const previous = await readFile(absPath, 'utf-8')
@@ -1743,7 +1994,9 @@ export async function writeConsole(opts = {}) {
     }
     if (wholeDomain) {
       // Earlier exports wrote these beside the page; it inlines both now. Nothing is deleted.
-      const leftovers = ['nn-console.bundle.js', 'nn-ui.css'].filter((name) => existsSync(join(root, name)))
+      const leftovers = ['nn-console.bundle.js', 'nn-ui.css'].filter((name) =>
+        existsSync(join(root, name)),
+      )
       if (leftovers.length > 0) {
         process.stderr.write(
           `WARNING: [export-console] ${leftovers.join(' and ')} in the workspace root are leftover from an earlier export; domaiNN_console.html no longer uses them and they were not removed.\n`,
@@ -1779,7 +2032,9 @@ export async function writeConsole(opts = {}) {
         log(`= ${basename(result.path)} unchanged`)
       } else {
         status = 'written'
-        log(`✔ ${basename(result.path)} → ./${result.path} (view ${view}, ${allElements.length} elements)`)
+        log(
+          `✔ ${basename(result.path)} → ./${result.path} (view ${view}, ${allElements.length} elements)`,
+        )
       }
     }
   }
@@ -1807,7 +2062,13 @@ export async function writeConsole(opts = {}) {
  *   title?: string | null,
  * }} options
  */
-export async function scaffoldConsoleView({ rootDir, slug, template = 'table', blueprint = null, title = null }) {
+export async function scaffoldConsoleView({
+  rootDir,
+  slug,
+  template = 'table',
+  blueprint = null,
+  title = null,
+}) {
   if (!slug || typeof slug !== 'string') {
     throw new ConsoleExportError('View slug is required (--new-view <slug>)', 'VIEWS_INVALID')
   }
@@ -1952,7 +2213,9 @@ async function runMain(argv, options = {}) {
   if (args.newView) {
     const template = VIEW_TEMPLATES.find((t) => t === args.template)
     if (!template) {
-      console.error(`Error: unknown --template "${args.template}" (expected ${VIEW_TEMPLATES.join(' | ')}).`)
+      console.error(
+        `Error: unknown --template "${args.template}" (expected ${VIEW_TEMPLATES.join(' | ')}).`,
+      )
       return { exitCode: 2, writtenFiles: [] }
     }
     const created = await scaffoldConsoleView({
@@ -1962,8 +2225,12 @@ async function runMain(argv, options = {}) {
       blueprint: args.blueprint,
       title: args.title,
     })
-    console.log(`Created console view "${created.title}" (${created.slug}):\n  ${created.targetPath}`)
-    console.log(`To compile the console with this view, run:\n  node scripts/export-console.mjs ${relative(process.cwd(), root) || '.'} --domain`)
+    console.log(
+      `Created console view "${created.title}" (${created.slug}):\n  ${created.targetPath}`,
+    )
+    console.log(
+      `To compile the console with this view, run:\n  node scripts/export-console.mjs ${relative(process.cwd(), root) || '.'} --domain`,
+    )
     return { exitCode: 0, writtenFiles: [created.targetPath] }
   }
   if (args.viewMissing) {
@@ -1993,7 +2260,9 @@ async function runMain(argv, options = {}) {
       const info = await inspectModelStatus(m, root, consoles)
       console.log(`  ${rel} [${info.status}]`)
     }
-    console.log(`Domain console: ${payloadHelper.consoleOutputPath('domain')} [${await inspectDomainConsole(models, root)}]`)
+    console.log(
+      `Domain console: ${payloadHelper.consoleOutputPath('domain')} [${await inspectDomainConsole(models, root)}]`,
+    )
     return { exitCode: 0, writtenFiles: [] }
   }
 
@@ -2067,8 +2336,10 @@ async function runMain(argv, options = {}) {
   })
   const written = result.status === 'written' ? 1 : 0
   const unchanged = result.status === 'unchanged' ? 1 : 0
-  if (result.openError) {
-    process.stderr.write(`WARNING: [export-console] could not open the console: ${result.openError}\n`)
+  if ('openError' in result && result.openError) {
+    process.stderr.write(
+      `WARNING: [export-console] could not open the console: ${result.openError}\n`,
+    )
   }
   console.log(
     `Exported ${written} console artifact(s)${unchanged > 0 ? ` (${unchanged} unchanged)` : ''}.`,
@@ -2110,7 +2381,13 @@ export async function runExportConsole(argv = [], options = {}) {
   process.stderr.write = capture((s) => (stderr += s))
   try {
     const result = await runMain(argv, options)
-    return { exitCode: result.exitCode, code: result.exitCode, stdout, stderr, writtenFiles: result.writtenFiles }
+    return {
+      exitCode: result.exitCode,
+      code: result.exitCode,
+      stdout,
+      stderr,
+      writtenFiles: result.writtenFiles,
+    }
   } catch (err) {
     if (err instanceof ConsoleExportError) stderr += `Error: ${err.message}\n`
     else stderr += `${err && err.stack ? err.stack : err}\n`

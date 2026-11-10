@@ -135,6 +135,20 @@ async function readViews(dir, files, origin, sourcePrefix) {
       sha256: createHash('sha256').update(code, 'utf8').digest('hex'),
       ...(dataName ? { dataPath: join(dir, dataName) } : {}),
     })
+    const extraMatches = [...code.matchAll(/registerView\s*\(\s*\{[\s\S]*?\bid\s*:\s*['"]([a-z0-9-]+)['"]/g)]
+    for (const match of extraMatches) {
+      const extraId = match[1]
+      if (extraId && extraId !== id && VIEW_ID_RE.test(extraId) && !RESERVED_VIEW_IDS.includes(extraId)) {
+        views.push({
+          id: extraId,
+          origin,
+          source,
+          code,
+          sha256: createHash('sha256').update(code, 'utf8').digest('hex'),
+          ...(dataName ? { dataPath: join(dir, dataName) } : {}),
+        })
+      }
+    }
   }
   return views
 }

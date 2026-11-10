@@ -137,7 +137,7 @@ describe('BudgetTracker', () => {
 });
 
 describe('appendLedger', () => {
-  it('appends one JSON line per call under <root>/.cognnitive/video-ledger.jsonl', () => {
+  it('appends one JSON line per call under <root>/.cognnitive/video/ledger.jsonl', () => {
     const root = tmp();
     appendLedger(root, { model: 'm1', estUsd: 0.1, ref: 'scene-1' });
     appendLedger(root, { model: 'm2', estUsd: 0.2, ref: 'scene-2' });
@@ -149,7 +149,7 @@ describe('appendLedger', () => {
     assert.equal(first.ref, 'scene-1');
     assert.equal(first.cacheHit, false);
     assert.ok(!Number.isNaN(Date.parse(first.ts)));
-    assert.equal(ledgerPath(root), path.join(root, '.cognnitive', 'video-ledger.jsonl'));
+    assert.equal(ledgerPath(root), path.join(root, '.cognnitive', 'video', 'ledger.jsonl'));
   });
 });
 

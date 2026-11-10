@@ -83,7 +83,7 @@ function fixture() {
   fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), '# NN DomaiNN\n', 'utf8');
   fs.writeFileSync(
     path.join(root, 'video-defaults_NN.md'),
-    '# NN Video Defaults\n\n## NN Video Defaults: D\nslug:: d\noutput_formats:: [1920x1920]\nscript_review:: skip\n',
+    '# NN Video Defaults\n\n## NN Video Defaults: D\nslug:: d\noutput_formats:: [1920x1920]\nreview_gates:: [preview]\n',
     'utf8',
   );
   const series = path.join(root, 'series', 's');

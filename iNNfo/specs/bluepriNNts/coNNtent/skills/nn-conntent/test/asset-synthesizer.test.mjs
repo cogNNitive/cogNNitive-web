@@ -62,6 +62,20 @@ async function runTests() {
     console.log('✔ no OS-native (Windows SAPI) synthesis path remains');
   }
 
+  // 3. Language mapping and no hardcoded 'Spanish'.
+  {
+    const { mapTtsLanguage } = await import('../scripts/lib/tts-options.mjs');
+    assert.strictEqual(mapTtsLanguage('es'), 'Spanish', 'es maps to Spanish');
+    assert.strictEqual(mapTtsLanguage('en'), 'English', 'en maps to English');
+    assert.strictEqual(mapTtsLanguage('fr'), 'auto', 'unmapped language maps to auto');
+    assert.strictEqual(mapTtsLanguage(''), 'auto', 'empty language maps to auto');
+    assert.strictEqual(mapTtsLanguage(undefined), 'auto', 'undefined language maps to auto');
+
+    const src = fs.readFileSync(SYNTH_PATH, 'utf8');
+    assert.ok(!/language:\s*options\.language\s*\|\|\s*['"]Spanish['"]/.test(src), 'no hardcoded Spanish default remains');
+    console.log('✔ language mapping handles es, en, and unmapped defaults to auto without hardcoded Spanish');
+  }
+
   console.log('\nAll asset-synthesizer unit tests passed! 🎉');
 }
 

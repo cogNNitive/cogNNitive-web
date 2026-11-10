@@ -1,39 +1,28 @@
 /**
  * nn-conntent/scripts/lib/frame-tokens.mjs
  *
- * Reads a frame design-token document (the HyperFrames frame layer: palette +
- * typography) and reduces it to the handful of tokens the emitter can apply to
- * overlays. The frame is truth for color and type, never for layout — overlay
- * geometry stays the engine's decision.
+ * Reads a HyperFrames frame design-token document (`FRAME.md` — palette +
+ * typography + spacing + components) and reduces it to the tokens the emitter can
+ * apply to overlays and the thumbnail renderer. The frame is truth for color and
+ * type; overlay geometry stays the engine's decision (design D18, D-K3).
  *
- * A frame is named by the cascade (`frame:: <name>`) and located as
- * `frames/<name>.md` by the shared nearest-folder walker (design D18); this
- * module only reads and parses the file it is handed.
+ * The frontmatter is parsed by nn-core's YAML parser (via the shared mirror), the
+ * same parser every other document uses, so nested `components:` maps survive and
+ * no third divergent parser exists (verification G11).
  *
- * Only the frontmatter is read. The parser is a deliberately small YAML subset
- * (`section:` / `  key: value` / `  key: { k: v, ... }`) so the skill stays
- * dependency-free when installed standalone in a user workspace.
+ * In Slice 1b the frame is still a single `<name>.md` file (`library/frames/<name>.md`
+ * under the new layout); the folder form (`FRAME.md` + `caption-skin.html`) lands in
+ * the Frame slice. This module only reads and parses the file it is handed.
  *
  * Zero external dependencies. ESM module.
  */
 
 import fs from 'node:fs';
+import path from 'node:path';
+import { parseYaml } from './nn-core.generated.cjs';
 
-const FENCE = /^---\s*$/;
-const unquote = (s) => String(s).trim().replace(/^["']|["']$/g, '').trim();
-
-/** Split `k: v, k2: "v2"` into a flat object. */
-function parseInlineMap(body) {
-  const out = {};
-  for (const part of String(body).split(',')) {
-    const idx = part.indexOf(':');
-    if (idx === -1) continue;
-    const key = part.slice(0, idx).trim();
-    const value = part.slice(idx + 1).trim();
-    if (key) out[key] = unquote(value);
-  }
-  return out;
-}
+/** Extract the YAML frontmatter block of a document. */
+const FENCE = /^---\s*\r?\n([\s\S]*?)\r?\n---\s*(?:$|\r?\n)/;
 
 /**
  * Parse a `frame.md` document into design tokens. Returns null when the document
@@ -43,53 +32,27 @@ function parseInlineMap(body) {
  * @returns {{ name?: string, colors: Record<string,string>, typography: Record<string, Record<string,string>>, radii: Record<string,string> } | null}
  */
 export function parseFrameTokens(text) {
-  const lines = String(text ?? '').split(/\r?\n/);
-  if (!FENCE.test(lines[0] || '')) return null;
-  const end = lines.findIndex((l, i) => i > 0 && FENCE.test(l));
-  if (end === -1) return null;
+  const m = String(text ?? '').match(FENCE);
+  if (!m) return null;
+  const fm = parseYaml(m[1]);
+  if (!fm || typeof fm !== 'object') return null;
 
   const tokens = { colors: {}, typography: {}, radii: {} };
-  const SECTIONS = new Set(['colors', 'typography', 'radii']);
-  let section = null;
-  let role = null;
-
-  for (const raw of lines.slice(1, end)) {
-    if (!raw.trim() || raw.trim().startsWith('#')) continue;
-    const indented = /^\s+/.test(raw);
-    const line = raw.trim();
-
-    if (!indented) {
-      section = null;
-      role = null;
-      const idx = line.indexOf(':');
-      if (idx === -1) continue;
-      const key = line.slice(0, idx).trim();
-      const value = line.slice(idx + 1).trim();
-      if (key === 'name' && value) tokens.name = unquote(value);
-      else if (SECTIONS.has(key) && !value) section = key;
-      continue;
+  if (typeof fm.name === 'string' && fm.name) tokens.name = fm.name;
+  if (fm.colors && typeof fm.colors === 'object') {
+    for (const [k, v] of Object.entries(fm.colors)) {
+      if (typeof v === 'string') tokens.colors[k] = v;
     }
-
-    if (!section) continue;
-    const idx = line.indexOf(':');
-    if (idx === -1) continue;
-    const key = line.slice(0, idx).trim();
-    const value = line.slice(idx + 1).trim();
-
-    if (section === 'typography') {
-      if (value.startsWith('{')) {
-        tokens.typography[key] = parseInlineMap(value.replace(/^\{|\}$/g, ''));
-        role = null;
-      } else if (!value) {
-        role = key;
-        tokens.typography[role] = {};
-      } else if (role) {
-        tokens.typography[role][key] = unquote(value);
-      }
-      continue;
+  }
+  if (fm.typography && typeof fm.typography === 'object') {
+    tokens.typography = Object.fromEntries(
+      Object.entries(fm.typography).filter(([, v]) => v && typeof v === 'object'),
+    );
+  }
+  if (fm.radii && typeof fm.radii === 'object') {
+    for (const [k, v] of Object.entries(fm.radii)) {
+      if (typeof v === 'string' || typeof v === 'number') tokens.radii[k] = String(v);
     }
-
-    if (value) tokens[section][key] = unquote(value);
   }
 
   if (!Object.keys(tokens.colors).length && !Object.keys(tokens.typography).length) return null;
@@ -98,8 +61,8 @@ export function parseFrameTokens(text) {
 
 /**
  * Reads and parses one frame document. A path that does not exist yields
- * `tokens: null`; callers locate the file first (via the walker), so a missing
- * path is a bug, never a silent fallback.
+ * `tokens: null`; callers locate the file first, so a missing path is a bug,
+ * never a silent fallback.
  * @param {string} filePath
  * @returns {{ path: string, tokens: object | null }}
  */
@@ -126,4 +89,84 @@ export function frameCss(tokens) {
   const textColor = colors.text || colors.foreground || null;
   const fontCss = fontFamily ? `font-family:'${String(fontFamily).replace(/'/g, "\\'")}',sans-serif` : '';
   return { fontCss, textColor, accent, fontFamily };
+}
+
+/**
+ * Parses the full FRAME.md frontmatter (every key, preserved), for the frame folder
+ * loader that must keep `spacing`, `components` and any DESIGN.md extra keys.
+ * Returns null when there is no frontmatter.
+ * @param {string} text
+ * @returns {object | null}
+ */
+export function parseFrameFrontmatter(text) {
+  const m = String(text ?? '').match(FENCE);
+  if (!m) return null;
+  const fm = parseYaml(m[1]);
+  return fm && typeof fm === 'object' ? fm : null;
+}
+
+/**
+ * Loads a frame **folder** (`library/frames/<name>/`): the required `FRAME.md`, an
+ * optional `caption-skin.html` and an optional `fonts/` directory. The frontmatter is
+ * parsed by nn-core's YAML parser, so nested `components:` maps survive (verification
+ * G11). (capability conntent-frame "A Frame Is A Folder With FRAME.md".)
+ * @param {{ frameDir: string }} input
+ * @returns {{ frameDir: string, FRAME: string|null, name: string|null, frontmatter: object|null, tokens: object|null, skin: string|null, fonts: string[] }}
+ */
+export function loadFrameFolder({ frameDir }) {
+  const FRAME_PATH = path.join(frameDir, 'FRAME.md');
+  let FRAME = null;
+  try {
+    FRAME = fs.readFileSync(FRAME_PATH, 'utf8');
+  } catch {
+    FRAME = null;
+  }
+  const frontmatter = FRAME ? parseFrameFrontmatter(FRAME) : null;
+  const tokens = frontmatter ? { ...frontmatter } : null;
+  let skin = null;
+  try {
+    skin = fs.readFileSync(path.join(frameDir, 'caption-skin.html'), 'utf8');
+  } catch {
+    skin = null;
+  }
+  let fonts = [];
+  try {
+    fonts = fs.readdirSync(path.join(frameDir, 'fonts')).filter((f) => f !== '.DS_Store').sort();
+  } catch {
+    fonts = [];
+  }
+  return {
+    frameDir,
+    FRAME,
+    name: frontmatter?.name ?? null,
+    frontmatter,
+    tokens,
+    skin,
+    fonts,
+  };
+}
+
+/**
+ * Emits a resolved frame into the HyperFrames project: copies `FRAME.md` unchanged to
+ * `hyperframes/frame.md`, the optional `caption-skin.html` to `hyperframes/caption-skin.html`,
+ * and the `fonts/` files to `hyperframes/fonts/`. (capability conntent-frame "Frame Is
+ * Emitted As frame.md In The HyperFrames Project".)
+ * @param {{ frameDir: string, projectDir: string }} input
+ */
+export function emitHyperframesFrame({ frameDir, projectDir }) {
+  const out = path.basename(projectDir) === 'hyperframes' ? projectDir : path.join(projectDir, 'hyperframes');
+  fs.mkdirSync(out, { recursive: true });
+  const src = path.join(frameDir, 'FRAME.md');
+  if (fs.existsSync(src)) fs.copyFileSync(src, path.join(out, 'frame.md'));
+  const skin = path.join(frameDir, 'caption-skin.html');
+  if (fs.existsSync(skin)) fs.copyFileSync(skin, path.join(out, 'caption-skin.html'));
+  const fonts = path.join(frameDir, 'fonts');
+  if (fs.existsSync(fonts)) {
+    const outFonts = path.join(out, 'fonts');
+    fs.mkdirSync(outFonts, { recursive: true });
+    for (const f of fs.readdirSync(fonts)) {
+      const p = path.join(fonts, f);
+      if (fs.statSync(p).isFile()) fs.copyFileSync(p, path.join(outFonts, f));
+    }
+  }
 }

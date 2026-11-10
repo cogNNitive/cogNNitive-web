@@ -38,6 +38,13 @@ function stubRun(_cmd, args) {
   return { status: 0, stdout: '', stderr: '' };
 }
 
+/** A fake installed GSAP build (the module stages it into the project vendor/). */
+function gsapDep(dir) {
+  const gsap = path.join(dir, 'gsap.min.js');
+  fs.writeFileSync(gsap, '/* gsap */', 'utf8');
+  return { resolveGsap: () => gsap };
+}
+
 test('wrapText wraps by length and respects explicit newlines', () => {
   const lines = wrapText('LA RUEDA DE HIERRO Y MADERA', 15);
   assert.ok(lines.length > 1);
@@ -85,7 +92,7 @@ test('renderThumbnail runs the CLI snapshot and copies the PNG output', async ()
     const base = path.join(dir, 'base.png');
     fs.writeFileSync(base, PNG);
     const out = path.join(dir, 'thumb.png');
-    const res = await renderThumbnail({ basePath: base, title: 'T', outputPath: out, deps: { run: stubRun, cliPath: '/fake/hyperframes' } });
+    const res = await renderThumbnail({ basePath: base, title: 'T', outputPath: out, deps: { run: stubRun, cliPath: '/fake/hyperframes', ...gsapDep(dir) } });
     assert.equal(res.width, 2560);
     assert.ok(fs.existsSync(out));
     assert.deepEqual(fs.readFileSync(out), PNG);
@@ -106,7 +113,7 @@ test('renderThumbnail converts to JPEG via ffmpeg for a .jpg output', async () =
       fs.writeFileSync(args[args.length - 1], Buffer.from('jpeg'));
       return { status: 0 };
     };
-    await renderThumbnail({ basePath: base, title: 'T', outputPath: out, deps: { run: stubRun, cliPath: '/fake/hyperframes', ffmpegRun } });
+    await renderThumbnail({ basePath: base, title: 'T', outputPath: out, deps: { run: stubRun, cliPath: '/fake/hyperframes', ffmpegRun, ...gsapDep(dir) } });
     assert.ok(ffmpegCalled, 'ffmpeg runs for a JPEG output');
     assert.ok(fs.existsSync(out));
   } finally {

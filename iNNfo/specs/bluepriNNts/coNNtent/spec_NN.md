@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-7-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"
 blueprint_name: "coNNtent"
-blueprint_version: "V_0-15-1"
+blueprint_version: "V_0-17-0"
 title: "coNNtent App"
 relationship_types:
   hierarchy:
@@ -24,6 +24,10 @@ validation:
     media: [asset, prompt]
     text: [text, text_from]
     animation: [asset]
+gates:
+  script: element
+  preview: element
+  budget: model
 ---
 
 # NN index
@@ -50,7 +54,7 @@ color:: blue
 weight:: 100
 storage:: distributed
 container:: Series
-placement:: "{container}/assets/{slug}/"
+placement:: "{container}/episodes/{slug}/"
 
 ## NN Concept Definition: Scene
 slug:: scene
@@ -148,13 +152,8 @@ description:: What the episode is about, in one or two sentences. The agent writ
 ## NN Field Definition: status
 concept:: Video
 type:: select
-options:: [idea, draft, approved, produced, published, archived]
+options:: [idea, draft, approved, produced, failed_qa, delivered, archived]
 description:: Lifecycle position of the episode, written by the engine or the user through a changeset. `idea` carries a title and linked Sources only.
-
-## NN Field Definition: published_url
-concept:: Video
-type:: url
-description:: Publication URL of the episode. Required once `status:: published`.
 
 ## NN Field Definition: script
 concept:: Video
@@ -166,10 +165,21 @@ concept:: Video
 type:: video
 description:: The episode's master `<slug>_<W>x<H>.mp4`, sized by the first entry of `output_formats`. Delivery formats are derived from it and never modeled.
 
+## NN Field Definition: delivered_version
+concept:: Video
+type:: string
+description:: The delivery version the engine last assembled (`v1`, `v2`, ...). Written by the engine together with `status:: delivered`.
+
 ## NN Field Definition: thumbnail
 concept:: Video
 type:: image
 description:: The episode's cover image, resolved under the owning model's directory.
+
+## NN Field Definition: translation_of
+concept:: Video
+scope:: record
+type:: string
+description:: For a translation episode, the slug of the original (`<slug>` in the same series, or `<series>/<slug>` across series). The original MUST exist, MUST NOT itself be a translation and MUST share the source; never points at itself. Video-only record field.
 
 ## NN Field Definition: kind
 concept:: Scene
@@ -223,59 +233,86 @@ description:: Call-to-action text for this language.
 ## NN Field Definition: bumper
 concept:: Chrome
 type:: file
-description:: Series bumper media for this language, resolved under `series/<s>/assets/`.
+description:: Series bumper media for this language, resolved as a logical name under `series/<s>/library/media/`.
 
 ## NN Field Definition: music
 concept:: Chrome
 type:: file
-description:: Series music bed for this language, resolved under `series/<s>/assets/`. Retired on Scene and Preset, where `background_audio` is the only field.
+description:: Series music bed for this language, resolved as a logical name under `series/<s>/library/media/`. Retired on Scene and Preset, where `background_audio` is the only field.
 
 ## NN Field Definition: presets
 concept:: [Video, Scene, Scene Kind, Series, Video Defaults]
+  scope:: render
 type:: select
 multiple:: true
 description:: Ordered list of Preset names that apply at this level, written as bare names such as `[Lucas, Studio Warm]` (no reference brackets). Each level's list sits directly under that level's explicit fields: the last Preset of a list wins, a level's explicit fields beat its own Presets, and lists are additive across levels. Optional.
 
 ## NN Field Definition: background_audio
 concept:: [Video, Scene, Preset, Series, Video Defaults]
+  scope:: render
 type:: file
 description:: Background audio file for the Scene. Resolves through the Universal Parameter Cascade. Background audio is a Field and MUST NOT be modeled as a Layer.
 
 ## NN Field Definition: background_audio_volume
 concept:: [Video, Scene, Preset, Series, Video Defaults]
-type:: string
+  scope:: render
+type:: number
 description:: Volume for the resolved `background_audio::` track (a number 0–1, e.g. `0.1`). Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies.
 
 ## NN Field Definition: transition
 concept:: [Video, Scene, Preset, Series, Video Defaults]
+  scope:: render
 type:: select
 options:: [fade, slide-left, slide-right, wipe, none]
 description:: Transition into the Scene. Resolves through the Universal Parameter Cascade. Optional.
 
 ## NN Field Definition: frame
 concept:: [Video, Scene, Preset, Series, Video Defaults]
+  scope:: render
 type:: string
-description:: Name of the frame document (`frames/<name>.md`) whose tokens style this Video, Scene, Series or domain. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies.
+description:: Name of the frame folder (`library/frames/<name>/FRAME.md` at the episode, series, domain or package level) whose tokens style this Video, Scene, Series or domain. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies.
 
 ## NN Field Definition: components
 concept:: [Video, Preset, Series, Video Defaults]
+  scope:: render
 type:: select
 multiple:: true
 description:: Keyed list of slot→component-name bindings (`slot=name`, e.g. `[lower-third=pill]`). Resolves per key through the Universal Parameter Cascade. Engine code names no component.
 
 ## NN Field Definition: sounds
 concept:: [Video, Preset, Series, Video Defaults]
+  scope:: render
 type:: select
 multiple:: true
 description:: Keyed list of engine-event→sound-name bindings (`event=name`, e.g. `[scene-boundary=whoosh]`). Resolves per key through the Universal Parameter Cascade. Engine code names no sound.
 
 ## NN Field Definition: avatar
 concept:: [Video, Scene, Preset, Series, Video Defaults]
+  scope:: render
 type:: file
 description:: Image used as the source for an `avatar` Layer that declares no `asset::`. Resolves through the Universal Parameter Cascade. Optional.
 
+## NN Field Definition: character
+concept:: [Video, Scene, Preset, Series, Video Defaults]
+  scope:: render
+type:: string
+description:: Name of the active Character (a folder in `library/characters/` or `media/characters/`). Resolves through the Universal Parameter Cascade; a series sets its host, a scene can bring a guest. Optional.
+
+## NN Field Definition: pose
+concept:: [Video, Scene, Preset, Series, Video Defaults]
+  scope:: render
+type:: string
+description:: Avatar pose of the active Character: a file name in its `avatars/` without extension. Defaults to the Character's `default_pose`; requires an active `character`. Optional.
+
+## NN Field Definition: background
+concept:: [Video, Scene, Preset, Series, Video Defaults]
+  scope:: render
+type:: string
+description:: Background image of the active Character: a file name in its `backgrounds/` without extension. Defaults to the Character's `default_background`; requires an active `character`. Optional.
+
 ## NN Field Definition: intro
 concept:: [Video, Preset, Series, Video Defaults]
+  scope:: render
 type:: file
 description:: Intro media reused by the episode's fixed first Scene. Resolves through the Universal Parameter Cascade. Optional; per episode, so not a Scene field.
 
@@ -301,7 +338,7 @@ description:: For a `media` Layer: `scene` spans the whole scene, `slot` occupie
 concept:: Layer
 type:: select
 options:: [title, lower-third, caption, watermark, quote]
-description:: For a `text` Layer: the visual component to render. The component implementation resolves by name (`components/<style>.html`, episode → series → domain → skill fallback), so a Series can restyle it without a new type.
+description:: For a `text` Layer: the visual component to render. The component implementation resolves by name (`components/<style>`, a folder `library/components/<style>/` or `media/components/<style>/`, episode → series → domain → skill fallback), so a Series can restyle it without a new type.
 
 ## NN Field Definition: text_from
 concept:: Layer
@@ -347,77 +384,134 @@ description:: Paint order of the Layer as a numeric string (higher renders on to
 
 ## NN Field Definition: avatar_model
 concept:: [Layer, Scene, Video, Preset, Series, Video Defaults]
+  scope:: render
 type:: string
-description:: Avatar/lip-sync model id for an `avatar` Layer, or a cascade default (e.g. `wavespeed-ai/infinitetalk-fast`). Resolves through the Universal Parameter Cascade.
+  options_from:: models:avatar
+description:: Avatar/lip-sync model id for an `avatar` Layer, or a cascade default (e.g. `wavespeed-ai/infinitetalk-fast`). Resolves through the Universal Parameter Cascade. The console picklist offers the merged catalog's allowed avatar models by `api_id`.
 
 ## NN Field Definition: avatar_resolution
 concept:: Layer
+  scope:: render
 type:: select
 options:: [480p, 720p, 768p]
 description:: Optional output resolution for an `avatar` clip. The engine validates it against the model's declared `controls` and falls back to a model-appropriate default. Ignored by other Layer types.
 
 ## NN Field Definition: fit
 concept:: [Layer, Scene, Video, Preset, Series, Video Defaults]
+  scope:: render
 type:: select
 options:: [cover, contain]
 description:: How a `media` Layer fits its box. `cover` fills and crops; `contain` shows the whole asset with margins. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies.
 
 ## NN Field Definition: voice
 concept:: [Video, Scene, Preset, Series, Video Defaults]
+  scope:: render
 type:: string
-description:: Registered voice name or system voice used for TTS synthesis. Resolves through the Universal Parameter Cascade; a Preset supplies it unless a nearer level sets it. Part of the synthesized-audio cache identity.
+  options_from:: voices
+description:: Registered voice name or system voice used for TTS synthesis. Resolves through the Universal Parameter Cascade; a Preset supplies it unless a nearer level sets it. Part of the synthesized-audio cache identity. The console picklist offers the merged catalog's Voices by slug.
 
 ## NN Field Definition: voice_model
 concept:: [Video, Scene, Preset, Series, Video Defaults]
+  scope:: render
 type:: string
-description:: Provider model id used for TTS synthesis (e.g. `minimax/speech-2.8-hd`). Resolves through the Universal Parameter Cascade. Part of the synthesized-audio cache identity.
+  options_from:: models:tts
+description:: Provider model id used for TTS synthesis (e.g. `minimax/speech-2.8-hd`). Resolves through the Universal Parameter Cascade. Part of the synthesized-audio cache identity. The console picklist offers the merged catalog's allowed tts models by `api_id`.
 
 ## NN Field Definition: voice_speed
 concept:: [Video, Scene, Preset, Series, Video Defaults]
+  scope:: render
 type:: string
 description:: Playback rate the provider synthesizes the narration at (a number, e.g. `1.1` for 10% faster). Optional; when no level declares it the provider default applies and the value stays out of the cache key. Part of the synthesized-audio cache identity, so changing it re-synthesizes.
 
 ## NN Field Definition: voice_emotion
 concept:: [Video, Scene, Preset, Series, Video Defaults]
+  scope:: render
 type:: string
 description:: Delivery the provider synthesizes the narration with (e.g. `happy`, `neutral`). Optional; when no level declares it the provider default applies and the value stays out of the cache key. Part of the synthesized-audio cache identity, so changing it re-synthesizes.
 
 ## NN Field Definition: image_model
 concept:: [Video, Scene, Preset, Series, Video Defaults]
+  scope:: render
 type:: string
-description:: Provider model id used to synthesize image assets (e.g. `wavespeed-ai/z-image/turbo`). Resolves through the Universal Parameter Cascade.
+  options_from:: models:image
+description:: Provider model id used to synthesize image assets (e.g. `wavespeed-ai/z-image/turbo`). Resolves through the Universal Parameter Cascade. The console picklist offers the merged catalog's allowed image models by `api_id`.
 
 ## NN Field Definition: image_size
 concept:: [Video, Scene, Preset, Series, Video Defaults]
+  scope:: render
 type:: string
 description:: Requested image size as `<W>x<H>`, validated against the resolved image Model's `sizes`. Part of the image cache key. Defaults to `1024x1024` in the blueprint Video Defaults.
 
 ## NN Field Definition: language
 concept:: [Video, Series, Video Defaults, Chrome]
+  scope:: video
 type:: string
 description:: Language code (for example `es`, `en`) driving voice selection, chrome text, narration rules and the description language. The blueprint ships no default: an unset language is a validation error.
 
 ## NN Field Definition: budget
 concept:: [Video, Series, Video Defaults]
+  scope:: video
 type:: number
 description:: Per-episode budget in the domaiNN's single currency. The blueprint ships no default: an unset budget always asks at the budget gate. An estimate within the budget is auto-approved.
 
 ## NN Field Definition: daily_budget
 concept:: Video Defaults
+  scope:: domain
 type:: number
 description:: Rolling 24-hour cap in the domaiNN's single currency. Settable only in a Video Defaults document (domain or blueprint level); the blueprint ships no default (no daily cap).
 
 ## NN Field Definition: output_formats
 concept:: [Video, Series, Video Defaults]
+  scope:: video
 type:: select
 multiple:: true
 description:: Ordered list of delivery sizes as `<W>x<H>`. The first entry is the master size; the rest are derived from the master. Defaults to `[1920x1920, 1080x1920, 1920x1080, 1080x1080]`.
 
-## NN Field Definition: script_review
+## NN Field Definition: review_gates
 concept:: [Video, Series, Video Defaults]
+scope:: video
 type:: select
-options:: [required, skip]
-description:: Whether the script review gate stops the run. `skip` treats the script as approved; it never bypasses the budget gate. Defaults to `required`.
+multiple:: true
+options:: [script, preview]
+description:: The gates that stop the run before spend, in order. Defaults to `[script, preview]`. Replaces the retired single script-review flag.
+
+## NN Field Definition: captions
+concept:: [Video, Series, Video Defaults]
+scope:: render
+type:: select
+options:: [off, words, lines]
+description:: Caption mode: `off` produces no captions, `words` word-level timing, `lines` segment-level timing. Defaults to `off`.
+
+## NN Field Definition: caption_model
+concept:: [Video, Series, Video Defaults]
+scope:: render
+type:: string
+description:: The transcript alignment model override. Defaults to the package model.
+
+## NN Field Definition: thumbnail_formats
+concept:: [Video, Series, Video Defaults]
+scope:: video
+type:: select
+multiple:: true
+description:: Ordered thumbnail sizes as `<W>x<H>`. Defaults to `[2560x1440, 1080x1920]`.
+
+## NN Field Definition: thumbnail_base
+concept:: [Video, Series, Video Defaults]
+scope:: video
+type:: file
+description:: A text-free clean composite used as the thumbnail base; defaults to the first scene still.
+
+## NN Field Definition: thumbnail_title
+concept:: [Video, Series, Video Defaults]
+scope:: video
+type:: string
+description:: The title text drawn on the thumbnail; defaults to the Video `title`.
+
+## NN Field Definition: thumbnail_badge
+concept:: [Video, Series, Video Defaults]
+scope:: video
+type:: string
+description:: An optional small badge drawn on the thumbnail; defaults to none.
 
 ## NN Field Definition: name
 concept:: Provider
@@ -518,8 +612,8 @@ reach the document only through changesets applied by the apply engine.
 ## Structure
 
 - **Video** — a distributed concept: one Video instance model per episode, at
-  `series/<s>/assets/<slug>/<slug>_coNNtent_NN.md`, holding exactly one Video element.
-  Carries the episode record (`status`, `published_url`, `script`, `master`, `thumbnail`),
+  `series/<s>/episodes/<slug>/<slug>_coNNtent_NN.md`, holding exactly one Video element.
+  Carries the episode record (`status`, `script`, `master`, `thumbnail`, `translation_of`),
   the human `title` and the pinned `blueprint_version` in the document frontmatter.
 - **Scene** — child of Video. Order equals the order of the `# NN index` list; no `order::`
   field exists. Its free-form prose BODY is the narration, synthesized by TTS and timed by
@@ -527,7 +621,12 @@ reach the document only through changesets applied by the apply engine.
   cascade fields.
 - **Layer** — child of a Scene, never of the Video. Discriminated by the required `type::`
   with exactly four values: `avatar`, `media`, `text`, `animation`.
-- **Layer** - child of a Scene: one visual, overlay or avatar track.
+- **Library** — the package ships the reusable folders `library/frames/<name>/FRAME.md`
+  (frame tokens), `library/components/<name>/{COMPONENT.md,index.html,preview.mp4}` (the
+  component portfolio base set) and `library/characters/<name>/CHARACTER.md` (characters),
+  plus the slot contracts in `skills/nn-conntent/slots/<slot>.html`; a domaiNN or series
+  root may shadow any of them under its own `library/`, and an episode under `media/`.
+  Component `index.html` files never reference a network URL, so rendering is offline.
 - **Scene Kind** — element of the Series: the grammar of one kind of scene (role,
   narration, limits, fixed placement, chrome, presets).
 - **Chrome** — element of the Series, one per language: series-level wallpaper (watermark,
@@ -618,8 +717,8 @@ record and the script.
 ### Description
 
 One `## NN Video: <name>` element models one episode. Its `slug::` is the stable identity the
-engine uses to name the output. The record fields — `description`, `status`,
-`published_url`, `script`, `master` and `thumbnail` — make the same document both the
+engine uses to name the output. The record fields — `description`, `status`, `script`,
+`master`, `thumbnail` and `translation_of` — make the same document both the
 episode's catalogue entry and its script. The document frontmatter pins
 `blueprint_version: V_0-15-0`; `produce` refuses any other pin. A second Video element in
 the same document violates the one-video-per-script constraint.
@@ -635,8 +734,8 @@ the same document violates the one-video-per-script constraint.
 
 ### Prompts
 
-- "Create a `Video` named `<title>` for this script and pin `blueprint_version: V_0-15-0`."
-- "Set `status` of `<video>` to `published` and point `published_url` at the publication."
+- "Create a `Video` named `<title>` for this script and pin `blueprint_version: V_0-17-0`."
+- "Produce `<video>`; the engine sets `delivered` after a passing QA and a new `deliveries/v<N>/`."
 
 ## Scene
 
@@ -799,7 +898,7 @@ One element per language holding the series wallpaper applied by kind.
 ### Description
 
 One `## NN Chrome: <language>` element declares `language` and any of `watermark`, `cta`,
-`bumper` and `music`; its media resolve under `series/<s>/assets/`. A kind's `chrome` list
+`bumper` and `music`; its media resolve as logical names under `series/<s>/library/media/`. A kind's `chrome` list
 names the items applied to its scenes. When a kind lists an item and no Chrome element for
 the resolved language declares it, the run fails before spend naming the item and the
 language.
@@ -807,7 +906,7 @@ language.
 ### Methodologies
 
 - Declare the chrome text once per language, not per episode.
-- Keep the media in `series/<s>/assets/`, never inside an episode.
+- Keep the media in `series/<s>/library/media/`, never inside an episode.
 - Remember that the episode's `language` selects the element.
 
 ### Prompts

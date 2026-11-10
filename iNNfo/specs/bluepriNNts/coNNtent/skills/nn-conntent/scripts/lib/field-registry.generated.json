@@ -1,12 +1,14 @@
 {
   "blueprint": "coNNtent",
-  "blueprint_version": "V_0-15-1",
+  "blueprint_version": "V_0-17-0",
   "generated_from": "spec_NN.md",
   "fields": {
     "adapter": {
       "concepts": [
         "Model"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "string",
       "options": [],
       "multiple": false,
@@ -17,6 +19,8 @@
       "concepts": [
         "Model"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "boolean",
       "options": [],
       "multiple": false,
@@ -27,6 +31,8 @@
       "concepts": [
         "Provider"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "url",
       "options": [],
       "multiple": false,
@@ -37,6 +43,8 @@
       "concepts": [
         "Model"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "string",
       "options": [],
       "multiple": false,
@@ -48,10 +56,12 @@
         "Layer",
         "Scene Kind"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "file",
       "options": [],
       "multiple": false,
-      "cascade": true,
+      "cascade": false,
       "description": "Source media file for a Layer (image or video), the directory of an authored HyperFrames project for an `animation` Layer, or the media of a fixed Scene Kind. One of `asset` or `prompt` is required for `avatar` and `media` Layers."
     },
     "avatar": {
@@ -61,6 +71,13 @@
         "Preset",
         "Series",
         "Video Defaults"
+      ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
       ],
       "type": "file",
       "options": [],
@@ -77,15 +94,27 @@
         "Series",
         "Video Defaults"
       ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene",
+        "layer"
+      ],
       "type": "string",
       "options": [],
       "multiple": false,
       "cascade": true,
-      "description": "Avatar/lip-sync model id for an `avatar` Layer, or a cascade default (e.g. `wavespeed-ai/infinitetalk-fast`). Resolves through the Universal Parameter Cascade."
+      "description": "Avatar/lip-sync model id for an `avatar` Layer, or a cascade default (e.g. `wavespeed-ai/infinitetalk-fast`). Resolves through the Universal Parameter Cascade. The console picklist offers the merged catalog's allowed avatar models by `api_id`."
     },
     "avatar_resolution": {
       "concepts": [
         "Layer"
+      ],
+      "scope": "render",
+      "levels": [
+        "layer"
       ],
       "type": "select",
       "options": [
@@ -94,8 +123,29 @@
         "768p"
       ],
       "multiple": false,
-      "cascade": false,
+      "cascade": true,
       "description": "Optional output resolution for an `avatar` clip. The engine validates it against the model's declared `controls` and falls back to a model-appropriate default. Ignored by other Layer types."
+    },
+    "background": {
+      "concepts": [
+        "Video",
+        "Scene",
+        "Preset",
+        "Series",
+        "Video Defaults"
+      ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
+      ],
+      "type": "string",
+      "options": [],
+      "multiple": false,
+      "cascade": true,
+      "description": "Background image of the active Character: a file name in its `backgrounds/` without extension. Defaults to the Character's `default_background`; requires an active `character`. Optional."
     },
     "background_audio": {
       "concepts": [
@@ -104,6 +154,13 @@
         "Preset",
         "Series",
         "Video Defaults"
+      ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
       ],
       "type": "file",
       "options": [],
@@ -119,7 +176,14 @@
         "Series",
         "Video Defaults"
       ],
-      "type": "string",
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
+      ],
+      "type": "number",
       "options": [],
       "multiple": false,
       "cascade": true,
@@ -131,6 +195,12 @@
         "Series",
         "Video Defaults"
       ],
+      "scope": "video",
+      "levels": [
+        "domain",
+        "series",
+        "video"
+      ],
       "type": "number",
       "options": [],
       "multiple": false,
@@ -141,16 +211,20 @@
       "concepts": [
         "Chrome"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "file",
       "options": [],
       "multiple": false,
       "cascade": false,
-      "description": "Series bumper media for this language, resolved under `series/<s>/assets/`."
+      "description": "Series bumper media for this language, resolved as a logical name under `series/<s>/library/media/`."
     },
     "capability": {
       "concepts": [
         "Model"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "tts",
@@ -162,10 +236,73 @@
       "cascade": false,
       "description": "What the Model produces. Capability is declared, never inferred from the id."
     },
+    "caption_model": {
+      "concepts": [
+        "Video",
+        "Series",
+        "Video Defaults"
+      ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video"
+      ],
+      "type": "string",
+      "options": [],
+      "multiple": false,
+      "cascade": true,
+      "description": "The transcript alignment model override. Defaults to the package model."
+    },
+    "captions": {
+      "concepts": [
+        "Video",
+        "Series",
+        "Video Defaults"
+      ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video"
+      ],
+      "type": "select",
+      "options": [
+        "off",
+        "words",
+        "lines"
+      ],
+      "multiple": false,
+      "cascade": true,
+      "description": "Caption mode: `off` produces no captions, `words` word-level timing, `lines` segment-level timing. Defaults to `off`."
+    },
+    "character": {
+      "concepts": [
+        "Video",
+        "Scene",
+        "Preset",
+        "Series",
+        "Video Defaults"
+      ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
+      ],
+      "type": "string",
+      "options": [],
+      "multiple": false,
+      "cascade": true,
+      "description": "Name of the active Character (a folder in `library/characters/` or `media/characters/`). Resolves through the Universal Parameter Cascade; a series sets its host, a scene can bring a guest. Optional."
+    },
     "chrome": {
       "concepts": [
         "Scene Kind"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "watermark",
@@ -174,7 +311,7 @@
         "music"
       ],
       "multiple": true,
-      "cascade": true,
+      "cascade": false,
       "description": "Chrome items applied to every scene of this kind. Each item resolves from the `Chrome` element for the cascaded `language`."
     },
     "components": {
@@ -183,6 +320,12 @@
         "Preset",
         "Series",
         "Video Defaults"
+      ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video"
       ],
       "type": "select",
       "options": [],
@@ -194,6 +337,8 @@
       "concepts": [
         "Model"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "speed",
@@ -209,6 +354,8 @@
       "concepts": [
         "Chrome"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "markdown_inline",
       "options": [],
       "multiple": false,
@@ -219,26 +366,46 @@
       "concepts": [
         "Video Defaults"
       ],
+      "scope": "domain",
+      "levels": [
+        "domain"
+      ],
       "type": "number",
       "options": [],
       "multiple": false,
       "cascade": true,
       "description": "Rolling 24-hour cap in the domaiNN's single currency. Settable only in a Video Defaults document (domain or blueprint level); the blueprint ships no default (no daily cap)."
     },
+    "delivered_version": {
+      "concepts": [
+        "Video"
+      ],
+      "scope": "record",
+      "levels": [],
+      "type": "string",
+      "options": [],
+      "multiple": false,
+      "cascade": false,
+      "description": "The delivery version the engine last assembled (`v1`, `v2`, ...). Written by the engine together with `status:: delivered`."
+    },
     "description": {
       "concepts": [
         "Video"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "markdown_inline",
       "options": [],
       "multiple": false,
-      "cascade": true,
+      "cascade": false,
       "description": "What the episode is about, in one or two sentences. The agent writes it as part of the proposed changeset."
     },
     "enter_animation": {
       "concepts": [
         "Layer"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "string",
       "options": [],
       "multiple": false,
@@ -249,6 +416,8 @@
       "concepts": [
         "Layer"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "string",
       "options": [],
       "multiple": false,
@@ -264,6 +433,14 @@
         "Series",
         "Video Defaults"
       ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene",
+        "layer"
+      ],
       "type": "select",
       "options": [
         "cover",
@@ -277,10 +454,12 @@
       "concepts": [
         "Scene Kind"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "string",
       "options": [],
       "multiple": false,
-      "cascade": true,
+      "cascade": false,
       "description": "Placement of an engine-inserted scene: `none`, `first`, `last` or `after:<kind>` (after the first scene of that kind). The episode does not declare fixed scenes; the engine inserts them with the kind's `asset`."
     },
     "frame": {
@@ -291,11 +470,18 @@
         "Series",
         "Video Defaults"
       ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
+      ],
       "type": "string",
       "options": [],
       "multiple": false,
       "cascade": true,
-      "description": "Name of the frame document (`frames/<name>.md`) whose tokens style this Video, Scene, Series or domain. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies."
+      "description": "Name of the frame folder (`library/frames/<name>/FRAME.md` at the episode, series, domain or package level) whose tokens style this Video, Scene, Series or domain. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies."
     },
     "image_model": {
       "concepts": [
@@ -305,11 +491,18 @@
         "Series",
         "Video Defaults"
       ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
+      ],
       "type": "string",
       "options": [],
       "multiple": false,
       "cascade": true,
-      "description": "Provider model id used to synthesize image assets (e.g. `wavespeed-ai/z-image/turbo`). Resolves through the Universal Parameter Cascade."
+      "description": "Provider model id used to synthesize image assets (e.g. `wavespeed-ai/z-image/turbo`). Resolves through the Universal Parameter Cascade. The console picklist offers the merged catalog's allowed image models by `api_id`."
     },
     "image_size": {
       "concepts": [
@@ -318,6 +511,13 @@
         "Preset",
         "Series",
         "Video Defaults"
+      ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
       ],
       "type": "string",
       "options": [],
@@ -332,6 +532,12 @@
         "Series",
         "Video Defaults"
       ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video"
+      ],
       "type": "file",
       "options": [],
       "multiple": false,
@@ -342,10 +548,12 @@
       "concepts": [
         "Scene"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [],
       "multiple": false,
-      "cascade": true,
+      "cascade": false,
       "description": "Name of a Scene Kind declared by the Series, or the reserved value `Libre`. Required on every V_0-15-0 Scene; the engine validates it against the Series and offers no static options."
     },
     "language": {
@@ -354,6 +562,12 @@
         "Series",
         "Video Defaults",
         "Chrome"
+      ],
+      "scope": "video",
+      "levels": [
+        "domain",
+        "series",
+        "video"
       ],
       "type": "string",
       "options": [],
@@ -365,36 +579,44 @@
       "concepts": [
         "Video"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "video",
       "options": [],
       "multiple": false,
-      "cascade": true,
+      "cascade": false,
       "description": "The episode's master `<slug>_<W>x<H>.mp4`, sized by the first entry of `output_formats`. Delivery formats are derived from it and never modeled."
     },
     "max_duration": {
       "concepts": [
         "Scene Kind"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "number",
       "options": [],
       "multiple": false,
-      "cascade": true,
+      "cascade": false,
       "description": "Maximum duration of a scene of this kind, in seconds. Compared with the estimate before spend and with the measured duration after TTS; an overrun is a warning, never a stop."
     },
     "music": {
       "concepts": [
         "Chrome"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "file",
       "options": [],
       "multiple": false,
       "cascade": false,
-      "description": "Series music bed for this language, resolved under `series/<s>/assets/`. Retired on Scene and Preset, where `background_audio` is the only field."
+      "description": "Series music bed for this language, resolved as a logical name under `series/<s>/library/media/`. Retired on Scene and Preset, where `background_audio` is the only field."
     },
     "name": {
       "concepts": [
         "Provider"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "string",
       "options": [],
       "multiple": false,
@@ -405,13 +627,15 @@
       "concepts": [
         "Scene Kind"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "on",
         "off"
       ],
       "multiple": false,
-      "cascade": true,
+      "cascade": false,
       "description": "Whether scenes of this kind carry narration. `off` means no TTS request is made and a non-empty scene body is an error."
     },
     "output_formats": {
@@ -419,6 +643,12 @@
         "Video",
         "Series",
         "Video Defaults"
+      ],
+      "scope": "video",
+      "levels": [
+        "domain",
+        "series",
+        "video"
       ],
       "type": "select",
       "options": [],
@@ -430,6 +660,8 @@
       "concepts": [
         "Layer"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "full",
@@ -439,10 +671,33 @@
       "cascade": false,
       "description": "For a `media` Layer: `full` covers the frame, `inset` places it inside the safe area. Required on `media`."
     },
+    "pose": {
+      "concepts": [
+        "Video",
+        "Scene",
+        "Preset",
+        "Series",
+        "Video Defaults"
+      ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
+      ],
+      "type": "string",
+      "options": [],
+      "multiple": false,
+      "cascade": true,
+      "description": "Avatar pose of the active Character: a file name in its `avatars/` without extension. Defaults to the Character's `default_pose`; requires an active `character`. Optional."
+    },
     "position": {
       "concepts": [
         "Layer"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "top",
@@ -463,6 +718,14 @@
         "Series",
         "Video Defaults"
       ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "kind",
+        "video",
+        "scene"
+      ],
       "type": "select",
       "options": [],
       "multiple": true,
@@ -473,6 +736,8 @@
       "concepts": [
         "Model"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "number",
       "options": [],
       "multiple": false,
@@ -483,6 +748,8 @@
       "concepts": [
         "Model"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "string",
       "options": [],
       "multiple": false,
@@ -493,6 +760,8 @@
       "concepts": [
         "Model"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "blueprint",
@@ -506,6 +775,8 @@
       "concepts": [
         "Model"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "per_1k_chars",
@@ -520,6 +791,8 @@
       "concepts": [
         "Layer"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "string",
       "options": [],
       "multiple": false,
@@ -530,74 +803,80 @@
       "concepts": [
         "Model"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "string",
       "options": [],
       "multiple": false,
       "cascade": false,
       "description": "Slug of the `Provider` element this Model belongs to."
     },
-    "published_url": {
-      "concepts": [
-        "Video"
-      ],
-      "type": "url",
-      "options": [],
-      "multiple": false,
-      "cascade": true,
-      "description": "Publication URL of the episode. Required once `status:: published`."
-    },
     "review": {
       "concepts": [
         "Scene"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "approved",
         "needs-change"
       ],
       "multiple": false,
-      "cascade": true,
+      "cascade": false,
       "description": "The reviewer's verdict on the scene. Every scene must be `approved` before the episode can reach `approved`; a reason is a changeset comment, never a field."
+    },
+    "review_gates": {
+      "concepts": [
+        "Video",
+        "Series",
+        "Video Defaults"
+      ],
+      "scope": "video",
+      "levels": [
+        "domain",
+        "series",
+        "video"
+      ],
+      "type": "select",
+      "options": [
+        "script",
+        "preview"
+      ],
+      "multiple": true,
+      "cascade": true,
+      "description": "The gates that stop the run before spend, in order. Defaults to `[script, preview]`. Replaces the retired single script-review flag."
     },
     "role": {
       "concepts": [
         "Scene Kind"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "string",
       "options": [],
       "multiple": false,
-      "cascade": true,
+      "cascade": false,
       "description": "Free-text role of the kind in the series format (for example `hook`, `news`, `wrap-up`). Orientative for the author, never enforced as an order."
     },
     "script": {
       "concepts": [
         "Video"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "file",
       "options": [],
       "multiple": false,
-      "cascade": true,
+      "cascade": false,
       "description": "The episode's script document, resolved under the owning model's directory."
-    },
-    "script_review": {
-      "concepts": [
-        "Video",
-        "Series",
-        "Video Defaults"
-      ],
-      "type": "select",
-      "options": [
-        "required",
-        "skip"
-      ],
-      "multiple": false,
-      "cascade": true,
-      "description": "Whether the script review gate stops the run. `skip` treats the script as approved; it never bypasses the budget gate. Defaults to `required`."
     },
     "sizes": {
       "concepts": [
         "Model"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [],
       "multiple": true,
@@ -611,6 +890,12 @@
         "Series",
         "Video Defaults"
       ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video"
+      ],
       "type": "select",
       "options": [],
       "multiple": true,
@@ -621,6 +906,8 @@
       "concepts": [
         "Model"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "number",
       "options": [],
       "multiple": false,
@@ -631,23 +918,28 @@
       "concepts": [
         "Video"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "idea",
         "draft",
         "approved",
         "produced",
-        "published",
+        "failed_qa",
+        "delivered",
         "archived"
       ],
       "multiple": false,
-      "cascade": true,
+      "cascade": false,
       "description": "Lifecycle position of the episode, written by the engine or the user through a changeset. `idea` carries a title and linked Sources only."
     },
     "style": {
       "concepts": [
         "Layer"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "title",
@@ -658,12 +950,14 @@
       ],
       "multiple": false,
       "cascade": false,
-      "description": "For a `text` Layer: the visual component to render. The component implementation resolves by name (`components/<style>.html`, episode → series → domain → skill fallback), so a Series can restyle it without a new type."
+      "description": "For a `text` Layer: the visual component to render. The component implementation resolves by name (`components/<style>`, a folder `library/components/<style>/` or `media/components/<style>/`, episode → series → domain → skill fallback), so a Series can restyle it without a new type."
     },
     "tags": {
       "concepts": [
         "*"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [],
       "multiple": true,
@@ -674,6 +968,8 @@
       "concepts": [
         "Layer"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "markdown_inline",
       "options": [],
       "multiple": false,
@@ -684,6 +980,8 @@
       "concepts": [
         "Layer"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "narration"
@@ -696,16 +994,92 @@
       "concepts": [
         "Video"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "image",
       "options": [],
       "multiple": false,
-      "cascade": true,
+      "cascade": false,
       "description": "The episode's cover image, resolved under the owning model's directory."
+    },
+    "thumbnail_badge": {
+      "concepts": [
+        "Video",
+        "Series",
+        "Video Defaults"
+      ],
+      "scope": "video",
+      "levels": [
+        "domain",
+        "series",
+        "video"
+      ],
+      "type": "string",
+      "options": [],
+      "multiple": false,
+      "cascade": true,
+      "description": "An optional small badge drawn on the thumbnail; defaults to none."
+    },
+    "thumbnail_base": {
+      "concepts": [
+        "Video",
+        "Series",
+        "Video Defaults"
+      ],
+      "scope": "video",
+      "levels": [
+        "domain",
+        "series",
+        "video"
+      ],
+      "type": "file",
+      "options": [],
+      "multiple": false,
+      "cascade": true,
+      "description": "A text-free clean composite used as the thumbnail base; defaults to the first scene still."
+    },
+    "thumbnail_formats": {
+      "concepts": [
+        "Video",
+        "Series",
+        "Video Defaults"
+      ],
+      "scope": "video",
+      "levels": [
+        "domain",
+        "series",
+        "video"
+      ],
+      "type": "select",
+      "options": [],
+      "multiple": true,
+      "cascade": true,
+      "description": "Ordered thumbnail sizes as `<W>x<H>`. Defaults to `[2560x1440, 1080x1920]`."
+    },
+    "thumbnail_title": {
+      "concepts": [
+        "Video",
+        "Series",
+        "Video Defaults"
+      ],
+      "scope": "video",
+      "levels": [
+        "domain",
+        "series",
+        "video"
+      ],
+      "type": "string",
+      "options": [],
+      "multiple": false,
+      "cascade": true,
+      "description": "The title text drawn on the thumbnail; defaults to the Video `title`."
     },
     "timing": {
       "concepts": [
         "Layer"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "scene",
@@ -720,10 +1094,12 @@
         "Video",
         "Series"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "string",
       "options": [],
       "multiple": false,
-      "cascade": true,
+      "cascade": false,
       "description": "Human title of the Video or the Series. The engine derives the manifest compositionId from the Video's title."
     },
     "transition": {
@@ -733,6 +1109,13 @@
         "Preset",
         "Series",
         "Video Defaults"
+      ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
       ],
       "type": "select",
       "options": [
@@ -746,10 +1129,24 @@
       "cascade": true,
       "description": "Transition into the Scene. Resolves through the Universal Parameter Cascade. Optional."
     },
+    "translation_of": {
+      "concepts": [
+        "Video"
+      ],
+      "scope": "record",
+      "levels": [],
+      "type": "string",
+      "options": [],
+      "multiple": false,
+      "cascade": false,
+      "description": "For a translation episode, the slug of the original (`<slug>` in the same series, or `<series>/<slug>` across series). The original MUST exist, MUST NOT itself be a translation and MUST share the source; never points at itself. Video-only record field."
+    },
     "type": {
       "concepts": [
         "Layer"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "select",
       "options": [
         "avatar",
@@ -769,11 +1166,18 @@
         "Series",
         "Video Defaults"
       ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
+      ],
       "type": "string",
       "options": [],
       "multiple": false,
       "cascade": true,
-      "description": "Registered voice name or system voice used for TTS synthesis. Resolves through the Universal Parameter Cascade; a Preset supplies it unless a nearer level sets it. Part of the synthesized-audio cache identity."
+      "description": "Registered voice name or system voice used for TTS synthesis. Resolves through the Universal Parameter Cascade; a Preset supplies it unless a nearer level sets it. Part of the synthesized-audio cache identity. The console picklist offers the merged catalog's Voices by slug."
     },
     "voice_emotion": {
       "concepts": [
@@ -782,6 +1186,13 @@
         "Preset",
         "Series",
         "Video Defaults"
+      ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
       ],
       "type": "string",
       "options": [],
@@ -793,6 +1204,8 @@
       "concepts": [
         "Voice"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "string",
       "options": [],
       "multiple": false,
@@ -807,11 +1220,18 @@
         "Series",
         "Video Defaults"
       ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
+      ],
       "type": "string",
       "options": [],
       "multiple": false,
       "cascade": true,
-      "description": "Provider model id used for TTS synthesis (e.g. `minimax/speech-2.8-hd`). Resolves through the Universal Parameter Cascade. Part of the synthesized-audio cache identity."
+      "description": "Provider model id used for TTS synthesis (e.g. `minimax/speech-2.8-hd`). Resolves through the Universal Parameter Cascade. Part of the synthesized-audio cache identity. The console picklist offers the merged catalog's allowed tts models by `api_id`."
     },
     "voice_speed": {
       "concepts": [
@@ -820,6 +1240,13 @@
         "Preset",
         "Series",
         "Video Defaults"
+      ],
+      "scope": "render",
+      "levels": [
+        "domain",
+        "series",
+        "video",
+        "scene"
       ],
       "type": "string",
       "options": [],
@@ -831,6 +1258,8 @@
       "concepts": [
         "Chrome"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "markdown_inline",
       "options": [],
       "multiple": false,
@@ -841,6 +1270,8 @@
       "concepts": [
         "Layer"
       ],
+      "scope": "record",
+      "levels": [],
       "type": "string",
       "options": [],
       "multiple": false,

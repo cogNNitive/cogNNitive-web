@@ -9,7 +9,18 @@
  * Zero external dependencies. ESM module.
  */
 
-import { resolve } from './video-scope.mjs';
+import { resolve } from './cascade.mjs';
+
+export const LANGUAGE_MAP = {
+  es: 'Spanish',
+  en: 'English',
+};
+
+export function mapTtsLanguage(lang) {
+  if (!lang) return 'auto';
+  const l = String(lang).toLowerCase().trim();
+  return LANGUAGE_MAP[l] || 'auto';
+}
 
 /**
  * @param {{ properties?: Record<string, any> }} sc Lowered scene
@@ -31,6 +42,9 @@ export function buildTtsVoiceOptions(sc, models = {}, _bags = {}) {
   // Only declared values are added: the provider defaults stay out of the key.
   if (p.scene_voice_speed !== undefined && p.scene_voice_speed !== null) voiceOptions.speed = p.scene_voice_speed;
   if (p.scene_voice_emotion) voiceOptions.emotion = p.scene_voice_emotion;
+  if (p.scene_language !== null && p.scene_language !== undefined && String(p.scene_language).trim() !== '') {
+    voiceOptions.language = String(p.scene_language).trim();
+  }
   // A cascaded model that resolves to the scene's own value is not an override:
   // adding it would fork the key of identical audio.
   if (models.tts && models.tts !== p.scene_voice_model) voiceOptions.modelOverride = models.tts;

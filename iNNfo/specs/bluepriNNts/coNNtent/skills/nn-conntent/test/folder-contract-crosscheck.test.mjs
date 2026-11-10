@@ -51,7 +51,7 @@ test('hyperframes/ entries: doc and engine agree', () => {
 test('description.md: doc and the chapter printer agree', () => {
   assert.ok(layout.includes('description.md'), 'description.md is in the doc layout');
   assert.ok(read('scripts/lib/description.mjs').includes('`description.md`'), 'the chapter block is documented as description.md');
-  assert.ok(read('scripts/produce.mjs').includes('description'), 'produce writes the chapter block for description.md');
+  assert.ok(read('scripts/lib/pipeline.mjs').includes('description'), 'the pipeline writes the chapter block for description.md');
 });
 
 test('render.tmp.mp4: doc and the render step agree', () => {

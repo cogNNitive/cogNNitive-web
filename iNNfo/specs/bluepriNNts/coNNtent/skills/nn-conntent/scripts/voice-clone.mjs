@@ -3,15 +3,20 @@
 /**
  * nn-conntent/scripts/voice-clone.mjs
  *
- * Usage: node voice-clone.mjs <name> <sample-audio> [--series <slug>] [--force]
+ * Usage: node voice-clone.mjs <name> <sample-audio> --language <es|en> [--series <slug>] [--force]
  *
  * Clones a voice ONCE and records it in the workspace `video-guard.json`
  * (`voices.<name> = { voice_id, series, sample_sha256 }`) so it is never cloned (and
- * paid for, ~$1.60 each) again. Refused before any provider call when the name exists
- * (case-insensitive), when the same sample was already cloned, or when the name is
- * unsafe, unless `--force`. A `pending` entry is reserved under an exclusive lock
- * BEFORE the provider call and replaced on success (restored on failure); the
- * registry is written via temp file + rename. Every attempt is ledgered with its outcome.
+ * paid for, ~$1.60 each) again, and writes the result as a catalog `Voice` element in
+ * the workspace `model-catalog_NN.md` carrying `model`, `voice_id` and the required
+ * `language` (ISO 639-1 lowercase; missing `--language` fails with
+ * `voice-language-required` before any provider call — capability conntent-character
+ * "Voice Cloning Writes A Voice With Its Language"). Refused before any provider call
+ * when the name exists (case-insensitive), when the same sample was already cloned, or
+ * when the name is unsafe, unless `--force`. A `pending` entry is reserved under an
+ * exclusive lock BEFORE the provider call and replaced on success (restored on
+ * failure); the registries are written via temp file + rename. Every attempt is
+ * ledgered with its outcome. The command never edits a CHARACTER.md.
  *
  * Zero external dependencies. ESM module.
  */
@@ -26,6 +31,76 @@ import { DEFAULT_GUARD, GUARD_FILENAME, LOCKS_RELATIVE_DIR, SpendGuard, loadGuar
 
 export const VOICE_CLONE_MODEL = 'minimax/voice-clone';
 export const VOICE_CLONE_EST_USD = 1.6;
+
+/** Error code when a clone run omits the required catalog `language` (D-K6). */
+export const VOICE_LANGUAGE_REQUIRED = 'voice-language-required';
+
+const ISO_639_1 = /^[a-z]{2}$/;
+
+/** The workspace `model-catalog_NN.md` overlay a clone writes its Voice into. */
+export const CATALOG_FILENAME = 'model-catalog_NN.md';
+
+/** Writes JSON through a temp file + rename so readers never see a partial registry. */
+function writeTextAtomic(file, text) {
+  const tmp = file + '.' + process.pid + '.' + Date.now() + '.tmp';
+  fs.writeFileSync(tmp, text, 'utf8');
+  fs.renameSync(tmp, file);
+}
+
+/**
+ * Upserts a `Voice` element in the workspace `model-catalog_NN.md`: replaces an element
+ * of the same slug (case-insensitive) or appends one under the `# NN Voice` section.
+ * Keeps every other section untouched. Returns the catalog file path.
+ * @param {{ root: string, name: string, model: string, voiceId: string, language: string }} input
+ */
+export function upsertCatalogVoice({ root, name, model, voiceId, language }) {
+  const file = path.join(root, CATALOG_FILENAME);
+  let text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '# NN Catalog\n\n';
+  const lines = text.split(/\r?\n/);
+  const headerIdx = lines.findIndex((l) => /^#\s+NN\s+Voice\s*$/.test(l.trim()));
+  const block = [`## NN Voice: ${name}`, `slug:: ${name}`, `model:: ${model}`, `voice_id:: ${voiceId}`, `language:: ${language}`, ''];
+  if (headerIdx === -1) {
+    // Append a new section after the last non-empty line.
+    while (lines.length && lines[lines.length - 1].trim() === '') lines.pop();
+    const out = [...lines, '', '# NN Voice', '', ...block];
+    writeTextAtomic(file, out.join('\n'));
+    return file;
+  }
+  // End of the Voice section: the next `# NN` H1 or EOF.
+  let endIdx = lines.length;
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    if (/^#\s+NN\s+\S/.test(lines[i].trim())) {
+      endIdx = i;
+      break;
+    }
+  }
+  const section = lines.slice(headerIdx, endIdx);
+  // Cut an existing element with the same slug (case-insensitive): its `## NN Voice: x`
+  // header through the line before the next element header (##) or the section end.
+  const elStart = section.findIndex(
+    (l) => /^##\s+NN\s+Voice:/i.test(l.trim()) && slugOfHeader(l, name) === name.toLowerCase(),
+  );
+  let kept = section;
+  if (elStart !== -1) {
+    let elEnd = section.length;
+    for (let j = elStart + 1; j < section.length; j++) {
+      if (/^##\s+NN\s+Voice:/i.test(section[j].trim())) {
+        elEnd = j;
+        break;
+      }
+    }
+    kept = [...section.slice(0, elStart), ...section.slice(elEnd)];
+  }
+  const next = [...lines.slice(0, headerIdx), ...kept, ...block, ...lines.slice(endIdx)];
+  writeTextAtomic(file, next.join('\n'));
+  return file;
+}
+
+/** @param {string} header `## NN Voice: Some Name` @returns {string} lowercased slug-ish name */
+function slugOfHeader(header, _name) {
+  const m = /^##\s+NN\s+Voice:\s*(.+?)\s*$/.exec(header);
+  return (m ? m[1] : '').toLowerCase();
+}
 
 const RESERVED_NAMES = new Set([...Object.getOwnPropertyNames(Object.prototype), 'prototype']);
 
@@ -86,13 +161,25 @@ function writeJsonAtomic(file, obj) {
  * @param {string} opts.name Voice name (key in video-guard.json `voices`).
  * @param {string} opts.samplePath Reference audio sample.
  * @param {string} [opts.series] Series slug the voice belongs to.
+ * @param {string} [opts.language] Required ISO 639-1 lowercase language; the catalog Voice
+ *   the clone writes carries it, and the clone fails with `voice-language-required` without it.
  * @param {boolean} [opts.force] Allow re-cloning an already recorded voice or sample.
  * @param {string} [opts.startDir] Where to look for the workspace (defaults to cwd).
  * @param {{ cloneVoice: Function }} [opts.client] Provider client (injectable).
- * @returns {Promise<{ voiceId: string, estUsd: number, guardFile: string }>}
+ * @returns {Promise<{ voiceId: string, estUsd: number, guardFile: string, catalogFile: string, language: string }>}
  */
-export async function cloneVoice({ name, samplePath, series, force = false, startDir = process.cwd(), client }) {
+export async function cloneVoice({ name, samplePath, series, language, force = false, startDir = process.cwd(), client }) {
   assertSafeName(name);
+  // The catalog Voice carries a required language; refuse before any provider call.
+  if (typeof language !== 'string' || !ISO_639_1.test(language.trim().toLowerCase())) {
+    const err = new Error(
+      'voice-language-required: pass --language <code> with an ISO 639-1 lowercase two-letter code (es, en); ' +
+        'the cloned catalog Voice must carry its language.',
+    );
+    err.code = VOICE_LANGUAGE_REQUIRED;
+    throw err;
+  }
+  const normalizedLanguage = language.trim().toLowerCase();
   const resolvedSample = path.resolve(samplePath || '');
   if (!samplePath || !fs.existsSync(resolvedSample)) {
     throw new Error('Voice sample not found: ' + resolvedSample);
@@ -174,16 +261,25 @@ export async function cloneVoice({ name, samplePath, series, force = false, star
     raw.voices[name] = { voice_id: voiceId, series: effectiveSeries, sample_sha256: sampleSha, clonedAt: new Date().toISOString() };
     writeJsonAtomic(guardFile, raw);
   });
+  // 4. Record the clone as a catalog Voice carrying its language (conntent-character
+  // "Voice Cloning Writes A Voice With Its Language"). Never edits CHARACTER.md.
+  const catalogFile = upsertCatalogVoice({
+    root: loaded.root,
+    name,
+    model: VOICE_CLONE_MODEL,
+    voiceId,
+    language: normalizedLanguage,
+  });
   ticket.settle('ok');
-  return { voiceId, estUsd: VOICE_CLONE_EST_USD, guardFile };
+  return { voiceId, estUsd: VOICE_CLONE_EST_USD, guardFile, catalogFile, language: normalizedLanguage };
 }
 
-const USAGE = 'Usage: node voice-clone.mjs <name> <sample-audio> [--series <slug>] [--force]';
+const USAGE = 'Usage: node voice-clone.mjs <name> <sample-audio> --language <es|en> [--series <slug>] [--force]';
 
 async function main() {
   let parsed;
   try {
-    parsed = parseArgs(process.argv.slice(2), { boolean: ['force'], value: ['series'] });
+    parsed = parseArgs(process.argv.slice(2), { boolean: ['force'], value: ['series', 'language'] });
   } catch (err) {
     if (!(err instanceof CliUsageError)) throw err;
     console.error('Error: ' + err.message + '\n' + USAGE);
@@ -195,8 +291,14 @@ async function main() {
     process.exit(1);
   }
   try {
-    const res = await cloneVoice({ name, samplePath: sample, series: parsed.flags.series, force: parsed.flags.force });
-    console.log('Cloned voice "' + name + '" (' + res.voiceId + '), est. $' + res.estUsd.toFixed(2) + ' -> ' + res.guardFile);
+    const res = await cloneVoice({
+      name,
+      samplePath: sample,
+      series: parsed.flags.series,
+      language: parsed.flags.language,
+      force: parsed.flags.force,
+    });
+    console.log('Cloned voice "' + name + '" (' + res.voiceId + ', ' + res.language + '), est. $' + res.estUsd.toFixed(2) + ' -> ' + res.guardFile + '; catalog Voice -> ' + res.catalogFile);
   } catch (err) {
     console.error('Error: ' + err.message);
     process.exit(1);

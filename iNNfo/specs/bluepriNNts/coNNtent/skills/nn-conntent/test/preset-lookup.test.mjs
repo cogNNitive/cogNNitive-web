@@ -15,7 +15,7 @@ import {
   lookupPreset,
   parsePresetList,
 } from '../scripts/lib/presets.mjs';
-import { resolve } from '../scripts/lib/video-scope.mjs';
+import { resolve } from '../scripts/lib/cascade.mjs';
 
 test('a bracketed list keeps its order', () => {
   assert.deepEqual(parsePresetList('[Lucas, Studio Warm]'), ['Lucas', 'Studio Warm']);

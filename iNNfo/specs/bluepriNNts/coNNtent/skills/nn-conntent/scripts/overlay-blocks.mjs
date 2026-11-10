@@ -112,17 +112,23 @@ export function overlayMount(overlay, opts = {}) {
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/'/g, '&#39;');
-  const z = Number.isFinite(opts.zIndex) ? ` style="z-index:${opts.zIndex}"` : '';
+  const z = Number.isFinite(opts.zIndex)
+    ? ` style="position:absolute;inset:0;z-index:${opts.zIndex}"`
+    : ` style="position:absolute;inset:0"`;
   // A static component (its root declares `data-no-timeline`) never registers a
   // sub-composition timeline, so the host must say so too or HyperFrames waits the
   // full 45s readiness timeout on every render.
   const noTimeline = opts.noTimeline ? ' data-no-timeline' : '';
   const pos = vars.position ? String(vars.position).toLowerCase().replace(/[^a-z0-9-]/g, '') : '';
   const posClass = pos ? ` nn-pos-${pos}` : '';
+  const sizeAttrs =
+    Number.isFinite(opts.width) && Number.isFinite(opts.height)
+      ? ` data-width="${opts.width}" data-height="${opts.height}"`
+      : '';
   return (
     `<div id="${esc(overlay.id)}" class="clip nn-overlay${posClass}" data-composition-id="${esc(slot)}" ` +
     `data-composition-src="components/${esc(componentName)}.html" data-start="${start}" data-duration="${duration}" ` +
-    `data-track-index="${opts.trackIndex ?? 10}" data-track-kind="graphics"${noTimeline} ` +
+    `data-track-index="${opts.trackIndex ?? 10}" data-track-kind="graphics"${sizeAttrs}${noTimeline} ` +
     `data-variable-values='${values}'${z}></div>`
   );
 }

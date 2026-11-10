@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 
 import { SceneCompiler } from '../scripts/scene-compiler.mjs';
 import { loadPresetIndex } from '../scripts/lib/presets.mjs';
-import { resolve } from '../scripts/lib/video-scope.mjs';
+import { resolve } from '../scripts/lib/cascade.mjs';
 
 const compiler = new SceneCompiler({ fps: 30, width: 1920, height: 1920 });
 

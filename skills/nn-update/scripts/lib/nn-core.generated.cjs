@@ -7746,6 +7746,7 @@ function parseConceptSection(conceptName, content) {
   const nodes = [];
   const lines = content.split("\n");
   let current = null;
+  let currentHasProperty = false;
   let descriptionLines = [];
   const leadingLines = [];
   let seenElement = false;
@@ -7789,6 +7790,7 @@ function parseConceptSection(conceptName, content) {
     });
     descriptionLines = [];
     seenElement = true;
+    currentHasProperty = false;
     return node;
   };
   const conceptFields = {};
@@ -7802,8 +7804,14 @@ function parseConceptSection(conceptName, content) {
       continue;
     }
     if (current) {
+      if (!currentHasProperty && /^\s*<!--.*-->\s*$/.test(line)) {
+        current.rawLeading = current.rawLeading ?? [];
+        current.rawLeading.push(line.trim());
+        continue;
+      }
       const prop = parsePropertyLine(line);
       if (prop !== null) {
+        currentHasProperty = true;
         if (prop[0] === "slug") {
           current.slug = String(prop[1]);
           current.slugExplicit = true;
@@ -8109,6 +8117,9 @@ function serializeKnowledge(model) {
     const hashes = "#".repeat(hDepth);
     lines.push(`${hashes} NN ${node.type}: ${node.name}`);
     if (node.slugExplicit && node.slug) lines.push(`slug:: ${node.slug}`);
+    if (node.rawLeading) {
+      for (const leading of node.rawLeading) lines.push(leading);
+    }
     for (const [k, v] of Object.entries(node.fields)) {
       const value = v;
       const raw = value === v ? node.rawFields?.[k] : void 0;
@@ -9224,9 +9235,10 @@ function matchesElement(e, target) {
   if (slugifyHeading(e.name).toLowerCase() === tLower) return true;
   return false;
 }
-function coerceFieldValue(existing, incoming) {
+function coerceFieldValue(existing, incoming, def) {
   if (typeof incoming !== "string") return incoming;
-  if (typeof existing === "number") {
+  const declared = def?.type;
+  if (declared === "number" || declared === void 0 && typeof existing === "number") {
     const trimmed = incoming.trim();
     if (trimmed !== "") {
       const asNumber = Number(trimmed);
@@ -9234,7 +9246,7 @@ function coerceFieldValue(existing, incoming) {
     }
     return incoming;
   }
-  if (typeof existing === "boolean") {
+  if (declared === "boolean" || declared === void 0 && typeof existing === "boolean") {
     const lower = incoming.trim().toLowerCase();
     if (lower === "true") return true;
     if (lower === "false") return false;
@@ -9332,26 +9344,28 @@ function updateField(model, args, schema) {
       parsedVal = parsePropertyValue(trimmed);
     }
   }
+  let fieldDef;
   if (schema && foundConcept) {
     const conceptObj = schema.concepts?.find((c) => c.name.toLowerCase() === foundConcept.toLowerCase());
-    let fieldDef = conceptObj?.fields?.find((f) => f.name.toLowerCase() === fieldName.toLowerCase());
+    fieldDef = conceptObj?.fields?.find((f) => f.name.toLowerCase() === fieldName.toLowerCase());
     if (!fieldDef && Array.isArray(schema.fields)) {
       fieldDef = schema.fields.find(
         (f) => f.name.toLowerCase() === fieldName.toLowerCase() && (!f.concept || f.concept === "*" || (Array.isArray(f.concept) ? f.concept.some((c) => c.toLowerCase() === foundConcept.toLowerCase()) : String(f.concept).toLowerCase() === foundConcept.toLowerCase()))
       );
     }
-    if (fieldDef) {
-      const diags = validateFieldValue(fieldDef, parsedVal, `${foundConcept}.${fieldName}`);
-      const errors = diags.filter((d) => d.severity === "error");
-      if (errors.length > 0) {
-        return {
-          success: false,
-          errors: errors.map((e) => ({ path: e.path, message: e.message }))
-        };
-      }
+  }
+  const coercedVal = coerceFieldValue(foundElement.fields[fieldName], parsedVal, fieldDef);
+  if (fieldDef) {
+    const diags = validateFieldValue(fieldDef, coercedVal, `${foundConcept}.${fieldName}`);
+    const errors = diags.filter((d) => d.severity === "error");
+    if (errors.length > 0) {
+      return {
+        success: false,
+        errors: errors.map((e) => ({ path: e.path, message: e.message }))
+      };
     }
   }
-  foundElement.fields[fieldName] = coerceFieldValue(foundElement.fields[fieldName], parsedVal);
+  foundElement.fields[fieldName] = coercedVal;
   if (foundElement.rawFields && fieldName in foundElement.rawFields) {
     delete foundElement.rawFields[fieldName];
   }

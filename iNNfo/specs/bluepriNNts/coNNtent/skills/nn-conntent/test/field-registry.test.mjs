@@ -32,7 +32,7 @@ test('the committed registry is exactly what the blueprint generates', () => {
 
 test('the registry carries the blueprint identity and the conditional-fields table', () => {
   assert.equal(registry.blueprint, 'coNNtent');
-  assert.equal(registry.blueprint_version, 'V_0-15-1');
+  assert.equal(registry.blueprint_version, 'V_0-17-0');
   assert.deepEqual(registry.conditional_fields, {
     avatar: ['asset', 'prompt'],
     media: ['asset', 'prompt'],
@@ -43,7 +43,9 @@ test('the registry carries the blueprint identity and the conditional-fields tab
 
 test('cascade parameters are flagged and layer-only fields are not', () => {
   assert.equal(registry.fields.presets.cascade, true);
-  assert.equal(registry.fields.kind.cascade, true);
+  assert.equal(registry.fields.presets.scope, 'render');
+  assert.equal(registry.fields.kind.cascade, false);
+  assert.equal(registry.fields.kind.scope, 'record');
   assert.equal(registry.fields.style.cascade, false);
   assert.equal(registry.fields.z_index.cascade, false);
 });

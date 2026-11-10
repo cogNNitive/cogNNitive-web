@@ -17,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 import { emitHyperframesProject, HYPERFRAMES_PIN } from './scene-project.mjs';
 import { SLOT_OF } from './overlay-blocks.mjs';
 import { assertGsapPresent } from './lib/stage-assets.mjs';
+import { emitHyperframesFrame } from './lib/frame-tokens.mjs';
 
 /** Quotes one argument so a shell passes it through as a single literal token. */
 export function quoteArg(arg, platform = process.platform) {
@@ -57,7 +58,8 @@ function outputTail(text) {
  * @param {{ gsapPath?: string }} [opts]
  */
 export function buildHyperframesProject(manifest, projectDir, opts = {}) {
-  const built = emitHyperframesProject(manifest, { projectDir });
+  const narrationCaptions = opts.narrationCaptions ?? manifest?.metadata?.narrationCaptions ?? manifest?.captions;
+  const built = emitHyperframesProject(manifest, { projectDir, narrationCaptions, ...opts });
   // GSAP is a 70 KB library, not a provider cache entry: it is copied. Copying it never
   // changes `link_mode`, which describes how the staged ASSETS were made available.
   const gsap = opts.gsapPath || assertGsapPresent();
@@ -76,6 +78,9 @@ export function buildHyperframesProject(manifest, projectDir, opts = {}) {
   }
   stageComponents(manifest, projectDir);
   stageAuthoredProjects(manifest, projectDir);
+  if (manifest?.metadata?.frame?.path) {
+    emitHyperframesFrame({ frameDir: path.dirname(manifest.metadata.frame.path), projectDir });
+  }
   return built;
 }
 
@@ -125,7 +130,9 @@ function stageComponents(manifest, projectDir) {
   for (const slot of slots) {
     const entry = resolved[slot];
     const name = entry?.name || slot;
-    const src = entry?.path || path.join(skillDir, 'components', `${name}.html`);
+    // The resolved component path is the folder's index.html (folder-form
+    // components); the fallback is the packaged slot contract.
+    const src = entry?.path || path.join(skillDir, 'slots', `${name}.html`);
     if (!fs.existsSync(src)) continue;
     fs.copyFileSync(src, path.join(componentsDir, `${name}.html`));
   }

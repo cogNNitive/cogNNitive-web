@@ -83,15 +83,18 @@ export function removeElement(modelSlug, elementSlug, concept) {
 }
 
 /**
- * Every applied `comment` op that targets this model, keyed by the element slug.
- * A reviewer's reason for `needs-change` lives here, not in the document (design A3).
+ * Apply every proposed HUMAN console changeset waiting under `changes/` (the console
+ * download fallback). The engine uses the same writer/apply path, so the human-origin
+ * policy of `executeChangesetApply` is the one that decides. A non-human or non-console
+ * proposal is left untouched (an agent's proposal goes through review, never here).
+ *
  * @param {string} rootDir
- * @param {string} modelSlug
+ * @returns {Promise<Array<{ changeset: string, changesetPath?: string, success: boolean, status?: string }>>}
  */
-export function readComments(rootDir, modelSlug) {
+export async function applyPendingHumanChangesets(rootDir) {
   const dir = path.join(rootDir, 'changes');
-  if (!fs.existsSync(dir)) return {};
-  const out = {};
+  if (!fs.existsSync(dir)) return [];
+  const applied = [];
   for (const entry of fs.readdirSync(dir).sort()) {
     if (!entry.endsWith('.md') || entry.endsWith('_spec_NN.md')) continue;
     let doc;
@@ -100,16 +103,17 @@ export function readComments(rootDir, modelSlug) {
     } catch {
       continue;
     }
-    if (doc.frontmatter?.status !== 'applied') continue;
-    for (const change of doc.changes || []) {
-      if (change.op !== 'comment' || !change.target) continue;
-      const match = /^([^@]+)@([^&]+)/.exec(String(change.target));
-      if (!match || match[1].trim() !== modelSlug) continue;
-      const notes = change.notes || change.to;
-      if (notes) out[match[2].trim()] = String(notes);
-    }
+    if (doc.frontmatter?.status !== 'proposed') continue;
+    if (doc.frontmatter.author_kind !== 'human' || doc.frontmatter.origin !== 'console') continue;
+    const result = await executeChangesetApply(rootDir, path.join(dir, entry));
+    applied.push({
+      changeset: entry,
+      changesetPath: result.changesetPath,
+      success: Boolean(result.success),
+      status: result.status,
+    });
   }
-  return out;
+  return applied;
 }
 
 /** Only the workspace files a changeset apply needs, so a dry apply is cheap. */

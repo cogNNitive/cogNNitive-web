@@ -38,9 +38,13 @@ export function buildImageOptions(sc, layer, models = {}) {
  * @param {{ computeHash: Function, getSync: Function }} cacheManager
  * @returns {string | undefined} Absolute cache file path, or undefined on a miss or a layer without prompt
  */
-export function imageCachePathFor(sc, layer, { cacheManager, models = {} }) {
+export function imageCacheKeyFor(sc, layer, { cacheManager, models = {} }) {
   const prompt = layerPrompt(layer);
   if (!prompt) return undefined;
-  const key = cacheManager.computeHash(String(prompt).trim(), buildImageOptions(sc, layer, models));
-  return cacheManager.getSync(key, 'png', 'images') || undefined;
+  return cacheManager.computeHash(String(prompt).trim(), buildImageOptions(sc, layer, models));
+}
+
+export function imageCachePathFor(sc, layer, opts) {
+  const key = imageCacheKeyFor(sc, layer, opts);
+  return key ? opts.cacheManager.getSync(key, 'png', 'images') || undefined : undefined;
 }

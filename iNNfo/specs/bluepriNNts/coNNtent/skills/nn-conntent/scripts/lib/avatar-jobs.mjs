@@ -57,7 +57,7 @@ export function normalizeAvatarResolution(requested, model) {
  * and a name such as "Avatar Intro" alone is not enough.
  */
 export function isAvatarLayer(l) {
-  const t = String(l.properties?.layer_type ?? l.type ?? '').toLowerCase().trim();
+  const t = String(l?.properties?.layer_type ?? l?.fields?.type ?? l?.type ?? '').toLowerCase().trim();
   return t === 'talking_avatar' || t === 'talking-avatar' || t === 'avatar';
 }
 
@@ -81,12 +81,17 @@ export function avatarJobKey(cacheManager, { imagePath, audioPath, model, resolu
  * writes). A narration/voice edit changes the key, so a stale entry is never served.
  * @returns {string | undefined} Absolute cache file path, or undefined on a miss
  */
-export function ttsCachePathFor(sc, { cacheManager, config, models = {}, bags = {} }) {
+export function ttsCacheKeyFor(sc, { cacheManager, config, models = {}, bags = {} }) {
   const narration = String(sc.narration || '').trim();
   if (!narration) return undefined;
   const options = resolveRegisteredVoice(buildTtsVoiceOptions(sc, models, bags), config);
-  const key = cacheManager.computeHash(narration, options);
-  return cacheManager.getSync(key, 'mp3', 'tts') || undefined;
+  return cacheManager.computeHash(narration, options);
+}
+
+export function ttsCachePathFor(sc, opts) {
+  const key = ttsCacheKeyFor(sc, opts);
+  if (!key) return undefined;
+  return opts.cacheManager.getSync(key, 'mp3', 'tts') || opts.cacheManager.getSync(key + '-offline', 'mp3', 'tts') || undefined;
 }
 
 /**

@@ -5,6 +5,10 @@
  * nn-core's scope engine (via ./nn-core.generated.cjs).
  *
  * Replaces legacy cascade.mjs and nearest.mjs.
+ *
+ * The scalar/keyed resolvers (`resolve`/`resolveKeyed`) live in cascade.mjs, the one
+ * resolver of the engine (design D-K2); this module supplies only the bag builders and
+ * the chain loader they share.
  */
 
 import fs from 'node:fs';
@@ -14,7 +18,6 @@ import {
   findDomainRoot,
   findScopeChain,
   loadChain,
-  resolve as coreResolve,
 } from './nn-core.generated.cjs';
 import { resolveWorkspace } from './video-guard.mjs';
 import { parseKnowledgeDocument } from './knowledge-model.mjs';
@@ -36,10 +39,6 @@ export class BlueprintPackageNotFoundError extends Error {
     this.name = 'BlueprintPackageNotFoundError';
     this.searched = searched;
   }
-}
-
-function usable(v) {
-  return v !== undefined && v !== null && String(v).trim() !== '';
 }
 
 /**
@@ -73,46 +72,6 @@ export function bagsToChain(bags = {}) {
     nodes.push({ id: level, kind: 'scope', doc: null, isolate: false, values: explicit });
   }
   return { floor, nodes };
-}
-
-/**
- * Resolves one scalar parameter across bags using nn-core resolve.
- * @param {string} param
- * @param {Record<string, Record<string, unknown>>} [bags]
- * @param {{ accept?: (v: unknown) => boolean }} [options]
- * @returns {{ value: unknown, source: string | null }}
- */
-export function resolve(param, bags = {}, options = {}) {
-  const loaded = bagsToChain(bags);
-  const accept = options.accept || usable;
-  const r = coreResolve(loaded, param, 'override', { accept });
-  return {
-    value: r.present ? r.value : null,
-    source: r.explain?.winner?.scope ?? null,
-  };
-}
-
-/**
- * Resolves one key of a keyed-list parameter (`components`, `sounds`) across bags
- * using nn-core resolve with union strategy.
- * @param {string} param
- * @param {string} key
- * @param {Record<string, Record<string, unknown>>} [bags]
- * @returns {{ value: string | null, source: string | null }}
- */
-export function resolveKeyed(param, key, bags = {}) {
-  const loaded = bagsToChain(bags);
-  const r = coreResolve(loaded, param, 'union');
-  if (!r.present || !Array.isArray(r.value)) {
-    return { value: null, source: null };
-  }
-  const entry = r.value.find((e) => e.name === key);
-  if (!entry) return { value: null, source: null };
-  const explainEntry = r.explain?.entries?.find((e) => e.name === key);
-  return {
-    value: entry.value,
-    source: explainEntry?.from?.scope ?? null,
-  };
 }
 
 function documentFields(file, concept) {
@@ -231,61 +190,4 @@ export function withScriptPresets(bags = {}, model = null, scriptPath = null) {
   const sources = [{ doc: scriptPath || null, elements }];
   for (const source of (bags.presetIndex?.sources || [])) sources.push(source);
   return { ...bags, presetIndex: loadPresetIndex(sources) };
-}
-
-export function findNearest(startDir, relPath, opts = {}) {
-  const { stopDir, fallbackDir } = opts;
-  const rel = relPath.split(/[\\/]/).filter(Boolean).join(path.sep);
-  const searched = [];
-  const stop = stopDir ? path.resolve(stopDir) : null;
-  let dir = path.resolve(startDir);
-  for (;;) {
-    const candidate = path.join(dir, rel);
-    searched.push(candidate);
-    if (fs.existsSync(candidate)) return { path: candidate, searched };
-    if (stop && dir === stop) break;
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  if (fallbackDir) {
-    const candidate = path.join(path.resolve(fallbackDir), rel);
-    searched.push(candidate);
-    if (fs.existsSync(candidate)) return { path: candidate, searched };
-  }
-  return { path: null, searched };
-}
-
-export function findNearestByStem(startDir, dirName, stem, opts = {}) {
-  const { stopDir, fallbackDir } = opts;
-  const searched = [];
-  const dirs = [];
-  const stop = stopDir ? path.resolve(stopDir) : null;
-  let dir = path.resolve(startDir);
-  for (;;) {
-    dirs.push(dir);
-    if (stop && dir === stop) break;
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
-  }
-  if (fallbackDir) dirs.push(path.resolve(fallbackDir));
-
-  for (const base of dirs) {
-    const folder = path.join(base, dirName);
-    const probe = path.join(folder, `${stem}.*`);
-    searched.push(probe);
-    let entries;
-    try {
-      entries = fs.readdirSync(folder, { withFileTypes: true });
-    } catch {
-      continue;
-    }
-    const match = entries
-      .filter((e) => e.isFile() && path.parse(e.name).name === stem)
-      .map((e) => e.name)
-      .sort()[0];
-    if (match) return { path: path.join(folder, match), searched };
-  }
-  return { path: null, searched };
 }

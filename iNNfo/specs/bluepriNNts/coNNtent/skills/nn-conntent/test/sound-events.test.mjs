@@ -62,10 +62,11 @@ function manifestFixture() {
   };
 }
 
-/** Writes a `sounds/<name>.mp3` file for every name and returns the episode dir. */
+/** Writes a `library/sounds/<name>.mp3` file for every name and returns the domaiNN root. */
 function soundsFixture(names) {
   const root = tmp('nn-sound-events-');
-  const soundsDir = path.join(root, 'sounds');
+  fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), '# NN DomaiNN\n', 'utf8');
+  const soundsDir = path.join(root, 'library', 'sounds');
   fs.mkdirSync(soundsDir, { recursive: true });
   for (const name of names) fs.writeFileSync(path.join(soundsDir, `${name}.mp3`), `data:${name}`, 'utf8');
   return root;
@@ -333,7 +334,7 @@ test('no concrete sound name lives in the engine scripts', () => {
   assert.deepEqual(offenders, [], 'the blueprint default sound name must not appear in engine code');
 });
 
-test('resolveSoundFiles does not search shared/audio: only sounds/ counts', () => {
+test('resolveSoundFiles does not search shared/audio: only library/sounds/ counts', () => {
   const root = tmp('nn-sound-no-shared-');
   const sharedAudioDir = path.join(root, 'shared', 'audio');
   fs.mkdirSync(sharedAudioDir, { recursive: true });
@@ -353,12 +354,12 @@ test('resolveSoundFiles does not search shared/audio: only sounds/ counts', () =
     },
   );
 
-  // The same sound under sounds/ is found.
-  const soundsDir = path.join(root, 'sounds');
+  // The same sound under library/sounds/ is found.
+  const soundsDir = path.join(root, 'library', 'sounds');
   fs.mkdirSync(soundsDir, { recursive: true });
   fs.writeFileSync(path.join(soundsDir, 'custom-start.mp3'), 'audio-data', 'utf8');
   const files = resolveSoundFiles({ bags, scriptDir: root, workspaceRoot: root, skillDir: SKILL_DIR });
   assert.ok(files['video-start']);
-  assert.match(files['video-start'].path, /sounds[/\\]custom-start\.mp3/);
+  assert.match(files['video-start'].path, /library[\\/]sounds[\\/]custom-start\.mp3/);
   fs.rmSync(root, { recursive: true, force: true });
 });

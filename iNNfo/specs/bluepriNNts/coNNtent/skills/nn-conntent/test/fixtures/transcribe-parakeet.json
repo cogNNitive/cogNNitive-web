@@ -1,0 +1,194 @@
+[
+  {
+    "id": "w0",
+    "text": "This",
+    "start": 0,
+    "end": 0.24
+  },
+  {
+    "id": "w1",
+    "text": "is",
+    "start": 0.24,
+    "end": 0.32
+  },
+  {
+    "id": "w2",
+    "text": "a",
+    "start": 0.32,
+    "end": 0.48
+  },
+  {
+    "id": "w3",
+    "text": "10-second",
+    "start": 0.48,
+    "end": 1.28
+  },
+  {
+    "id": "w4",
+    "text": "verification",
+    "start": 1.28,
+    "end": 2
+  },
+  {
+    "id": "w5",
+    "text": "fixture",
+    "start": 2,
+    "end": 2.48
+  },
+  {
+    "id": "w6",
+    "text": "for",
+    "start": 2.48,
+    "end": 2.56
+  },
+  {
+    "id": "w7",
+    "text": "the",
+    "start": 2.56,
+    "end": 2.64
+  },
+  {
+    "id": "w8",
+    "text": "caption",
+    "start": 2.64,
+    "end": 3.04
+  },
+  {
+    "id": "w9",
+    "text": "alignment",
+    "start": 3.2,
+    "end": 3.76
+  },
+  {
+    "id": "w10",
+    "text": "pipeline.",
+    "start": 3.76,
+    "end": 4.88
+  },
+  {
+    "id": "w11",
+    "text": "It",
+    "start": 4.88,
+    "end": 5.12
+  },
+  {
+    "id": "w12",
+    "text": "should",
+    "start": 5.12,
+    "end": 5.52
+  },
+  {
+    "id": "w13",
+    "text": "contain",
+    "start": 5.52,
+    "end": 5.92
+  },
+  {
+    "id": "w14",
+    "text": "enough",
+    "start": 5.92,
+    "end": 6.24
+  },
+  {
+    "id": "w15",
+    "text": "words",
+    "start": 6.24,
+    "end": 6.56
+  },
+  {
+    "id": "w16",
+    "text": "to",
+    "start": 6.56,
+    "end": 6.72
+  },
+  {
+    "id": "w17",
+    "text": "produce",
+    "start": 6.72,
+    "end": 7.04
+  },
+  {
+    "id": "w18",
+    "text": "word",
+    "start": 7.04,
+    "end": 7.28
+  },
+  {
+    "id": "w19",
+    "text": "level",
+    "start": 7.36,
+    "end": 7.76
+  },
+  {
+    "id": "w20",
+    "text": "timestamps",
+    "start": 7.76,
+    "end": 8.4
+  },
+  {
+    "id": "w21",
+    "text": "when",
+    "start": 8.4,
+    "end": 8.56
+  },
+  {
+    "id": "w22",
+    "text": "the",
+    "start": 8.56,
+    "end": 8.64
+  },
+  {
+    "id": "w23",
+    "text": "whisper",
+    "start": 8.64,
+    "end": 9.12
+  },
+  {
+    "id": "w24",
+    "text": "model",
+    "start": 9.2,
+    "end": 9.44
+  },
+  {
+    "id": "w25",
+    "text": "transcribes",
+    "start": 9.6,
+    "end": 10.16
+  },
+  {
+    "id": "w26",
+    "text": "the",
+    "start": 10.16,
+    "end": 10.32
+  },
+  {
+    "id": "w27",
+    "text": "audio",
+    "start": 10.32,
+    "end": 10.72
+  },
+  {
+    "id": "w28",
+    "text": "track",
+    "start": 10.72,
+    "end": 11.12
+  },
+  {
+    "id": "w29",
+    "text": "of",
+    "start": 11.12,
+    "end": 11.2
+  },
+  {
+    "id": "w30",
+    "text": "an",
+    "start": 11.2,
+    "end": 11.44
+  },
+  {
+    "id": "w31",
+    "text": "episode.",
+    "start": 11.44,
+    "end": 12.48
+  }
+]

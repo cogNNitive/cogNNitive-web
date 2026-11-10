@@ -19,6 +19,8 @@ import { DELIVERY_FORMATS } from '../scripts/render-formats.mjs';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SKILL = path.resolve(__dirname, '..');
 const read = (rel) => fs.readFileSync(path.join(SKILL, rel), 'utf8').replace(/\r\n/g, '\n');
+/** Reads `<bps>/library/components/<name>/index.html`. */
+const relToBps = (bps, name) => path.join('..', path.relative(SKILL, bps), 'library', 'components', name, 'index.html');
 
 function model(sceneFields = {}, videoFields = {}) {
   return {
@@ -82,8 +84,12 @@ test('every delivery format is the declared crop or scale of the master', () => 
 });
 
 test('the six overlay components lay out inside the central safe square', () => {
+  // Components live as `library/components/<name>/index.html` in the package.
+  const BPS = path.resolve(__dirname, '..', '..', '..'); // test -> nn-conntent -> skills -> coNNtent
   for (const name of ['lower-third', 'caption', 'title', 'quote', 'watermark', 'b-roll']) {
-    const html = read(path.join('components', name + '.html'));
+    const html = fs
+      .readFileSync(path.join(BPS, 'library', 'components', name, 'index.html'), 'utf8')
+      .replace(/\r\n/g, '\n');
     assert.match(html, /#root \{ position: absolute; inset: 21\.875%; overflow: visible; \}/, `${name} carries the inset`);
     assert.doesNotMatch(html, /#root \{ position: absolute; inset: 0;/, `${name} no longer fills the whole master`);
   }

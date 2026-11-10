@@ -97,6 +97,7 @@ test('changing narration, voice or voice model never serves the old entry', () =
     assert.equal(ttsCachePathFor({ ...sc, narration: 'changed' }, ctx), undefined);
     assert.equal(ttsCachePathFor({ ...sc, properties: { ...sc.properties, scene_voice: 'echo' } }, ctx), undefined);
     assert.equal(ttsCachePathFor({ ...sc, properties: { ...sc.properties, scene_voice_model: 'm2' } }, ctx), undefined);
+    assert.equal(ttsCachePathFor({ ...sc, properties: { ...sc.properties, scene_language: 'en' } }, { ...ctx }), undefined);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

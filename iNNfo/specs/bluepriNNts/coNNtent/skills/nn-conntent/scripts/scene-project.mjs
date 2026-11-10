@@ -148,6 +148,8 @@ ${tween}
         frame,
         trackIndex: 10 + i,
         zIndex: 200 + i,
+        width,
+        height,
       });
     })
     .filter(Boolean)
@@ -185,7 +187,7 @@ ${tween}
       const slug = sceneSlug(scene);
       const start = frameSeconds(scene.fromFrame, fps);
       const dur = frameSeconds(scene.durationInFrames, fps);
-      return `  <div id="scene-${esc(slug)}" class="clip" data-composition-id="${esc(slug)}" data-composition-src="compositions/${esc(slug)}.html" data-start="${start}" data-duration="${dur}" data-track-index="0" data-track-kind="graphics" data-width="${width}" data-height="${height}"></div>`;
+      return `  <div id="scene-${esc(slug)}" class="clip" data-composition-id="${esc(slug)}" data-composition-src="compositions/${esc(slug)}.html" data-start="${start}" data-duration="${dur}" data-track-index="0" data-track-kind="graphics" data-width="${width}" data-height="${height}" style="position:absolute;inset:0;"></div>`;
     })
     .join('\n');
 
@@ -203,19 +205,44 @@ ${tween}
     })
     .join('\n');
 
+  let captionsHostHtml = '';
+  const narrationCaptions = plan.narrationCaptions ?? manifest?.metadata?.narrationCaptions ?? manifest?.captions;
+  if (narrationCaptions) {
+    let inner = '';
+    if (Array.isArray(narrationCaptions)) {
+      inner = narrationCaptions
+        .map((entry) => {
+          const s = roundMs(Number(entry.start) || 0);
+          const e = roundMs(Number(entry.end) || s);
+          const d = roundMs(e - s);
+          const cls = entry.kind ? `caption-${entry.kind}` : 'caption-entry';
+          return `    <span class="${cls}" data-start="${s}" data-end="${e}" data-duration="${d}">${esc(entry.text)}</span>`;
+        })
+        .join('\n');
+      if (inner) inner = '\n' + inner + '\n  ';
+    } else if (typeof narrationCaptions === 'string') {
+      inner = narrationCaptions;
+    }
+    captionsHostHtml = `  <div id="captions" class="clip" data-track-kind="captions" data-start="0" data-duration="${total}" data-track-index="900">${inner}</div>\n`;
+  }
+
   const indexHtml = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <title>${esc(compositionId)}</title>
+    <style>
+      #root { position: relative; width: ${width}px; height: ${height}px; overflow: hidden; }
+      .clip { position: absolute; inset: 0; }
+    </style>
     <script src="vendor/gsap.min.js"></script>
   </head>
   <body>
-    <div id="root" data-composition-id="${esc(compositionId)}" data-start="0" data-duration="${total}" data-width="${width}" data-height="${height}" data-fps="${fps}">
+    <div id="root" data-composition-id="${esc(compositionId)}" data-start="0" data-duration="${total}" data-width="${width}" data-height="${height}" data-fps="${fps}" style="position:relative;width:${width}px;height:${height}px;overflow:hidden;">
 ${sceneHosts}
 ${overlayHosts}
 ${animationHosts}
-${plan.narrationCaptions ? `  <div id="captions" class="clip" data-track-kind="captions" data-start="0" data-duration="${total}" data-track-index="900"></div>\n` : ''}${audioEls}
+${captionsHostHtml}${audioEls}
     </div>
     <script>window.__timelines[${JSON.stringify(compositionId)}] = gsap.timeline({ paused: true });</script>
   </body>
@@ -243,7 +270,8 @@ ${plan.narrationCaptions ? `  <div id="captions" class="clip" data-track-kind="c
  */
 export function emitHyperframesProject(manifest, plan = {}) {
   if (!plan.projectDir) throw new Error('emitHyperframesProject: plan.projectDir is required');
-  const built = buildProject(manifest, plan);
+  const narrationCaptions = plan.narrationCaptions ?? manifest?.metadata?.narrationCaptions ?? manifest?.captions;
+  const built = buildProject(manifest, { ...plan, narrationCaptions });
   const dir = path.resolve(plan.projectDir);
   writeGuarded(dir, built.files);
 

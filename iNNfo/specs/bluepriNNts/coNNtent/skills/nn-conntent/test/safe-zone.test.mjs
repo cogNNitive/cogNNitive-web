@@ -12,13 +12,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const COMPONENTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'components');
+const COMPONENTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'library', 'components');
 const NAMES = ['lower-third', 'caption', 'title', 'quote', 'watermark', 'b-roll'];
 const MASTER = 1920;
 const INSET = 21.875;
 const SAFE = MASTER * (1 - 2 * INSET / 100);
 
-const css = (name) => /<style>([\s\S]*?)<\/style>/.exec(fs.readFileSync(path.join(COMPONENTS, name + '.html'), 'utf8'))?.[1] ?? '';
+const css = (name) => /<style>([\s\S]*?)<\/style>/.exec(fs.readFileSync(path.join(COMPONENTS, name, 'index.html'), 'utf8'))?.[1] ?? '';
 const rule = (sheet, selector) => new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\{([^}]*)\\}').exec(sheet)?.[1] ?? '';
 const pct = (decls, prop) => {
   const m = new RegExp('(?:^|[;\\s])' + prop + ':\\s*(-?[\\d.]+)%').exec(decls);
@@ -26,7 +26,10 @@ const pct = (decls, prop) => {
 };
 
 test('the six overlay components ship', () => {
-  const shipped = fs.readdirSync(COMPONENTS).filter((f) => f.endsWith('.html')).map((f) => f.replace(/\.html$/, '')).sort();
+  const shipped = fs
+    .readdirSync(COMPONENTS)
+    .filter((f) => fs.statSync(path.join(COMPONENTS, f)).isDirectory() && fs.existsSync(path.join(COMPONENTS, f, 'index.html')))
+    .sort();
   assert.deepEqual(shipped, [...NAMES].sort());
 });
 

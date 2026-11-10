@@ -34,12 +34,24 @@ import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { loadSeriesFor } from './lib/series-doc.mjs';
-import { loadCascadeBags, resolve, findNearest } from './lib/video-scope.mjs';
+import { loadCascadeBags } from './lib/video-scope.mjs';
+import { resolve } from './lib/cascade.mjs';
+import { resolveLibrary } from './lib/library.mjs';
 import { loadFrame, frameCss } from './lib/frame-tokens.mjs';
 import { resolveWorkspace } from './lib/video-guard.mjs';
+import { resolveGsapPath } from './lib/stage-assets.mjs';
 import { HYPERFRAMES_PIN } from './scene-project.mjs';
 
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/** The pinned GSAP build for hermetic renders, or null when not installed. */
+function resolveGsapOrDefault() {
+  try {
+    return resolveGsapPath({});
+  } catch {
+    return null;
+  }
+}
 
 /** Raised when the pinned HyperFrames CLI cannot be run. Callers surface it as a loud error. */
 export class HyperframesCliError extends Error {
@@ -82,7 +94,8 @@ export function resolveSeriesTitle({ outputPath, seriesDir } = {}) {
 export function resolveThumbnailText({ subtitle, badge, seriesTitle } = {}) {
   return {
     subtitle: subtitle || seriesTitle,
-    badge: badge || seriesTitle || 'iNNtrevistas',
+    // `null` is an explicit "no badge"; `undefined` keeps the series fallback.
+    badge: badge === null ? null : badge || seriesTitle || 'iNNtrevistas',
   };
 }
 
@@ -127,7 +140,7 @@ function escHtml(value) {
  *   baseFileName: string, frameTokens?: object | null }} options
  * @returns {{ indexHtml: string, files: Record<string, string> }}
  */
-export function buildThumbnailProject({ width = 2560, height = 1440, title, subtitle, badge, baseFileName, frameTokens = null }) {
+export function buildThumbnailProject({ width = 2560, height = 1440, title, subtitle, badge, baseFileName, frameTokens = null, gsapPath = 'vendor/gsap.min.js' }) {
   const titleFont = Math.round(height * 0.105);
   const subtitleFont = Math.round(height * 0.048);
   const badgeFont = Math.round(height * 0.028);
@@ -139,12 +152,15 @@ export function buildThumbnailProject({ width = 2560, height = 1440, title, subt
   const titleLines = wrapText(title, 20);
   const titleHtml = titleLines.map((l) => escHtml(l)).join('<br>');
   const subtitleHtml = subtitle ? `<div id="subtitle" class="clip" data-start="0" data-duration="1" data-track-index="3">${escHtml(subtitle)}</div>` : '';
+  const badgeHtml = badge
+    ? `<div id="badge" class="clip" data-start="0" data-duration="1" data-track-index="1">${escHtml(badge)}</div>`
+    : '';
 
   const indexHtml = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="${escHtml(gsapPath)}"></script>
     <style>
       * { margin: 0; box-sizing: border-box; }
       html, body { width: ${width}px; height: ${height}px; overflow: hidden; }
@@ -166,7 +182,7 @@ export function buildThumbnailProject({ width = 2560, height = 1440, title, subt
   <body>
     <div id="root" data-composition-id="thumbnail" data-start="0" data-duration="1" data-width="${width}" data-height="${height}" data-fps="30">
       <img id="base" class="clip" data-start="0" data-duration="1" data-track-index="0" src="assets/${escHtml(baseFileName)}" />
-      <div id="badge" class="clip" data-start="0" data-duration="1" data-track-index="1">${escHtml(badge)}</div>
+      ${badgeHtml}
       <div id="title" class="clip" data-start="0" data-duration="1" data-track-index="2">${titleHtml}</div>
       ${subtitleHtml}
     </div>
@@ -189,12 +205,17 @@ export function resolveThumbnailFrameTokens({ outputPath, seriesDir } = {}) {
     const bags = loadCascadeBags(inputDir);
     const { value: name } = resolve('frame', bags);
     if (!name) return null;
-    const { path: framePath } = findNearest(inputDir, `frames/${name}.md`, {
-      stopDir: resolveWorkspace(inputDir).root,
-      fallbackDir: SKILL_DIR,
+    const { file: framePath } = resolveLibrary({
+      kind: 'frames',
+      ref: `frames/${name}`,
+      fromDir: inputDir,
+      root: resolveWorkspace(inputDir).root,
+      packageFloor: path.join(SKILL_DIR, 'library', 'frames'),
     });
     if (!framePath) return null;
-    return loadFrame(framePath).tokens;
+    const frameFile = framePath.endsWith('.md') ? framePath : path.join(framePath, 'FRAME.md');
+    if (!fs.existsSync(frameFile)) return null;
+    return loadFrame(frameFile).tokens;
   } catch {
     return null;
   }
@@ -276,6 +297,20 @@ export async function renderThumbnail({
     fs.writeFileSync(path.join(projectDir, 'index.html'), project.indexHtml, 'utf8');
 
     const cli = resolveCli({ cliPath: deps.cliPath, installedVersion: deps.installedVersion });
+
+    // Render is hermetic: stage the vendored GSAP build beside the HTML so the
+    // project renders offline (capability conntent-skill-dependency-bundling).
+    const vendorDir = path.join(projectDir, 'vendor');
+    fs.mkdirSync(vendorDir, { recursive: true });
+    const gsap = deps.resolveGsap
+      ? deps.resolveGsap()
+      : resolveGsapOrDefault();
+    if (gsap) {
+      fs.copyFileSync(gsap, path.join(vendorDir, 'gsap.min.js'));
+    } else {
+      // A missing GSAP is fatal here: the emitted project references vendor/gsap.min.js.
+      throw new Error('gsap is not installed: the thumbnail project references vendor/gsap.min.js and the render is hermetic; run skills-manager.js update coNNtent first.');
+    }
     const shotsDir = path.join(workDir, 'shots');
     fs.mkdirSync(shotsDir, { recursive: true });
     const run = deps.run || defaultRun;

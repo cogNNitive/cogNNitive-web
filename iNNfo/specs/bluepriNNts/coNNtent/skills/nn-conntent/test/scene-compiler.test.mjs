@@ -222,6 +222,96 @@ async function runTests() {
     console.log('✔ legacy flat scripts lacking parentSlug resolve via slug-prefix fallback');
   }
 
+  // Test 9 (Task 2.1): scene text layers are lowered to overlays.
+  {
+    const scs = [
+      scene('Scene One', 'scene-one', 'First scene narration with enough words to have length'),
+      scene('Scene Two', 'scene-two', 'Second scene narration with no text layers at all'),
+    ];
+    const lys = [
+      layer('Main Title', 'scene-one-title', { type: 'text', style: 'title', text: 'Botijos News', position: 'bottom' }),
+      layer('Presenter Subtitle', 'scene-one-lt', { type: 'text', style: 'lower-third', text: 'Dr. Host', position: 'bottom' }),
+      layer('Speech Caption', 'scene-one-caption', { type: 'text', style: 'caption', text: 'Captioned words' }),
+      layer('Background Video', 'scene-one-media', { type: 'media', asset: 'media/bg.mp4' }),
+      layer('Talking Presenter', 'scene-one-avatar', { type: 'avatar', asset: 'avatars/host.png' }),
+    ];
+    const manifest = compiler.compile(model({ title: 'Text Layer Lowering', scenes: scs, layers: lys }));
+    
+    // Assert 3 overlays created for Scene 1 with declared texts
+    const overlays = manifest.tracks.overlays;
+    assert.strictEqual(overlays.length, 3, 'expected exactly 3 overlays from text layers');
+    const titleOverlay = overlays.find((o) => o.type === 'kineticTitle');
+    assert.ok(titleOverlay, 'title lowered to kineticTitle');
+    assert.strictEqual(titleOverlay.config.heading, 'Botijos News', 'text comes from declared text field');
+    
+    const ltOverlay = overlays.find((o) => o.type === 'lowerThird');
+    assert.ok(ltOverlay, 'lower-third lowered to lowerThird');
+    assert.strictEqual(ltOverlay.config.title, 'Dr. Host', 'text comes from declared text field');
+
+    const captionOverlay = overlays.find((o) => o.type === 'captions');
+    assert.ok(captionOverlay, 'caption lowered to captions');
+
+    // Assert no layer_type: text left in props.layers
+    const scene1 = manifest.tracks.scenes[0];
+    const scene1Layers = scene1.props.layers || [];
+    assert.strictEqual(scene1Layers.some((l) => l.properties?.layer_type === 'text'), false, 'no layer_type: text left in props.layers');
+
+    // Assert scene 2 (no text layers) adds no text overlay
+    const scene2 = manifest.tracks.scenes[1];
+    const scene2Overlays = overlays.filter((o) => o.fromFrame >= scene2.fromFrame);
+    assert.strictEqual(scene2Overlays.length, 0, 'scene without text layers adds no text overlay');
+
+    // Global timing
+    assert.strictEqual(titleOverlay.fromFrame, scene1.fromFrame, 'overlay starts at scene start + offset');
+    console.log('✔ Text layers lowered to typed overlays and removed from props.layers');
+  }
+
+  // Test 10 (Task 2.2): text Layer with missing or unknown style fails checkScript with unknown-text-style
+  {
+    const badModelMissing = model({
+      title: 'Missing Style',
+      scenes: [scene('Scene One', 'scene-one', 'Narration')],
+      layers: [layer('Broken Text', 'broken-text', { type: 'text', text: 'Hello' })],
+    });
+    const resMissing = compiler.checkScript(badModelMissing);
+    assert.strictEqual(resMissing.ok, false, 'checkScript should fail on missing text style');
+    assert.ok(resMissing.errors.some((e) => e.code === 'unknown-text-style'), 'fails with unknown-text-style when style is missing');
+
+    const badModelUnknown = model({
+      title: 'Unknown Style',
+      scenes: [scene('Scene One', 'scene-one', 'Narration')],
+      layers: [layer('Broken Text', 'broken-text', { type: 'text', style: 'marquee', text: 'Hello' })],
+    });
+    const resUnknown = compiler.checkScript(badModelUnknown);
+    assert.strictEqual(resUnknown.ok, false, 'checkScript should fail on unknown text style');
+    assert.ok(resUnknown.errors.some((e) => e.code === 'unknown-text-style'), 'fails with unknown-text-style when style is unknown');
+    console.log('✔ checkScript fails with unknown-text-style on missing or unknown text style');
+  }
+
+  // Test 11 (Phase 7): language cascades to properties.scene_language; missing language fails
+  {
+    const modelWithLang = model({
+      title: 'Spanish Video',
+      scenes: [scene('Scene Uno', 'scene-uno', 'Hola')],
+    });
+    modelWithLang.elements.Video[0].fields.language = 'es';
+    const lowered = compiler.lowerKnowledgeModel(modelWithLang, { fps: 30, width: 1920, height: 1920 });
+    assert.strictEqual(lowered.scenes[0].properties.scene_language, 'es', 'scene_language is cascaded from Video');
+
+    const modelNoLang = model({
+      title: 'No Language Video',
+      scenes: [scene('Scene One', 'scene-one', 'Hello', { kind: 'Libre' })],
+    });
+    modelNoLang.frontmatter.blueprint_version = 'V_0-15-0';
+    delete modelNoLang.elements.Video[0].fields.language;
+    assert.throws(
+      () => compiler.lowerKnowledgeModel(modelNoLang, { fps: 30, width: 1920, height: 1920 }),
+      (err) => err.code === 'missing-language',
+      'fails with missing-language when no language is declared',
+    );
+    console.log('✔ language cascades to scene_language; missing language fails');
+  }
+
   console.log('\nAll scene compiler unit tests passed! ✨');
 }
 

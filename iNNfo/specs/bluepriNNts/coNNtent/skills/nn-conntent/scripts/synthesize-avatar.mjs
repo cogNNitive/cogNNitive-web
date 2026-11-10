@@ -32,12 +32,14 @@ import { fileURLToPath } from 'node:url';
 import { AssetSynthesizer, BillingFailureError, probeAudioDurationDetailed } from './asset-synthesizer.mjs';
 import { CacheManager } from './cache-manager.mjs';
 import { estimateCallUsd } from './asset-cost-estimator.mjs';
-import { loadCascadeBags, resolve } from './lib/video-scope.mjs';
+import { loadCascadeBags } from './lib/video-scope.mjs';
+import { resolve } from './lib/cascade.mjs';
 import { SceneCompiler, ScriptValidationError } from './scene-compiler.mjs';
 import { loadKnowledgeModel } from './lib/knowledge-model.mjs';
 import { withScriptPresets } from './lib/video-scope.mjs';
 import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
-import { LOCKS_RELATIVE_DIR, SpendGuard, loadGuard, normalizeModelId, resolveDefaultCacheDir } from './lib/video-guard.mjs';
+import { LOCKS_RELATIVE_DIR, SpendGuard, normalizeModelId, resolveDefaultCacheDir } from './lib/video-guard.mjs';
+import { loadGuardWithVoices } from './lib/guard-config.mjs';
 import { collectAvatarJobs } from './lib/avatar-jobs.mjs';
 import { appendPending, findOutstanding, latestPending } from './lib/pending-predictions.mjs';
 import { acquireLock } from './lib/file-lock.mjs';
@@ -116,7 +118,7 @@ export async function synthesizeAvatars(o) {
     tts: normalizeModelId(resolve('voice_model', bags).value),
     avatar: normalizeModelId(resolve('avatar_model', bags).value),
   };
-  const loaded = loadGuard(scriptDir);
+  const loaded = loadGuardWithVoices(scriptDir);
   const cacheDir = o.cacheDir || resolveDefaultCacheDir(scriptDir);
   // Spending is authorized by `produce`; this guard enforces the caps and the model lists.
   const checkNow = () => ({ ok: true });
@@ -131,9 +133,9 @@ export async function synthesizeAvatars(o) {
   const model = o.model || loadKnowledgeModel(scriptPath, { model: o.model, modelPath: o.modelPath });
   // The script's own Presets shadow Series and domain ones (design D3).
   const chainBags = withScriptPresets(bags, model, scriptPath);
-  const scriptGuard = compiler.checkScript(model, { ...o, bags: chainBags });
+  const scriptGuard = compiler.checkScript(model, { ...o, bags: chainBags, scriptDir });
   if (!scriptGuard.ok) throw new ScriptValidationError(scriptGuard.errors);
-  const parsed = compiler.lowerKnowledgeModel(model, { bags: chainBags });
+  const parsed = compiler.lowerKnowledgeModel(model, { bags: chainBags, scriptDir });
   const sceneFilter = o.scenes?.length ? [...new Set(o.scenes)] : undefined;
   if (sceneFilter) {
     const unknown = sceneFilter.filter((id) => !parsed.scenes.some((s) => s.id === id));

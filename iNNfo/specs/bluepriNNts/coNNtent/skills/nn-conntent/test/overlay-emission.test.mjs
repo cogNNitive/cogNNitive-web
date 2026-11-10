@@ -78,12 +78,13 @@ test('the enter/exit animations and the frame tokens reach the host as variable 
 
 test('a series components:: [lower-third=pill] mounts pill.html', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-comp-series-'));
+  fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), '# NN DomaiNN\n', 'utf8');
   const series = path.join(root, 'series-a');
-  const episode = path.join(series, 'ep-01');
-  fs.mkdirSync(path.join(series, 'components'), { recursive: true });
+  const episode = path.join(series, 'episodes', 'ep-01');
+  fs.mkdirSync(path.join(series, 'library', 'components', 'pill'), { recursive: true });
   fs.mkdirSync(episode, { recursive: true });
   fs.writeFileSync(
-    path.join(series, 'components', 'pill.html'),
+    path.join(series, 'library', 'components', 'pill', 'index.html'),
     '<div data-composition-variables=\'[{"id":"text"},{"id":"src"},{"id":"position"},{"id":"enter"},{"id":"exit"},{"id":"font"},{"id":"accent"}]\'></div>',
     'utf8',
   );
@@ -91,7 +92,7 @@ test('a series components:: [lower-third=pill] mounts pill.html', () => {
   const bags = { series: { components: '[lower-third=pill]' }, blueprint: { components: '[lower-third=lower-third]' } };
   const resolved = resolveComponents({ slots: ['lower-third'], bags, scriptDir: episode, workspaceRoot: root, skillDir: SKILL_DIR });
   assert.equal(resolved['lower-third'].name, 'pill');
-  assert.equal(resolved['lower-third'].path, path.join(series, 'components', 'pill.html'));
+  assert.equal(resolved['lower-third'].path, path.join(series, 'library', 'components', 'pill', 'index.html'));
 
   const manifest = fixture();
   manifest.metadata.components = resolved;
@@ -115,12 +116,14 @@ test('a static component marks its overlay host data-no-timeline', () => {
 
 test('resolveComponents records whether each resolved component is static', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-comp-static-'));
+  fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), '# NN DomaiNN\n', 'utf8');
   const episode = path.join(root, 'ep-01');
-  fs.mkdirSync(path.join(root, 'components'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'library', 'components', 'static'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'library', 'components', 'animated'), { recursive: true });
   fs.mkdirSync(episode, { recursive: true });
   const vars = '[{"id":"text"},{"id":"src"},{"id":"position"},{"id":"enter"},{"id":"exit"},{"id":"font"},{"id":"accent"}]';
-  fs.writeFileSync(path.join(root, 'components', 'static.html'), `<div data-composition-variables='${vars}' data-no-timeline></div>`, 'utf8');
-  fs.writeFileSync(path.join(root, 'components', 'animated.html'), `<div data-composition-variables='${vars}'></div>`, 'utf8');
+  fs.writeFileSync(path.join(root, 'library', 'components', 'static', 'index.html'), `<div data-composition-variables='${vars}' data-no-timeline></div>`, 'utf8');
+  fs.writeFileSync(path.join(root, 'library', 'components', 'animated', 'index.html'), `<div data-composition-variables='${vars}'></div>`, 'utf8');
 
   const bags = (name) => ({ series: { components: `[lower-third=${name}]` }, blueprint: { components: '[lower-third=lower-third]' } });
   const staticRes = resolveComponents({ slots: ['lower-third'], bags: bags('static'), scriptDir: episode, workspaceRoot: root, skillDir: SKILL_DIR });
@@ -189,7 +192,7 @@ test('the six manifest overlay types map to their slot names', () => {
 
 test('the skill ships exactly one neutral fallback per slot', () => {
   for (const slot of ['title', 'lower-third', 'caption', 'quote', 'watermark', 'b-roll']) {
-    const file = path.join(SKILL_DIR, 'components', `${slot}.html`);
+    const file = path.join(SKILL_DIR, 'slots', `${slot}.html`);
     assert.ok(fs.existsSync(file), `missing fallback ${slot}.html`);
     assert.ok(readVariableIds(fs.readFileSync(file, 'utf8')).length > 0, `${slot}.html declares no variables`);
   }
@@ -281,7 +284,7 @@ test('overlayMount emits nn-pos-<position> class on the host element when positi
 test('all neutral fallback overlay components contain CSS rules honoring position variants', () => {
   const positions = ['nn-pos-top-left', 'nn-pos-top-right', 'nn-pos-bottom-left', 'nn-pos-bottom-right', 'nn-pos-center'];
   for (const slot of ['title', 'lower-third', 'caption', 'quote', 'watermark', 'b-roll']) {
-    const file = path.join(SKILL_DIR, 'components', `${slot}.html`);
+    const file = path.join(SKILL_DIR, 'slots', `${slot}.html`);
     const content = fs.readFileSync(file, 'utf8');
     for (const pos of positions) {
       assert.ok(content.includes(`.${pos}`), `${slot}.html is missing CSS rule for ${pos}`);

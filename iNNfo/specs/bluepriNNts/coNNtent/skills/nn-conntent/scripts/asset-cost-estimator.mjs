@@ -17,20 +17,22 @@ import { loadKnowledgeModel, parseKnowledgeDocument } from './lib/knowledge-mode
 import { fileURLToPath } from 'node:url';
 import { computePlanHash, formatStamp } from './lib/plan.mjs';
 import { normalizeModelId } from './lib/video-guard.mjs';
-import { loadCascadeBags, resolve, withScriptPresets } from './lib/video-scope.mjs';
+import { loadCascadeBags, withScriptPresets } from './lib/video-scope.mjs';
+import { resolve } from './lib/cascade.mjs';
 import { isAvatarLayer, collectAvatarJobs, ttsCachePathFor, AVATAR_CACHE_EXT, AVATAR_CACHE_CATEGORY } from './lib/avatar-jobs.mjs';
 import { layerPrompt, imageCachePathFor } from './lib/image-options.mjs';
 import { loadMergedCatalog, assertImageSize, isPriceStale, DEFAULT_STALE_AFTER_DAYS } from './lib/catalog.mjs';
 import { CacheManager } from './cache-manager.mjs';
-import { loadGuard, resolveDefaultCacheDir } from './lib/video-guard.mjs';
+import { resolveDefaultCacheDir } from './lib/video-guard.mjs';
+import { loadGuardWithVoices } from './lib/guard-config.mjs';
 import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
 
 export function resolveModelId(prop, fallback) {
   return normalizeModelId(typeof prop === 'string' && prop.includes('/') ? prop : fallback);
 }
 
-/** Conservative fallback rates (USD) for models missing from the catalog: never under-estimate. */
-const FALLBACK_RATES = { image: 0.025, ttsPer1kChars: 0.02, avatarPerSecond: 0.018, video: 0.035 };
+/** Conservative fallback rates (USD) for models missing from the catalog: never under-estimate. No video-clip rate exists: video capability is unsupported. */
+const FALLBACK_RATES = { image: 0.025, ttsPer1kChars: 0.02, avatarPerSecond: 0.018 };
 
 export function findCatalogEntry(category, model) {
   const id = normalizeModelId(model);
@@ -128,7 +130,7 @@ export function warnUnpricedAllowedModels(config, warn = console.warn) {
 
 /**
  * Estimated USD for ONE billable provider call, used by the spend guard (budget + ledger).
- * @param {'image' | 'tts' | 'avatar' | 'video'} kind
+ * @param {'image' | 'tts' | 'avatar'} kind
  * @param {string} model Provider model id
  * @param {{ chars?: number, seconds?: number }} [units]
  * @returns {number}
@@ -191,7 +193,7 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
   const cacheDir = options.cacheDir || (scriptDir ? resolveDefaultCacheDir(scriptDir) : null);
   const cache = cacheDir ? new CacheManager({ baseDir: cacheDir, readOnly: true }) : null;
   const models = { image: defaultImageModel, imageSize: defaultImageSize, tts: defaultTtsModel, avatar: defaultAvatarModel };
-  const loaded = scriptDir ? loadGuard(scriptDir) : { config: {}, root: null };
+  const loaded = scriptDir ? loadGuardWithVoices(scriptDir) : { config: {}, root: null };
   const config = loaded.config;
   warnUnpricedAllowedModels(config);
   // An `image_size` the resolved model does not offer fails the ESTIMATE, before any spend,
@@ -213,12 +215,10 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
   let totalCharacters = 0;
   let totalImages = 0;
   let totalAvatars = 0;
-  let totalVideos = 0;
   let totalEstimatedDurationSeconds = 0;
   let totalImageCost = 0;
   let totalTtsCost = 0;
   let totalAvatarCost = 0;
-  let totalVideoCost = 0;
 
   for (let i = 0; i < parsed.scenes.length; i++) {
     const scene = parsed.scenes[i];
@@ -230,12 +230,11 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
     // Layer breakdown
     const promptLayers = (scene.layers || []).filter(layerPrompt);
     const avatarLayers = (scene.layers || []).filter(isAvatarLayer);
-    const videoLayers = (scene.layers || []).filter(l => l.type === 'video' || l.type === 'ai_video' || l.properties?.layer_type === 'video' || l.properties?.layer_type === 'ai_video');
 
     // Compile generates an image only for a layer with a prompt: no prompt, no quote.
+    // Video clips do not exist: capability `video` is rejected when the catalog is built.
     const imageCount = promptLayers.length;
     const avatarCount = avatarLayers.length;
-    const videoCount = videoLayers.length;
 
     // 1. Image: one billable call per prompt layer, priced with the SAME model resolution the compile step uses.
     let sceneImageCost = 0;
@@ -272,20 +271,15 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
     sceneAvatarCost = Math.round(sceneAvatarCost * 10000) / 10000;
     const avatarPricing = findCatalogEntry('avatar', avatarModelKey) || { modelName: avatarModelKey };
 
-    // 4. Resolve Video Cost
-    const sceneVideoCost = Math.round(videoCount * 0.030 * 10000) / 10000;
-
-    const sceneTotalCost = Math.round((sceneImageCost + sceneTtsCost + sceneAvatarCost + sceneVideoCost) * 10000) / 10000;
+    const sceneTotalCost = Math.round((sceneImageCost + sceneTtsCost + sceneAvatarCost) * 10000) / 10000;
 
     totalCharacters += charCount;
     totalImages += imageCount;
     totalAvatars += avatarCount;
-    totalVideos += videoCount;
     totalEstimatedDurationSeconds += estimatedDurationSec;
     totalImageCost += sceneImageCost;
     totalTtsCost += sceneTtsCost;
     totalAvatarCost += sceneAvatarCost;
-    totalVideoCost += sceneVideoCost;
 
     sceneEstimates.push({
       sceneNumber: i + 1,
@@ -311,7 +305,7 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
     });
   }
 
-  const grandTotalCost = totalImageCost + totalTtsCost + totalAvatarCost + totalVideoCost;
+  const grandTotalCost = totalImageCost + totalTtsCost + totalAvatarCost;
 
   // Comparison tiers
   const tiers = {
@@ -374,12 +368,10 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
       totalCharacters,
       totalImages,
       totalAvatars,
-      totalVideos,
       totalEstimatedDurationSeconds,
       totalImageCost: Math.round(totalImageCost * 10000) / 10000,
       totalTtsCost: Math.round(totalTtsCost * 10000) / 10000,
       totalAvatarCost: Math.round(totalAvatarCost * 10000) / 10000,
-      totalVideoCost: Math.round(totalVideoCost * 10000) / 10000,
       grandTotalCost: Math.round(grandTotalCost * 10000) / 10000,
       currency: 'USD',
     },

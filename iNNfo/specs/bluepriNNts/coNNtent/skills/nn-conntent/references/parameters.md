@@ -28,11 +28,12 @@ Legend: ● can be written at this scope, · cannot.
 | `tags` | select (multi) | — | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |
 | `title` | string | — | · | ● | · | · | ● | · | · | · | · | · | · | · |
 | `description` | markdown_inline | — | · | · | · | · | ● | · | · | · | · | · | · | · |
-| `status` | select | `idea`, `draft`, `approved`, `produced`, `published`, `archived` | · | · | · | · | ● | · | · | · | · | · | · | · |
-| `published_url` | url | — | · | · | · | · | ● | · | · | · | · | · | · | · |
+| `status` | select | `idea`, `draft`, `approved`, `produced`, `failed_qa`, `delivered`, `archived` | · | · | · | · | ● | · | · | · | · | · | · | · |
 | `script` | file | — | · | · | · | · | ● | · | · | · | · | · | · | · |
 | `master` | video | — | · | · | · | · | ● | · | · | · | · | · | · | · |
+| `delivered_version` | string | — | · | · | · | · | ● | · | · | · | · | · | · | · |
 | `thumbnail` | image | — | · | · | · | · | ● | · | · | · | · | · | · | · |
+| `translation_of` | string | — | · | · | · | · | ● | · | · | · | · | · | · | · |
 | `kind` | select | — | · | · | · | · | · | ● | · | · | · | · | · | · |
 | `review` | select | `approved`, `needs-change` | · | · | · | · | · | ● | · | · | · | · | · | · |
 | `role` | string | — | · | · | ● | · | · | · | · | · | · | · | · | · |
@@ -46,12 +47,15 @@ Legend: ● can be written at this scope, · cannot.
 | `music` | file | — | · | · | · | · | · | · | · | · | ● | · | · | · |
 | `presets` | select (multi) | — | ● | ● | ● | · | ● | ● | · | · | · | · | · | · |
 | `background_audio` | file | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
-| `background_audio_volume` | string | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
+| `background_audio_volume` | number | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
 | `transition` | select | `fade`, `slide-left`, `slide-right`, `wipe`, `none` | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
 | `frame` | string | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
 | `components` | select (multi) | — | ● | ● | · | ● | ● | · | · | · | · | · | · | · |
 | `sounds` | select (multi) | — | ● | ● | · | ● | ● | · | · | · | · | · | · | · |
 | `avatar` | file | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
+| `character` | string | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
+| `pose` | string | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
+| `background` | string | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
 | `intro` | file | — | ● | ● | · | ● | ● | · | · | · | · | · | · | · |
 | `type` | select | `avatar`, `media`, `text`, `animation` | · | · | · | · | · | · | ● | · | · | · | · | · |
 | `placement` | select | `full`, `inset` | · | · | · | · | · | · | ● | · | · | · | · | · |
@@ -78,7 +82,13 @@ Legend: ● can be written at this scope, · cannot.
 | `budget` | number | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
 | `daily_budget` | number | — | ● | · | · | · | · | · | · | · | · | · | · | · |
 | `output_formats` | select (multi) | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
-| `script_review` | select | `required`, `skip` | ● | ● | · | · | ● | · | · | · | · | · | · | · |
+| `review_gates` | select (multi) | `script`, `preview` | ● | ● | · | · | ● | · | · | · | · | · | · | · |
+| `captions` | select | `off`, `words`, `lines` | ● | ● | · | · | ● | · | · | · | · | · | · | · |
+| `caption_model` | string | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
+| `thumbnail_formats` | select (multi) | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
+| `thumbnail_base` | file | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
+| `thumbnail_title` | string | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
+| `thumbnail_badge` | string | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
 | `name` | string | — | · | · | · | · | · | · | · | · | · | ● | · | · |
 | `api_base` | url | — | · | · | · | · | · | · | · | · | · | ● | · | · |
 | `provider` | string | — | · | · | · | · | · | · | · | · | · | · | ● | · |
@@ -132,12 +142,6 @@ Lifecycle position of the episode, written by the engine or the user through a c
 
 Settable at: `Video`.
 
-### `published_url`
-
-Publication URL of the episode. Required once `status:: published`.
-
-Settable at: `Video`.
-
 ### `script`
 
 The episode's script document, resolved under the owning model's directory.
@@ -150,9 +154,21 @@ The episode's master `<slug>_<W>x<H>.mp4`, sized by the first entry of `output_f
 
 Settable at: `Video`.
 
+### `delivered_version`
+
+The delivery version the engine last assembled (`v1`, `v2`, ...). Written by the engine together with `status:: delivered`.
+
+Settable at: `Video`.
+
 ### `thumbnail`
 
 The episode's cover image, resolved under the owning model's directory.
+
+Settable at: `Video`.
+
+### `translation_of`
+
+For a translation episode, the slug of the original (`<slug>` in the same series, or `<series>/<slug>` across series). The original MUST exist, MUST NOT itself be a translation and MUST share the source; never points at itself. Video-only record field.
 
 Settable at: `Video`.
 
@@ -212,13 +228,13 @@ Settable at: `Chrome`.
 
 ### `bumper`
 
-Series bumper media for this language, resolved under `series/<s>/assets/`.
+Series bumper media for this language, resolved as a logical name under `series/<s>/library/media/`.
 
 Settable at: `Chrome`.
 
 ### `music`
 
-Series music bed for this language, resolved under `series/<s>/assets/`. Retired on Scene and Preset, where `background_audio` is the only field.
+Series music bed for this language, resolved as a logical name under `series/<s>/library/media/`. Retired on Scene and Preset, where `background_audio` is the only field.
 
 Settable at: `Chrome`.
 
@@ -248,7 +264,7 @@ Settable at: `Video`, `Scene`, `Preset`, `Series`, `Video Defaults`.
 
 ### `frame`
 
-Name of the frame document (`frames/<name>.md`) whose tokens style this Video, Scene, Series or domain. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies.
+Name of the frame folder (`library/frames/<name>/FRAME.md` at the episode, series, domain or package level) whose tokens style this Video, Scene, Series or domain. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies.
 
 Settable at: `Video`, `Scene`, `Preset`, `Series`, `Video Defaults`.
 
@@ -267,6 +283,24 @@ Settable at: `Video`, `Preset`, `Series`, `Video Defaults`.
 ### `avatar`
 
 Image used as the source for an `avatar` Layer that declares no `asset::`. Resolves through the Universal Parameter Cascade. Optional.
+
+Settable at: `Video`, `Scene`, `Preset`, `Series`, `Video Defaults`.
+
+### `character`
+
+Name of the active Character (a folder in `library/characters/` or `media/characters/`). Resolves through the Universal Parameter Cascade; a series sets its host, a scene can bring a guest. Optional.
+
+Settable at: `Video`, `Scene`, `Preset`, `Series`, `Video Defaults`.
+
+### `pose`
+
+Avatar pose of the active Character: a file name in its `avatars/` without extension. Defaults to the Character's `default_pose`; requires an active `character`. Optional.
+
+Settable at: `Video`, `Scene`, `Preset`, `Series`, `Video Defaults`.
+
+### `background`
+
+Background image of the active Character: a file name in its `backgrounds/` without extension. Defaults to the Character's `default_background`; requires an active `character`. Optional.
 
 Settable at: `Video`, `Scene`, `Preset`, `Series`, `Video Defaults`.
 
@@ -296,7 +330,7 @@ Settable at: `Layer`.
 
 ### `style`
 
-For a `text` Layer: the visual component to render. The component implementation resolves by name (`components/<style>.html`, episode → series → domain → skill fallback), so a Series can restyle it without a new type.
+For a `text` Layer: the visual component to render. The component implementation resolves by name (`components/<style>`, a folder `library/components/<style>/` or `media/components/<style>/`, episode → series → domain → skill fallback), so a Series can restyle it without a new type.
 
 Settable at: `Layer`.
 
@@ -350,7 +384,7 @@ Settable at: `Layer`.
 
 ### `avatar_model`
 
-Avatar/lip-sync model id for an `avatar` Layer, or a cascade default (e.g. `wavespeed-ai/infinitetalk-fast`). Resolves through the Universal Parameter Cascade.
+Avatar/lip-sync model id for an `avatar` Layer, or a cascade default (e.g. `wavespeed-ai/infinitetalk-fast`). Resolves through the Universal Parameter Cascade. The console picklist offers the merged catalog's allowed avatar models by `api_id`.
 
 Settable at: `Layer`, `Scene`, `Video`, `Preset`, `Series`, `Video Defaults`.
 
@@ -368,13 +402,13 @@ Settable at: `Layer`, `Scene`, `Video`, `Preset`, `Series`, `Video Defaults`.
 
 ### `voice`
 
-Registered voice name or system voice used for TTS synthesis. Resolves through the Universal Parameter Cascade; a Preset supplies it unless a nearer level sets it. Part of the synthesized-audio cache identity.
+Registered voice name or system voice used for TTS synthesis. Resolves through the Universal Parameter Cascade; a Preset supplies it unless a nearer level sets it. Part of the synthesized-audio cache identity. The console picklist offers the merged catalog's Voices by slug.
 
 Settable at: `Video`, `Scene`, `Preset`, `Series`, `Video Defaults`.
 
 ### `voice_model`
 
-Provider model id used for TTS synthesis (e.g. `minimax/speech-2.8-hd`). Resolves through the Universal Parameter Cascade. Part of the synthesized-audio cache identity.
+Provider model id used for TTS synthesis (e.g. `minimax/speech-2.8-hd`). Resolves through the Universal Parameter Cascade. Part of the synthesized-audio cache identity. The console picklist offers the merged catalog's allowed tts models by `api_id`.
 
 Settable at: `Video`, `Scene`, `Preset`, `Series`, `Video Defaults`.
 
@@ -392,7 +426,7 @@ Settable at: `Video`, `Scene`, `Preset`, `Series`, `Video Defaults`.
 
 ### `image_model`
 
-Provider model id used to synthesize image assets (e.g. `wavespeed-ai/z-image/turbo`). Resolves through the Universal Parameter Cascade.
+Provider model id used to synthesize image assets (e.g. `wavespeed-ai/z-image/turbo`). Resolves through the Universal Parameter Cascade. The console picklist offers the merged catalog's allowed image models by `api_id`.
 
 Settable at: `Video`, `Scene`, `Preset`, `Series`, `Video Defaults`.
 
@@ -426,9 +460,45 @@ Ordered list of delivery sizes as `<W>x<H>`. The first entry is the master size;
 
 Settable at: `Video`, `Series`, `Video Defaults`.
 
-### `script_review`
+### `review_gates`
 
-Whether the script review gate stops the run. `skip` treats the script as approved; it never bypasses the budget gate. Defaults to `required`.
+The gates that stop the run before spend, in order. Defaults to `[script, preview]`. Replaces the retired single script-review flag.
+
+Settable at: `Video`, `Series`, `Video Defaults`.
+
+### `captions`
+
+Caption mode: `off` produces no captions, `words` word-level timing, `lines` segment-level timing. Defaults to `off`.
+
+Settable at: `Video`, `Series`, `Video Defaults`.
+
+### `caption_model`
+
+The transcript alignment model override. Defaults to the package model.
+
+Settable at: `Video`, `Series`, `Video Defaults`.
+
+### `thumbnail_formats`
+
+Ordered thumbnail sizes as `<W>x<H>`. Defaults to `[2560x1440, 1080x1920]`.
+
+Settable at: `Video`, `Series`, `Video Defaults`.
+
+### `thumbnail_base`
+
+A text-free clean composite used as the thumbnail base; defaults to the first scene still.
+
+Settable at: `Video`, `Series`, `Video Defaults`.
+
+### `thumbnail_title`
+
+The title text drawn on the thumbnail; defaults to the Video `title`.
+
+Settable at: `Video`, `Series`, `Video Defaults`.
+
+### `thumbnail_badge`
+
+An optional small badge drawn on the thumbnail; defaults to none.
 
 Settable at: `Video`, `Series`, `Video Defaults`.
 

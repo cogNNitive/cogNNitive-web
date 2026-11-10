@@ -147,6 +147,18 @@ model:: minimax-speech-2-8-hd
 voice_id:: Deep_Voice_Man
 language:: en
 
+## NN Voice: friendly-person-es
+slug:: friendly-person-es
+model:: minimax-speech-2-8-hd
+voice_id:: Friendly_Person_Es
+language:: es
+
+## NN Voice: deep-voice-man-es
+slug:: deep-voice-man-es
+model:: minimax-speech-2-8-hd
+voice_id:: Deep_Voice_Man_Es
+language:: es
+
 The dated reference catalog shipped by the `coNNtent` bluepriNNt. The prices are the ones
 the engine carried in code before V_0-15-0, recorded here on 2026-11-02 as the observation
 date; a domaiNN SHOULD replace them with invoice values in its `model-catalog_NN.md` overlay.
