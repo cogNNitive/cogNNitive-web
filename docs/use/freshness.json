@@ -1,35 +1,31 @@
 {
-  "generatedAt": "2026-11-12T10:51:25.038Z",
-  "head": "9a01c5a5ca14dff94ac5821c9b646306ed691e84",
+  "generatedAt": "2026-11-12T11:25:10.014Z",
+  "head": "dac88e42fce1c0c7b34faaf79948d0466fbd109a",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
-      "pinnedTag": "skills-v3.1.1",
-      "pinnedTagDate": "2026-11-12T06:46:34+01:00",
-      "commitsSincePin": 2,
-      "filesTouched": [
-        "skills/nn-sources/SKILL.md",
-        "skills/nn-sources/scripts/index.js",
-        "skills/nn-sources/scripts/lib/duplicate-guards.js",
-        "skills/nn-sources/scripts/lib/import-guard.js",
-        "skills/nn-sources/scripts/scanner.js",
-        "skills/nn-sources/test/run.js",
-        "skills/nn-sources/test/unit/test-import-guards.js"
-      ]
+      "pinnedTag": "skills-v3.2.0",
+      "pinnedTagDate": "2026-11-12T11:50:47+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "blueprints": {
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.58.1",
       "pinnedTagDate": "2026-11-12T06:46:34+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/metrics/assets/console-view-timeline.js"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.58.1",
       "pinnedTagDate": "2026-11-12T06:46:34+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/metrics/assets/console-view-timeline.js"
+      ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
