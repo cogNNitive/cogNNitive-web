@@ -21,6 +21,7 @@ registerView({
       ctx.container.appendChild(empty)
       return
     }
+    if (projections.length > 1) ctx.container.appendChild(variantExportBar(doc, projections))
     projections.forEach(function (p) {
       var section = doc.createElement('section')
       section.className = 'nn-timeline-view'
@@ -29,6 +30,10 @@ registerView({
         heading.className = 'nn-timeline-title'
         heading.textContent = p.title || ''
         section.appendChild(heading)
+        var summary = doc.createElement('p')
+        summary.className = 'nn-timeline-summary'
+        summary.textContent = seriesSummary(p, projections)
+        section.appendChild(summary)
       }
       ctx.container.appendChild(section)
       var meta = { months: p.months }
@@ -38,6 +43,101 @@ registerView({
     })
   },
 })
+
+/* The single export that puts every variant in one file, offered only when the
+   model really has more than one. */
+function variantExportBar(doc, projections) {
+  var bar = doc.createElement('div')
+  bar.className = 'nn-timeline-actions'
+  var button = doc.createElement('button')
+  button.setAttribute('type', 'button')
+  button.className = 'nn-btn-csv'
+  button.textContent = 'Download all variants CSV'
+  button.addEventListener('click', function () {
+    downloadCsv(doc, variantsCsv(projections), 'timeline_variants.csv')
+  })
+  bar.appendChild(button)
+  return bar
+}
+
+/* One comparison card's text: what this variant is, how far it runs, how many
+   rows it carries, and which rows no other variant carries. */
+function seriesSummary(projection, projections) {
+  var parts = []
+  if (projection.scenarioType) parts.push(projection.scenarioType)
+  parts.push(projection.months + (projection.months === 1 ? ' month' : ' months'))
+  parts.push(projection.rows.length + (projection.rows.length === 1 ? ' row' : ' rows'))
+  var exclusive = exclusiveRows(projection, projections)
+  if (exclusive.length) parts.push('exclusive: ' + exclusive.join(', '))
+  return parts.join(' · ')
+}
+
+/* Rows this variant carries and no other variant does. */
+function exclusiveRows(projection, projections) {
+  var elsewhere = {}
+  projections.forEach(function (other) {
+    if (other === projection) return
+    other.rows.forEach(function (r) {
+      elsewhere[String((r && r.label) || '').toLowerCase()] = true
+    })
+  })
+  return projection.rows
+    .filter(function (r) {
+      return r && r.label && !elsewhere[String(r.label).toLowerCase()]
+    })
+    .map(function (r) {
+      return r.label
+    })
+}
+
+/* Every variant in one CSV: one row per variant and metric, carrying the model
+   inputs the view owns (horizon, type, unit, base value, growth rule). */
+function variantsCsv(projections) {
+  var header = ['Scenario', 'Scenario Type', 'Months', 'Start Year', 'Start Month', 'Group', 'Metric', 'Type', 'Unit', 'Base Value', 'Growth Rule']
+  var lines = [header.map(csvCell).join(',')]
+  projections.forEach(function (p) {
+    p.rows.forEach(function (r) {
+      var g = r.growth || {}
+      lines.push(
+        [
+          p.scenarioName || p.title || '',
+          p.scenarioType || '',
+          p.months,
+          p.startYear == null ? '' : p.startYear,
+          p.startMonth == null ? '' : p.startMonth,
+          r.grp || '',
+          r.label || r.id || '',
+          r.metricType || '',
+          r.metricUnit || '',
+          r.base == null ? '' : r.base,
+          (g.mode || 'fixed') + (g.factor ? ' (' + g.factor + ')' : ''),
+        ]
+          .map(csvCell)
+          .join(','),
+      )
+    })
+  })
+  return lines.join('\r\n')
+}
+
+function csvCell(value) {
+  return '"' + String(value == null ? '' : value).replace(/"/g, '""') + '"'
+}
+
+function downloadCsv(doc, text, fileName) {
+  if (typeof Blob === 'undefined' || typeof URL === 'undefined' || !doc) return
+  var blob = new Blob([text], { type: 'text/csv;charset=utf-8;' })
+  var url = URL.createObjectURL(blob)
+  var anchor = doc.createElement('a')
+  anchor.href = url
+  anchor.download = fileName
+  anchor.click()
+  if (typeof URL.revokeObjectURL === 'function') {
+    setTimeout(function () {
+      URL.revokeObjectURL(url)
+    }, 1000)
+  }
+}
 
 /* Groups the domaiNN's elements by model, then derives one series per Scenario
    of that model: the scenario's own horizon and the metric/variable rows its
@@ -71,6 +171,8 @@ function deriveProjections(elements, matrices) {
     series.forEach(function (s) {
       out.push({
         title: many && g.title ? g.title + ' — ' + s.title : s.title || g.title,
+        scenarioName: s.title,
+        scenarioType: s.scenarioType,
         rows: s.rows,
         months: s.months,
         startYear: s.startYear,
@@ -105,7 +207,9 @@ function scenarioIncludes(matrices) {
 
 function finiteNumber(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : null
-  var n = Number(String(value == null ? '' : value).trim())
+  var text = String(value == null ? '' : value).trim()
+  if (text === '') return null
+  var n = Number(text)
   return Number.isFinite(n) ? n : null
 }
 
@@ -133,6 +237,7 @@ function deriveProjection(elements, scenario, includes) {
 
   return {
     title: (scenario && scenario.name) || '',
+    scenarioType: typeof f.scenarioType === 'string' ? f.scenarioType.trim() : '',
     rows: rows,
     months: months,
     startYear: finiteNumber(f.startYear || f.scenarioStartYear),

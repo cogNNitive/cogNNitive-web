@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-12T11:25:10.014Z",
-  "head": "dac88e42fce1c0c7b34faaf79948d0466fbd109a",
+  "generatedAt": "2026-11-12T11:42:36.061Z",
+  "head": "6af34b51c45647e0f66f56f6486ab78ca6a3d896",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -11,20 +11,26 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.58.1",
-      "pinnedTagDate": "2026-11-12T06:46:34+01:00",
-      "commitsSincePin": 1,
+      "pinnedTag": "blueprints-v0.59.0",
+      "pinnedTagDate": "2026-11-12T12:24:13+01:00",
+      "commitsSincePin": 2,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/metrics/assets/console-view-timeline.js"
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/metrics/assets/console-view-timeline.js",
+        "iNNfo/specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-5-3_metrics_NN.md",
+        "iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
       ]
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.58.1",
-      "pinnedTagDate": "2026-11-12T06:46:34+01:00",
-      "commitsSincePin": 1,
+      "pinnedTag": "blueprints-v0.59.0",
+      "pinnedTagDate": "2026-11-12T12:24:13+01:00",
+      "commitsSincePin": 2,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/metrics/assets/console-view-timeline.js"
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/metrics/assets/console-view-timeline.js",
+        "iNNfo/specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-5-3_metrics_NN.md",
+        "iNNfo/specs/bluepriNNts/metrics/spec_NN.md"
       ]
     },
     "nn-mcp": {

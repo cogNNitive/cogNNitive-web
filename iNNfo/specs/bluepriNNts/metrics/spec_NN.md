@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
-blueprint_version: "V_0-5-2"
+blueprint_version: "V_0-5-3"
 title: "Metrics App"
 relationship_types:
   hierarchy:
@@ -237,7 +237,7 @@ title: "<Metrics Model Title>"
 
 ### Canonical Sample
 
-The official sample for this template is at `iNNfo/specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-5-1_metrics_NN.md`. It exercises typed metric rows, input variables, evolution rules, scenarios, and the three evaluable matrices.
+The official sample for this template is at `iNNfo/specs/bluepriNNts/metrics/samples/Ghostbusters_V_0-5-3_metrics_NN.md`. It exercises typed metric rows, input variables, evolution rules, scenarios, and the three evaluable matrices.
 
 ### Parent Chain
 
@@ -332,10 +332,12 @@ which metric rows each scenario includes. Historical rows carry verbatim
 `history` values in the metrics elements; the `timeline` view renders them
 distinctly from computed months.
 
-NOTE — V_0-1-0 scope: the artifact renders one neutral flow (actuals +
-projection). Scenario variants (optimistic/pessimistic) are modeled as
-ordinary variant rows through Metrics/Variables; side-by-side comparison
-is backlog (`feature/metrics-scenario-compare`).
+NOTE — V_0-1-0 scope: every Scenario renders as its own series, with that
+scenario's horizon and the rows its `scenario-metrics` cells include (a
+scenario the matrix does not cover keeps every row), plus a comparison card
+and one all-variant CSV export. Variants may still be modeled as ordinary
+rows through Metrics/Variables. Deeper side-by-side analysis (per-month
+deltas between variants) remains backlog (`feature/metrics-scenario-compare`).
 
 ### Methodologies
 
