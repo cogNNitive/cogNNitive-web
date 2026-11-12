@@ -2545,7 +2545,9 @@
   }
 
   // The `meta.models[]` entry a knowledge value names (file stem, id or title), or
-  // null. Full-path matches win over bare-name matches.
+  // null. Full-path matches win over bare-name matches; a bare name shared by two
+  // models is ambiguous and resolves to nothing rather than to the first match,
+  // because guessing points the marker at a model the author never named.
   function resolveKnowledgeModel(meta, value) {
     var models = Array.isArray(meta && meta.models) ? meta.models : []
     var want = knowledgeStem(value)
@@ -2554,17 +2556,23 @@
     function keysOf(m) {
       return [m.id, m.title, m.filePath].map(knowledgeStem).filter(Boolean)
     }
+    var exactHits = []
     for (var i = 0; i < models.length; i++) {
-      if (models[i] && keysOf(models[i]).indexOf(want) !== -1) return models[i]
+      if (models[i] && keysOf(models[i]).indexOf(want) !== -1 && exactHits.indexOf(models[i]) === -1) {
+        exactHits.push(models[i])
+      }
     }
+    if (exactHits.length > 1) return null
+    if (exactHits.length === 1) return exactHits[0]
+    var tailHits = []
     for (var j = 0; j < models.length; j++) {
       if (!models[j]) continue
       var tails = keysOf(models[j]).map(function (k) {
         return k.split('/').pop()
       })
-      if (tails.indexOf(wantTail) !== -1) return models[j]
+      if (tails.indexOf(wantTail) !== -1) tailHits.push(models[j])
     }
-    return null
+    return tailHits.length === 1 ? tailHits[0] : null
   }
 
   // Resolves a field's declared type from the schema, for type-aware read
@@ -8257,6 +8265,7 @@
     composeAgentPrompt: composeAgentPrompt,
     mountNavbarActions: mountNavbarActions,
     boot: boot,    fieldDefOf: fieldDefOf,
+    resolveKnowledgeModel: resolveKnowledgeModel,
   }
 
   return PUBLIC_API

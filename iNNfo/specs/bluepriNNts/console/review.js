@@ -24,14 +24,24 @@
   }
 
   // The definition governing a matrix cell: the matrix definition of the same name.
+  // A domaiNN can aggregate two blueprints that declare a matrix with the same
+  // name, so the cell's target concept breaks the tie; a definition that names no
+  // target never wins over one that names the cell's.
   function matrixCellDef(schema, matrix, col, target) {
     if (!schema) return null
     var want = String(matrix).toLowerCase()
-    return (
-      (Array.isArray(schema.matrices) ? schema.matrices : []).filter(function (d) {
-        return d && String(d.name).toLowerCase() === want
-      })[0] || null
-    )
+    var defs = (Array.isArray(schema.matrices) ? schema.matrices : []).filter(function (d) {
+      return d && String(d.name).toLowerCase() === want
+    })
+    if (defs.length <= 1) return defs[0] || null
+    var targetKey = String(target == null ? '' : target).toLowerCase()
+    if (targetKey) {
+      var byTarget = defs.filter(function (d) {
+        return String(d.target == null ? '' : d.target).toLowerCase() === targetKey
+      })
+      if (byTarget.length) return byTarget[0]
+    }
+    return defs[0]
   }
 
   // Declared definition of a field, keyed by (concept, field) so two concepts that
@@ -1803,6 +1813,7 @@
     createDraftStore: createDraftStore,
     createReviewController: createReviewController,
     fieldDefOf: fieldDefOf,
+    matrixCellDef: matrixCellDef,
     isTargetChanged: isTargetChanged,
     isAlreadyApplied: isAlreadyApplied,
     progressByConcept: progressByConcept,

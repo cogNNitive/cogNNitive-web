@@ -8786,7 +8786,7 @@ var MUTATION_HANDLERS = {
   remove_element: (model, args) => removeElement(model, args),
   rename_concept: (model, args) => renameConcept(model, args),
   rename_element: (model, args, schema) => renameElement(model, args, schema),
-  update_matrix_cell: (model, args) => updateMatrixCell(model, args),
+  update_matrix_cell: (model, args, schema) => updateMatrixCell(model, args, schema),
   update_element_text: (model, args) => updateElementText(model, args),
   update_concept_text: (model, args, schema) => updateConceptText(model, args, schema),
   update_concept_field: (model, args, schema) => updateConceptField(model, args, schema),
@@ -9371,7 +9371,7 @@ function updateField(model, args, schema) {
   }
   return { success: true };
 }
-function updateMatrixCell(model, args) {
+function updateMatrixCell(model, args, schema) {
   const matrixName = args.matrixName || "";
   let matrixSlug = args.matrixSlug || "";
   let row = args.row || "";
@@ -9429,6 +9429,18 @@ function updateMatrixCell(model, args) {
     const r = requested.toLowerCase();
     return a === r || slugify(a) === slugify(r) || slugifyHeading(a) === slugifyHeading(r) || normalizeKey(a) === normalizeKey(r);
   };
+  const declared = declaredMatrixValues(schema, matrixName || matrixSlug, matrix.name);
+  if (declared && declared.length > 0 && val !== void 0 && !cellValueAllowed(val, declared)) {
+    return {
+      success: false,
+      errors: [
+        {
+          path: "",
+          message: `Value "${val}" is not declared by matrix "${matrix.name}": allowed ${declared.map((v) => `"${v}"`).join(", ")} (or "-" for an empty cell).`
+        }
+      ]
+    };
+  }
   const cell = matrix.cells.find((c) => matchesCoord(c.row, row) && matchesCoord(c.col, col));
   if (cell) {
     cell.value = val;
@@ -9436,6 +9448,23 @@ function updateMatrixCell(model, args) {
     matrix.cells.push({ row, col, value: val });
   }
   return { success: true };
+}
+function matrixDeclOf(schema, requested, resolvedName) {
+  if (!schema || !Array.isArray(schema.matrices)) return void 0;
+  const wantName = resolvedName.toLowerCase();
+  const wantRequested = (requested || "").toLowerCase();
+  const wantRequestedSlug = wantRequested ? slugify(wantRequested).toLowerCase() : "";
+  const match = (d, key) => d.name.toLowerCase() === key || slugify(d.name).toLowerCase() === key || slugifyHeading(d.name).toLowerCase() === key;
+  return schema.matrices.find((d) => d.name.toLowerCase() === wantName) || schema.matrices.find((d) => wantRequested && match(d, wantRequested)) || schema.matrices.find((d) => wantRequestedSlug && match(d, wantRequestedSlug));
+}
+function declaredMatrixValues(schema, requested, resolvedName) {
+  const decl = matrixDeclOf(schema, requested, resolvedName);
+  return decl && Array.isArray(decl.values) && decl.values.length > 0 ? decl.values : null;
+}
+function cellValueAllowed(value, declared) {
+  const v = String(value).trim().toLowerCase();
+  if (v === "" || v === "-") return true;
+  return declared.some((d) => String(d).trim().toLowerCase() === v);
 }
 function removeElement(model, args) {
   const req = requireArgs(args, ["conceptName", "elementName"]);
