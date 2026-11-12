@@ -1,13 +1,21 @@
 {
-  "generatedAt": "2026-11-12T09:39:40.926Z",
-  "head": "490c229a2394d7b8e219efd7a51b94cf081d31bf",
+  "generatedAt": "2026-11-12T10:51:25.038Z",
+  "head": "9a01c5a5ca14dff94ac5821c9b646306ed691e84",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v3.1.1",
       "pinnedTagDate": "2026-11-12T06:46:34+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 2,
+      "filesTouched": [
+        "skills/nn-sources/SKILL.md",
+        "skills/nn-sources/scripts/index.js",
+        "skills/nn-sources/scripts/lib/duplicate-guards.js",
+        "skills/nn-sources/scripts/lib/import-guard.js",
+        "skills/nn-sources/scripts/scanner.js",
+        "skills/nn-sources/test/run.js",
+        "skills/nn-sources/test/unit/test-import-guards.js"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",

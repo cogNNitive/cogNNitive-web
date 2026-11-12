@@ -119,6 +119,11 @@ async function main() {
     totalPassed += duplicateBodyHashResult.passed;
     totalFailed += duplicateBodyHashResult.failed;
 
+    const importGuardsTest = require('./unit/test-import-guards');
+    const importGuardsResult = await importGuardsTest.run();
+    totalPassed += importGuardsResult.passed;
+    totalFailed += importGuardsResult.failed;
+
     const impactCheckerTest = require('./unit/test-impact-checker');
     const impactCheckerResult = await impactCheckerTest.run();
     totalPassed += impactCheckerResult.passed;

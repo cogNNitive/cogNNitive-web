@@ -28,6 +28,24 @@ the file. The raw file is never moved, renamed, or rewritten.
 Raw media (`.mp3`, `.wav`, `.png`, `.jpg`, and similar) is not converted by the scanner. To make
 its content citable, place a transcript or description as a text source and cognitivize that.
 
+## Import guard
+
+Before `--scan` normalises an incoming source — a raw file with no sidecar, or one whose bytes
+changed — it runs two guards over it:
+
+- **Duplicate guard** — the same raw bytes (or the same normalized body) as a source already in the
+  domaiNN is an *exact* duplicate; a text-native subject whose structural similarity reaches `0.5`
+  is a *near* duplicate.
+- **History guard** — prior handling of the same file name, stem, or path, searched in
+  `conversations/` and `sources/conversations/`.
+
+A flagged source is answered **reuse**, **adjust**, or **from scratch**: reuse writes nothing and
+cites the existing source, adjust normalises the incoming file and reconciles the pair, and from
+scratch keeps it as an independent source. The interactive menu asks; a non-interactive `--scan`
+applies the deterministic default — reuse for an exact duplicate, adjust otherwise — and prints the
+decision per flagged file. `--cognitivize` and `--normalize-file` name one file explicitly, so they
+do not run the guards.
+
 ## Sidecar provenance
 
 Every cognitivized raw file gets a sidecar with origin-metadata frontmatter. `cognitivize` is the

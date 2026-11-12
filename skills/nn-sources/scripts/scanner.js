@@ -1,17 +1,18 @@
 const fs = require('fs');
 const path = require('path');
 const core = require('./lib/scanner-core');
+const importGuard = require('./lib/import-guard');
 const converters = require('./lib/scanner-converters');
 const { cognitivize, isSidecarName, isNNName } = require('./lib/nn-core.generated.cjs');
 const { createNormalizer } = require('./lib/normalizer');
 
 /**
- * Cognitivize one raw file in place through nn-core. Dependency and consent
- * checks for the prompt formats run first, and only when the sidecar is stale.
- *
- * @returns {Promise<{ format: string, status: string, action: string, outcome: 'processed' | 'skipped', refreshed?: boolean }>}
+ * Cognitivize one raw file in place through nn-core. The import guards classify
+ * an incoming source (no sidecar, or changed bytes) before anything is written;
+ * the prompt-format dependency and consent checks follow, only when it is stale.
+ * @returns {Promise<{ format: string, status: string, action: string, outcome: 'processed' | 'skipped', refreshed?: boolean, guard?: any, decision?: string }>}
  */
-async function processFile(projectDir, item, normalizer, notes, options) {
+async function processFile(projectDir, item, normalizer, notes, options, guardContext = { index: null, batch: [] }) {
   const { absPath, relPath, sourceFileField } = item;
   const ext = path.extname(relPath).toLowerCase();
   const format = ext === '.txt' ? 'Plain Text' : ext.substring(1).toUpperCase();
@@ -27,18 +28,23 @@ async function processFile(projectDir, item, normalizer, notes, options) {
     return { format, status: '⚠️ Skipped', action: `Format ${core.EXT_LABELS[ext]} excluded by user selection.`, outcome: 'skipped' };
   }
 
-  // A zero-byte subject is an input error, not content: refuse it through the existing
-  // skipped outcome rather than registering a source whose sha256 hashes the empty string.
+  // A zero-byte subject is an input error, not content: refuse it rather than hash the empty string.
   if (fs.statSync(absPath).size === 0) {
     return { format, status: '⚠️ Skipped', action: 'Not cognitivized (zero-byte subject).', outcome: 'skipped' };
   }
 
+  const rawHash = core.computeFileHash(absPath);
+  const upToDate = core.readSidecarSha256(absPath) === rawHash;
+
+  // Import guards: both run before normalisation, only for a source that is incoming.
+  const review = upToDate || options.duplicateGuard === false
+    ? importGuard.IDLE_REVIEW
+    : await importGuard.reviewIncomingSource(projectDir, item, guardContext, options);
+  if (review.reuse) return { format, status: '↩️ Reused', action: review.action, outcome: 'skipped', guard: review.verdict, decision: review.decision };
+
   if (isPrompt) {
-    if (ext === '.doc') {
-      return { format, status: '⚠️ Skipped', action: 'Legacy .doc is not supported — convert it to .docx, or provide the .txt', outcome: 'skipped' };
-    }
-    const current = core.readSidecarSha256(absPath) === core.computeFileHash(absPath);
-    if (!current) {
+    if (ext === '.doc') return { format, status: '⚠️ Skipped', action: 'Legacy .doc is not supported — convert it to .docx, or provide the .txt', outcome: 'skipped' };
+    if (!upToDate) {
       const dep = await converters.ensureDependency(ext, options, core.EXT_DEPS);
       if (!dep.ok) return { format, status: dep.status, action: dep.reason, outcome: 'skipped' };
       let approve = options.autoAcceptPrompt;
@@ -53,13 +59,14 @@ async function processFile(projectDir, item, normalizer, notes, options) {
       return { format, status: '✅ Processed', action: `Already up to date at \`${result.sidecar}\` (unchanged, sha256 match).`, outcome: 'processed' };
     }
     if (result.status === 'written' || result.status === 'refreshed') {
+      importGuard.recordSource(guardContext, item, rawHash);
       const note = notes.get(sourceFileField);
       const verb = result.status === 'refreshed' ? 'Refreshed' : 'Cognitivized in place:';
       const status = note && note.partial ? '✅ Processed (Partial)' : '✅ Processed';
       const action = note && note.partial
         ? `${verb} \`${result.sidecar}\` with a placeholder body. Parsing failed: ${note.note}`
         : `${verb} \`${result.sidecar}\``;
-      return { format, status, action, outcome: 'processed', refreshed: result.status === 'refreshed' };
+      return { format, status, action: `${action}${review.suffix}`, outcome: 'processed', refreshed: result.status === 'refreshed', guard: review.verdict || undefined, decision: review.decision || undefined };
     }
     const reason = result.status === 'rejected' ? result.reason : result.status;
     return { format, status: '⚠️ Skipped', action: `Not cognitivized (${reason}).`, outcome: 'skipped' };
@@ -79,6 +86,7 @@ async function processFile(projectDir, item, normalizer, notes, options) {
 async function cognitivizeItems(projectDir, files, options) {
   const notes = new Map();
   const normalizer = createNormalizer({ projectDir, webImportMeta: options.webImportMeta || {}, notes });
+  const guardContext = { index: null, batch: [] };
 
   const registry = [];
   const refreshed = [];
@@ -86,14 +94,14 @@ async function cognitivizeItems(projectDir, files, options) {
   let skippedCount = 0;
 
   for (const item of files) {
-    const entry = await processFile(projectDir, item, normalizer, notes, options);
+    const entry = await processFile(projectDir, item, normalizer, notes, options, guardContext);
     if (entry.outcome === 'processed') {
       processedCount++;
       if (entry.refreshed) refreshed.push(item.sourceFileField);
     } else {
       skippedCount++;
     }
-    registry.push({ name: item.sourceFileField, format: entry.format, size: fs.statSync(item.absPath).size, status: entry.status, action: entry.action });
+    registry.push({ name: item.sourceFileField, format: entry.format, size: fs.statSync(item.absPath).size, status: entry.status, action: entry.action, ...importGuard.registryField(entry.guard, entry.decision) });
   }
 
   // Orphaned sidecars are reported, never deleted (Zero Unilateral Mutation).

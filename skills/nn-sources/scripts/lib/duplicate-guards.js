@@ -154,6 +154,130 @@ function searchConversationHistory(workspaceRoot, query = {}) {
   return hits;
 }
 
+/** Extensions whose raw bytes are readable as text, so the near-duplicate guard can compare them. */
+const TEXT_EXTENSIONS = new Set(['.md', '.txt', '.csv', '.json', '.html', '.htm', '.srt', '.vtt']);
+
+/**
+ * Conversation-history hits for a source, over both transcript roots: the
+ * workspace `conversations/` and the promoted `sources/conversations/`. The
+ * source itself is never a hit for its own import.
+ *
+ * @param {string} workspaceRoot
+ * @param {string} relPath domaiNN-relative path of the incoming source.
+ * @param {{ fileName?: string, topic?: string, sourceRef?: string }} query
+ * @returns {Array<{ file: string, title?: string, date?: string, excerpt?: string }>}
+ */
+function collectHistoryHits(workspaceRoot, relPath, query) {
+  const hits = [];
+  const seen = new Set();
+  for (const root of ['', 'sources']) {
+    const base = root ? path.join(workspaceRoot, root) : workspaceRoot;
+    for (const hit of searchConversationHistory(base, query)) {
+      const file = root ? `${root}/${hit.file}` : hit.file;
+      if (file === relPath || seen.has(file)) continue;
+      seen.add(file);
+      hits.push({ ...hit, file });
+    }
+  }
+  return hits;
+}
+
+/**
+ * Run both import guards over one incoming source, before it is normalised.
+ *
+ * The duplicate guard reports an `exact` hit when another source already holds
+ * the same raw bytes (or the same normalized body), and a `near` hit when the
+ * structural similarity of a text-native subject reaches `nearThreshold`. The
+ * history guard reports prior handling of the same file name, path or stem.
+ * Nothing is written and nothing is decided here: the caller asks the user
+ * reuse / adjust / from scratch and acts on the answer.
+ *
+ * @param {string} workspaceRoot
+ * @param {{ absPath: string, relPath: string } | string} incoming Incoming source;
+ *   `relPath` must be domaiNN-relative when the object form is used.
+ * @param {{
+ *   nearThreshold?: number,
+ *   index?: ReturnType<typeof indexWorkspaceSources>,
+ *   batch?: Array<{ relativePath: string, rawSha256?: string|null, primaryPath?: string }>,
+ *   history?: boolean,
+ * }} [opts] `index` reuses one workspace index across a batch; `batch` holds the
+ *   sources already normalised by the same run.
+ * @returns {{
+ *   flagged: boolean,
+ *   duplicate: { exact: string[], near: Array<{ path: string, score: number }> },
+ *   history: Array<{ file: string, title?: string, date?: string, excerpt?: string }>,
+ * }}
+ */
+function guardIncomingSource(workspaceRoot, incoming, opts = {}) {
+  const { nearThreshold = 0.5, batch = [], history = true } = opts;
+  const absPath = typeof incoming === 'string' ? incoming : incoming.absPath;
+  const relPath = String(
+    typeof incoming === 'string' ? path.relative(workspaceRoot, incoming) : incoming.relPath,
+  ).replace(/\\/g, '/');
+  const index = opts.index || indexWorkspaceSources(workspaceRoot);
+
+  const rawHash = computeFileHash(absPath);
+  const exact = new Set();
+  for (const entry of index.sources) {
+    if (entry.relativePath === relPath) continue;
+    if (entry.rawSha256 && entry.rawSha256 === rawHash) exact.add(entry.primaryPath || entry.relativePath);
+  }
+  for (const prev of batch) {
+    if (!prev || prev.relativePath === relPath) continue;
+    if (prev.rawSha256 && prev.rawSha256 === rawHash) exact.add(prev.primaryPath || prev.relativePath);
+  }
+
+  let near = [];
+  if (TEXT_EXTENSIONS.has(path.extname(absPath).toLowerCase())) {
+    const canonical = new Map();
+    const corpus = [];
+    for (const entry of index.sources) {
+      if (entry.relativePath === relPath) continue;
+      const readable = TEXT_EXTENSIONS.has(path.extname(entry.fullPath).toLowerCase());
+      const corpusPath = readable ? entry.fullPath : path.join(workspaceRoot, entry.sidecarPath);
+      canonical.set(corpusPath, entry.primaryPath || entry.relativePath);
+      corpus.push({ path: corpusPath });
+    }
+    const found = detectDuplicates(absPath, corpus, { nearThreshold });
+    for (const p of found.exact) exact.add(canonical.get(p) || p);
+    const seenNear = new Set();
+    near = found.near
+      .map((n) => ({ path: canonical.get(n.path) || n.path, score: n.score }))
+      .filter((n) => {
+        if (exact.has(n.path) || seenNear.has(n.path)) return false;
+        seenNear.add(n.path);
+        return true;
+      })
+      .sort((a, b) => b.score - a.score);
+  }
+
+  const historyHits = history
+    ? collectHistoryHits(workspaceRoot, relPath, {
+        fileName: path.basename(relPath),
+        topic: path.basename(relPath, path.extname(relPath)),
+        sourceRef: relPath,
+      })
+    : [];
+
+  return {
+    flagged: exact.size > 0 || near.length > 0 || historyHits.length > 0,
+    duplicate: { exact: [...exact], near },
+    history: historyHits,
+  };
+}
+
+/**
+ * The decision the scan takes when nobody was asked: an identical source is
+ * reused (never a silent second copy of bytes already in the domaiNN) and a
+ * near duplicate or a prior handling is adjusted in place.
+ *
+ * @param {{ duplicate: { exact: string[] } }} verdict
+ * @returns {'reuse'|'adjust'}
+ */
+function defaultDuplicateDecision(verdict) {
+  return verdict && verdict.duplicate && verdict.duplicate.exact.length > 0 ? 'reuse' : 'adjust';
+}
+
 /**
  * Index every cognitivized source of the domaiNN from its co-located sidecar,
  * establishing canonical primary paths vs alias paths.
@@ -430,6 +554,8 @@ module.exports = {
   computeFileHash,
   detectDuplicates,
   searchConversationHistory,
+  guardIncomingSource,
+  defaultDuplicateDecision,
   indexWorkspaceSources,
   auditUncitedSources,
 };

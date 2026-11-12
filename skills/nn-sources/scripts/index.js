@@ -355,6 +355,9 @@ async function handleCliMode(argv) {
     const scanOptions = {
       autoAcceptPrompt: true,
       singleFile: targetFile,
+      // An explicit single-target refresh is already the user's decision: the
+      // import guards run on the bulk scan, not on a named file.
+      duplicateGuard: false,
     };
 
     if (argv.formats) {
@@ -374,7 +377,7 @@ async function handleCliMode(argv) {
     const target = String(argv.cognitivize);
     console.log(`Cognitivizing "${target}" in place in "${projectDir}"...`);
 
-    const options = { autoAcceptPrompt: true };
+    const options = { autoAcceptPrompt: true, duplicateGuard: false };
     if (argv.formats) {
       options.formats = argv.formats.split(',').map(f => '.' + f.trim().replace(/^\./, ''));
     }
@@ -418,6 +421,9 @@ async function handleCliMode(argv) {
 
     const result = await scanner.scanAndProcess(projectDir, scanOptions);
     console.log(`Scan completed! Discovered: ${result.totalDiscovered}, Processed: ${result.processedCount}, Skipped: ${result.skippedCount}`);
+    for (const entry of result.registry) {
+      if (entry.importGuard) console.log(`  ${entry.status} ${entry.name}: ${entry.action}`);
+    }
 
     reportScanImpact(projectDir);
   }
@@ -709,7 +715,10 @@ async function runProjectMenu(projectDir) {
 
   if (response.action === 'scan') {
     console.log('\nScanning active source directories (sources/import, sources/conversations)...');
-    const result = await scanner.scanAndProcess(projectDir, { autoAcceptPrompt: true });
+    const result = await scanner.scanAndProcess(projectDir, {
+      autoAcceptPrompt: true,
+      duplicatePrompt: promptImportGuardDecision,
+    });
     console.log('\n=== Scan Completed ===');
     console.log(`Processed: ${result.processedCount} files successfully.`);
     console.log(`Skipped/Needs Review: ${result.skippedCount} files.`);
@@ -717,6 +726,38 @@ async function runProjectMenu(projectDir) {
 
     return runProjectMenu(projectDir);
   }
+}
+
+/**
+ * Ask the user what the scan should do with an incoming source the import guard
+ * flagged. Returning nothing falls back to the deterministic default.
+ *
+ * @param {string} sourceFile
+ * @param {any} verdict
+ * @param {{ decisions?: string[], recommended?: 'reuse'|'adjust' }} [choices]
+ */
+async function promptImportGuardDecision(sourceFile, verdict, choices = {}) {
+  const recommended = choices.recommended;
+  const exact = verdict.duplicate.exact[0];
+  const near = verdict.duplicate.near[0];
+  const prior = verdict.history[0];
+  const finding = exact
+    ? `duplicate of ${exact}`
+    : near
+      ? `near duplicate of ${near.path} (score ${near.score})`
+      : `prior handling in ${prior ? prior.file : 'the conversation history'}`;
+  const options = [
+    { title: `${recommended === 'reuse' ? '(Recommended) ' : ''}Reuse the existing source (import nothing)`, value: 'reuse' },
+    { title: `${recommended === 'adjust' ? '(Recommended) ' : ''}Adjust the existing source (normalise this one and reconcile)`, value: 'adjust' },
+    { title: 'From scratch (keep this as its own source)', value: 'scratch' },
+  ];
+  const answer = await prompts({
+    type: 'select',
+    name: 'decision',
+    message: `Import guard: ${sourceFile} is a ${finding}. What should the scan do?`,
+    choices: options,
+  });
+  return answer.decision;
 }
 
 async function runPromoteConversationFlow(projectDir) {

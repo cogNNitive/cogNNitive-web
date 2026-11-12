@@ -1,8 +1,8 @@
 ---
 name: nn-sources
 description: "Bootstrap projects, scan raw documents, normalize them into citable sources with mandatory sidecar provenance, and record every artifact through a `produce_artifact` change. Includes document ingestion, format conversion (txt, md, csv, json, docx, pdf, xlsx), source convergence and impact checks. Procedure execution is owned by the canonical protocol in nn-innfo; this skill links to it instead of restating it. Triggers: sources, scan documents, document ingestion, normalize, sidecar, provenance, lineage, markdown conversion, project bootstrap"
-version: "V_3-5-6"
-last_updated: 2026-11-03
+version: "V_3-5-7"
+last_updated: 2026-11-12
 empty_sections_mode: "ask-per-section"
 license: MIT
 metadata:
@@ -172,6 +172,22 @@ node scripts/index.js --src "<source-folder>" --dest "<destination-parent-folder
 
 1. **Check if `sources/import/` exists** inside the project directory. If not, ask the user and create it: `mkdir sources/import`
 2. **Copy files into `sources/import/`** (preserve originals in-place; DO NOT move or delete user files without consent). The user may organize subfolders freely — sidecars simply sit next to their raw file, so no structure is mirrored anywhere. Files placed by hand keep their names; files brought in by `--import-url`, `--sync` or conversation promotion are written write-once with a UTC suffix.
+
+> **⚠️ Import Guard Rule (`--scan`)**: before a raw file is normalised, `--scan` runs two guards over the incoming source. The **duplicate guard** classifies it against the sources already in the domaiNN: the same raw bytes (or the same normalized body) is an *exact* duplicate, and a text-native subject whose structural similarity reaches `0.5` is a *near* duplicate. The **history guard** searches `conversations/` and `sources/conversations/` for prior handling of the same file name, stem or path. When either one flags the file, **ask before anything is written**:
+>
+> ```
+> Import guard: sources/import/report_q3_copy.md is a duplicate of sources/import/report_q3.md
+>   [a] (Recommended) Reuse the existing source (import nothing)
+>   [b] Adjust the existing source (normalise this one and reconcile)
+>   [c] From scratch (keep this as its own source)
+> ```
+>
+> - **Reuse** writes nothing: the raw file stays where it is and the existing source is cited.
+> - **Adjust** normalises the incoming file and reconciles the pair: the shorter path stays canonical and the new member is recorded as its alias when the bytes are identical.
+> - **From scratch** normalises the incoming file as an independent source and ignores the prior one.
+>
+> A non-interactive `--scan` cannot ask, so it applies the deterministic default — *reuse* for an exact duplicate, *adjust* for a near duplicate or a prior handling — and prints the decision per flagged file. An up-to-date source (sidecar sha256 matches the raw bytes) never reaches the guards. `--cognitivize` and `--normalize-file` name one file explicitly, so they do not run the guards: use them to normalise after choosing *adjust* or *from scratch*. There is no editor half to this guard; it lives in the scan path and in this procedure only.
+
 3. **Raw media (audio/video/images)**:
    `.mp3`, `.wav`, `.png`, `.jpg` and similar files are not converted by the scanner: `--scan` reports them as skipped (needs manual action) and `nn-preflight` lists un-transcribed media as informational `raw-media`. To make the content citable, place a transcript or description as a text source (`.txt`, `.md`, `.srt`, `.vtt`...) in `sources/import/` and cognitivize it. Raw media is kept untouched; no automatic same-stem pairing exists.
 4. **Sidecar with Origin-Metadata Frontmatter**:
