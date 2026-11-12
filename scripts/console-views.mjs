@@ -564,18 +564,88 @@ export function stripConsoleCitations(payload) {
 }
 
 /**
+ * The second degrade step: drops the per-element `provenance` maps (applied
+ * history and field origin). They repeat the change log per element, so a domain
+ * that is still over the hard limit after losing its citations often lands under
+ * it here. The change log itself is untouched, so provenance stays reconstructible.
+ *
+ * @param {any} payload
+ * @returns {number} how many elements lost their provenance
+ */
+export function stripConsoleProvenance(payload) {
+  const elements = payload?.model?.elements
+  if (!Array.isArray(elements)) return 0
+  let dropped = 0
+  for (const element of elements) {
+    if (!element) continue
+    let lost = false
+    if (element.provenance) {
+      delete element.provenance
+      lost = true
+    }
+    if (element.history) {
+      delete element.history
+      lost = true
+    }
+    if (lost) dropped += 1
+  }
+  return dropped
+}
+
+/**
+ * The size budget a domain declares in its manifest frontmatter, validated and
+ * merged over the shipped defaults. An unusable value never changes the budget:
+ * it is reported and the default stays. Returns the effective thresholds, where
+ * they came from, and the problems worth printing.
+ *
+ * @param {Record<string, unknown> | null | undefined} frontmatter `domaiNN_NN.md` frontmatter
+ * @param {{ warnBytes: number, failBytes: number }} [defaults]
+ * @returns {{ warnBytes: number, failBytes: number, source: 'default'|'domain', problems: string[] }}
+ */
+export function resolveSizeBudget(frontmatter, defaults = CONSOLE_SIZE_BUDGET) {
+  const problems = []
+  const declared = frontmatter && typeof frontmatter === 'object' ? frontmatter : {}
+  const read = (key) => {
+    const raw = declared[key]
+    if (raw === undefined || raw === null || String(raw).trim() === '') return undefined
+    const value = Number(String(raw).trim())
+    if (!Number.isFinite(value) || value <= 0) {
+      problems.push(`${key} must be a positive integer of bytes; got "${raw}". Using the default.`)
+      return undefined
+    }
+    return Math.floor(value)
+  }
+  const warnBytes = read('console_size_budget_warn') ?? defaults.warnBytes
+  const failBytes = read('console_size_budget_fail') ?? defaults.failBytes
+  const source = warnBytes === defaults.warnBytes && failBytes === defaults.failBytes ? 'default' : 'domain'
+  if (warnBytes >= failBytes) {
+    problems.push(
+      `console_size_budget_warn (${warnBytes} B) must be lower than console_size_budget_fail (${failBytes} B); using the defaults.`,
+    )
+    return { warnBytes: defaults.warnBytes, failBytes: defaults.failBytes, source: 'default', problems }
+  }
+  return { warnBytes, failBytes, source, problems }
+}
+
+/**
  * Pure size gate. Inputs are UTF-8 byte counts: bundle = inlined bundle + CSS, models =
  * schema + model slots, views = wrapped view scripts, total = the final HTML.
+ *
+ * `budget` lets a domain override the shipped thresholds and `strategy` records
+ * what the export had to drop to fit, so the gate always says which answer it
+ * applied instead of only how big the file is.
  */
-export function evaluateSizeBudget({ bundle, models, views, total }) {
+export function evaluateSizeBudget({ bundle, models, views, total, budget = null, strategy = 'none' }) {
   const breakdown = `size: total ${total} B (bundle ${bundle} B, models ${models} B, views ${views} B)`
-  const { warnBytes, failBytes } = CONSOLE_SIZE_BUDGET
+  const warnBytes = budget && Number.isFinite(budget.warnBytes) ? budget.warnBytes : CONSOLE_SIZE_BUDGET.warnBytes
+  const failBytes = budget && Number.isFinite(budget.failBytes) ? budget.failBytes : CONSOLE_SIZE_BUDGET.failBytes
   const status = total > failBytes ? 'fail' : total > warnBytes ? 'warn' : 'ok'
   const limit = status === 'fail' ? failBytes : warnBytes
+  const strategyNote = strategy === 'none' ? '' : ` [strategy: ${strategy}]`
   const message =
     status === 'ok'
-      ? breakdown
-      : `console is larger than ${limit} B; ${breakdown}` +
+      ? `${breakdown}${strategyNote}`
+      : `console is larger than ${limit} B; ${breakdown}${strategyNote}` +
         (status === 'fail' ? '. Views are not split lazily: remove or slim what is inlined.' : '')
-  return { status, total, breakdown, message }
+  return { status, total, limit, warnBytes, failBytes, strategy, breakdown, message }
 }

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-12T12:12:07.913Z",
-  "head": "2cad053093ef7f24c21ba7f7a62271b4ec940aaf",
+  "generatedAt": "2026-11-12T12:31:14.215Z",
+  "head": "334986fd1dc49d87c282c86b3e96db144e528e04",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -11,25 +11,17 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.60.1",
-      "pinnedTagDate": "2026-11-12T12:59:24+01:00",
-      "commitsSincePin": 2,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
-      ]
+      "pinnedTag": "blueprints-v0.61.0",
+      "pinnedTagDate": "2026-11-12T13:11:30+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.60.1",
-      "pinnedTagDate": "2026-11-12T12:59:24+01:00",
-      "commitsSincePin": 2,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
-      ]
+      "pinnedTag": "blueprints-v0.61.0",
+      "pinnedTagDate": "2026-11-12T13:11:30+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
@@ -67,12 +59,14 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.36.1",
       "pinnedTagDate": "2026-11-12T06:46:34+01:00",
-      "commitsSincePin": 3,
+      "commitsSincePin": 4,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
         "iNNfo/specs/bluepriNNts/console/review.js",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "scripts/console-views.mjs",
+        "scripts/export-console.mjs"
       ]
     }
   }

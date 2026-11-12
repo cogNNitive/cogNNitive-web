@@ -2010,31 +2010,62 @@ export async function writeConsole(opts = {}) {
   }
   // Final size gate, before the first write of this run.
   const bytes = (text) => Buffer.byteLength(text, 'utf8')
-  const budgetOf = (rendered) =>
+
+  // A domain declares its own thresholds in the manifest frontmatter; an
+  // unusable declaration is reported and the shipped defaults stay.
+  const manifestPath = join(root, 'domaiNN_NN.md')
+  let manifestFrontmatter = null
+  if (existsSync(manifestPath)) {
+    try {
+      manifestFrontmatter = frontmatterOf(await readFile(manifestPath, 'utf8'))
+    } catch {
+      manifestFrontmatter = null
+    }
+  }
+  const sizeBudget = viewsLib.resolveSizeBudget(manifestFrontmatter)
+  for (const problem of sizeBudget.problems) {
+    process.stderr.write(`WARNING: [export-console] ${problem}\n`)
+  }
+
+  const budgetOf = (rendered, strategy = 'none') =>
     viewsLib.evaluateSizeBudget({
       bundle: bytes(preparedAssets.bundleScript) + bytes(preparedAssets.css),
       models:
         bytes(JSON.stringify(domainPayload.schema)) + bytes(JSON.stringify(domainPayload.model)),
       views: preparedAssets.viewScripts.reduce((sum, script) => sum + bytes(script), 0),
       total: bytes(rendered),
+      budget: sizeBudget,
+      strategy,
     })
 
   let html = buildHtml(new Date().toISOString())
   let budget = budgetOf(html)
 
-  // Degrade instead of refusing to write: a domain that outgrew the hard limit still
-  // exports, with the resolved citation payload dropped and the strategy reported.
-  let slimmed = false
+  // Degrade instead of refusing to write, in a fixed order: the resolved citation
+  // payload first (the raw field values survive), then the per-element provenance
+  // maps (the change log still holds the same facts). The strategy each step
+  // applied travels in the gate's message.
+  let strategy = 'none'
   if (budget.status === 'fail') {
-    const stripped = viewsLib.stripConsoleCitations(domainPayload)
-    if (stripped > 0) {
+    const strippedCitations = viewsLib.stripConsoleCitations(domainPayload)
+    if (strippedCitations > 0) {
+      strategy = 'strip-citations'
       html = buildHtml(new Date().toISOString())
-      budget = budgetOf(html)
-      slimmed = true
+      budget = budgetOf(html, strategy)
+      let strippedProvenance = 0
+      if (budget.status === 'fail') {
+        strippedProvenance = viewsLib.stripConsoleProvenance(domainPayload)
+        if (strippedProvenance > 0) {
+          strategy = 'strip-citations+provenance'
+          html = buildHtml(new Date().toISOString())
+          budget = budgetOf(html, strategy)
+        }
+      }
       process.stderr.write(
-        `WARNING: [export-console] console exceeded ${viewsLib.CONSOLE_SIZE_BUDGET.failBytes} B; ` +
-          `exported slimmed — dropped the resolved citations of ${stripped} elements ` +
-          `(their raw field values are untouched).\n`,
+        `WARNING: [export-console] console exceeded ${sizeBudget.failBytes} B; ` +
+          `exported degraded (${strategy}) — dropped the resolved citations of ${strippedCitations} elements` +
+          (strippedProvenance > 0 ? ` and the provenance of ${strippedProvenance}` : '') +
+          ` (their raw field values are untouched).\n`,
       )
     }
   }
@@ -2067,7 +2098,7 @@ export async function writeConsole(opts = {}) {
     }
 
     let isUnchanged = false
-    if (!slimmed && existsSync(absPath)) {
+    if (strategy === 'none' && existsSync(absPath)) {
       const previous = await readFile(absPath, 'utf-8')
       const previousGenerated = extractModelMetaFromHtml(previous)?.generated
       // Re-render with the previous generated stamp: identical bytes mean nothing changed.
