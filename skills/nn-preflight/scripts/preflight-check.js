@@ -34,6 +34,7 @@ const crypto = require('crypto');
 const { parseFocusedYaml, parseFrontmatter } = require('./lib/yaml-lite');
 const { diffSkillDir } = require('./lib/skill-content-hash');
 const { discoverModels, scanWorkspaceLineage } = require('./lineage-audit');
+const { auditDomain } = require('./domain-audit');
 const { isProjectableName, classifyProjection, hashTree } = require('./lib/projection');
 // The bundle is a generated CJS mirror whose exports tsc cannot infer; the cast restates its contract.
 const { SPEC_FILENAME, ensureNNFilename, isSidecarName, rawPathOfSidecar, sidecarPathOf } = /** @type {any} */ (
@@ -1145,6 +1146,11 @@ function auditModifiedSkills(state, skillsDir) {
   return { items, count };
 }
 
+/** Invalid domaiNN models or an engine older than the domaiNN declares need action; an unsynced manifest only warns. */
+function hasDomainIssues(summary) {
+  return (summary.domainModelsInvalid || 0) > 0 || (summary.blueprintEnginesBehind || 0) > 0;
+}
+
 async function runCheck(options = {}) {
   const manifestUrl = options.manifestUrl || process.env.SM_MANIFEST_URL || DEFAULT_MANIFEST_URL;
   const skillsDir = options.skillsDir || DEFAULT_SKILLS_DIR;
@@ -1193,6 +1199,9 @@ async function runCheck(options = {}) {
       blueprintModelsAhead: 0,
       blueprintModelsUnlisted: 0,
       blueprintModelsUnpinned: 0,
+      domainModelsInvalid: 0,
+      domainManifestUnregistered: 0,
+      blueprintEnginesBehind: 0,
       templateCatalogOffline: 0,
       templatesCompositionValid: 0,
       templatesCompositionBlockers: 0,
@@ -1287,6 +1296,15 @@ async function runCheck(options = {}) {
         results.items.push(...upgrade.items);
       }
     }
+
+    // 1b-ii. domaiNN audit: models wherever the manifest and the placement rules
+    // put them (not only kNNowledge/), engine drift, unsynced manifest. Catalog-free.
+    const domain = auditDomain(workspaceDir, { blueprintsDir });
+    results.summary.blueprintModelsScanned = Math.max(results.summary.blueprintModelsScanned, domain.summary.modelsScanned);
+    results.summary.domainModelsInvalid = domain.summary.invalid;
+    results.summary.domainManifestUnregistered = domain.summary.unregistered;
+    results.summary.blueprintEnginesBehind = domain.summary.enginesBehind;
+    results.items.push(...domain.items);
   }
 
   const state = loadState(stateFile);
@@ -1333,7 +1351,7 @@ async function runCheck(options = {}) {
     });
     // Offline mode: do not block if local files exist — but stale workspace
     // specs, unnormalized sources, or projection drift are still a hard failure and must not be masked by the early return.
-    if (results.summary.specsStale > 0 || results.summary.sourcesUnnormalized > 0 || results.summary.sourcesDangling > 0 || results.summary.projectionsDrift > 0) {
+    if (results.summary.specsStale > 0 || results.summary.sourcesUnnormalized > 0 || results.summary.sourcesDangling > 0 || results.summary.projectionsDrift > 0 || hasDomainIssues(results.summary)) {
       results.status = 'ACTION_REQUIRED';
       results.exitCode = 1;
     }
@@ -1553,7 +1571,7 @@ async function runCheck(options = {}) {
   const hasCatalogOutdated = (results.summary.catalogOutdated || 0) > 0;
   const hasDependencyIssues = (results.summary.blueprintDependencyIssues || 0) > 0;
 
-  if (hasOutdated || hasMissing || hasStaleSpecs || hasSourceIssues || hasCompositionBlockers || hasProjectionDrift || hasCatalogOutdated || hasDependencyIssues) {
+  if (hasOutdated || hasMissing || hasStaleSpecs || hasSourceIssues || hasCompositionBlockers || hasProjectionDrift || hasCatalogOutdated || hasDependencyIssues || hasDomainIssues(results.summary)) {
     results.status = 'ACTION_REQUIRED';
     results.exitCode = 1;
   } else {
@@ -1588,6 +1606,22 @@ function printHumanReport(results) {
       }
     }
     console.log('  Remediation: rehydrate the local copy from its canonical URL (e.g. run check_workspace). Do NOT hand-delete or hand-edit files under specs/.\n');
+  }
+
+  if (results.summary.blueprintEnginesBehind > 0 || results.summary.domainModelsInvalid > 0 || results.summary.domainManifestUnregistered > 0) {
+    console.log('\nWARNING: domaiNN issues detected:');
+    for (const item of results.items) {
+      if (item.type === 'blueprint-engine' && item.status === 'behind') {
+        console.log(`  - [ENGINE BEHIND] ${item.name}: installed ${item.installed} < declared ${item.declared}`);
+        console.log(`    Run: ${item.command}`);
+      } else if (item.type === 'domain-model' && item.status === 'invalid') {
+        console.log(`  - [INVALID MODEL] ${item.name}`);
+        console.log(`    ${item.detail}`);
+      } else if (item.type === 'domain-manifest' && item.status === 'warning') {
+        console.log(`  - [MANIFEST UNSYNCED] ${item.detail}`);
+      }
+    }
+    console.log('');
   }
 
   if (results.summary.projectionsDrift > 0) {

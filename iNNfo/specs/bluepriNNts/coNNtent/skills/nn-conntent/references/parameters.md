@@ -174,7 +174,7 @@ Settable at: `Video`.
 
 ### `kind`
 
-Name of a Scene Kind declared by the Series, or the reserved value `Libre`. Required on every V_0-15-0 Scene; the engine validates it against the Series and offers no static options.
+Name of a Scene Kind declared by the Series, or the reserved value `Libre`. Required on every V_0-15-0 Scene; the engine validates it against the Series and offers no static options. A `Libre` scene takes no kind rules, presets or chrome, so it renders with no watermark, CTA, bumper or music.
 
 Settable at: `Scene`.
 
@@ -192,7 +192,7 @@ Settable at: `Scene Kind`.
 
 ### `narration`
 
-Whether scenes of this kind carry narration. `off` means no TTS request is made and a non-empty scene body is an error.
+Whether scenes of this kind carry narration. With `on`, the measured narration sets the scene length and every `animation` Layer is trimmed or looped to it. `off` means no TTS request is made, a non-empty scene body is an error, and the scene takes its length from its media or animation.
 
 Settable at: `Scene Kind`.
 

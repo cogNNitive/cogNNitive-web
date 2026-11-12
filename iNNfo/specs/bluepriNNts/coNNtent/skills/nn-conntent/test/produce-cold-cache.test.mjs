@@ -65,10 +65,10 @@ function buildEpisodeDoc({
   return `---
 level: 3
 parent_spec:
-  name: "coNNtent_V_0-18-0"
+  name: "coNNtent_V_0-19-0"
   url: "https://example.invalid/coNNtent/spec_NN.md"
 knowledge_version: "V_0-1-0"
-blueprint_version: "V_0-18-0"
+blueprint_version: "V_0-19-0"
 title: "Cold Cache E2E Episode"
 ---
 
@@ -123,14 +123,14 @@ function createWorkspace() {
     'utf8',
   )
 
-  fs.mkdirSync(path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'V_0-18-0'), { recursive: true })
+  fs.mkdirSync(path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'V_0-19-0'), { recursive: true })
   fs.copyFileSync(
     path.join(BLUEPRINT, 'spec_NN.md'),
     path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'spec_NN.md'),
   )
   fs.copyFileSync(
     path.join(BLUEPRINT, 'spec_NN.md'),
-    path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'V_0-18-0', 'spec_NN.md'),
+    path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'V_0-19-0', 'spec_NN.md'),
   )
   fs.copyFileSync(
     path.join(BLUEPRINT, 'defaults', 'video-defaults_NN.md'),

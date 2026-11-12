@@ -34,8 +34,8 @@ import { appendTimingRow, timingRow } from './facts.mjs';
 import { assertImageSize, loadMergedCatalog } from './catalog.mjs';
 import { warnUnpricedAllowedModels } from '../asset-cost-estimator.mjs';
 import { loadFrame, emitHyperframesFrame } from './frame-tokens.mjs';
-import { captionsCacheKey } from './captions.mjs';
-import { resolveCaptionModel } from './captions-stage.mjs';
+import { groupCaptionSegments, sceneCaptionsCacheKey } from './captions.mjs';
+import { sceneAudioPath, sceneCaptionPlans } from './captions-stage.mjs';
 import { probeDuration } from './media-duration.mjs';
 import { checkMissingAsset } from './missing-asset.mjs';
 import { resolveAnimations, assertAnimationIds } from './animations.mjs';
@@ -515,7 +515,9 @@ async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = 
 
 /**
  * Synthesizes every TTS and image asset an episode script needs into cache.
- * Records 'tts' and 'image' stage timing rows to facts if provided.
+ * Records 'tts' and 'image' stage timing rows to facts if provided. With
+ * `lookupOnly` it only returns `{ audioAssets }` (scene id -> cached narration audio)
+ * from a read-only plan pass, spending and writing nothing.
  */
 export async function synthesizeEpisodeAssets(options = {}) {
   const scriptPath = path.resolve(options.scriptPath);
@@ -552,7 +554,7 @@ export async function synthesizeEpisodeAssets(options = {}) {
 
   const model = options.model || loadKnowledgeModel(scriptPath, { model: options.model, modelPath: options.modelPath });
   const scriptBags = withScriptPresets(bags, model, scriptPath);
-  const guard = compiler.checkScript(model, { ...options, bags: scriptBags });
+  const guard = compiler.checkScript(model, { ...options, bags: scriptBags, scriptDir });
   if (!guard.ok) throw new ScriptValidationError(guard.errors);
   const parsed = compiler.lowerKnowledgeModel(model, { bags: scriptBags, scriptDir, fps: options.fps, width: options.width, height: options.height });
 
@@ -563,7 +565,10 @@ export async function synthesizeEpisodeAssets(options = {}) {
     guard: planGuard,
     ...synthOptions,
   });
-  await synthesizeScriptAssets(structuredClone(parsed), planSynth, models, () => {}, new Map(), bags, catalog);
+  const planned = await synthesizeScriptAssets(structuredClone(parsed), planSynth, models, () => {}, new Map(), bags, catalog);
+  // `lookupOnly`: the scene -> cached audio map of the plan pass (read-only cache, dry-run
+  // guard: nothing is spent or written). A scene whose audio is not cached is absent.
+  if (options.lookupOnly) return { audioAssets: planned.audioAssets };
   planGuard.assertPlanAffordable();
 
   const costByRef = new Map();
@@ -659,7 +664,7 @@ export async function compileVideo(options) {
   // any synthesis so an invalid document never spends a cent.
   const model = options.model || loadKnowledgeModel(scriptPath, { model: options.model, modelPath: options.modelPath });
   const scriptBags = withScriptPresets(bags, model, scriptPath);
-  const guard = compiler.checkScript(model, { ...options, bags: scriptBags });
+  const guard = compiler.checkScript(model, { ...options, bags: scriptBags, scriptDir });
   if (!guard.ok) throw new ScriptValidationError(guard.errors);
   const parsed = compiler.lowerKnowledgeModel(model, { bags: scriptBags, scriptDir, fps: options.fps, width: options.width, height: options.height });
   // Resolve the frame cascade value to its document BEFORE any synthesis or
@@ -678,6 +683,10 @@ export async function compileVideo(options) {
       parsed.scenes.flatMap((sc) => (Array.isArray(sc.layers) ? sc.layers : []).filter((l) => l.kind === 'overlay').map((l) => l.type)),
     ),
   ];
+  // Scenes with captions on and narration: their aligned words become `captions` overlays,
+  // so the caption slot component is resolved with the others.
+  const captionPlans = sceneCaptionPlans({ model, scriptPath, bags: scriptBags }).filter((p) => p.mode !== 'off' && p.narration);
+  if (captionPlans.length > 0 && !overlaySlots.includes('caption')) overlaySlots.push('caption');
   const components = resolveComponents({ slots: overlaySlots, bags, scriptDir, workspaceRoot: loaded.root });
   // Resolve every authored animation project BEFORE any synthesis (design D7/D8):
   // a missing project fails loudly with nothing spent, and an id that would
@@ -722,7 +731,7 @@ export async function compileVideo(options) {
     if (options.dryRun) {
       // Each scene's target duration (design D14): `measured` when narration
       // audio exists, `estimated` from the word count otherwise; an authored
-      // animation extends it to `max(narration, animation)`.
+      // animation sets the length only of a scene without narration.
       const scenes = computeSceneDurations(parsed.scenes, {
         wordsPerSecond: compiler.wordsPerSecond,
         defaultSceneDuration: compiler.defaultSceneDuration,
@@ -855,49 +864,65 @@ export async function compileVideo(options) {
     emitHyperframesFrame({ frameDir: path.dirname(frameInfo.path), projectDir: scriptDir });
   }
 
-  // Collect aligned captions from cache for scenes with captions != off
+  // Aligned captions, read from the cache the captions stage wrote. Writer and reader
+  // share the scene plan (`sceneCaptionPlans`) and the key (`sceneCaptionsCacheKey`).
+  // Each scene's words are grouped into readable segments and every segment becomes
+  // one `captions` overlay (slot `caption`) inside its scene, so the emitter mounts
+  // the caption component like any other overlay.
   const allCaptions = [];
   const fps = options.fps || parsed.fps || manifest.fps || 30;
-  for (let i = 0; i < parsed.scenes.length; i++) {
-    const sc = parsed.scenes[i];
-    const sceneBags = { ...bags, video: parsed.video || {}, scene: sc.fields || sc.properties || sc };
-    const mode = resolve('captions', sceneBags).value || 'off';
-    const captionModel = resolve('caption_model', sceneBags).value || null;
-    const sceneTrack = manifest.tracks?.scenes?.[i];
-    const sceneStartSec = (sceneTrack ? sceneTrack.fromFrame : 0) / fps;
-
-    if (mode !== 'off' && sc.narration && sc.narration.trim().length > 0) {
-      const lang = parsed.language || resolve('language', bags).value || 'en';
-      const modelName = resolveCaptionModel({ language: lang, captionModel });
-      const audioSha = audioAssets[sc.id]?.sha256;
-      if (audioSha) {
-        const cacheKey = captionsCacheKey({
-          audioSha,
-          text: sc.narration.trim(),
-          engine: 'auto',
-          engineVersion: `${modelName}:${lang}`,
-        });
-        const cacheFile = path.join(cacheDir, 'captions', `${cacheKey}.json`);
-        if (fs.existsSync(cacheFile)) {
-          try {
-            const data = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
-            const items = mode === 'lines' ? (data.lines || []) : (data.words || []);
-            for (const item of items) {
-              allCaptions.push({
-                text: item.text,
-                start: sceneStartSec + Number(item.start || 0),
-                end: sceneStartSec + Number(item.end || item.start || 0),
-                kind: mode === 'lines' ? 'line' : 'word',
-              });
-            }
-          } catch {}
-        }
-      }
+  const captionOverlays = [];
+  for (const plan of captionPlans) {
+    const sceneTrack = (manifest.tracks?.scenes || []).find((s) => s.id === plan.sceneId);
+    const audioPath = sceneAudioPath(audioAssets, plan);
+    if (!sceneTrack || !audioPath || !fs.existsSync(audioPath)) continue;
+    const cacheFile = path.join(
+      cacheDir,
+      'captions',
+      `${sceneCaptionsCacheKey({ audioPath, text: plan.narration, modelName: plan.modelName, language: plan.language })}.json`,
+    );
+    if (!fs.existsSync(cacheFile)) {
+      console.warn(`[compile] captions:: ${plan.mode} for scene "${plan.slug}" but no aligned captions are cached; run the captions stage (produce).`);
+      continue;
+    }
+    let data;
+    try {
+      data = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+    } catch (err) {
+      throw new VideoRenderError(`caption-cache-corrupt: ${cacheFile} for scene "${plan.slug}" is not valid JSON (${err.message}); delete it and re-run the captions stage.`);
+    }
+    const sceneStart = sceneTrack.fromFrame / fps;
+    const sceneEnd = (sceneTrack.fromFrame + sceneTrack.durationInFrames) / fps;
+    const timed = (plan.mode === 'lines' ? data.lines : data.words) || [];
+    const kind = plan.mode === 'lines' ? 'line' : 'word';
+    const items = timed.map((item) => ({
+      text: item.text,
+      start: sceneStart + Number(item.start || 0),
+      end: sceneStart + Number(item.end || item.start || 0),
+      kind,
+    }));
+    allCaptions.push(...items);
+    const segments = plan.mode === 'lines' ? items : groupCaptionSegments(items);
+    for (const seg of segments) {
+      const fromFrame = Math.max(sceneTrack.fromFrame, Math.round(seg.start * fps));
+      const endFrame = Math.min(Math.round(sceneEnd * fps), Math.max(fromFrame + 1, Math.round(seg.end * fps)));
+      if (endFrame <= fromFrame) continue;
+      captionOverlays.push({
+        id: `caption_${plan.slug}_${String(captionOverlays.length + 1).padStart(3, '0')}`,
+        type: 'captions',
+        sceneId: plan.sceneId,
+        fromFrame,
+        durationInFrames: endFrame - fromFrame,
+        config: { text: seg.text, position: 'bottom' },
+      });
     }
   }
   if (allCaptions.length > 0) {
     manifest.metadata.narrationCaptions = allCaptions;
     manifest.narrationCaptions = allCaptions;
+  }
+  if (captionOverlays.length > 0) {
+    manifest.tracks.overlays = [...(manifest.tracks.overlays || []), ...captionOverlays];
   }
 
   // The resolved slot components ride on the manifest so the emitter mounts the

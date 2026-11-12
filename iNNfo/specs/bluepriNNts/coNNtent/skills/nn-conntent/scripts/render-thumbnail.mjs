@@ -31,7 +31,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { spawnSync } from 'node:child_process';
+import { spawnTool } from './lib/spawn-tool.mjs';
 import { fileURLToPath } from 'node:url';
 import { loadSeriesFor } from './lib/series-doc.mjs';
 import { loadCascadeBags } from './lib/video-scope.mjs';
@@ -250,8 +250,8 @@ function resolveCli({ cliPath, installedVersion } = {}) {
 }
 
 function defaultRun(cmd, args, opts = {}) {
-  // `shell: true` is needed for the .cmd shim on Windows.
-  return spawnSync(cmd, args, { shell: true, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...opts });
+  // spawnTool runs the Windows .cmd shim through cmd.exe with every argument escaped (#616).
+  return spawnTool(cmd, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...opts });
 }
 
 /**

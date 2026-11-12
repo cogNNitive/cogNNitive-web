@@ -289,6 +289,25 @@
         }
         return deepCopy(
           mutate(function (s) {
+            // A verdict is THE decision on one (model, scene, gate): a later one
+            // replaces it in place and keeps its id, so a re-export after a failed
+            // apply carries each decision once (#606).
+            if (raw.kind === 'verdict') {
+              for (var i = 0; i < s.drafts.length; i++) {
+                var prev = s.drafts[i]
+                if (
+                  prev &&
+                  prev.kind === 'verdict' &&
+                  prev.knowledge_id === String(raw.knowledge_id) &&
+                  prev.element_slug === String(raw.element_slug) &&
+                  prev.gate === String(raw.gate)
+                ) {
+                  var replaced = normalizeDraft(raw, prev.id)
+                  s.drafts[i] = replaced
+                  return replaced
+                }
+              }
+            }
             var draft = normalizeDraft(raw, raw.id || nextDraftId(s.drafts))
             s.drafts.push(draft)
             return draft

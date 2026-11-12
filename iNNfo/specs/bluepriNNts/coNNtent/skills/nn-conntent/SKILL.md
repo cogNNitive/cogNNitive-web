@@ -46,6 +46,32 @@ Propose that procedure and ask for confirmation; the person may choose another o
 six procedures, their steps and the tool of each step live in
 `procedures/usage_procedures_NN.md`: point to it, do not restate it. Detection is
 stateless, so after a procedure completes run `detectState` again and propose the next.
+Series, cascade and character authoring follow `procedures/create_series_procedures_NN.md`,
+`procedures/configure_cascade_procedures_NN.md` and `procedures/create_character_procedures_NN.md`.
+
+## 0c. Authoring rules (always)
+
+- **Load the HyperFrames skills before any visual.** Before authoring or changing any
+  visual (an `animation` project, a component, an overlay, a frame), load `hyperframes`,
+  `hyperframes-cli`, `hyperframes-registry` and `media-use`. Search the registry
+  (`hyperframes-registry`) for a ready-made block before hand-authoring one: an arrow, a
+  lower third, a chart or a transition almost always exists. Get music, sound effects and
+  images through `media-use`; an episode with no music bed is a decision, not a default.
+- **Verify with snapshots; render once.** After each visual change run `hyperframes check`
+  on the project, then `hyperframes snapshot` and inspect the frames it writes. Fix and
+  repeat on snapshots. Render the master once, at the end, through `produce`: a full render
+  takes minutes and is never the way to check a fix.
+- **Scene Kinds come only from the series.** Every `kind::` names a `Scene Kind` the Series
+  document declares. Never invent a kind, or write a field where the blueprint does not
+  define it (for example a `demo` kind, or `role::` on a Scene: `role` belongs to the Scene
+  Kind); propose adding the kind to the
+  Series instead. `Libre` is the only escape hatch, and it takes no chrome (no watermark).
+- **Narration is continuous prose.** The scene body is TTS input: never break a line inside
+  a sentence, because the voice reads it as a pause.
+- **Never patch the installed copy silently.** The installed bluepriNNt and this skill under
+  `~/.agents/` are overwritten by the next `install --blueprint coNNtent`, so a local patch is
+  lost. When a workaround needs one, tell the person, and record it as an upstream report
+  (what failed, the patch, the file) so it can be fixed in the bluepriNNt itself.
 
 ## 1. Engine Architecture & HyperFrames Pipeline
 

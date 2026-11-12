@@ -62,11 +62,16 @@ function walkModels(dir, files) {
   }
 }
 
-/** Discover Level-3 models in the workspace (models/ + root, recursively). */
-function discoverModels(workspaceDir) {
+/**
+ * Every `_NN.md` document of the workspace (sidecars and staging dirs excluded)
+ * with its parsed frontmatter. `fm` is `{}` when the frontmatter cannot be read
+ * or parsed; `parseError` then says why. Model discovery and the domaiNN audit
+ * both read the workspace through this one walk.
+ */
+function readNNDocuments(workspaceDir) {
   const files = [];
   walkModels(workspaceDir, files);
-  const models = [];
+  const docs = [];
   for (const file of files) {
     let content;
     try {
@@ -75,20 +80,32 @@ function discoverModels(workspaceDir) {
       continue;
     }
     let fm;
+    let parseError = null;
     try {
       fm = parseFocusedYaml(parseFrontmatter(content)) || {};
-    } catch {
+    } catch (err) {
       fm = {};
+      parseError = err && err.message ? err.message : String(err);
     }
-    if (String(fm.level) !== '3') continue;
-    const parentUrl = (fm.parent_spec && fm.parent_spec.url) || fm.spec_url || null;
-    models.push({
+    docs.push({
       file,
       rel: path.relative(workspaceDir, file).replace(/\\/g, '/'),
-      parentUrl,
+      fm,
+      parseError,
     });
   }
-  return models;
+  return docs;
+}
+
+/** Discover Level-3 models in the workspace (models/ + root, recursively). */
+function discoverModels(workspaceDir) {
+  return readNNDocuments(workspaceDir)
+    .filter((doc) => String(doc.fm.level) === '3')
+    .map((doc) => ({
+      file: doc.file,
+      rel: doc.rel,
+      parentUrl: (doc.fm.parent_spec && doc.fm.parent_spec.url) || doc.fm.spec_url || null,
+    }));
 }
 
 /**
@@ -314,6 +331,7 @@ module.exports = {
   compareVersions,
   parsePinnedUrl,
   discoverModels,
+  readNNDocuments,
   scanWorkspaceUpgrades,
   scanWorkspaceLineage: scanWorkspaceUpgrades,
   planUpgrade,

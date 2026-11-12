@@ -23,7 +23,7 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
-import { spawnSync } from 'node:child_process'
+import { spawnTool } from './lib/spawn-tool.mjs'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from './lib/cli-args.mjs'
 
@@ -116,7 +116,7 @@ export function buildBlurFillFilter(
 
 /** Default runner: ffmpeg on PATH, output inherited. */
 function defaultRun(args) {
-  return spawnSync('ffmpeg', args, { stdio: 'inherit' })
+  return spawnTool('ffmpeg', args, { stdio: 'inherit' })
 }
 
 /**
@@ -124,7 +124,7 @@ function defaultRun(args) {
  * Returns null when ffprobe is missing or cannot read the file.
  */
 function defaultProbe(file) {
-  const res = spawnSync(
+  const res = spawnTool(
     'ffprobe',
     [
       '-v',

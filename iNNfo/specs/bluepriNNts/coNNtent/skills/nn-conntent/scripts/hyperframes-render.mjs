@@ -12,30 +12,16 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { emitHyperframesProject, HYPERFRAMES_PIN } from './scene-project.mjs';
+import { emitHyperframesProject, HYPERFRAMES_PIN, resolveHyperframesCli } from './scene-project.mjs';
 import { SLOT_OF } from './overlay-blocks.mjs';
 import { assertGsapPresent } from './lib/stage-assets.mjs';
 import { emitHyperframesFrame } from './lib/frame-tokens.mjs';
+import { spawnTool } from './lib/spawn-tool.mjs';
 
-/** Quotes one argument so a shell passes it through as a single literal token. */
-export function quoteArg(arg, platform = process.platform) {
-  const a = String(arg);
-  if (/^[\w@%+=:,./-]+$/.test(a)) return a;
-  if (platform === 'win32') return `"${a.replace(/"/g, '\\"')}"`;
-  return `'${a.replace(/'/g, "'\\''")}'`;
-}
-
-/** Default runner: `npx` on PATH. */
+/** Default runner: the pinned CLI through `spawnTool` (the Windows `.cmd` shim runs safely). */
 function defaultRun(cmd, args, opts = {}) {
-  // `shell: true` is needed for the npx .cmd shim on Windows, so quote every arg ourselves.
-  const res = spawnSync(cmd, args.map((a) => quoteArg(a)), {
-    shell: true,
-    encoding: 'utf8',
-    maxBuffer: 64 * 1024 * 1024,
-    ...opts,
-  });
+  const res = spawnTool(cmd, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...opts });
   return { status: res.status, stdout: res.stdout || '', stderr: res.stderr || '', error: res.error };
 }
 
@@ -88,28 +74,64 @@ export function buildHyperframesProject(manifest, projectDir, opts = {}) {
  * Copies each authored animation project into `<project>/authored/<id>/` (design
  * D5/D7) so its root `index.html` and relative assets resolve in place. The
  * project's own `.hyperframes/` cache is skipped — it is machine state, not
- * source. Idempotent: a missing source directory is skipped.
+ * source. A project mounted by several scenes is staged once. Idempotent: a
+ * missing source directory is skipped.
+ *
+ * HyperFrames resolves every `data-composition-src` against the ENTRY project
+ * root, not against the file that mounts it. Inside the authored project a
+ * sub-composition is therefore written `compositions/x.html`; once the project
+ * sits under `authored/<id>/` of the emitted root that path would point at the
+ * root's own `compositions/`. Each staged HTML file has its relative
+ * `data-composition-src` values re-rooted to `authored/<id>/…`, so a project that
+ * splits its scene into sub-composition files (what `hyperframes check` asks for)
+ * renders when mounted.
  * @param {object} manifest
  * @param {string} projectDir
  */
 export function stageAuthoredProjects(manifest, projectDir) {
   const scenes = manifest?.tracks?.scenes || [];
   const entries = scenes.flatMap((scene) => scene.animations || []);
+  const staged = new Set();
   for (const entry of entries) {
-    if (!entry?.id || !entry?.sourceDir || !fs.existsSync(entry.sourceDir)) continue;
-    copyDir(entry.sourceDir, path.join(projectDir, 'authored', entry.id), new Set(['.hyperframes']));
+    if (!entry?.id || !entry?.sourceDir || !fs.existsSync(entry.sourceDir) || staged.has(entry.id)) continue;
+    staged.add(entry.id);
+    const prefix = `authored/${entry.id}/`;
+    copyDir(entry.sourceDir, path.join(projectDir, 'authored', entry.id), new Set(['.hyperframes']), (name, text) =>
+      /\.html?$/i.test(name) ? rerootCompositionSrc(text, prefix) : null,
+    );
   }
 }
 
-/** Recursive copy that skips any directory whose name is in `skip`. */
-function copyDir(src, dest, skip) {
+/**
+ * Prefixes every relative `data-composition-src` in `html` with `prefix`. Absolute
+ * URLs, root-absolute paths and values already under the prefix are kept.
+ * @param {string} html
+ * @param {string} prefix e.g. `authored/rig/`
+ */
+export function rerootCompositionSrc(html, prefix) {
+  return String(html).replace(/(data-composition-src\s*=\s*)(["'])([^"']*)\2/g, (match, attr, quote, value) => {
+    const src = value.trim();
+    if (!src || /^[a-z][a-z0-9+.-]*:/i.test(src) || src.startsWith('/') || src.startsWith(prefix)) return match;
+    return `${attr}${quote}${prefix}${src.replace(/^\.\//, '')}${quote}`;
+  });
+}
+
+/**
+ * Recursive copy that skips any directory whose name is in `skip`. `transform`
+ * may return new text for a file (null keeps the bytes as they are).
+ */
+function copyDir(src, dest, skip, transform = () => null) {
   fs.mkdirSync(dest, { recursive: true });
   for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
     if (skip.has(entry.name)) continue;
     const from = path.join(src, entry.name);
     const to = path.join(dest, entry.name);
-    if (entry.isDirectory()) copyDir(from, to, skip);
-    else if (entry.isFile()) fs.copyFileSync(from, to);
+    if (entry.isDirectory()) copyDir(from, to, skip, transform);
+    else if (entry.isFile()) {
+      const text = /\.html?$/i.test(entry.name) ? transform(entry.name, fs.readFileSync(from, 'utf8')) : null;
+      if (text === null) fs.copyFileSync(from, to);
+      else fs.writeFileSync(to, text, 'utf8');
+    }
   }
 }
 
@@ -163,9 +185,8 @@ export async function tryHyperframesRender(input, deps = {}) {
   // version different from the pin is returned as a named reason — never a silent
   // `npx` install. The caller raises a loud named error; there is no FFmpeg fallback.
   const skillDir = deps.skillDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-  const binName = process.platform === 'win32' ? 'hyperframes.cmd' : 'hyperframes';
   const injectedCli = deps.cliPath !== undefined;
-  const cliPath = deps.cliPath || path.join(skillDir, 'node_modules', '.bin', binName);
+  const cliPath = deps.cliPath || resolveHyperframesCli({ skillDir });
   const installedPkgPath = path.join(skillDir, 'node_modules', 'hyperframes', 'package.json');
   let installedPin = deps.installedPin !== undefined ? deps.installedPin : null;
   // An injected runner (tests) owns CLI resolution; otherwise verify the real pin.

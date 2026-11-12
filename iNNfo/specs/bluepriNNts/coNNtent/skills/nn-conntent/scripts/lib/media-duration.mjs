@@ -7,7 +7,7 @@
  */
 
 import fs from 'node:fs';
-import { spawnSync } from 'node:child_process';
+import { spawnTool } from './spawn-tool.mjs';
 
 export const FFPROBE_CMD = 'ffprobe';
 
@@ -23,7 +23,7 @@ const roundMs = (seconds) => Math.round(seconds * 1000) / 1000;
 
 /** Default runner: `ffprobe` on PATH. Returns the captured streams. */
 function defaultRun(cmd, args) {
-  const res = spawnSync(cmd, args, { encoding: 'utf8' });
+  const res = spawnTool(cmd, args, { encoding: 'utf8' });
   return { status: res.status, stdout: res.stdout || '', stderr: res.stderr || '', error: res.error };
 }
 

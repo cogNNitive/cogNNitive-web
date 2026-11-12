@@ -22,6 +22,11 @@ domaiNN already implies, summarise before proposing, and end in a sealed `propos
 changeset that a human approves. Library files that are not kNNowledge documents may be
 written by the wizard, but they stay inert until an applied changeset references them.
 
+Three companion procedures state how the wizards' decisions are written, field by field:
+`create_series_procedures_NN.md` (Series document, Scene Kind grammar, Chrome, Presets),
+`configure_cascade_procedures_NN.md` (setting a parameter at the domain, series or video
+scope) and `create_character_procedures_NN.md` (the character folder, poses and voices).
+
 ## NN Work: Set up the Domain
 step_type:: task
 level:: domaiNN

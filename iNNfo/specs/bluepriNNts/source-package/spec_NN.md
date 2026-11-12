@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-7-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"
-blueprint_version: "V_0-4-0"
+blueprint_version: "V_0-4-1"
 title: "Source Package App"
 relationship_types:
   hierarchy:
@@ -223,7 +223,7 @@ The frontier is the whole design. A package may **summarize** and may **extract 
 
 Two consequences follow. First, the expensive transformations — transcription, extraction, asset caching, hashing — are paid once per item and never again per consumer. Second, the package has no triage state: its existence *is* its readiness. Candidates that were never digested stay in the channel's own model as intake records; only a promoted item earns a package.
 
-This template deliberately adds **nothing new for provenance**. Digested files are made citable by the canonical `sidecar` blueprint through the `cognitivize` operation, and the upstream edge of every file is the sidecar's own `sources` property, from which the lineage projection derives `derived_from`. This template only adds what did not exist: the neutral handoff record, the transformation-run record with an idempotency key, and the channel register.
+This template deliberately adds **nothing new for provenance**. Digested files are made citable by the canonical `sidecar` blueprint through the `cognitivize` operation, and the upstream edge of every file is the sidecar's own `sources` frontmatter key, from which the lineage projection derives `derived_from`. An element of this blueprint never declares `sources::`: L3 validation rejects it (`"sources::" is banned on L3; provenance is the applied change's evidence`), so an element's own provenance is the evidence of the changeset that created it. This template only adds what did not exist: the neutral handoff record, the transformation-run record with an idempotency key, and the channel register.
 
 ## Objectives
 
@@ -231,7 +231,7 @@ This template deliberately adds **nothing new for provenance**. Digested files a
 - Separate acquisition (where material comes from) from transformation (what is done to it), so steps can chain and be added without touching the package shape.
 - Separate expensive digestion (once, at promotion) from cheap capture (many, at intake).
 - Make N consumers read one artifact instead of N copies, and detect source change from one hash.
-- Reuse `sidecar`, `sources`, `changes`, `procedures` and `artifacts` as they are; add no parallel provenance mechanism.
+- Reuse `sidecar`, `sources`, `changes`, `procedures` and `artifacts` as they are; add no parallel provenance mechanism, and never declare `sources::` on an element.
 - State the frontier explicitly, so interpretation never leaks into the package.
 
 ## Specification
@@ -307,7 +307,7 @@ A package's files are not modelled by an element of this blueprint. They are **s
 
 Two rules keep the chain coherent without inventing anything:
 
-- **The upstream edge is `sources`.** A sidecar declares no `derived_from`; it cites its upstream in `sources`, and the lineage projection derives `derived_from` from it. Chains are therefore expressed with the mechanism cogNNitive already has.
+- **The upstream edge is the sidecar's `sources`.** A sidecar declares no `derived_from`; it cites its upstream in its `sources` frontmatter key, and the lineage projection derives `derived_from` from it. Chains are therefore expressed with the mechanism cogNNitive already has.
 - **The file's role is a sidecar metadata key.** `role:: primary | discussion | transcript | subtitle | asset` is written by the normalizer as its own key in the sidecar frontmatter, which the sidecar blueprint explicitly permits and preserves on refresh. No new concept, no extra element.
 
 ### Chaining transformations
@@ -316,14 +316,14 @@ A channel brings one thing in. A package may be the product of several steps in 
 
 Two rules make the chain work:
 
-- **Files point backwards through `sources`.** Each sidecar cites its upstream: the origin URI for the first step, the parent file for every later one. Walking backwards from any file reconstructs the chain to the world.
+- **Files point backwards through their sidecar's `sources`.** Each sidecar cites its upstream in its frontmatter: the origin URI for the first step, the parent file for every later one. Walking backwards from any file reconstructs the chain to the world.
 - **The idempotency key is `step` + `input_hash`.** An unchanged input never re-runs an expensive step: the existing output is reused and the run is recorded with `outcome:: cached`. This is what makes deep chains affordable.
 
 Adding a transformation type is a local change: one procedure document and one new `step` identifier. Package, Channel, sidecars and consumers are untouched. If the step produces a role the convention already knows, nothing else changes at all.
 
 Worked chain — a YouTube URL supplied by hand:
 
-| # | step | upstream (`sources`) | outputs | tool | outcome |
+| # | step | upstream (sidecar `sources`) | outputs | tool | outcome |
 |---|---|---|---|---|---|
 | 1 | `parse` | the URL | `source.json` | agent | ok |
 | 2 | `media-fetch` | `source.json` | `media.m4a` | yt-dlp | ok |
@@ -337,7 +337,12 @@ Note what the chain does **not** contain: a decision about what the transcript i
 
 ### Reserved Properties
 
-`sources::` is the reserved iNNfo property used in two places, and it is the only provenance edge in this design: on a `Package` to cite the digested files and their sidecars, and on a `Transformation` to cite what the step consumed. The package never cites a consumer.
+`sources::` is reserved by iNNfo and **banned on every L3 element**, including `Package` and `Transformation`: validation reports `"sources::" is banned on L3; provenance is the applied change's evidence`. Provenance therefore lives in two places that already exist:
+
+- **File provenance** — each digested file's sidecar cites its upstream in its own `sources` frontmatter key (the origin URI for the first step, the parent file for every later one). A `Package` reaches its files through `package_path`, and a `Transformation` names what it produced in `outputs`; walking the sidecars of those files reconstructs the chain.
+- **Element provenance** — a `Package` or `Transformation` element is created by an applied changeset whose `evidence` cites the files it was derived from. That evidence is the element's provenance; the element repeats none of it.
+
+The package never cites a consumer.
 
 ## Template
 
@@ -377,7 +382,6 @@ package_path:: sources/import/<channel>/<item-slug>
 captured_at:: 2026-01-01T00:00:00+00:00
 ingested_at:: 2026-01-01 00:00:00
 channel:: @nnews
-sources:: [sources/import/<channel>/<item-slug>/article.md@## NN Source, sources/import/<channel>/<item-slug>/comments.md@## NN Source]
 
 # NN Transformation
 
@@ -391,7 +395,6 @@ input_hash:: <sha256 of the fetched bytes>
 output_hash:: <sha256>
 ran_at:: 2026-01-01T00:00:00Z
 outcome:: ok
-sources:: [sources/import/<channel>/<item-slug>/article.md@## NN Source]
 
 # NN Channel
 
@@ -415,7 +418,7 @@ One digested item, neutral and complete, ready for any consumer domain.
 
 ### Description
 
-Each `Package` element is one item that passed intake and was digested once: the parsed outlet, the publication timestamp, the detected language, an extractive summary, the atomic facts, the verbatim quotes with locators, the entities, the attribution note and the hash of the primary evidence. It references the `Channel` that brought it in, cites its digested files in `sources`, and lets each of those files carry its own sidecar.
+Each `Package` element is one item that passed intake and was digested once: the parsed outlet, the publication timestamp, the detected language, an extractive summary, the atomic facts, the verbatim quotes with locators, the entities, the attribution note and the hash of the primary evidence. It references the `Channel` that brought it in and locates its digested files through `package_path`; each of those files carries its own sidecar, whose `sources` key cites its upstream. The element itself declares no `sources::`: its provenance is the evidence of the changeset that created it.
 
 A package is created at **promotion**, not at capture. A candidate that has not been promoted is an intake record in the channel's model; it has no package, because digesting it would spend the expensive transformations on something no consumer asked for.
 
@@ -442,7 +445,7 @@ One executed step that turned inputs into files, recorded so the chain can be wa
 
 ### Description
 
-A `Transformation` element is the record of one run of one step: what it produced (`outputs`), which tool did it, the hash of its input, the hash of its output, when it ran and how it ended. Its upstream is expressed in `sources`, the same edge every sidecar uses, so the lineage projection can derive the chain without a parallel mechanism.
+A `Transformation` element is the record of one run of one step: what it produced (`outputs`), which tool did it, the hash of its input, the hash of its output, when it ran and how it ended. Its upstream is expressed by the sidecars of its `outputs`, whose `sources` key cites what the step consumed, so the lineage projection derives the chain without a parallel mechanism. The element declares no `sources::`; the changeset that records the run carries the evidence.
 
 It is deliberately not a `Channel`: a channel is where material is discovered, a transformation is what is done to it afterwards. Conflating the two is what makes chaining unmodellable, because a step cannot then be inserted between two other steps.
 
@@ -495,7 +498,7 @@ The channel's `status` is the channel's own lifecycle. It is unrelated to the tr
 |---|---|---|
 | `title`, `canonical_url`, `outlet`, `published` | package | neutral |
 | `facts`, `quotes`, `summary`, `attribution` | package | neutral |
-| `article.md`, `comments.md` as sidecars | package `sources` | neutral |
+| `article.md`, `comments.md` as sidecars | package files (sidecars under `package_path`) | neutral |
 | Epicene angle, Celedonio framing | video domain's news model | derived |
 | `status:: scripted`, `video_slug` | video domain's news model | derived |
 | Post intro, keyword choice, publish state | web domain's model | derived |
@@ -506,7 +509,7 @@ The video domain selects three facts out of five and orders them; the web domain
 
 | Element | Where it lives | Derived or neutral |
 |---|---|---|
-| audio reference, `.txt`, `.srt` with timecodes | package `sources` | neutral |
+| audio reference, `.txt`, `.srt` with timecodes | package files (sidecars under `package_path`) | neutral |
 | extractive summary, verbatim quotes with timecode locators | package | neutral |
 | "these are the decisions and commitments" | business domain's model | derived |
 | "these 28 seconds are clip-worthy" | video domain's model | derived |
@@ -517,8 +520,8 @@ The timecodes are the generic asset: the chain produces them once, and both cons
 
 | Element | Where it lives | Derived or neutral |
 |---|---|---|
-| normalized body markdown, `sha256`, `captured_at` | package `sources` | neutral |
-| local assets with their own sidecars | package `sources` | neutral |
+| normalized body markdown, `sha256`, `captured_at` | package files (sidecars under `package_path`) | neutral |
+| local assets with their own sidecars | package files (sidecars under `package_path`) | neutral |
 | `summary`, attribution and license note | package | neutral |
 | Citation in a knowledge model element | documentation domain's model | derived |
 | Digest republication, staleness flag from `sha256` | content domain's model | derived |

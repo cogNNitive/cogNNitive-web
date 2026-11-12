@@ -51,11 +51,11 @@ Direct generative diffusion of typography produces distorted, illegible text and
 ### CLI Usage Example
 ```bash
 node ~/.agents/skills/nn-conntent/scripts/render-thumbnail.mjs \
-  --base series/inntrevistas/assets/la-rueda/thumbnail_rueda_base.jpeg \
+  --base series/inntrevistas/episodes/la-rueda/thumbnail_rueda_base.jpeg \
   --title "LA RUEDA" \
   --subtitle "Mesopotamia · 3500 a.C." \
   --badge "iNNtrevistas" \
-  --out series/inntrevistas/assets/la-rueda/thumbnail_rueda.jpeg
+  --out series/inntrevistas/episodes/la-rueda/thumbnail_rueda.jpeg
 ```
 
 ---

@@ -41,10 +41,19 @@ export const HYPERFRAMES_PIN = (() => {
   }
 })();
 
+/**
+ * The pinned HyperFrames CLI binary in this skill's `node_modules/.bin` (the `.cmd`
+ * shim on Windows). The one place that names it: render and transcription both run
+ * this file, never `npx`.
+ * @param {{ skillDir?: string, platform?: string }} [opts]
+ */
+export function resolveHyperframesCli({ skillDir, platform = process.platform } = {}) {
+  const dir = skillDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  return path.join(dir, 'node_modules', '.bin', platform === 'win32' ? 'hyperframes.cmd' : 'hyperframes');
+}
+
 const roundMs = (seconds) => Math.round(seconds * 1000) / 1000;
 const frameSeconds = (frames, fps) => roundMs((frames || 0) / fps);
-/** Non-fatal emission warning (design D14: animation/narration mismatch). */
-const warn = (message) => console.warn(`[scene-project] ${message}`);
 const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const sceneSlug = (scene) => String(scene.slug || scene.id || 'scene').replace(/^scene_/, '') || 'scene';
@@ -157,25 +166,35 @@ ${tween}
 
   // Authored-animation hosts (design D4/D7): ROOT-level sub-compositions with
   // global times, mounted from `authored/<id>/index.html` (staged by the render
-  // driver). The host duration is the SCENE duration so a shorter animation holds
-  // its last frame; no `muted`, no playback-rate — the animation plays its own
-  // audio at its authored level. A mismatch of more than one frame warns.
+  // driver). The scene length is fixed before this point (narration when the scene
+  // has it); the animation fits it: a longer one is TRIMMED (one host lasting the
+  // scene) and a shorter one is LOOPED (consecutive hosts of the animation's length,
+  // the last one trimmed). Every host id is namespaced per mount
+  // (`animation-<scene>-<id>[-<n>]`), so one project can be mounted by several
+  // scenes; HyperFrames gives each mount of the same composition id its own runtime
+  // instance. No `muted`, no playback-rate: the animation plays its own audio.
   let animationTrackIndex = 500;
   const animationHosts = scenes
     .map((scene) => {
       const anims = scene.animations || [];
       if (anims.length === 0) return '';
-      const start = frameSeconds(scene.fromFrame, fps);
-      const dur = frameSeconds(scene.durationInFrames, fps);
-      const narrationFrames = scene.narrationDurationInFrames;
+      const slug = sceneSlug(scene);
+      const sceneFrames = Math.max(0, Number(scene.durationInFrames) || 0);
       return anims
         .map((a) => {
-          if (Number.isFinite(narrationFrames) && Math.abs((Number(a.durationInFrames) || 0) - narrationFrames) > 1) {
-            warn(
-              `scene "${sceneSlug(scene)}": animation ${frameSeconds(a.durationInFrames, fps)}s differs from narration ${frameSeconds(narrationFrames, fps)}s`,
+          const animFrames = Math.max(0, Number(a.durationInFrames) || 0);
+          const loops = animFrames > 0 && animFrames < sceneFrames - 1 ? Math.ceil(sceneFrames / animFrames) : 1;
+          const step = loops > 1 ? animFrames : sceneFrames;
+          const hosts = [];
+          for (let k = 0; k < loops; k++) {
+            const from = (Number(scene.fromFrame) || 0) + k * step;
+            const frames = Math.min(step, sceneFrames - k * step);
+            const id = `animation-${slug}-${a.id}${loops > 1 ? `-${k + 1}` : ''}`;
+            hosts.push(
+              `  <div id="${esc(id)}" class="clip" data-composition-id="${esc(a.id)}" data-composition-src="authored/${esc(a.id)}/index.html" data-start="${frameSeconds(from, fps)}" data-duration="${frameSeconds(frames, fps)}" data-track-index="${animationTrackIndex++}" data-track-kind="graphics"></div>`,
             );
           }
-          return `  <div id="animation-${esc(a.id)}" class="clip" data-composition-id="${esc(a.id)}" data-composition-src="authored/${esc(a.id)}/index.html" data-start="${start}" data-duration="${dur}" data-track-index="${animationTrackIndex++}" data-track-kind="graphics"></div>`;
+          return hosts.join('\n');
         })
         .join('\n');
     })
@@ -205,9 +224,14 @@ ${tween}
     })
     .join('\n');
 
+  // Compile turns aligned narration captions into `captions` overlays (one per
+  // readable segment), which mount the caption component above like any overlay.
+  // The raw word host is only emitted for a manifest that carries no such overlays,
+  // so the same words are never drawn twice.
   let captionsHostHtml = '';
   const narrationCaptions = plan.narrationCaptions ?? manifest?.metadata?.narrationCaptions ?? manifest?.captions;
-  if (narrationCaptions) {
+  const hasCaptionOverlays = overlays.some((o) => o?.type === 'captions');
+  if (narrationCaptions && !hasCaptionOverlays) {
     let inner = '';
     if (Array.isArray(narrationCaptions)) {
       inner = narrationCaptions

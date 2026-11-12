@@ -7,10 +7,10 @@
  * (design D7/D8, slice S8). The model side (this file's first block) proves a
  * `type:: animation` Layer is valid with an `asset::` and rejected without, and
  * that an unknown type is rejected. The mounting side (later blocks) proves the
- * authored project is read pre-compile (id + duration), the scene lasts
- * max(narration, animation), the host is a root sub-composition with its own
- * audio (no `muted`, no playback-rate), a mismatch warns, and ids must not
- * collide.
+ * authored project is read pre-compile (id + duration), a narrated scene lasts its
+ * narration (the animation is trimmed or looped to it), the host is a root
+ * sub-composition with its own audio (no `muted`, no playback-rate), and ids of
+ * different projects must not collide.
  */
 
 import test from 'node:test';
@@ -160,18 +160,18 @@ test('an authored id colliding with a scene slug, root id, component id or anoth
   assert.doesNotThrow(() => assertAnimationIds({ animations: { scene_a: [{ id: 'demo-anim' }] }, sceneSlugs: ['a'], rootId: 'demo', componentIds: ['lower-third'] }));
 });
 
-// --- Scene duration = max(narration, animation) -------------------------------
+// --- Scene duration: the narration sets it (#615) ------------------------------
 
-test('a scene lasts max(narration, animation)', () => {
+test('a narrated scene lasts its narration; only a scene without narration takes the animation length', () => {
   const compiler = new SceneCompiler({ fps: 30, wordsPerSecond: 5, width: 1920, height: 1920 });
-  // 5 words / 5 wps = 1s -> max(3,1) = 3s narration; a 6s animation extends it.
+  // 5 words / 5 wps = 1s -> max(3,1) = 3s narration; a 6s animation does NOT extend it.
   const long = compiler.compile(
     model({ scenes: [scene('S', 's', 'one two three four five')] }),
     { animations: { scene_s: [{ id: 'demo-anim', durationSeconds: 6, sourceDir: '/x' }] } },
   );
-  assert.equal(long.tracks.scenes[0].durationInFrames, 180);
+  assert.equal(long.tracks.scenes[0].durationInFrames, 90);
   assert.equal(long.tracks.scenes[0].animations[0].durationInFrames, 180);
-  // 30 words / 5 wps = 6s narration beats a 4s animation.
+  // 30 words / 5 wps = 6s narration; a 4s animation does not shorten it.
   const short = compiler.compile(
     model({ scenes: [scene('S', 's', 'w '.repeat(30).trim())] }),
     { animations: { scene_s: [{ id: 'demo-anim', durationSeconds: 4, sourceDir: '/x' }] } },
@@ -179,6 +179,12 @@ test('a scene lasts max(narration, animation)', () => {
   assert.equal(short.tracks.scenes[0].durationInFrames, 180);
   assert.equal(short.tracks.scenes[0].narrationDurationInFrames, 180);
   assert.equal(short.tracks.scenes[0].animations[0].durationInFrames, 120);
+  // No narration: the animation sets the length.
+  const silent = compiler.compile(
+    model({ scenes: [scene('S', 's', '')] }),
+    { animations: { scene_s: [{ id: 'demo-anim', durationSeconds: 6, sourceDir: '/x' }] } },
+  );
+  assert.equal(silent.tracks.scenes[0].durationInFrames, 180);
 });
 
 // --- Root mount + emission ----------------------------------------------------
@@ -197,7 +203,7 @@ function manifestWithAnimation({ narrationFrames = 180, animationFrames = 180 } 
           id: 'scene_a',
           slug: 'a',
           fromFrame: 0,
-          durationInFrames: Math.max(narrationFrames, animationFrames),
+          durationInFrames: narrationFrames,
           narrationDurationInFrames: narrationFrames,
           animations: [{ id: 'demo-anim', durationInFrames: animationFrames, sourceDir: '/x' }],
           props: { layers: [] },
@@ -214,45 +220,26 @@ test('an animation mounts as a root sub-composition with its own audio (no muted
   const { indexHtml, compositions } = buildProject(manifestWithAnimation());
   assert.match(indexHtml, /data-composition-src="authored\/demo-anim\/index\.html"/);
   assert.match(indexHtml, /data-composition-id="demo-anim"/);
-  assert.match(indexHtml, /id="animation-demo-anim"/);
+  assert.match(indexHtml, /id="animation-a-demo-anim"/);
   assert.match(indexHtml, /data-start="0"[^>]*data-duration="6"/);
-  const host = indexHtml.match(/<div id="animation-demo-anim"[^>]*>/)[0];
+  const host = indexHtml.match(/<div id="animation-a-demo-anim"[^>]*>/)[0];
   assert.doesNotMatch(host, /muted/);
   assert.doesNotMatch(host, /playback/i);
   for (const c of compositions) assert.doesNotMatch(c.html, /demo-anim/, 'animations live at the root, not in a scene sub-composition');
 });
 
-test('a shorter animation holds its last frame: the host duration is the scene duration', () => {
-  const { indexHtml } = buildProject(manifestWithAnimation({ narrationFrames: 180, animationFrames: 120 }));
-  const host = indexHtml.match(/<div id="animation-demo-anim"[^>]*>/)[0];
-  assert.match(host, /data-duration="6"/, 'the scene lasts 6s while the animation is 4s');
+test('a longer animation is trimmed to the scene: one host lasting the scene', () => {
+  const { indexHtml } = buildProject(manifestWithAnimation({ narrationFrames: 120, animationFrames: 180 }));
+  const hosts = indexHtml.match(/<div id="animation-a-demo-anim[^"]*"[^>]*>/g);
+  assert.equal(hosts.length, 1);
+  assert.match(hosts[0], /data-duration="4"/);
 });
 
-test('a mismatch of more than one frame warns naming the scene and both durations', () => {
-  const warnings = [];
-  const orig = console.warn;
-  console.warn = (...a) => warnings.push(a.join(' '));
-  try {
-    buildProject(manifestWithAnimation({ narrationFrames: 180, animationFrames: 120 }));
-  } finally {
-    console.warn = orig;
-  }
-  const text = warnings.join('\n');
-  assert.match(text, /scene "a"/);
-  assert.match(text, /4s/);
-  assert.match(text, /6s/);
-});
-
-test('a mismatch of at most one frame does not warn', () => {
-  const warnings = [];
-  const orig = console.warn;
-  console.warn = (...a) => warnings.push(a.join(' '));
-  try {
-    buildProject(manifestWithAnimation({ narrationFrames: 180, animationFrames: 179 }));
-  } finally {
-    console.warn = orig;
-  }
-  assert.deepEqual(warnings, []);
+test('an animation within one frame of the scene is one host, never a one-frame loop', () => {
+  const { indexHtml } = buildProject(manifestWithAnimation({ narrationFrames: 180, animationFrames: 179 }));
+  const hosts = indexHtml.match(/<div id="animation-a-demo-anim[^"]*"[^>]*>/g);
+  assert.equal(hosts.length, 1);
+  assert.match(hosts[0], /data-duration="6"/);
 });
 
 // --- Staging ------------------------------------------------------------------

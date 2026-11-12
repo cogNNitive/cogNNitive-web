@@ -13,7 +13,7 @@ A Series ships these artifacts:
 - A **blueprint** under `iNNfo/specs/bluepriNNts/<series>/spec_NN.md` that
   `includes: [coNNtent]` and adds only series-specific fields (for example
   series `tone` and `sound_tags`).
-- A **Series instance model** `series/<s>/<s>_video-script_NN.md` with frontmatter `scope: true`. It is the
+- A **Series instance model** `series/<s>/<s>_coNNtent_NN.md` with frontmatter `scope: true`. It is the
   only file that anchors the Series, it is the series' scope document, and its Fields supply the `series` level of
   the parameter cascade.
 - Optional **`Preset` elements** in that same document, after its `Series` section.

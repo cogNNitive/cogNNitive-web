@@ -6887,14 +6887,24 @@
     lines.push('')
 
     var reviewer = getReviewerName()
+    // The placeholder names nobody: the engine refuses a changeset signed by it
+    // (GATE_REVIEWER_REQUIRED), so no changeset is embedded until a name is set (#606).
+    var unnamed = !reviewer || reviewer === DEFAULT_REVIEWER_NAME
     var exportMeta = {
       source_knowledge: domainOrModel,
       title: 'Review Changes: ' + domainOrModel,
-      author: reviewer || 'reviewer',
+      author: reviewer,
       changesBlueprintVersion: (state && state.meta && state.meta.changesBlueprintVersion) || 'V_0-1-0',
     }
+    if (unnamed && drafts.length > 0) {
+      lines.push('### Normative Changeset Document')
+      lines.push(
+        'Not included: no reviewer name is set. Type your reviewer name in the console header, then copy this prompt again.',
+      )
+      lines.push('')
+    }
     try {
-      var changesetDoc = serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
+      var changesetDoc = unnamed ? '' : serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
       if (changesetDoc && drafts.length > 0) {
         lines.push('### Normative Changeset Document (`_changes_NN.md`)')
         lines.push('```markdown')

@@ -175,13 +175,13 @@ function inheritedSources(fields) {
 
 async function episodeFacts({ rootDir, series, episode, sourceHashes = {} }) {
   const model = loadKnowledgeModel(episode.scriptPath)
-  // The console payload addresses elements as `<knowledge stem>@<slug>`; the stem is the
-  // episode document's file name without `_NN.md`, not the `<series>/<slug>` pair.
-  const knowledgeId = String(episode.scriptPath).replace(/\\/g, '/').split('/').pop().replace(/_NN\.md$/i, '')
   const video = (model.elements?.Video || [])[0] || {}
   const fields = video.fields || {}
   const slug = String(fields.slug || video.slug || episode.slug)
   const modelId = `${series.slug}/${slug}`
+  // The console payload addresses a distributed episode by its domain index id,
+  // `<series>/<episode>`: the same id `produce` and apply_change resolve (#606).
+  const knowledgeId = modelId
   const bags = withScriptPresets(loadCascadeBags(series.dir), model, episode.scriptPath)
   // The Video element's own fields are the innermost explicit level of the cascade.
   const videoBag = (model.elements?.Video || [])[0]?.fields || {}

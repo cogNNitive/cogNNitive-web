@@ -132,7 +132,7 @@ test('the V.3 Parakeet fixture carries word timings and aligns to its own text',
 
 test('the transcribe runner uses --engine auto and passes the language', () => {
   const args = transcribeArgs({ audioPath: 'a.wav', language: 'es' });
-  assert.deepEqual(args.slice(0, 7), ['-y', 'hyperframes', 'transcribe', 'a.wav', '--json', '--engine', 'auto']);
+  assert.deepEqual(args.slice(0, 5), ['transcribe', 'a.wav', '--json', '--engine', 'auto']);
   assert.deepEqual(args.slice(-2), ['--language', 'es']);
   assert.equal(transcribeArgs({ audioPath: 'a.wav' }).includes('--language'), false);
 });

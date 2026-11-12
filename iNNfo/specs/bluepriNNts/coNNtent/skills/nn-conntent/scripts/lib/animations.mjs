@@ -5,16 +5,16 @@
  * authored HyperFrames project directory through `asset::`. The pre-pass reads the
  * project's `index.html` root `data-composition-id` (its id) and `data-duration`
  * (its intended length, in seconds) BEFORE any synthesis or render, so a missing
- * project fails loudly with nothing spent and the scene length can be
- * `max(narration, animation)`.
+ * project fails loudly with nothing spent, and a scene without narration can take
+ * the animation's length (a narrated scene trims or loops it).
  *
  * Convention (documented, no engine precedent): the authored project's ROOT
  * element declares `data-composition-id` and `data-duration` (seconds). The first
  * `data-composition-id`/`data-duration` pair in `index.html` is the root's.
  *
  * Ids must be unique across the emitted root: an authored id equal to a scene
- * slug, the root composition id, a component id or another animation's id is an
- * error naming both (design D8).
+ * slug, the root composition id, a component id or a DIFFERENT project's id is an
+ * error naming both (design D8). One project mounted by several scenes is allowed.
  *
  * Pure filesystem module: imports no provider and no HyperFrames module.
  */
@@ -129,10 +129,13 @@ export function assertAnimationIds({ animations, sceneSlugs = [], rootId = null,
       if (componentSet.has(id)) {
         throw new AnimationIdCollisionError({ id, other: id, kind: 'component' });
       }
-      if (seen.has(id)) {
-        throw new AnimationIdCollisionError({ id, other: seen.get(id), kind: 'animation' });
+      // The SAME project mounted by several scenes is one staged copy with one
+      // namespaced host per mount; two DIFFERENT projects sharing an id collide.
+      const prior = seen.get(id);
+      if (prior && !(entry.sourceDir && prior.sourceDir && path.resolve(entry.sourceDir) === path.resolve(prior.sourceDir))) {
+        throw new AnimationIdCollisionError({ id, other: prior.sceneId, kind: 'animation' });
       }
-      seen.set(id, sceneId);
+      if (!prior) seen.set(id, { sceneId, sourceDir: entry.sourceDir });
     }
   }
   return true;

@@ -8,25 +8,26 @@
  * Zero external dependencies. ESM module.
  */
 
-import crypto from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 import {
   CAPTION_MATCH_MIN,
   alignCaptionLines,
   alignCaptions,
-  captionsCacheKey,
   runTranscribe,
+  sceneCaptionsCacheKey,
   wordsUnsupported,
 } from './captions.mjs';
 import { CacheManager } from '../cache-manager.mjs';
 import { EpisodeError, readEpisode, registerCaptionsValidator, resolveForEpisode } from './episode.mjs';
 import { ProduceStop } from './pipeline.mjs';
-import { recordStage } from './compile.mjs';
+import { recordStage, synthesizeEpisodeAssets } from './compile.mjs';
 import { resolve as cascadeResolve } from './cascade.mjs';
+import { slugify } from './knowledge-model.mjs';
 import { loadCascadeBags, withScriptPresets } from './video-scope.mjs';
-import { normalizeModelId, resolveDefaultCacheDir } from './video-guard.mjs';
+import { resolveDefaultCacheDir } from './video-guard.mjs';
 
 let _whisperAvailableOverride = null;
 
@@ -47,11 +48,76 @@ export function isWhisperAvailable(deps = {}) {
   return true;
 }
 
-/** Derive the whisper model name from scene language and optional caption_model override. */
-export function resolveCaptionModel({ language = 'en', captionModel } = {}) {
+/** Where the HyperFrames CLI keeps whisper models (`ggml-<model>.bin`). */
+export function whisperModelsDir(env = process.env) {
+  return env.NN_WHISPER_MODELS_DIR || path.join(os.homedir(), '.cache', 'hyperframes', 'whisper', 'models');
+}
+
+/** The whisper models already installed for the HyperFrames CLI, by name. */
+export function listInstalledWhisperModels(dir = whisperModelsDir()) {
+  try {
+    return fs
+      .readdirSync(dir)
+      .map((file) => /^ggml-(.+)\.bin$/.exec(file)?.[1])
+      .filter(Boolean)
+      .sort();
+  } catch {
+    // No models directory: nothing is installed yet.
+    return [];
+  }
+}
+
+/** Preference order when no `caption_model` is declared (quality vs size). */
+const MODEL_PREFERENCE = ['small', 'medium', 'base', 'large-v3-turbo', 'large-v3', 'large-v2', 'large-v1', 'large', 'tiny'];
+
+/**
+ * The whisper model for a scene. A declared `caption_model` always wins. Otherwise an
+ * INSTALLED model is preferred (an English-only `.en` model only for English, where it
+ * is preferred), so the CLI never downloads a model the machine does not have when
+ * another one would do; with nothing installed it is `small.en` for English and
+ * `small` for other languages.
+ * @param {{ language?: string, captionModel?: string, installedModels?: string[] }} [input]
+ */
+export function resolveCaptionModel({ language = 'en', captionModel, installedModels } = {}) {
   if (captionModel) return String(captionModel);
-  const lang = String(language || 'en').toLowerCase();
-  return lang === 'en' ? 'small.en' : 'small';
+  const english = String(language || 'en').toLowerCase().split(/[-_]/)[0] === 'en';
+  const installed = new Set(installedModels ?? listInstalledWhisperModels());
+  const candidates = MODEL_PREFERENCE.flatMap((m) => (english ? [`${m}.en`, m] : [m]));
+  const extra = [...installed].filter((m) => !candidates.includes(m) && (english || !m.endsWith('.en')));
+  const pick = [...candidates, ...extra].find((m) => installed.has(m));
+  return pick || (english ? 'small.en' : 'small');
+}
+
+/**
+ * The captions plan of every Scene element: its slug and lowered scene id
+ * (`scene_<slug>`, the key synthesis uses for its audio), the resolved `captions`
+ * mode, the whisper model, the language and the narration text. The captions stage
+ * (writer) and compile (reader) both use it, so they agree on every key input.
+ * @param {{ model: object, scriptPath?: string, bags?: object, installedModels?: string[] }} input
+ */
+export function sceneCaptionPlans({ model, scriptPath = '', bags = {}, installedModels }) {
+  const videoFields = (model?.elements?.Video || [])[0]?.fields || {};
+  const language = String(resolveForEpisode(model, scriptPath, 'language').value || videoFields.language || 'en');
+  return (model?.elements?.Scene || []).map((scene, i) => {
+    const fields = scene.fields || {};
+    const slug = scene.slug || fields.slug || (scene.name ? slugify(scene.name) : `scene_${i + 1}`);
+    const sceneBags = { ...bags, video: videoFields, scene: fields };
+    const captionModel = cascadeResolve('caption_model', sceneBags).value || null;
+    return {
+      slug,
+      sceneId: `scene_${slug}`,
+      mode: cascadeResolve('captions', sceneBags).value || 'off',
+      captionModel,
+      modelName: resolveCaptionModel({ language, captionModel, installedModels }),
+      language,
+      narration: String(scene.narration || fields.narration || scene.description || '').trim(),
+    };
+  });
+}
+
+/** The synthesized narration audio of one scene, from the scene -> audio map. */
+export function sceneAudioPath(audioAssets, plan) {
+  return (audioAssets?.[plan.sceneId] || audioAssets?.[plan.slug])?.assetPath || null;
 }
 
 /**
@@ -106,7 +172,15 @@ registerCaptionsValidator(assertCaptionsValid);
  * Runs the captions alignment stage for all scenes of an episode.
  * Executed after asset synthesis and before the animatic.
  *
- * @param {{ scriptPath: string, facts?: object, deps?: object, cacheDir?: string, model?: object }} options
+ * Each scene aligns against ITS OWN synthesized narration: the scene -> audio map is
+ * `options.audioAssets` / `deps.audioAssets` (the synthesis result, keyed by scene id),
+ * else it is read from the TTS cache with a read-only plan pass (nothing spent). A
+ * scene with no audio stops with `caption-audio-missing`; there is no fallback to
+ * another file. `deps.audioPath` is an explicit test seam: one file for every scene.
+ *
+ * `bags` are the outer cascade bags (as for synthesis and compile; default: loaded from the script dir).
+ *
+ * @param {{ scriptPath: string, facts?: object, deps?: object, cacheDir?: string, model?: object, audioAssets?: object, bags?: object }} options
  * @returns {Promise<{ ok: boolean, captions: Array<object> }>}
  */
 export async function alignEpisodeCaptions(options = {}) {
@@ -119,73 +193,50 @@ export async function alignEpisodeCaptions(options = {}) {
   assertCaptionsValid(episode, { deps });
 
   const scriptDir = scriptPath ? path.dirname(scriptPath) : process.cwd();
-  const bags = withScriptPresets(loadCascadeBags(scriptDir), episode.model, scriptPath);
-  const videoFields = (episode.model.elements?.Video || [])[0]?.fields || {};
-  const scenes = episode.model.elements?.Scene || [];
-  const language = String(resolveForEpisode(episode.model, scriptPath, 'language').value || videoFields.language || 'en');
+  const outerBags = options.bags || loadCascadeBags(scriptDir);
+  const bags = withScriptPresets(outerBags, episode.model, scriptPath);
+  const plans = sceneCaptionPlans({ model: episode.model, scriptPath, bags, installedModels: deps.installedModels })
+    .filter((plan) => plan.mode !== 'off' && plan.narration);
 
-  const cacheDir = options.cacheDir || resolveDefaultCacheDir(scriptDir);
+  // `produce` hands its cache dir in `deps`: the stage must write where compile reads.
+  const cacheDir = options.cacheDir || deps.cacheDir || resolveDefaultCacheDir(scriptDir);
   const cacheManager = new CacheManager({ baseDir: cacheDir });
   const captionsCacheDir = cacheManager.getCacheDir('captions');
+
+  const synthesizerOptions = options.synthesizerOptions || deps.synthesizerOptions;
+  let audioAssets = options.audioAssets || deps.audioAssets || null;
+  if (!audioAssets && !deps.audioPath && plans.length > 0 && scriptPath) {
+    const lookup = deps.lookupAudioAssets || synthesizeEpisodeAssets;
+    audioAssets = (
+      await lookup({
+        scriptPath,
+        cacheDir,
+        model: episode.model,
+        lookupOnly: true,
+        ...(options.bags ? { bags: options.bags } : {}),
+        ...(synthesizerOptions ? { synthesizerOptions } : {}),
+      })
+    ).audioAssets;
+  }
 
   let hits = 0;
   let misses = 0;
   const alignedCaptions = [];
 
-  for (let i = 0; i < scenes.length; i++) {
-    const scene = scenes[i];
-    const sceneFields = scene.fields || {};
-    const sceneSlug = scene.slug || sceneFields.slug || `scene_${i + 1}`;
-    const sceneBags = { ...bags, video: videoFields, scene: sceneFields };
-    const mode = cascadeResolve('captions', sceneBags).value || 'off';
-    const captionModel = cascadeResolve('caption_model', sceneBags).value || null;
-
-    if (mode === 'off') continue;
-
-    const narration = String(scene.narration || sceneFields.narration || scene.description || '').trim();
-    if (!narration) {
-      // Silent scene: skipped without error
-      continue;
-    }
-
-    const modelName = resolveCaptionModel({ language, captionModel });
-
-    // Locate audio file
-    let audioPath = deps.audioAssets?.[sceneSlug]?.assetPath || deps.audioPath;
-    if (!audioPath && scriptPath) {
-      // Look up cached TTS audio in cache manager
-      const ttsModel = normalizeModelId(cascadeResolve('voice_model', sceneBags).value);
-      const audioSha = deps.audioAssets?.[sceneSlug]?.sha256;
-      if (audioSha) {
-        audioPath = cacheManager.resolvePath(audioSha, 'mp3', 'tts');
-      }
-    }
-
+  for (const plan of plans) {
+    const { slug: sceneSlug, mode, modelName, language, narration } = plan;
+    const audioPath = deps.audioPath || sceneAudioPath(audioAssets, plan);
     if (!audioPath || !fs.existsSync(audioPath)) {
-      if (deps.audioPath && fs.existsSync(deps.audioPath)) {
-        audioPath = deps.audioPath;
-      } else {
-        // Fallback: check tts cache directory for any matching audio
-        const ttsDir = cacheManager.getCacheDir('tts');
-        const files = fs.existsSync(ttsDir) ? fs.readdirSync(ttsDir) : [];
-        if (files.length > 0) {
-          audioPath = path.join(ttsDir, files[0]);
-        }
-      }
+      throw new ProduceStop(
+        'caption-audio-missing',
+        `Captions for scene "${sceneSlug}" need its synthesized narration audio, and none was found` +
+          (audioPath ? ` (${audioPath} does not exist)` : '') +
+          '. Run synthesis for this scene first.',
+        { exitCode: 1, details: { scene: sceneSlug, audioPath } },
+      );
     }
 
-    let audioSha = '0'.repeat(64);
-    if (audioPath && fs.existsSync(audioPath)) {
-      const audioBytes = fs.readFileSync(audioPath);
-      audioSha = crypto.createHash('sha256').update(audioBytes).digest('hex');
-    }
-
-    const cacheKey = captionsCacheKey({
-      audioSha,
-      text: narration,
-      engine: 'auto',
-      engineVersion: `${modelName}:${language}`,
-    });
+    const cacheKey = sceneCaptionsCacheKey({ audioPath, text: narration, modelName, language });
     const cacheFile = path.join(captionsCacheDir, `${cacheKey}.json`);
 
     let aligned;
@@ -196,7 +247,7 @@ export async function alignEpisodeCaptions(options = {}) {
       misses++;
       const runner = deps.runTranscribe || runTranscribe;
       const transcribeRes = runner({
-        audioPath: audioPath || 'audio.mp3',
+        audioPath,
         language: language === 'en' ? undefined : language,
         model: modelName,
         deps: deps.transcribeDeps || deps,
@@ -222,6 +273,7 @@ export async function alignEpisodeCaptions(options = {}) {
           words,
           segments: transcribeRes.segments,
           audioDurationSeconds: transcribeRes.durationSeconds,
+          language,
         });
       }
 

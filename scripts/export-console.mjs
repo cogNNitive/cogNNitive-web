@@ -782,6 +782,34 @@ async function loadModels(root) {
   return models
 }
 
+/**
+ * The domain index of `root` (nn-core `discoverDomainModels` + `buildDomainIndex`, as
+ * nn-mcp's `buildNodeDomainIndex`): the single source of model ids. The declared
+ * storage of each bluepriNNt comes from the schemas the export already resolved; a
+ * bluepriNNt no exported model pins reads as declaring no storage (compact), the
+ * non-strict reading, so resolving never touches the network.
+ */
+async function buildExportDomainIndex(root, models, schemaResolutions) {
+  const keyOf = (name, url) => `${name}\n${url ?? ''}`
+  const declared = new Map()
+  const declaredByName = new Map()
+  for (const m of models) {
+    const spec = (m.fm ?? frontmatterOf(m.content))?.parent_spec
+    const name = typeof spec === 'string' ? spec : spec?.name
+    if (typeof name !== 'string' || name === '') continue
+    const url = spec && typeof spec === 'object' && typeof spec.url === 'string' ? spec.url : undefined
+    const concepts = schemaResolutions.get(m)?.schema?.concepts || []
+    const storage = new Map(concepts.filter((c) => c && c.storage).map((c) => [c.name, c.storage]))
+    if (!declared.has(keyOf(name, url))) declared.set(keyOf(name, url), storage)
+    if (!declaredByName.has(name)) declaredByName.set(name, storage)
+  }
+  const discovered = await payloadHelper.discoverDomainModels(root)
+  return payloadHelper.buildDomainIndex(
+    discovered.map((d) => d.input),
+    ({ name, url }) => declared.get(keyOf(name, url)) ?? declaredByName.get(name) ?? new Map(),
+  )
+}
+
 /** Atomic replace: write `<file>.tmp`, then rename it over `file`. */
 async function writeFileAtomic(file, text) {
   await mkdir(dirname(file), { recursive: true })
@@ -1444,11 +1472,17 @@ export async function writeConsole(opts = {}) {
   let changesBlueprintVersion = ''
   let blueprintCatalog = null
 
+  // Each model's schema, resolved once in model order (the same warnings as before), so
+  // the domain index can read the declared storage before any payload is built.
+  const schemaResolutions = new Map()
+  for (const m of payloadModels) schemaResolutions.set(m, await resolveModelSchema(m.content))
+  const domainIndex = await buildExportDomainIndex(root, payloadModels, schemaResolutions)
+
   for (const m of payloadModels) {
     const relPath = relative(root, m.filePath).replace(/\\/g, '/')
     const fileName = basename(relPath)
     const modelStem = fileName.replace(/\.[^/.]+$/, '')
-    const modelSchemaResolution = await resolveModelSchema(m.content)
+    const modelSchemaResolution = schemaResolutions.get(m)
     if (modelSchemaResolution.catalog) {
       if (!blueprintCatalog) {
         blueprintCatalog = { models: {}, voices: {} }
@@ -1463,6 +1497,9 @@ export async function writeConsole(opts = {}) {
       changesets: payloadChangesets,
       schema: modelSchemaResolution.schema,
       procedures: modelSchemaResolution.procedures,
+      // The domain index id: `<container>/<slug>` for a distributed instance, the stem
+      // for a compact model. A model the index cannot address keeps the stem (#606).
+      modelId: domainIndex.byPath(relPath)?.id,
     })
     if (payload && payload.model) {
       changesBlueprintVersion =

@@ -29,11 +29,11 @@ import { emitHyperframesFrame } from '../scripts/lib/frame-tokens.mjs';
 const wordsOf = (tokens, gap = 0.5) =>
   tokens.map((text, index) => ({ text, start: index * gap, end: index * gap + gap * 0.9 }));
 
-test('model derivation: small.en for en, small for others, never default', () => {
-  assert.equal(resolveCaptionModel({ language: 'en' }), 'small.en');
-  assert.equal(resolveCaptionModel({ language: 'es' }), 'small');
-  assert.equal(resolveCaptionModel({ language: 'fr' }), 'small');
-  assert.equal(resolveCaptionModel({ language: 'es', captionModel: 'medium' }), 'medium');
+test('model derivation with no model installed: small.en for en, small for others, never default', () => {
+  assert.equal(resolveCaptionModel({ language: 'en', installedModels: [] }), 'small.en');
+  assert.equal(resolveCaptionModel({ language: 'es', installedModels: [] }), 'small');
+  assert.equal(resolveCaptionModel({ language: 'fr', installedModels: [] }), 'small');
+  assert.equal(resolveCaptionModel({ language: 'es', captionModel: 'medium', installedModels: [] }), 'medium');
 });
 
 test('transcribe command line always names a model explicitly', () => {
@@ -76,6 +76,7 @@ kind:: Libre
 w0 w1 w2 w3 w4 w5 w6 w7 w8 w9
 `;
     fs.writeFileSync(scriptPath, doc, 'utf8');
+    fs.writeFileSync(path.join(dir, 'dummy.mp3'), 'fake-audio-bytes', 'utf8');
 
     // Mock transcribe returning only 8 of 10 words (80% match)
     const tenWords = 'w0 w1 w2 w3 w4 w5 w6 w7 w8 w9'.split(' ');

@@ -195,8 +195,10 @@ export function compositionIdOf(input) {
 /**
  * Computes each scene's target duration (design D7/D14). Narration is measured
  * when its audio exists (`audioDurations`/`audioAssets`) and estimated from the
- * word count otherwise; an authored `animation` longer than the narration extends
- * the scene (`max`). `measured` says whether the narration length was measured.
+ * word count otherwise. A narrated scene lasts its narration and an authored
+ * `animation` never stretches it (the emitter trims or loops the animation); a
+ * scene without narration lasts its longest animation, else the default.
+ * `measured` says whether the narration length was measured.
  * @param {Array<{ id: string, slug?: string, narration?: string }>} scenes
  * @param {{ fps?: number, wordsPerSecond?: number, defaultSceneDuration?: number, audioDurations?: Record<string, number>, audioAssets?: Record<string, { durationSeconds?: number }>, animations?: Record<string, Array<{ durationSeconds?: number }>> }} [options]
  * @returns {Array<{ sceneId: string, slug: string | undefined, seconds: number, narrationSeconds: number, animationSeconds: number, measured: boolean }>}
@@ -223,10 +225,14 @@ export function computeSceneDurations(scenes, options = {}) {
       narrationSeconds = Math.max(3, words / wordsPerSecond);
     }
     const animationSeconds = animFor(sceneId).reduce((m, a) => Math.max(m, Number(a?.durationSeconds) || 0), 0);
+    // `narration:: on` (the scene has narration): the narration alone sets the length,
+    // an animation is trimmed or looped to it. `narration:: off`: the media or the
+    // animation sets it.
+    const narrated = measured || Boolean(sc.narration && sc.narration.trim().length > 0);
     return {
       sceneId,
       slug: sc.slug,
-      seconds: Math.max(narrationSeconds, animationSeconds),
+      seconds: narrated || animationSeconds <= 0 ? narrationSeconds : animationSeconds,
       narrationSeconds,
       animationSeconds,
       measured,
@@ -341,6 +347,19 @@ export class SceneCompiler {
       const key = sceneEl.slug || slugify(sceneEl.name);
       if (key) sceneFieldsBySlug.set(key, sceneEl.fields || {});
     }
+    // The cascade bags a Layer resolves through, exactly as lowering builds them:
+    // its owning Scene (same ownership rule), that Scene's Kind presets, the Video,
+    // and the outer levels in `bags`. A conditional field may be satisfied there.
+    const grammar = options.grammar || (options.scriptDir ? loadSeriesGrammar(options.scriptDir) : { kinds: {}, chrome: {} });
+    const layerSceneFields = new Map();
+    assignLayersToScenes(elements.Scene || [], elements.Layer || []).forEach((bucket, i) => {
+      for (const l of bucket) layerSceneFields.set(l, (elements.Scene[i] || {}).fields || {});
+    });
+    const layerBags = (layer) => {
+      const sceneFields = layerSceneFields.get(layer) || sceneFieldsBySlug.get(layer.parentSlug) || {};
+      const kindBag = kindBagOf(grammar, sceneFields.kind);
+      return { ...(guardBags || {}), ...(kindBag ? { kind: kindBag } : {}), video: videoFields, scene: sceneFields, layer: layer.fields || {} };
+    };
     // Preset reference errors are reported by the same guard, before any spend.
     if (guardBags) {
       const seen = new Set(errors.map((e) => e.code + '|' + e.message));
@@ -388,17 +407,18 @@ export class SceneCompiler {
       }
       // caption defaults to the owning Scene body: `text` is not strictly required.
       if (type === 'caption' || (type === 'text' && layer.fields?.style === 'caption')) continue;
+      const present = (value) => value !== undefined && value !== null && String(value).trim() !== '';
       const hasAny = required.some((field) => {
-        const value = layer.fields?.[field];
-        if (value !== undefined && String(value).trim() !== '') return true;
-        // A cascade parameter may be satisfied by another level: a presenter's
-        // image can come from `avatar` on the Scene, a Preset, the Video, the
-        // Series or the domain defaults (design D7). Resolution stays pure and
-        // offline, so the guard still runs before any spend.
-        if (field === 'avatar' && guardBags) {
-          const sceneFields = sceneFieldsBySlug.get(layer.parentSlug) || {};
-          const resolved = resolve('avatar', { ...guardBags, video: videoFields, scene: sceneFields }).value;
-          return resolved !== undefined && resolved !== null && String(resolved).trim() !== '';
+        if (present(layer.fields?.[field])) return true;
+        // A cascade parameter may be satisfied by another level. An avatar Layer's
+        // image (`asset`) comes from the cascaded `avatar` when the Layer declares
+        // none, exactly as `lowerLayer` reads it: from the Layer's or Scene's own
+        // `presets`, the Scene Kind's presets, the Video, the Series or the domain
+        // defaults (design D7). Resolution stays pure and offline, so the guard
+        // still runs before any spend.
+        const isAvatar = type === 'avatar' || type === 'presenter';
+        if ((field === 'avatar' || (field === 'asset' && isAvatar)) && guardBags) {
+          return present(resolve('avatar', layerBags(layer)).value);
         }
         return false;
       });
@@ -771,8 +791,8 @@ export class SceneCompiler {
 
     const compositionId = compositionIdOf(parsed.title);
 
-    // Per-scene target durations (design D7/D14): narration measured/estimated,
-    // extended to `max(narration, animation)` when an authored animation is longer.
+    // Per-scene target durations (design D7/D14): narration measured/estimated
+    // sets a narrated scene; only a scene without narration takes an animation's length.
     const durations = computeSceneDurations(parsed.scenes, {
       wordsPerSecond: this.wordsPerSecond,
       defaultSceneDuration: this.defaultSceneDuration,
@@ -790,8 +810,8 @@ export class SceneCompiler {
       const sc = parsed.scenes[i];
       const sceneId = sc.id || `scene_${i + 1}`;
 
-      // 1. Duration: measured audio/media only — never declared. An authored
-      //    animation longer than the narration extends the scene (design D7).
+      // 1. Duration: measured audio/media only — never declared. A narrated scene
+      //    lasts its narration; an animation is trimmed or looped to it (emitter).
       const durationInSeconds = durations[i].seconds;
       const narrationDurationInFrames = Math.max(1, Math.ceil(durations[i].narrationSeconds * fps));
       const durationInFrames = Math.max(1, Math.ceil(durationInSeconds * fps));

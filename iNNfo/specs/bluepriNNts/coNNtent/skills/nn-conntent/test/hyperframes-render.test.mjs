@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { tryHyperframesRender, quoteArg } from '../scripts/hyperframes-render.mjs';
+import { tryHyperframesRender } from '../scripts/hyperframes-render.mjs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { renderVideo, splitPassthrough } from '../scripts/lib/render.mjs';
@@ -121,17 +121,6 @@ test('a spawn error (status null) is reported as error: <msg> with the output ta
   assert.equal(res.reason, 'error: ENOBUFS');
   assert.equal(res.detail, 'x');
   fs.rmSync(dir, { recursive: true, force: true });
-});
-
-test('quoteArg keeps spaces and shell metacharacters inside a single literal argument', () => {
-  assert.equal(quoteArg('a b', 'win32'), '"a b"');
-  assert.equal(quoteArg('a&b', 'win32'), '"a&b"');
-  assert.equal(quoteArg('say "hi"', 'win32'), '"say \\"hi\\""');
-  assert.equal(quoteArg('--workers', 'win32'), '--workers');
-  assert.equal(quoteArg('a b', 'linux'), "'a b'");
-  assert.equal(quoteArg('a&b', 'linux'), "'a&b'");
-  assert.equal(quoteArg("it's", 'linux'), String.raw`'it'\''s'`);
-  assert.equal(quoteArg('--workers', 'linux'), '--workers');
 });
 
 test('a missing pinned CLI is a named reason, never an npx install', async () => {

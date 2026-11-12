@@ -105,7 +105,7 @@
     },
     "coNNtent": {
       "name": "coNNtent",
-      "adopted": "V_0-18-0",
+      "adopted": "V_0-19-0",
       "tier": "free",
       "access": "public",
       "when_to_use": null,
@@ -115,7 +115,7 @@
       ],
       "versions": [
         {
-          "blueprint_version": "V_0-18-0",
+          "blueprint_version": "V_0-19-0",
           "spec_version": "V_0-5-0",
           "title": "coNNtent App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
@@ -294,7 +294,7 @@
     },
     "source-package": {
       "name": "source-package",
-      "adopted": "V_0-4-0",
+      "adopted": "V_0-4-1",
       "tier": "free",
       "access": "public",
       "when_to_use": null,
@@ -302,7 +302,7 @@
       "embedded_skills": [],
       "versions": [
         {
-          "blueprint_version": "V_0-4-0",
+          "blueprint_version": "V_0-4-1",
           "spec_version": "V_0-7-0",
           "title": "Source Package App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/source-package/spec_NN.md"

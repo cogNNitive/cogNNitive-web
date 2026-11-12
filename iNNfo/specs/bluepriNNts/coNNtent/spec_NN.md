@@ -6,9 +6,19 @@ parent_spec:
   name: "iNNfo_V_0-7-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"
 blueprint_name: "coNNtent"
-blueprint_version: "V_0-18-0"
+blueprint_version: "V_0-19-0"
 title: "coNNtent App"
 catalog: catalog/model-catalog_coNNtent_NN.md
+procedures:
+  - id: "create-series"
+    name: "Create a Series"
+    path: "procedures/create_series_procedures_NN.md"
+  - id: "configure-cascade"
+    name: "Configure Cascade Parameters"
+    path: "procedures/configure_cascade_procedures_NN.md"
+  - id: "create-character"
+    name: "Create a Character"
+    path: "procedures/create_character_procedures_NN.md"
 relationship_types:
   hierarchy:
     enabled: true
@@ -185,7 +195,7 @@ description:: For a translation episode, the slug of the original (`<slug>` in t
 ## NN Field Definition: kind
 concept:: Scene
 type:: select
-description:: Name of a Scene Kind declared by the Series, or the reserved value `Libre`. Required on every V_0-15-0 Scene; the engine validates it against the Series and offers no static options.
+description:: Name of a Scene Kind declared by the Series, or the reserved value `Libre`. Required on every V_0-15-0 Scene; the engine validates it against the Series and offers no static options. A `Libre` scene takes no kind rules, presets or chrome, so it renders with no watermark, CTA, bumper or music.
 
 ## NN Field Definition: review
 concept:: Scene
@@ -202,7 +212,7 @@ description:: Free-text role of the kind in the series format (for example `hook
 concept:: Scene Kind
 type:: select
 options:: [on, off]
-description:: Whether scenes of this kind carry narration. `off` means no TTS request is made and a non-empty scene body is an error.
+description:: Whether scenes of this kind carry narration. With `on`, the measured narration sets the scene length and every `animation` Layer is trimmed or looped to it. `off` means no TTS request is made, a non-empty scene body is an error, and the scene takes its length from its media or animation.
 
 ## NN Field Definition: max_duration
 concept:: Scene Kind
@@ -618,7 +628,8 @@ reach the document only through changesets applied by the apply engine.
   the human `title` and the pinned `blueprint_version` in the document frontmatter.
 - **Scene** — child of Video. Order equals the order of the `# NN index` list; no `order::`
   field exists. Its free-form prose BODY is the narration, synthesized by TTS and timed by
-  the engine. It states a required `kind::` and may carry `review::`, `presets::` and the
+  the engine. The body is TTS input verbatim, so it is continuous prose: a line break inside
+  a sentence reaches the voice as a pause. It states a required `kind::` and may carry `review::`, `presets::` and the
   cascade fields.
 - **Layer** — child of a Scene, never of the Video. Discriminated by the required `type::`
   with exactly four values: `avatar`, `media`, `text`, `animation`.
@@ -659,6 +670,40 @@ explicit fields only. There is no `cli` level: no command-line flag supplies a p
 Each of domain, series, kind, video and scene MAY list `presets`, expanded directly before
 that level's explicit node; a Scene Kind contributes only its expanded `presets`. A `Libre`
 scene contributes no kind node.
+
+## Narration and Scene Duration
+
+A scene body is the TTS input. Write it as continuous prose: never break a line inside a
+sentence, because the synthesized voice reads a hard line break as a pause and the audio
+cuts mid-sentence. Separate sentences or paragraphs only where a pause is intended.
+
+Timing is never declared; the scene length comes from one source, chosen by the kind's
+`narration`:
+
+- **`narration:: on`** — the measured narration sets the scene length. An `animation` Layer never stretches the scene: a longer animation is
+  trimmed and a shorter one is looped to the narration length. `max_duration` is compared
+  with that narration length.
+- **`narration:: off`** — no narration exists, so the scene takes its length from its media
+  or animation.
+
+A `Libre` scene has no kind and therefore no `narration` setting of its own: it follows
+`narration:: on` when its body carries narration and `narration:: off` when the body is empty.
+
+## Review Iteration
+
+Review state is derived, never stored. Each verdict is a `review_gate` changeset for one
+`(scene, gate)` pair and carries that scene's content hash. Editing a scene changes its hash,
+so only that scene's verdict stops counting and only that scene returns to review; every
+other scene keeps its approval. A text fix therefore reopens one scene, not the episode.
+`review_gates:: []` on the Series or Video turns the gates off entirely (autopilot); it is
+not a draft mode, because with it nothing stops before spend except the budget gate.
+
+## Animatic and Avatars
+
+The animatic built before the `preview` gate shows each `avatar` Layer as its static source
+image, on purpose. Talking avatars are the costliest call, so they are synthesized only after
+the `preview` gate is approved; the animatic exists to review narration, timing and visuals
+before that spend. A static avatar in the animatic is expected, not a defect.
 
 ## Conditional Fields
 
@@ -755,6 +800,8 @@ children and may declare `review::`, `presets::` and cascade fields.
 ### Methodologies
 
 - Write narration as the Scene body prose, never as a field.
+- Keep each sentence on one line: the body is TTS input, and a mid-sentence line break is
+  synthesized as a pause.
 - State the kind on every scene; use `Libre` only when the series format does not fit.
 - Order Scenes by the index list; never declare an `order::` field.
 - Put background audio on `background_audio::`, never as a Layer.
@@ -876,14 +923,18 @@ parameter: its only cascade contribution is its expanded `presets`. The series s
 orientative — an episode may reorder, remove or repeat scenes of any kind. A kind whose
 `fixed` is not `none` describes a scene the engine inserts; the episode does not declare it.
 The reserved name `Libre` is not a kind element: it inherits no kind rules, no kind presets
-and no kind chrome, and contributes no cascade node.
+and no kind chrome, and contributes no cascade node. Because chrome is applied by kind, a
+`Libre` scene renders with no watermark, CTA, bumper or music; when the series discloses AI
+use through its watermark, use a declared kind instead. The series declares every kind:
+an episode never invents one, and `Libre` is the only escape hatch.
 
 ### Methodologies
 
 - Give every kind a role; the role guides the agent, it is not an order.
 - Set `narration:: off` for silent scenes (bumper, title card) so no TTS is requested.
 - Use `fixed` for bumpers and outros instead of asking every episode to declare them.
-- Keep `max_duration` realistic: the scene length follows the narration.
+- Keep `max_duration` realistic: with `narration:: on` the scene length is the narration
+  length, and an `animation` Layer is trimmed or looped to it, never the reverse.
 
 ### Prompts
 

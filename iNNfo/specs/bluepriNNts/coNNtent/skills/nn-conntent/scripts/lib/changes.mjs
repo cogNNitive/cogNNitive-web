@@ -111,6 +111,8 @@ export async function applyPendingHumanChangesets(rootDir) {
       changesetPath: result.changesetPath,
       success: Boolean(result.success),
       status: result.status,
+      // The engine's reasons, so the intake can name them instead of only "(rejected)".
+      errors: result.errors || [],
     });
   }
   return applied;

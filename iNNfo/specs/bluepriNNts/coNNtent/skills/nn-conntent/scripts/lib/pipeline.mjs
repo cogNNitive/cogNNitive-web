@@ -284,6 +284,19 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
   const pendingHuman = await (deps.applyPending || applyPendingHumanChangesets)(rootDir)
   for (const outcome of pendingHuman) {
     log(`intake: applied pending ${outcome.changeset} (${outcome.status})`)
+    // A rejection names its reason, so the author fixes the changeset instead of
+    // retrying blind (#606).
+    if (outcome.success === false) {
+      const errors = Array.isArray(outcome.errors) ? outcome.errors : []
+      if (errors.length === 0) {
+        log('intake:   changeset-rejected: no rejection reason reached the intake')
+      }
+      for (const error of errors) {
+        const code = error?.code || 'changeset-rejected'
+        const where = error?.path ? ` [${error.path}]` : ''
+        log(`intake:   ${code}: ${error?.message || String(error)}${where}`)
+      }
+    }
   }
 
   let episode = readEpisode(scriptPath, { model: deps.model })
@@ -455,7 +468,7 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
 
   // 4b. Synthesis of audio and images (before avatars so narration audio is cached for avatars)
   const synthAssets = deps.synthesizeEpisodeAssets || synthesizeEpisodeAssets
-  await synthAssets({
+  const synth = await synthAssets({
     scriptPath,
     facts,
     recordSynthesisStages: true,
@@ -464,7 +477,14 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
   })
 
   const alignCaptions = deps.alignEpisodeCaptions || alignEpisodeCaptions
-  await alignCaptions({ scriptPath, facts, deps })
+  await alignCaptions({
+    scriptPath,
+    facts,
+    deps,
+    audioAssets: synth?.audioAssets,
+    ...(cacheDir ? { cacheDir } : {}),
+    ...(synthOptions ? { synthesizerOptions: synthOptions } : {}),
+  })
 
   // 4b. Preview gate: after the cheap spend (TTS, images, captions, animatic) and before
   // any avatar call. The hash covers what the reviewer heard and saw.

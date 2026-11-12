@@ -5,7 +5,9 @@
  * Two checkpoints:
  * 1. Master checkpoint (after render, before formats):
  *    - Structural overlay check against index.html (start and duration matching manifest)
- *    - Visible text edge density measurement (midpoint frame vs reference frame)
+ *    - Visible text edge density measurement (midpoint frame vs reference frame);
+ *      skipped for an overlay with no text, never used for captions (checked by
+ *      structure and manifest timing instead)
  *    - Master properties (duration +- 1 frame, resolution, audio stream when narrated)
  *    - Deterministic scene sampling
  * 2. Output-set checkpoint (after formats, thumbnails and description, before delivery):
@@ -17,22 +19,28 @@
  */
 
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
-import { spawnSync } from 'node:child_process'
+import { spawnTool } from './spawn-tool.mjs'
 
 /**
- * Minimum edge density ratio difference between the text region sampled at the
- * midpoint of an overlay interval and the reference frame outside the interval.
- * Calibrated against the Villabotijos Today pilot master (pepper-mapache_1920x1920.mp4),
- * where overlay edge diffs ranged from 0.005264 (watermark on 04-vacuna) to 0.100208
- * (closing title). Calibrated to 0.004 to provide a ~24% margin of headroom against
- * video compression variance while firmly catching missing/transparent text (< 0.001).
+ * Presence heuristic, not a legibility measure: the minimum edge-density
+ * difference between the overlay region at the midpoint of its interval and a
+ * reference frame outside it.
+ *
+ * Evidence: an absent overlay measures about 0.0000 (compression noise stays
+ * below 0.001); present overlays measured 0.005264-0.100208 on the pilot master
+ * (9bd659de) but only 0.0029 for a visible lower-third over a textured background
+ * in a later production (#610), which the former 0.004 rejected. 0.0015 sits
+ * 1.5x above the absent ceiling and about 2x below the lowest present value, so
+ * the two populations separate on both sides. Captions are not judged by this
+ * number (adjacent captions differ by design); see qaMaster.
  */
-export const QA_TEXT_EDGE_MIN = 0.004
+export const QA_TEXT_EDGE_MIN = 0.0015
 
-/** Default tool runner: spawnSync. */
+/** Default tool runner: spawnTool (Windows .cmd shims included). */
 function runCommand(cmd, args, options = {}) {
-  const res = spawnSync(cmd, args, { encoding: 'utf8', ...options })
+  const res = spawnTool(cmd, args, { encoding: 'utf8', ...options })
   return {
     status: res.status,
     stdout: res.stdout || '',
@@ -230,21 +238,30 @@ export function overlayCropRegion({ overlay, masterWidth = 1920, masterHeight = 
 /**
  * Measure edge density at a specific timestamp and crop region in a video file.
  * Returns ratio of edge pixels (0.0 to 1.0).
+ *
+ * The decoded frame goes to a temp file, never to stdout: reading binary frame
+ * bytes from a spawnSync pipe was reported to come back empty on Windows, so
+ * every overlay measured 0 and looked missing (#616).
  */
-export function defaultMeasureFrameEdgeDensity({ masterPath, timeSeconds, crop }) {
+export function defaultMeasureFrameEdgeDensity({ masterPath, timeSeconds, crop, run = spawnTool }) {
   const cropFilter = `crop=${crop.width}:${crop.height}:${crop.x}:${crop.y},edgedetect,format=gray`
   const ss = Math.max(0, timeSeconds).toFixed(3)
-  const res = spawnSync(
-    'ffmpeg',
-    ['-ss', ss, '-i', masterPath, '-vframes', '1', '-filter:v', cropFilter, '-f', 'rawvideo', '-'],
-    { stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 10 * 1024 * 1024 },
-  )
-
-  if (res.status !== 0 || !res.stdout || res.stdout.length === 0) {
-    return 0
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-frame-'))
+  const framePath = path.join(tmpDir, 'frame.gray')
+  let buf
+  try {
+    const res = run(
+      'ffmpeg',
+      ['-v', 'error', '-y', '-ss', ss, '-i', masterPath, '-vframes', '1', '-filter:v', cropFilter, '-f', 'rawvideo', framePath],
+      { stdio: 'ignore' },
+    )
+    if (res?.error || res?.status !== 0 || !fs.existsSync(framePath)) return 0
+    buf = fs.readFileSync(framePath)
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true })
   }
+  if (buf.length === 0) return 0
 
-  const buf = res.stdout
   let nonZero = 0
   for (let i = 0; i < buf.length; i++) {
     if (buf[i] > 0) nonZero++
@@ -294,6 +311,23 @@ export function parseHtmlOverlayHosts(html) {
   }
   return hosts
 }
+
+/** Text an overlay shows: lowerThird `title`, kineticTitle `heading`, the others `text`. */
+function overlayText(o) {
+  for (const bag of [o?.config, o?.props]) {
+    for (const key of ['title', 'heading', 'text']) {
+      const v = bag?.[key]
+      if (typeof v === 'string' && v.trim()) return v
+    }
+  }
+  return ''
+}
+
+/** Captions follow each other, so a frame diff against a reference frame is meaningless for them (#610). */
+const isCaption = (item) => /^(captions?|caption-word)$/i.test(String(item.type || ''))
+
+/** Overlays that draw media rather than text keep the visual check with no text. */
+const isMediaOverlay = (item) => /^b-?roll$/i.test(String(item.type || '')) || Boolean(item.config?.assetPath)
 
 /**
  * Checkpoint 1: Master QA.
@@ -481,7 +515,7 @@ export async function qaMaster({
       durationInFrames: durFrames,
       start: fromFrame / fps,
       duration: durFrames / fps,
-      text: o.config?.title || o.config?.text || o.props?.title || o.props?.text || '',
+      text: overlayText(o),
       config: o.config || o.props || {},
       bbox: o.bbox || null,
     })
@@ -566,6 +600,52 @@ export async function qaMaster({
         })
         continue
       }
+    }
+
+    // Captions: structural (above) and manifest timing, never a frame diff (#610).
+    if (isCaption(item)) {
+      const scene = scenes.find((sc) => item.sceneId && (sc.id === item.sceneId || sc.slug === item.sceneId))
+      const tol = frameDuration + 0.001
+      const bounds = scene
+        ? [(Number(scene.fromFrame) || 0) / fps, ((Number(scene.fromFrame) || 0) + (Number(scene.durationInFrames) || 0)) / fps]
+        : [0, manifestDuration]
+      const end = item.start + item.duration
+      const inTime =
+        Number.isFinite(item.start) &&
+        Number.isFinite(item.duration) &&
+        item.duration > 0 &&
+        item.start >= bounds[0] - tol &&
+        end <= bounds[1] + tol
+      checks.push({
+        id: inTime ? 'caption-present' : 'caption-timing',
+        checkpoint: 'master',
+        status: inTime ? 'pass' : 'fail',
+        scene: item.sceneId,
+        overlayKind: item.type,
+        text: item.text,
+        interval,
+        expected: `host #${item.id} and an interval inside [${bounds[0].toFixed(3)}, ${bounds[1].toFixed(3)}]s`,
+        found: inTime ? 'host present, timing inside bounds' : `interval [${itemStart}, ${itemEnd}]s`,
+        sampled: indexHtmlPath,
+      })
+      continue
+    }
+
+    // An overlay with no text has nothing to measure: the structural check stands alone (#610).
+    if (!String(item.text || '').trim() && !isMediaOverlay(item)) {
+      checks.push({
+        id: 'overlay-structural',
+        checkpoint: 'master',
+        status: 'pass',
+        scene: item.sceneId,
+        overlayKind: item.type,
+        text: item.text,
+        interval,
+        expected: `host element #${item.id} in index.html`,
+        found: 'host present; visual check skipped: overlay has no text',
+        sampled: indexHtmlPath,
+      })
+      continue
     }
 
     // Visible check

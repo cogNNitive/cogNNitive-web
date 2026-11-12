@@ -10,10 +10,12 @@
  */
 
 import { canonicalJson, sha256Hex } from './canonical.mjs';
-import { execFileSync } from 'node:child_process';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { spawnTool } from './spawn-tool.mjs';
+import { resolveHyperframesCli } from '../scene-project.mjs';
 
 /** The minimum share of script words that must match a transcript word. */
 export const CAPTION_MATCH_MIN = 0.9;
@@ -35,6 +37,71 @@ export function normaliseToken(token) {
     .toLowerCase()
     .replace(/[^\p{L}\p{N}]+/gu, '')
     .trim();
+}
+
+const EN_ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const EN_TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+const ES_ONES = ['cero', 'uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez', 'once', 'doce', 'trece', 'catorce', 'quince', 'dieciseis', 'diecisiete', 'dieciocho', 'diecinueve', 'veinte', 'veintiuno', 'veintidos', 'veintitres', 'veinticuatro', 'veinticinco', 'veintiseis', 'veintisiete', 'veintiocho', 'veintinueve'];
+const ES_TENS = ['', '', '', 'treinta', 'cuarenta', 'cincuenta', 'sesenta', 'setenta', 'ochenta', 'noventa'];
+const ES_HUNDREDS = ['', 'ciento', 'doscientos', 'trescientos', 'cuatrocientos', 'quinientos', 'seiscientos', 'setecientos', 'ochocientos', 'novecientos'];
+
+function enWords(n) {
+  if (n < 20) return [EN_ONES[n]];
+  if (n < 100) return n % 10 ? [EN_TENS[Math.floor(n / 10)], EN_ONES[n % 10]] : [EN_TENS[n / 10]];
+  if (n < 1000) return [EN_ONES[Math.floor(n / 100)], 'hundred', ...(n % 100 ? enWords(n % 100) : [])];
+  for (const [size, name] of [[1e9, 'billion'], [1e6, 'million'], [1e3, 'thousand']]) {
+    if (n >= size) return [...enWords(Math.floor(n / size)), name, ...(n % size ? enWords(n % size) : [])];
+  }
+  return [String(n)];
+}
+
+function esWords(n) {
+  if (n < 30) return [ES_ONES[n]];
+  if (n < 100) return n % 10 ? [ES_TENS[Math.floor(n / 10)], 'y', ES_ONES[n % 10]] : [ES_TENS[n / 10]];
+  if (n === 100) return ['cien'];
+  if (n < 1000) return [ES_HUNDREDS[Math.floor(n / 100)], ...(n % 100 ? esWords(n % 100) : [])];
+  if (n < 1e6) {
+    const k = Math.floor(n / 1000);
+    return [...(k === 1 ? [] : esWords(k)), 'mil', ...(n % 1000 ? esWords(n % 1000) : [])];
+  }
+  if (n < 1e12) {
+    const m = Math.floor(n / 1e6);
+    return [...(m === 1 ? ['uno', 'millon'] : [...esWords(m), 'millon']), ...(n % 1e6 ? esWords(n % 1e6) : [])];
+  }
+  return [String(n)];
+}
+
+/** Spellings that name the same number word (`un`/`una` = `uno`), per language. */
+const ALIASES = { es: { un: 'uno', una: 'uno', veintiun: 'veintiuno', veintiuna: 'veintiuno', millones: 'millon' } };
+const PERCENT = { en: ['percent'], es: ['por', 'ciento'] };
+
+/** Base language of a tag (`es-ES` -> `es`). */
+const baseLanguage = (language) => String(language || 'en').toLowerCase().split(/[-_]/)[0];
+
+/**
+ * Matching keys for one display token. A token written with digits (`14%`, `1.000`,
+ * `2026`) expands to its spelled-out words in the language, so a script that spells a
+ * number out and a transcript that writes it in digits (or the reverse) still match.
+ * Languages without a number table keep the digits. The displayed text never changes.
+ * @param {string} token
+ * @param {string} [language]
+ * @returns {string[]}
+ */
+export function matchKeys(token, language = 'en') {
+  const lang = baseLanguage(language);
+  const aliases = ALIASES[lang] || {};
+  const raw = String(token == null ? '' : token);
+  const number = /^[^\p{L}\p{N}]*(\d{1,3}(?:[.,]\d{3})+|\d+)(%?)[^\p{L}\p{N}]*$/u.exec(raw);
+  const toWords = lang === 'es' ? esWords : lang === 'en' ? enWords : null;
+  if (number && toWords) {
+    const value = Number(number[1].replace(/[.,]/g, ''));
+    if (Number.isSafeInteger(value)) {
+      return [...toWords(value), ...(number[2] ? PERCENT[lang] : [])].map((w) => aliases[w] || w);
+    }
+  }
+  const norm = normaliseToken(raw);
+  if (!norm) return [];
+  return [aliases[norm] || norm];
 }
 
 /** The script split into display tokens (whitespace), keeping their text. */
@@ -122,31 +189,49 @@ export function dropSilentTail(words, audioDurationSeconds) {
  * @returns {{ ok: boolean, reason?: string, coverage: number,
  *   words: Array<{ text: string, start: number, end: number }> }}
  */
-export function alignCaptions({ scriptText, words = [], segments = [], audioDurationSeconds }) {
+export function alignCaptions({ scriptText, words = [], segments = [], audioDurationSeconds, language = 'en' }) {
   const script = scriptTokens(scriptText);
-  const normalisedScript = script.map(normaliseToken);
-  const transcript = dropSilentTail(words.length > 0 ? words : segments.flatMap(wordsFromSegment), audioDurationSeconds)
-    .map((word) => ({ ...word, norm: normaliseToken(word.text) }))
-    .filter((word) => word.norm !== '');
+  // Both sides become matching keys (numbers spelled out in the language), so
+  // "catorce por ciento" in the script matches "14%" in the transcript, and the reverse.
+  const scriptKeys = [];
+  const keyOwner = [];
+  script.forEach((token, index) => {
+    for (const key of matchKeys(token, language)) {
+      scriptKeys.push(key);
+      keyOwner.push(index);
+    }
+  });
+  const transcript = [];
+  for (const word of dropSilentTail(words.length > 0 ? words : segments.flatMap(wordsFromSegment), audioDurationSeconds)) {
+    const keys = matchKeys(word.text, language);
+    const start = Number(word.start) || 0;
+    const step = Math.max(0, (Number(word.end) || start) - start) / Math.max(1, keys.length);
+    keys.forEach((norm, k) => transcript.push({ norm, start: start + step * k, end: start + step * (k + 1) }));
+  }
 
   if (script.length === 0) return { ok: true, coverage: 1, words: [] };
   if (transcript.length === 0) return { ok: false, reason: 'caption-match-low', coverage: 0, words: [] };
 
   const pairs = lcsPairs(
-    normalisedScript,
+    scriptKeys,
     transcript.map((word) => word.norm),
   );
-  const coverage = pairs.length / script.length;
+  // A display token is matched when any of its keys matched; its timing spans them.
+  const timed = new Array(script.length).fill(null);
+  for (const [keyIndex, transcriptIndex] of pairs) {
+    const owner = keyOwner[keyIndex];
+    const hit = transcript[transcriptIndex];
+    timed[owner] = timed[owner]
+      ? { start: Math.min(timed[owner].start, hit.start), end: Math.max(timed[owner].end, hit.end) }
+      : { start: hit.start, end: hit.end };
+  }
+  const coverage = timed.filter(Boolean).length / script.length;
   if (coverage < CAPTION_MATCH_MIN) {
     return { ok: false, reason: 'caption-match-low', coverage, words: [] };
   }
 
   // Timings for every script token: matched ones from the transcript, the rest
   // interpolated between their nearest matched neighbours.
-  const timed = new Array(script.length).fill(null);
-  for (const [scriptIndex, transcriptIndex] of pairs) {
-    timed[scriptIndex] = { start: transcript[transcriptIndex].start, end: transcript[transcriptIndex].end };
-  }
   let firstStart = transcript[0].start;
   let lastEnd = transcript[transcript.length - 1].end;
   for (let index = 0; index < timed.length; index++) {
@@ -203,9 +288,64 @@ export function captionsCacheKey({ audioSha, text, engine = 'auto', engineVersio
   return sha256Hex(canonicalJson({ audio_sha: audioSha, text: String(text || ''), engine, engine_version: String(engineVersion || '') }));
 }
 
-/** The `hyperframes transcribe` argv (explicit model when provided). */
+/**
+ * The one cache key for a scene's aligned captions, shared by the writer (the
+ * captions stage) and the reader (compile): the audio FILE bytes, the narration text
+ * and the model/language. Throws when the audio file cannot be read.
+ * @param {{ audioPath: string, text: string, modelName: string, language: string }} input
+ */
+export function sceneCaptionsCacheKey({ audioPath, text, modelName, language }) {
+  const audioSha = crypto.createHash('sha256').update(fs.readFileSync(audioPath)).digest('hex');
+  return captionsCacheKey({ audioSha, text: String(text || '').trim(), engine: 'auto', engineVersion: `${modelName}:${language}` });
+}
+
+/** Readable caption segments: at most this many words and seconds. */
+export const CAPTION_SEGMENT_MAX_WORDS = 7;
+export const CAPTION_SEGMENT_MAX_SECONDS = 3.2;
+/** A pause at least this long between two words starts a new segment. */
+export const CAPTION_SEGMENT_GAP_SECONDS = 0.6;
+
+/**
+ * Groups timed words into readable caption segments. A segment ends at a sentence
+ * end, at a clause break once it holds 4 words, at CAPTION_SEGMENT_MAX_WORDS words or
+ * CAPTION_SEGMENT_MAX_SECONDS seconds, and before a pause of CAPTION_SEGMENT_GAP_SECONDS.
+ * @param {Array<{ text: string, start: number, end: number }>} words
+ * @returns {Array<{ text: string, start: number, end: number }>}
+ */
+export function groupCaptionSegments(words = []) {
+  const segments = [];
+  let current = null;
+  const close = () => {
+    if (current) segments.push({ text: current.words.join(' '), start: current.start, end: current.end });
+    current = null;
+  };
+  for (const word of words) {
+    const text = String(word?.text || '').trim();
+    if (!text) continue;
+    const start = Number(word.start) || 0;
+    const end = Math.max(start, Number(word.end) || start);
+    if (current && start - current.end >= CAPTION_SEGMENT_GAP_SECONDS) close();
+    if (!current) current = { words: [], start, end };
+    current.words.push(text);
+    current.end = Math.max(current.end, end);
+    const endsSentence = /[.!?…]["'”»)]*$/.test(text);
+    const endsClause = /[,;:]$/.test(text);
+    if (
+      endsSentence ||
+      (endsClause && current.words.length >= 4) ||
+      current.words.length >= CAPTION_SEGMENT_MAX_WORDS ||
+      current.end - current.start >= CAPTION_SEGMENT_MAX_SECONDS
+    ) {
+      close();
+    }
+  }
+  close();
+  return segments;
+}
+
+/** The `hyperframes transcribe` argv for the pinned CLI (explicit model when provided). */
 export function transcribeArgs({ audioPath, language, model }) {
-  const args = ['-y', 'hyperframes', 'transcribe', String(audioPath), '--json', '--engine', 'auto'];
+  const args = ['transcribe', String(audioPath), '--json', '--engine', 'auto'];
   if (model) args.push('--model', String(model));
   if (language) args.push('--language', String(language));
   return args;
@@ -215,15 +355,20 @@ export function transcribeArgs({ audioPath, language, model }) {
  * Transcribe one audio file in a throwaway cwd. The CLI prints a summary on stdout and
  * writes the word list to `transcript.json`. `deps.run` is the seam for tests.
  *
- * @param {{ audioPath: string, language?: string, model?: string, deps?: { run?: Function, cwd?: string } }} input
+ * The default runner is the skill's pinned HyperFrames CLI, never `npx` (which needs
+ * the registry and may resolve another version), spawned through `spawnTool` so the
+ * Windows `.cmd` shim runs.
+ *
+ * @param {{ audioPath: string, language?: string, model?: string, deps?: { run?: Function, cwd?: string, cliPath?: string, spawnTool?: Function } }} input
  */
 export function runTranscribe({ audioPath, language, model, deps = {} }) {
-  const run = deps.run || ((args, options) => execFileSync('npx', args, options));
+  const run = deps.run || ((args, options) => runPinnedCli(args, options, deps));
   const cwd = deps.cwd || fs.mkdtempSync(path.join(os.tmpdir(), 'nn-transcribe-'));
   let summary
   try {
     summary = JSON.parse(String(run(transcribeArgs({ audioPath, language, model }), { cwd, encoding: 'utf8' })));
   } catch (err) {
+    if (err?.code === 'hyperframes-missing') return { ok: false, reason: 'hyperframes-missing', error: err };
     return { ok: false, reason: 'transcribe-failed', error: err };
   }
   if (!summary || summary.ok !== true) {
@@ -243,4 +388,22 @@ export function runTranscribe({ audioPath, language, model, deps = {} }) {
     durationSeconds: summary.durationSeconds,
     words: Array.isArray(words) ? words : [],
   };
+}
+
+/**
+ * Runs the pinned HyperFrames CLI and returns its stdout. A CLI that is not
+ * installed is a `hyperframes-missing` error; a non-zero exit carries the CLI's own
+ * words. `deps.cliPath`/`deps.spawnTool` are test seams.
+ */
+function runPinnedCli(args, options, deps = {}) {
+  const cli = deps.cliPath || resolveHyperframesCli();
+  if (!fs.existsSync(cli)) {
+    throw Object.assign(new Error(`the pinned HyperFrames CLI is not installed at ${cli}`), { code: 'hyperframes-missing' });
+  }
+  const res = (deps.spawnTool || spawnTool)(cli, args, { ...options, maxBuffer: 64 * 1024 * 1024 });
+  if (res.error) throw res.error;
+  if (res.status !== 0) {
+    throw new Error(`hyperframes transcribe exited ${res.status}: ${String(res.stderr || res.stdout || '').trim().slice(-2000)}`);
+  }
+  return res.stdout;
 }
