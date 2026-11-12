@@ -435,12 +435,27 @@
     '.nn-mini-info{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:none;background:transparent;color:var(--nn-muted);cursor:pointer;border-radius:50%}',
     '.nn-mini-info:hover,.nn-mini-info[aria-expanded=true]{color:var(--nn-text);background:var(--nn-surface-2)}',
     '.nn-navbar-actions-group{display:inline-flex;align-items:center;gap:.5rem}',
+    '.nn-navbar-actions-inner{display:inline-flex;align-items:center;gap:.5rem}',
     '.nn-navbar-action-btn{appearance:none;border:1px solid var(--nn-border);background:var(--nn-surface);color:var(--nn-text);font:inherit;font-size:.8rem;font-weight:600;padding:5px 12px;border-radius:var(--nn-radius-sm);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s ease,border-color .15s ease;line-height:1.2}',
     '.nn-navbar-action-btn:hover{background:var(--nn-surface-2);border-color:var(--nn-focus)}',
     '.nn-navbar-action-btn:focus-visible{outline:2px solid var(--nn-focus);outline-offset:1px}',
     '.nn-navbar-action-btn .nn-btn-icon{display:inline-flex;align-items:center;color:var(--nn-muted)}',
     '.nn-navbar-action-btn:hover .nn-btn-icon{color:var(--nn-text)}',
     '.nn-navbar-action-btn .nn-badge-count{margin-left:4px;font-size:.72rem;background:var(--nn-accent);color:var(--nn-bg);padding:1px 6px;border-radius:999px;font-weight:700}',
+    // Narrow width: the two header actions collapse behind one menu trigger.
+    '.nn-navbar-actions-toggle{display:none}',
+    '.nn-navbar-actions-menu{position:absolute;top:calc(100% + 6px);right:0;z-index:40;display:none;flex-direction:column;min-width:12rem;padding:4px;background:var(--nn-surface);border:1px solid var(--nn-border);border-radius:var(--nn-radius-sm);box-shadow:0 8px 24px rgba(0,0,0,.18)}',
+    '.nn-navbar-actions-menu[data-open=true]{display:flex}',
+    '.nn-navbar-actions-menu .nn-navbar-action-btn{border:none;justify-content:flex-start;width:100%}',
+    '@media (max-width:720px){.nn-navbar-actions-inner{display:none}.nn-navbar-actions-toggle{display:inline-flex}.nn-navbar-actions-group{position:relative}}',
+    // ChipEditor: a generic multi-value (select/chips) field for views.
+    '.nn-chip-editor{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem;min-height:2rem}',
+    '.nn-chip{display:inline-flex;align-items:center;gap:.3rem;padding:2px 4px 2px 8px;border:1px solid var(--nn-border);border-radius:999px;background:var(--nn-surface-2);font-size:.78rem;line-height:1.4}',
+    '.nn-chip-remove{appearance:none;border:none;background:transparent;color:var(--nn-muted);cursor:pointer;line-height:1;padding:2px;border-radius:50%}',
+    '.nn-chip-remove:hover{color:var(--nn-text);background:var(--nn-surface)}',
+    '.nn-chip-input{appearance:none;border:1px dashed var(--nn-border);background:transparent;color:var(--nn-text);font:inherit;font-size:.78rem;padding:3px 8px;border-radius:999px;min-width:8rem}',
+    '.nn-chip-input:focus-visible{outline:2px solid var(--nn-focus);outline-offset:1px}',
+    '.nn-chip-empty{color:var(--nn-muted);font-size:.78rem}',
   ]
   for (var slot = 1; slot <= 12; slot++) {
     COMPONENT_CSS.push(
@@ -3814,7 +3829,7 @@
       container.setAttribute('data-nn-component', 'navbar-actions')
 
       var vnode = htmlTag`
-        <div class="nn-navbar-actions-inner" style="display:inline-flex;align-items:center;gap:8px;">
+        <div class="nn-navbar-actions-inner">
           <button
             type="button"
             class="nn-navbar-action-btn nn-btn-save"
@@ -3846,11 +3861,14 @@
         </div>
       `
       renderFn(vnode, container)
+      appendCollapsedActions(doc, container, draftsCount, saveSvg, promptSvg, onSave, onCopyPrompt)
       return container
     }
 
     var wrap = makeEl(doc, 'div', 'nn-navbar-actions-group')
     wrap.setAttribute('data-nn-component', 'navbar-actions')
+    var inline = makeEl(doc, 'div', 'nn-navbar-actions-inner')
+    wrap.appendChild(inline)
 
     var btnSave = makeEl(doc, 'button', 'nn-navbar-action-btn nn-btn-save')
     btnSave.setAttribute('type', 'button')
@@ -3866,7 +3884,7 @@
       if (e && e.preventDefault) e.preventDefault()
       if (typeof onSave === 'function') onSave()
     })
-    wrap.appendChild(btnSave)
+    inline.appendChild(btnSave)
 
     var btnCopy = makeEl(doc, 'button', 'nn-navbar-action-btn nn-btn-copy-prompt')
     btnCopy.setAttribute('type', 'button')
@@ -3877,9 +3895,167 @@
       if (e && e.preventDefault) e.preventDefault()
       if (typeof onCopyPrompt === 'function') onCopyPrompt()
     })
-    wrap.appendChild(btnCopy)
+    inline.appendChild(btnCopy)
 
+    appendCollapsedActions(doc, wrap, draftsCount, saveSvg, promptSvg, onSave, onCopyPrompt)
     return wrap
+  }
+
+  /**
+   * The narrow-width half of TopBarActions: one trigger plus a menu holding the
+   * same actions. The CSS hides `.nn-navbar-actions-inner` below 720px and shows
+   * the trigger, so the header never wraps or clips the two labels.
+   */
+  function appendCollapsedActions(doc, group, draftsCount, saveSvg, promptSvg, onSave, onCopyPrompt) {
+    var moreSvg =
+      (typeof icon === 'function' ? icon('more-horizontal', 14) : '') ||
+      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>'
+
+    var toggle = makeEl(doc, 'button', 'nn-navbar-action-btn nn-navbar-actions-toggle')
+    toggle.setAttribute('type', 'button')
+    toggle.setAttribute('data-nn', 'navbar-actions-toggle')
+    toggle.setAttribute('aria-haspopup', 'menu')
+    toggle.setAttribute('aria-expanded', 'false')
+    toggle.innerHTML =
+      '<span class="nn-btn-icon">' + moreSvg + '</span><span>Actions</span>' +
+      (draftsCount > 0 ? '<span class="nn-badge-count">' + draftsCount + '</span>' : '')
+
+    var menu = makeEl(doc, 'div', 'nn-navbar-actions-menu')
+    menu.setAttribute('role', 'menu')
+    menu.setAttribute('data-nn', 'navbar-actions-menu')
+    menu.setAttribute('data-open', 'false')
+
+    function menuItem(key, label, svg, handler) {
+      var item = makeEl(doc, 'button', 'nn-navbar-action-btn')
+      item.setAttribute('type', 'button')
+      item.setAttribute('role', 'menuitem')
+      item.setAttribute('data-nn-menu', key)
+      item.innerHTML = '<span class="nn-btn-icon">' + svg + '</span><span>' + label + '</span>'
+      item.addEventListener('click', function (e) {
+        if (e && e.preventDefault) e.preventDefault()
+        menu.setAttribute('data-open', 'false')
+        toggle.setAttribute('aria-expanded', 'false')
+        if (typeof handler === 'function') handler()
+      })
+      return item
+    }
+
+    menu.appendChild(menuItem('save-snapshot', 'Save Snapshot', saveSvg, onSave))
+    menu.appendChild(menuItem('copy-agent-prompt', 'Copy AI Prompt', promptSvg, onCopyPrompt))
+
+    toggle.addEventListener('click', function (e) {
+      if (e && e.preventDefault) e.preventDefault()
+      var open = toggle.getAttribute('aria-expanded') === 'true'
+      toggle.setAttribute('aria-expanded', open ? 'false' : 'true')
+      menu.setAttribute('data-open', open ? 'false' : 'true')
+    })
+
+    group.appendChild(toggle)
+    group.appendChild(menu)
+  }
+
+  /**
+   * ChipEditor: a generic multi-value field (a `select` declared `multiple`, or
+   * any list of tags) for views. Chips are removable, the input adds on Enter or
+   * on blur, and `onChange(values)` receives the whole list every time.
+   */
+  function ChipEditor(data, opts) {
+    opts = opts || {}
+    var doc = resolveDoc(opts)
+    if (!doc) throw new TypeError('nnUI.ChipEditor: doc is required')
+    var values = Array.isArray(data && data.values) ? data.values.slice() : []
+    var options = Array.isArray(data && data.options) ? data.options : []
+    var onChange = typeof (data && data.onChange) === 'function' ? data.onChange : opts.onChange
+    var placeholder = (data && data.placeholder) || 'Add a value'
+    var disabled = Boolean(data && data.disabled) || Boolean(opts.disabled)
+
+    var root = makeEl(doc, 'div', 'nn-chip-editor')
+    root.setAttribute('data-nn-component', 'chip-editor')
+
+    function emit() {
+      if (typeof onChange === 'function') onChange(values.slice())
+    }
+
+    function removeAt(index, chip) {
+      values.splice(index, 1)
+      root.removeChild(chip)
+      renderEmpty()
+      emit()
+    }
+
+    function renderEmpty() {
+      var empty = root.querySelector('.nn-chip-empty')
+      if (values.length === 0 && !empty) {
+        root.insertBefore(makeEl(doc, 'span', 'nn-chip-empty', 'No values'), root.firstChild)
+      } else if (values.length > 0 && empty && empty.parentNode) {
+        empty.parentNode.removeChild(empty)
+      }
+    }
+
+    function addChip(value) {
+      var text = String(value == null ? '' : value).trim()
+      if (!text || values.some(function (v) { return String(v).toLowerCase() === text.toLowerCase() })) return
+      values.push(text)
+      var chip = makeEl(doc, 'span', 'nn-chip', text)
+      var remove = makeEl(doc, 'button', 'nn-chip-remove')
+      remove.setAttribute('type', 'button')
+      remove.setAttribute('aria-label', 'Remove ' + text)
+      remove.textContent = '×'
+      remove.disabled = disabled
+      chip.appendChild(remove)
+      remove.addEventListener('click', function () {
+        removeAt(values.indexOf(text), chip)
+      })
+      root.insertBefore(chip, input)
+      renderEmpty()
+      emit()
+    }
+
+    values.forEach(function (v) {
+      var chip = makeEl(doc, 'span', 'nn-chip', String(v))
+      var remove = makeEl(doc, 'button', 'nn-chip-remove')
+      remove.setAttribute('type', 'button')
+      remove.setAttribute('aria-label', 'Remove ' + v)
+      remove.textContent = '×'
+      remove.disabled = disabled
+      chip.appendChild(remove)
+      remove.addEventListener('click', function () {
+        removeAt(values.indexOf(String(v)), chip)
+      })
+      root.appendChild(chip)
+    })
+
+    var input = makeEl(doc, 'input', 'nn-chip-input')
+    input.setAttribute('type', 'text')
+    input.setAttribute('data-nn', 'chip-input')
+    input.setAttribute('placeholder', placeholder)
+    input.disabled = disabled
+    if (options.length) {
+      var listId = 'nn-chip-options-' + Math.random().toString(36).slice(2, 8)
+      var datalist = makeEl(doc, 'datalist')
+      datalist.id = listId
+      options.forEach(function (o) {
+        var option = makeEl(doc, 'option')
+        option.setAttribute('value', String(o))
+        datalist.appendChild(option)
+      })
+      input.setAttribute('list', listId)
+      root.appendChild(datalist)
+    }
+    function commit() {
+      addChip(input.value)
+      input.value = ''
+    }
+    input.addEventListener('keydown', function (e) {
+      if (e && e.key === 'Enter') {
+        if (e.preventDefault) e.preventDefault()
+        commit()
+      }
+    })
+    input.addEventListener('blur', commit)
+    root.appendChild(input)
+    renderEmpty()
+    return root
   }
 
   /**
@@ -5005,6 +5181,7 @@
     RailProgress: RailProgress,
     Toast: Toast,
     TopBarActions: TopBarActions,
+    ChipEditor: ChipEditor,
     STATUS_LABELS: STATUS_LABELS,
     statusLabel: statusLabel,
     EditModal: EditModal,

@@ -109,7 +109,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.60.1",
+      "release_tag": "blueprints-v0.60.0",
       "embedded_skills": [
         "nn-conntent"
       ],
@@ -378,8 +378,7 @@
           "title": "Workspace Specification App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
         }
-      ],
-      "release_tag": "blueprints-v0.60.1"
+      ]
     }
   },
   "warnings": []

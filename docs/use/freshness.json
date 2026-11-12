@@ -1,40 +1,34 @@
 {
-  "generatedAt": "2026-11-12T12:00:19.299Z",
-  "head": "477c0d6903e6fa60e46133e2f94320549c30945f",
+  "generatedAt": "2026-11-12T12:12:07.913Z",
+  "head": "2cad053093ef7f24c21ba7f7a62271b4ec940aaf",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
-      "pinnedTag": "skills-v3.2.0",
-      "pinnedTagDate": "2026-11-12T11:50:47+01:00",
-      "commitsSincePin": 1,
-      "filesTouched": [
-        "skills/nn-update/scripts/lib/nn-core.generated.cjs"
-      ]
+      "pinnedTag": "skills-v3.2.1",
+      "pinnedTagDate": "2026-11-12T12:59:24+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.60.0",
-      "pinnedTagDate": "2026-11-12T12:41:43+01:00",
-      "commitsSincePin": 1,
+      "pinnedTag": "blueprints-v0.60.1",
+      "pinnedTagDate": "2026-11-12T12:59:24+01:00",
+      "commitsSincePin": 2,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/review.js"
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
       ]
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.60.0",
-      "pinnedTagDate": "2026-11-12T12:41:43+01:00",
-      "commitsSincePin": 1,
+      "pinnedTag": "blueprints-v0.60.1",
+      "pinnedTagDate": "2026-11-12T12:59:24+01:00",
+      "commitsSincePin": 2,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/review.js"
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
       ]
     },
     "nn-mcp": {
@@ -73,11 +67,12 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.36.1",
       "pinnedTagDate": "2026-11-12T06:46:34+01:00",
-      "commitsSincePin": 1,
+      "commitsSincePin": 3,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
-        "iNNfo/specs/bluepriNNts/console/review.js"
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
       ]
     }
   }
