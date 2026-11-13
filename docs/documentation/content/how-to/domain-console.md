@@ -24,6 +24,10 @@ The console is where the review half of every change happens. When your agent pr
 
 The console is **static**: it cannot talk back to your agent on its own, so approvals always travel through the conversation. That is what makes it safe to archive.
 
+Open **Changes · N** in the top-right corner to review pending drafts and the applied history together. The counter follows your edits. You can discard a draft, return to its element, or propose a reversal of an applied field update.
+
+Enter your reviewer identifier to **Copy changes** or **Download changes**, then give the change document to your agent. Copying and downloading keep the pending drafts; they do not apply them. **Discard all** asks for confirmation. **Save Snapshot** saves a self-contained copy of the console, including its drafts.
+
 ## Works offline
 
 Because the page is self-contained, you can open it directly from disk — no web server required — and it keeps working with no toolchain installed. That is also what makes it a durable deliverable you can hand to someone else.

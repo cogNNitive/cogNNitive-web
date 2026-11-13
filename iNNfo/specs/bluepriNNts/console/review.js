@@ -1226,18 +1226,18 @@
     }
 
     function buildNewElementButton() {
-      var dock = doc.getElementById('nn-review-dock')
       var banner = doc.getElementById('nn-feedback-banner') || doc.getElementById('nn-banner')
-      var host = dock || banner
+      var host = doc.getElementById('nn-navbar-actions') || banner
       if (!host || !store || !canReview(meta, elements, needs)) return null
       var existing = doc.querySelector('[data-nn="new-element"]')
       if (existing) return existing
       if (!schemaConcepts().length) return null
-      var b = makeEl(doc, 'button', 'nn-new-element nn-dock-changes', '+ New element')
+      var b = makeEl(doc, 'button', 'nn-new-element nn-navbar-action-btn', '+ New element')
       b.setAttribute('data-nn', 'new-element')
+      b.setAttribute('aria-label', 'New element')
       b.setAttribute('type', 'button')
       b.addEventListener('click', openNew)
-      var exportBtn = host.querySelector('#nn-dock-export-btn') || host.querySelector('#nn-feedback-open')
+      var exportBtn = host.querySelector('#nn-feedback-open')
       if (exportBtn && exportBtn.parentNode) exportBtn.parentNode.insertBefore(b, exportBtn)
       else host.appendChild(b)
       return b

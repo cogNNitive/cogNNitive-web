@@ -7693,6 +7693,7 @@ input[type="text"], input[type="search"], textarea, select {
 #nn-navbar-actions {
   display: flex !important;
   align-items: center !important;
+  gap: 8px;
   margin-left: auto !important;
   order: 9999 !important;
   flex-shrink: 0 !important;
@@ -7971,6 +7972,7 @@ input[type="text"], input[type="search"], textarea, select {
   flex-direction: column;
   gap: 16px;
   overflow: auto;
+  min-height: 0;
 }
 .nn-export-flow {
   margin: 0;
@@ -8060,6 +8062,25 @@ input[type="text"], input[type="search"], textarea, select {
 }
 .nn-export-actions {
   align-items: center;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  #nn-navbar-actions .nn-new-element {
+    font-size: 0;
+    width: 32px;
+    padding: 6px;
+  }
+  #nn-navbar-actions .nn-new-element::before {
+    content: '+';
+    font-size: 1rem;
+  }
+  .nn-export-actions .nn-export-spacer {
+    display: none;
+  }
+  .nn-export-actions [data-nn="copy-status"] {
+    flex-basis: 100%;
+  }
 }
 .nn-export-spacer {
   margin-left: auto;

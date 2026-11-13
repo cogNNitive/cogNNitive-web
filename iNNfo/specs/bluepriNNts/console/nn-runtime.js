@@ -1110,7 +1110,7 @@
   function renderBanner(doc, meta, needs, draftCount, onReviewerChange, state) {
     var banner = doc.getElementById('nn-feedback-banner') || doc.getElementById('nn-banner')
     if (!banner) return
-    var existingOpen = banner.querySelector('#nn-feedback-open') || banner.querySelector('#nn-export-open')
+    var existingOpen = doc.getElementById('nn-feedback-open') || doc.getElementById('nn-export-open')
     banner.innerHTML = ''
     var title = el('span', 'nn-banner-title', null)
     if (title) {
@@ -1128,8 +1128,6 @@
     var version = el('span', 'nn-banner-version', ' ' + domainModelVersion(meta))
     var draftsBadge = el('span', 'nn-banner-drafts', ' unsent: ' + (draftCount || 0))
     draftsBadge.setAttribute('data-nn', 'draft-count')
-    var dockDrafts = doc.querySelector('#nn-review-dock .nn-dock-drafts')
-    if (dockDrafts) dockDrafts.textContent = 'Unsent: ' + (draftCount || 0)
 
     banner.appendChild(title)
     banner.appendChild(version)
@@ -1143,9 +1141,10 @@
     banner.appendChild(buildReviewerChip(doc))
 
     if (existingOpen) {
-      banner.appendChild(existingOpen)
+      existingOpen.textContent = 'Changes · ' + (draftCount || 0)
+      if (!existingOpen.parentNode || existingOpen.parentNode === banner) banner.appendChild(existingOpen)
     } else if (banner.id === 'nn-feedback-banner') {
-      var openBtn = el('button', 'nn-feedback-open', 'Export changes')
+      var openBtn = el('button', 'nn-feedback-open nn-navbar-action-btn', 'Changes · ' + (draftCount || 0))
       if (openBtn) {
         openBtn.id = 'nn-feedback-open'
         openBtn.setAttribute('type', 'button')
@@ -5321,21 +5320,22 @@
 
   // One Changes tab: Unsent on top (the only change signal a model view carries),
   // the applied history below. The history reads the payload `changes` collection.
-  function renderReviewTab(doc, state, config, onRefresh) {
-    var host = doc && typeof doc.getElementById === 'function' ? doc.getElementById('nn-tab-review') : null
+  function renderReviewTab(doc, state, config, onRefresh, container) {
+    var host = container || (doc && typeof doc.getElementById === 'function' ? doc.getElementById('nn-tab-review') : null)
+    var inDialog = !!container
     if (!host) return
     host.innerHTML = ''
 
     var drafts = state && state.store ? state.store.drafts() : []
     var changes = state && Array.isArray(state.changes) ? state.changes : []
     var byId = elementsByIdOf(state)
-    var root = el('div', 'nn-review-tab-content p-6 max-w-5xl mx-auto')
+    var root = el('div', inDialog ? 'nn-review-tab-content' : 'nn-review-tab-content p-6 max-w-5xl mx-auto')
     if (!root) return
 
     var head = el('section', 'nn-review-head flex justify-between items-center mb-6 pb-4 border-b border-base-200')
     if (head) {
       var titleWrap = el('div')
-      titleWrap.appendChild(el('h2', 'text-2xl font-bold tracking-tight', UI.COPY.changes))
+      if (!inDialog) titleWrap.appendChild(el('h2', 'text-2xl font-bold tracking-tight', UI.COPY.changes))
       var count = el(
         'p',
         'nn-review-count text-sm opacity-70 mt-1',
@@ -5360,7 +5360,7 @@
       }
       head.appendChild(titleWrap)
 
-      if (drafts.length > 0) {
+      if (drafts.length > 0 && !inDialog) {
         var exportBtn = el('button', 'nn-btn nn-tab-export-btn btn btn-primary btn-sm flex items-center gap-2 shadow-sm', 'Export changes')
         if (exportBtn) {
           exportBtn.setAttribute('type', 'button')
@@ -5377,6 +5377,11 @@
     }
 
     function goTo(rawElementId) {
+      if (inDialog) {
+        var dialog = host.closest('dialog')
+        if (dialog && typeof dialog.close === 'function') dialog.close()
+        else if (dialog) dialog.removeAttribute('open')
+      }
       var elRec = findElementForTarget(state && state.elements, rawElementId)
       focusElementCard(doc, elRec ? elRec.id : rawElementId)
     }
@@ -5388,7 +5393,7 @@
       var elRec = findElementForTarget(state.elements, entry.target)
       var field = entry.field || targetFieldOf(entry.target)
       if (!elRec || !field) return
-      var current = elRec.fields ? elRec.fields[field] : undefined
+      var current = field === 'name' ? elRec.name : field === 'description' ? elRec.description : elRec.fields ? elRec.fields[field] : undefined
       state.store.addDraft({
         element_id: elRec.id,
         concept: elRec.concept,
@@ -6254,10 +6259,10 @@
     var modal = active.createElement('dialog')
     modal.id = 'nn-feedback-modal'
     modal.className = 'nn-export-modal'
-    modal.setAttribute('aria-label', 'Export proposed changes')
+    modal.setAttribute('aria-label', 'Changes')
     modal.innerHTML =
       '<header class="nn-export-head">' +
-      '<h2>Export proposed changes</h2>' +
+      '<h2>Changes</h2>' +
       '<span class="nn-export-count" data-nn="draft-badge"></span>' +
       '<button class="nn-export-close" data-nn="close" type="button" aria-label="Close">\u00d7</button>' +
       '</header>' +
@@ -6267,8 +6272,7 @@
       '<label class="nn-edit-field-label" for="nn-export-identifier">Author / Reviewer identifier</label>' +
       '<input id="nn-export-identifier" class="nn-edit-input" data-nn="identifier" type="text" placeholder="e.g. round-2" />' +
       '</div>' +
-      '<div class="nn-export-list-head"><h3>Unsent changes</h3>' +
-      '<span data-nn="draft-count"></span></div>' +
+      '<p>Copying or downloading keeps your pending changes here until they are applied or discarded.</p>' +
       '<div class="nn-change-sheets" data-nn="preview"></div>' +
       '<div data-nn="errors" style="display: none;"></div>' +
       '<details class="nn-modal-details">' +
@@ -6296,84 +6300,6 @@
 
     root.appendChild(modal)
 
-    // Contextual Floating Review Dock
-    var oldDock = active.getElementById('nn-review-dock')
-    if (oldDock && oldDock.parentNode) oldDock.parentNode.removeChild(oldDock)
-    var dock = active.createElement('div')
-    dock.id = 'nn-review-dock'
-    dock.className = 'nn-review-dock'
-    dock.setAttribute('data-nn-component', 'review-dock')
-    dock.setAttribute('aria-label', 'Review floating dock')
-    dock.style.display = 'none'
-
-    var dockStatus = active.createElement('div')
-    dockStatus.className = 'nn-dock-status'
-    dockStatus.innerHTML = '<span class="nn-dock-dot"></span><span>Change</span>'
-    dock.appendChild(dockStatus)
-
-    var sep1 = active.createElement('span')
-    sep1.className = 'nn-dock-sep'
-    dock.appendChild(sep1)
-
-    // Reviewer identity inside floating dock
-    dock.appendChild(buildReviewerChip(active))
-
-    var sep2 = active.createElement('span')
-    sep2.className = 'nn-dock-sep'
-    dock.appendChild(sep2)
-
-    // Changes view toggle button
-    var changesBtn = active.createElement('button')
-    changesBtn.type = 'button'
-    changesBtn.className = 'nn-dock-changes'
-    changesBtn.setAttribute('data-nn', 'dock-changes')
-    changesBtn.textContent = 'Changes'
-    changesBtn.addEventListener('click', function () {
-      if (state && state.tabs) {
-        if (state.tabs.current() === 'review') {
-          state.tabs.select('explorer')
-        } else {
-          state.tabs.select('review')
-        }
-      }
-    })
-    dock.appendChild(changesBtn)
-
-    var dockDraftsEl = active.createElement('span')
-    dockDraftsEl.className = 'nn-dock-drafts'
-    dockDraftsEl.textContent = 'Unsent: 0'
-    dock.appendChild(dockDraftsEl)
-
-    // Open button (Export changes)
-    var openBtn = active.createElement('button')
-    openBtn.id = 'nn-dock-export-btn'
-    openBtn.setAttribute('type', 'button')
-    openBtn.className = 'nn-feedback-open nn-dock-export'
-    openBtn.textContent = 'Export changes'
-    dock.appendChild(openBtn)
-
-    var exitBtn = active.createElement('button')
-    exitBtn.type = 'button'
-    exitBtn.className = 'nn-dock-exit'
-    exitBtn.textContent = 'Hide'
-    exitBtn.setAttribute('aria-label', 'Hide the change bar')
-    exitBtn.addEventListener('click', function () {
-      dock.style.setProperty('display', 'none', 'important')
-      dock.removeAttribute('data-visible')
-      dock.classList.remove('active', 'nn-dock-blinking')
-      if (dock._blinkTimer) {
-        clearTimeout(dock._blinkTimer)
-        dock._blinkTimer = null
-      }
-    })
-    dock.appendChild(exitBtn)
-
-    if (active.body) {
-      active.body.appendChild(dock)
-    } else {
-      root.appendChild(dock)
-    }
-
     // Single-header layout: the feedback controls live inside the top navbar
     // (no second application header). Fall back to the body top for shells
     // that ship no navbar.
@@ -6382,13 +6308,6 @@
       navbar.appendChild(root)
     } else if (active.body) {
       active.body.insertBefore(root, active.body.firstChild)
-    }
-
-    if (state && !openBtn.getAttribute('data-nn-bound')) {
-      openBtn.setAttribute('data-nn-bound', '1')
-      openBtn.addEventListener('click', function () {
-        openExportModal(active, state)
-      })
     }
 
     return root
@@ -7096,6 +7015,10 @@
       }
     }
     if (!target || !UI || typeof UI.TopBarActions !== 'function') return null
+    var changesButton = active.getElementById('nn-feedback-open')
+    if (changesButton && changesButton.parentNode === target) target.removeChild(changesButton)
+    var newElementButton = active.querySelector('[data-nn="new-element"]')
+    if (newElementButton && newElementButton.parentNode === target) target.removeChild(newElementButton)
     target.innerHTML = ''
     var draftsCount = state && state.store ? state.store.drafts().length : 0
     var actionsEl = UI.TopBarActions(
@@ -7113,6 +7036,8 @@
     if (actionsEl) {
       target.appendChild(actionsEl)
     }
+    if (newElementButton) target.appendChild(newElementButton)
+    if (changesButton) target.appendChild(changesButton)
     return target
   }
 
@@ -7170,41 +7095,10 @@
     }
 
     var preview = modal.querySelector('[data-nn="preview"]')
-    if (preview) {
-      preview.innerHTML = ''
-      drafts.forEach(function (d, i) {
-        preview.appendChild(
-          UI.changeSheet(
-            {
-              entry: d,
-              variant: 'draft',
-              // Same staleness rule the review tab uses: the target moved under
-              // the draft and the draft is not already applied.
-              stale: Review.isTargetChanged(d, byId) && !Review.isAlreadyApplied(d, byId),
-            },
-            {
-              doc: doc,
-              modelId: modelId,
-              open: i === 0,
-              onCite: function (citeData) {
-                openCitePayload(doc, citeData)
-              },
-              onDiscard: function (id) {
-                if (state && state.store) state.store.removeDraft(id)
-                if (state && typeof state.refreshUi === 'function') state.refreshUi()
-                updateExportPreview(doc, state)
-              },
-            },
-          ),
-        )
-      })
-      if (!drafts.length) {
-        var empty = doc.createElement('p')
-        empty.className = 'nn-export-empty'
-        empty.textContent = 'No unsent changes. Edit an element to record one.'
-        preview.appendChild(empty)
-      }
-    }
+    if (preview) renderReviewTab(doc, state, null, function () {
+      if (state && typeof state.refreshUi === 'function') state.refreshUi()
+      updateExportPreview(doc, state)
+    }, preview)
 
     var composed = composeExport(state, identifier)
     var downloadCsBtn = modal.querySelector('[data-nn="download-changeset"]')
@@ -7713,6 +7607,10 @@
       if (bannerCount) bannerCount.textContent = ' unsent: ' + n
       var dockCount = active.querySelector('#nn-review-dock .nn-dock-drafts')
       if (dockCount) dockCount.textContent = 'Unsent: ' + n
+      var changesButton = active.getElementById('nn-feedback-open')
+      if (changesButton) changesButton.textContent = 'Changes · ' + n
+      var dialog = active.getElementById('nn-feedback-modal')
+      if (dialog && dialog.hasAttribute('open')) updateExportPreview(active, state)
       updateTabBadges(active, state)
       mountNavbarActions(active, state)
       renderReviewTab(active, state, config, function () {
@@ -7820,6 +7718,7 @@
       renderBanner(active, meta, config.needs, currentDrafts.length, function () {
         refresh(activeSearchQuery)
       }, state)
+      mountNavbarActions(active, state)
       renderRail(active, concepts, counts, draftCountsByConcept, selectRailToken, state)
       if (!scopedView) {
         renderConceptGuide(
