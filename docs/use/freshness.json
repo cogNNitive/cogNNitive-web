@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-13T12:59:33.561Z",
-  "head": "b5659610016864116c15c8029064c54916f2782c",
+  "generatedAt": "2026-11-13T13:38:28.307Z",
+  "head": "40811b59c227a88d5e706a8cb6565bce292bdbbc",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -27,8 +27,11 @@
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.37.0",
       "pinnedTagDate": "2026-11-13T09:15:13+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js",
+        "iNNfo/packages/nn-mcp/package.json"
+      ]
     },
     "nn-console": {
       "subsystem": "nn-console",
