@@ -10462,8 +10462,7 @@ function changesetLikeOf(path5, doc) {
 }
 function resolveChangeFacts(change, cs) {
   const status = change.status ?? cs.status ?? "proposed";
-  const inheriting = cs.batch !== void 0;
-  const resolvedTarget = change.resolved_target ?? (inheriting && status === "applied" ? change.target : void 0);
+  const resolvedTarget = change.resolved_target ?? (status === "applied" ? change.target : void 0);
   const evidenceSha256 = change.evidence_sha256 ?? (status === "applied" ? inheritedEvidenceShas(change.evidence, cs.evidenceSha256) : void 0);
   const facts = { status };
   const appliedAt = change.applied_at ?? cs.appliedAt;
