@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-13T08:04:12.274Z",
-  "head": "7408ede5e6f8c8baf585ce732baa9d1fab903717",
+  "generatedAt": "2026-11-13T08:16:10.650Z",
+  "head": "01588aee3e3665fc21470a061062b2d60a65959c",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -13,22 +13,27 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.61.0",
       "pinnedTagDate": "2026-11-12T13:11:30+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/catalog.json"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.61.0",
       "pinnedTagDate": "2026-11-12T13:11:30+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/catalog.json"
+      ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.36.0",
       "pinnedTagDate": "2026-11-07T12:23:56+01:00",
-      "commitsSincePin": 12,
+      "commitsSincePin": 13,
       "filesTouched": [
+        "iNNfo/packages/nn-mcp/package.json",
         "iNNfo/packages/nn-mcp/src/server.spec.ts",
         "iNNfo/packages/nn-mcp/src/server.ts",
         "iNNfo/packages/nn-mcp/src/tools/apply-change-facts.spec.ts",
