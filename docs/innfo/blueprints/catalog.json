@@ -378,8 +378,7 @@
           "title": "Workspace Specification App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/workspace_spec_NN.md"
         }
-      ],
-      "release_tag": "blueprints-v0.62.3"
+      ]
     }
   },
   "warnings": []
