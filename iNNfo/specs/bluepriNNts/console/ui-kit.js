@@ -957,6 +957,7 @@
   var MD_HEADING = /^(#{1,6})\s+(.*)$/
   var MD_LIST = /^\s{0,3}([-*+]|\d+[.)])\s+(.*)$/
   var MD_QUOTE = /^\s{0,3}>\s?(.*)$/
+  var MD_FENCE = /^ {0,3}(`{3,})[^`]*$|^ {0,3}(~{3,}).*$/
   var MD_CALLOUTS = ['note', 'tip', 'important', 'warning', 'caution']
 
   function mdInline(doc, parent, text) {
@@ -1024,6 +1025,19 @@
         i++
         continue
       }
+      var fence = MD_FENCE.exec(line)
+      if (fence) {
+        var marker = fence[1] || fence[2]
+        var closing = new RegExp('^ {0,3}' + marker.charAt(0) + '{' + marker.length + ',}[ \\t]*$')
+        var codeLines = []
+        i++
+        while (i < lines.length && !closing.test(lines[i])) codeLines.push(lines[i++])
+        if (i < lines.length) i++
+        var pre = makeEl(doc, 'pre')
+        pre.appendChild(makeEl(doc, 'code', null, codeLines.join('\n')))
+        root.appendChild(pre)
+        continue
+      }
       var hm = MD_HEADING.exec(line)
       if (hm) {
         var h = makeEl(doc, 'h' + hm[1].length, 'nn-md-heading')
@@ -1077,7 +1091,8 @@
         !blank(lines[i]) &&
         !MD_HEADING.test(lines[i]) &&
         !MD_LIST.test(lines[i]) &&
-        !MD_QUOTE.test(lines[i])
+        !MD_QUOTE.test(lines[i]) &&
+        !MD_FENCE.test(lines[i])
       ) {
         para.push(lines[i])
         i++

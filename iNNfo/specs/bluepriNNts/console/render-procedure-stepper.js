@@ -335,6 +335,27 @@
       }
     }
 
+    function appendMarkdownWithKuPills(hostEl, rawText) {
+      var UI = GLOBAL.nnUI
+      if (!UI || typeof UI.Markdown !== 'function') {
+        appendWithKuPills(hostEl, rawText)
+        return
+      }
+      var markdown = UI.Markdown(rawText, { doc: document })
+      function decorate(node) {
+        if (node.nodeType === 3) {
+          var fragment = document.createDocumentFragment()
+          appendWithKuPills(fragment, node.nodeValue)
+          node.parentNode.replaceChild(fragment, node)
+          return
+        }
+        if (/^(CODE|PRE|A|BUTTON)$/.test(node.tagName || '')) return
+        Array.prototype.slice.call(node.childNodes || []).forEach(decorate)
+      }
+      decorate(markdown)
+      hostEl.appendChild(markdown)
+    }
+
     function refButton(label, name) {
       var target = byName[name]
       if (!target) {
@@ -891,9 +912,9 @@
       card.appendChild(h2)
 
       if (cur.el.description) {
-        var pDesc = document.createElement('p')
+        var pDesc = document.createElement('div')
         pDesc.className = 'exec-step-desc'
-        appendWithKuPills(pDesc, cur.el.description)
+        appendMarkdownWithKuPills(pDesc, cur.el.description)
         card.appendChild(pDesc)
       }
 
