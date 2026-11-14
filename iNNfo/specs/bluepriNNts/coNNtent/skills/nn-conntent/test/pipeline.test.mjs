@@ -22,6 +22,11 @@ import { readEpisode } from '../scripts/lib/episode.mjs';
 
 for (const k of ['WAVESPEED_API_KEY', 'REPLICATE_API_TOKEN', 'TTS_PROVIDER', 'MEDIA_PROVIDER']) delete process.env[k];
 
+// These tests assert when the pipeline asks the writer to open the console, so they must not
+// inherit `INNFO_CONSOLE_NO_OPEN` from the caller (`scripts/verify.js` sets it for every suite).
+// The writer is always injected here, so nothing real is opened.
+delete process.env.INNFO_CONSOLE_NO_OPEN;
+
 const SKILL = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const BLUEPRINT = path.resolve(SKILL, '..', '..');
 const read = (rel) => fs.readFileSync(path.join(SKILL, rel), 'utf8');

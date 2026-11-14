@@ -38,6 +38,11 @@ for (const k of ['WAVESPEED_API_KEY', 'REPLICATE_API_TOKEN', 'TTS_PROVIDER', 'ME
   delete process.env[k]
 }
 
+// `produce` stops at review gates with exit 10, which regenerates the console and opens it in
+// a browser. This suite runs the real writer, so it must never open a tab on the desktop of
+// whoever runs it, with or without `scripts/verify.js`.
+process.env.INNFO_CONSOLE_NO_OPEN = '1'
+
 const SKILL = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const BLUEPRINT = path.resolve(SKILL, '..', '..')
 

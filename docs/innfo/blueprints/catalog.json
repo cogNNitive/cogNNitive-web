@@ -109,7 +109,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.62.2",
+      "release_tag": null,
       "embedded_skills": [
         "nn-conntent"
       ],
