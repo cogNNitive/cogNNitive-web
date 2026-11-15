@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-15T20:25:16.065Z",
-  "head": "8e2cd466324c8556c8e4ddfac6faf1704ed2732c",
+  "generatedAt": "2026-11-15T20:33:59.056Z",
+  "head": "7c63adf1f46f2ac4ac1fb99cf29d54347a013856",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -13,15 +13,43 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.62.6",
       "pinnedTagDate": "2026-11-15T20:26:59+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/qa.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/field-registry.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/gates-scene-reopen.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/pipeline.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce-cold-cache.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/qa-overlay-presence.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/qa.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/user-journeys-u1-u7.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/whisper-consent.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.62.6",
       "pinnedTagDate": "2026-11-15T20:26:59+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/qa.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/field-registry.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/gates-scene-reopen.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/pipeline.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce-cold-cache.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/qa-overlay-presence.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/qa.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/user-journeys-u1-u7.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/whisper-consent.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
+      ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",

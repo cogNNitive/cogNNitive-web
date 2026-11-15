@@ -29,7 +29,7 @@ ${narration}
 const episodeDoc = (narrations) => `---
 level: 3
 parent_spec:
-  name: "coNNtent_V_0-19-0"
+  name: "coNNtent_V_0-20-0"
   url: "https://example.invalid/coNNtent/spec_NN.md"
 knowledge_version: "V_0-1-0"
 title: "Probe episode"
@@ -56,7 +56,7 @@ function workspace() {
   fs.mkdirSync(episodeDir, { recursive: true });
   fs.writeFileSync(
     path.join(seriesDir, 's_coNNtent_NN.md'),
-    '---\nlevel: 3\nscope: true\nparent_spec:\n  name: "coNNtent_V_0-19-0"\n  url: "https://example.invalid/coNNtent/spec_NN.md"\ntitle: "S"\n---\n\n# NN Series\n\n## NN Series: S\nslug:: s\nlanguage:: es\n',
+    '---\nlevel: 3\nscope: true\nparent_spec:\n  name: "coNNtent_V_0-20-0"\n  url: "https://example.invalid/coNNtent/spec_NN.md"\ntitle: "S"\n---\n\n# NN Series\n\n## NN Series: S\nslug:: s\nlanguage:: es\n',
     'utf8',
   );
   return { root, scriptPath: path.join(episodeDir, 'e_coNNtent_NN.md') };

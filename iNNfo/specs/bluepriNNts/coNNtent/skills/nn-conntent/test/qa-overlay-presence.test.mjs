@@ -15,7 +15,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-import { QA_TEXT_EDGE_MIN, qaMaster, defaultMeasureFrameEdgeDensity } from '../scripts/lib/qa.mjs';
+import { QA_TEXT_EDGE_MIN, qaMaster, defaultMeasureFrameEdgeDensity, defaultSampleEdgeDensity, overlayCropRegion, overlayControlCropRegion } from '../scripts/lib/qa.mjs';
 
 const FPS = 30;
 
@@ -199,4 +199,53 @@ test('edge density on a real master: textured frame > 0, flat frame = 0 (needs f
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test('overlayControlCropRegion yields valid non-overlapping control area within master', () => {
+  const cropBottom = { width: 756, height: 250, x: 474, y: 1200 };
+  const ctrlBottom = overlayControlCropRegion({ crop: cropBottom, masterWidth: 1920, masterHeight: 1920 });
+  assert.equal(ctrlBottom.width, 756);
+  assert.equal(ctrlBottom.height, 250);
+  assert.equal(ctrlBottom.x, 474);
+  assert.equal(ctrlBottom.y, 950); // shifted above
+  assert.ok(ctrlBottom.y + ctrlBottom.height <= cropBottom.y);
+
+  const cropTop = { width: 450, height: 200, x: 420, y: 100 };
+  const ctrlTop = overlayControlCropRegion({ crop: cropTop, masterWidth: 1920, masterHeight: 1920 });
+  assert.equal(ctrlTop.y, 300); // shifted below
+  assert.ok(ctrlTop.y >= cropTop.y + cropTop.height);
+});
+
+test('defaultSampleEdgeDensity uses controlCrop when provided', () => {
+  const crop = { width: 100, height: 100, x: 0, y: 200 };
+  const controlCrop = { width: 100, height: 100, x: 0, y: 100 };
+  const mockMeasure = ({ crop: c }) => (c.y === 200 ? 0.025 : 0.010);
+  const diff = defaultSampleEdgeDensity({
+    masterPath: 'fake.mp4',
+    time: 10,
+    crop,
+    controlCrop,
+    measureFn: mockMeasure,
+  });
+  assert.ok(Math.abs(diff - 0.015) < 1e-6);
+});
+
+test('qaMaster passes contiguous overlays when patch density exceeds control crop density', async () => {
+  const overlays = [
+    { id: 'ov_1', type: 'lowerThird', sceneId: 'scene_01', fromFrame: 0, durationInFrames: 900, config: { title: 'First' } },
+    { id: 'ov_2', type: 'lowerThird', sceneId: 'scene_02', fromFrame: 900, durationInFrames: 900, config: { title: 'Second' } },
+  ];
+  const { res, sampled } = await runQa(overlays, 0.005, { frames: 1800 });
+  assert.equal(res.ok, true, JSON.stringify(res.checks));
+  assert.equal(sampled.length, 2);
+  assert.ok(sampled[0].controlCrop);
+  assert.ok(sampled[1].controlCrop);
+});
+
+test('qaMaster fails when overlay is absent in same-frame control comparison', async () => {
+  const overlay = { id: 'ov_absent', type: 'lowerThird', sceneId: 'scene_01', fromFrame: 0, durationInFrames: 90, config: { title: 'Ghost' } };
+  const { res } = await runQa([overlay], 0.0002); // below QA_TEXT_EDGE_MIN (0.0015)
+  assert.equal(res.ok, false);
+  const check = res.checks.find((c) => c.id === 'overlay-missing');
+  assert.ok(check);
 });

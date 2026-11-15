@@ -235,6 +235,20 @@ export function overlayCropRegion({ overlay, masterWidth = 1920, masterHeight = 
   return { width: cropW, height: cropH, x: cropX, y: cropY }
 }
 
+/** Compute a control crop region in the same frame that does not overlap the overlay. */
+export function overlayControlCropRegion({ crop, masterWidth = 1920, masterHeight = 1920 }) {
+  let yControl = crop.y >= crop.height ? crop.y - crop.height : crop.y + crop.height
+  if (yControl + crop.height > masterHeight) {
+    yControl = Math.max(0, crop.y - crop.height)
+  }
+  return {
+    width: crop.width,
+    height: crop.height,
+    x: crop.x,
+    y: Math.max(0, Math.min(masterHeight - crop.height, Math.floor(yControl))),
+  }
+}
+
 /**
  * Measure edge density at a specific timestamp and crop region in a video file.
  * Returns ratio of edge pixels (0.0 to 1.0).
@@ -269,15 +283,20 @@ export function defaultMeasureFrameEdgeDensity({ masterPath, timeSeconds, crop, 
   return buf.length > 0 ? nonZero / buf.length : 0
 }
 
-/** Compare edge density at tMid against reference frame outside overlay interval. */
+/** Compare edge density at tMid against same-frame control crop or reference frame. */
 export function defaultSampleEdgeDensity({
   masterPath,
   time,
   refTime,
   crop,
+  controlCrop,
   measureFn = defaultMeasureFrameEdgeDensity,
 }) {
   const densityMid = measureFn({ masterPath, timeSeconds: time, crop })
+  if (controlCrop) {
+    const densityControl = measureFn({ masterPath, timeSeconds: time, crop: controlCrop })
+    return Math.max(0, densityMid - densityControl)
+  }
   const densityRef = refTime !== null ? measureFn({ masterPath, timeSeconds: refTime, crop }) : 0
   return Math.abs(densityMid - densityRef)
 }
@@ -662,12 +681,18 @@ export async function qaMaster({
       masterWidth: probed.width,
       masterHeight: probed.height,
     })
+    const controlCrop = overlayControlCropRegion({
+      crop,
+      masterWidth: probed.width,
+      masterHeight: probed.height,
+    })
 
     const edgeDiff = sampleEdgeDensity({
       masterPath,
       time: tMid,
       refTime: tRef,
       crop,
+      controlCrop,
     })
 
     if (edgeDiff < QA_TEXT_EDGE_MIN) {
@@ -681,7 +706,7 @@ export async function qaMaster({
         interval,
         expected: `edge density difference >= ${QA_TEXT_EDGE_MIN}`,
         found: `edge density difference ${edgeDiff.toFixed(4)}`,
-        sampled: `tMid=${tMid}s, tRef=${tRef !== null ? tRef + 's' : 'none'}`,
+        sampled: `tMid=${tMid}s, controlCrop=y:${controlCrop.y}`,
       })
     } else {
       checks.push({
@@ -692,7 +717,7 @@ export async function qaMaster({
         overlayKind: item.type,
         text: item.text,
         interval,
-        sampled: `tMid=${tMid}s, tRef=${tRef !== null ? tRef + 's' : 'none'}`,
+        sampled: `tMid=${tMid}s, controlCrop=y:${controlCrop.y}`,
       })
     }
   }
