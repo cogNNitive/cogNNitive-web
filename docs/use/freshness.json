@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-15T20:33:59.056Z",
-  "head": "7c63adf1f46f2ac4ac1fb99cf29d54347a013856",
+  "generatedAt": "2026-11-15T20:48:55.090Z",
+  "head": "1b59b19e4d71b71eb60ca4dea6fefa861f07b320",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -11,61 +11,82 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.62.6",
-      "pinnedTagDate": "2026-11-15T20:26:59+01:00",
-      "commitsSincePin": 3,
+      "pinnedTag": "blueprints-v0.62.7",
+      "pinnedTagDate": "2026-11-15T21:33:03+01:00",
+      "commitsSincePin": 8,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/qa.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/assets/console-view-conntent.data.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/assets/console-view-conntent.js",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/console-conntent-data.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/console-dashboard.test.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/field-registry.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/gates-scene-reopen.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/helpers/blueprint-version.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/pipeline.test.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce-cold-cache.test.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/qa-overlay-presence.test.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/qa.test.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/user-journeys-u1-u7.test.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/whisper-consent.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
       ]
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.62.6",
-      "pinnedTagDate": "2026-11-15T20:26:59+01:00",
-      "commitsSincePin": 3,
+      "pinnedTag": "blueprints-v0.62.7",
+      "pinnedTagDate": "2026-11-15T21:33:03+01:00",
+      "commitsSincePin": 8,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/qa.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/assets/console-view-conntent.data.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/assets/console-view-conntent.js",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/console-conntent-data.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/console-dashboard.test.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/field-registry.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/gates-scene-reopen.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/helpers/blueprint-version.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/pipeline.test.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce-cold-cache.test.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/qa-overlay-presence.test.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/qa.test.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/user-journeys-u1-u7.test.mjs",
         "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/whisper-consent.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
       ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.37.2",
       "pinnedTagDate": "2026-11-15T20:01:23+01:00",
-      "commitsSincePin": 1,
-      "filesTouched": [
-        "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js"
-      ]
+      "commitsSincePin": 2,
+      "filesTouched": []
     },
     "nn-console": {
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.37.3",
       "pinnedTagDate": "2026-11-15T20:26:59+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 7,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
+        "iNNfo/specs/bluepriNNts/console/nn-ui.css",
+        "iNNfo/specs/bluepriNNts/console/package.json",
+        "iNNfo/specs/bluepriNNts/console/review.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
+        "scripts/export-console.mjs"
+      ]
     }
   }
 }

@@ -3208,11 +3208,14 @@
     // Mode Selector: Propose Value vs Comment (D15)
     var modeWrap = makeEl(doc, 'div', 'nn-edit-mode-selector')
     // commentOnly: there is no value to propose, so the mode is fixed and the
-    // toggle is not offered. A list/object value keeps the toggle visible but
-    // disables Propose: there is no list editor, only a comment (S3b P0-2).
+    // toggle is not offered. Only declared string lists have a typed list editor;
+    // arbitrary arrays and objects remain comment-only rather than being coerced.
     var commentOnly = Boolean(data.commentOnly)
-    var valueIsContainer =
-      Boolean(data.valueCommentOnly) || (data.value !== null && typeof data.value === 'object')
+    var editableList = Boolean(data.multiple) &&
+      (data.value == null || typeof data.value === 'string' ||
+        (Array.isArray(data.value) && data.value.every(function (v) { return typeof v === 'string' })))
+    var valueIsContainer = Boolean(data.valueCommentOnly) ||
+      (!editableList && data.value !== null && typeof data.value === 'object')
     var isComment = commentOnly || valueIsContainer || Boolean(data.isComment)
     var btnPropose = makeEl(doc, 'button', 'nn-edit-mode-btn' + (!isComment ? ' active' : ''), 'Propose value')
     var btnComment = makeEl(doc, 'button', 'nn-edit-mode-btn' + (isComment ? ' active' : ''), 'Comment')
@@ -3261,6 +3264,8 @@
     var fieldsContainer = makeEl(doc, 'div', 'nn-edit-fields')
     var widgetRef = null
     var fieldType = data.type || 'string'
+    var listValues = editableList && Array.isArray(data.value) ? data.value.slice() :
+      editableList && typeof data.value === 'string' && data.value.trim() ? [data.value] : []
     var fieldLabel = makeEl(doc, 'label', 'nn-edit-field-label', data.fieldName ? data.fieldName : 'Value')
     fieldsContainer.appendChild(fieldLabel)
 
@@ -3268,6 +3273,9 @@
       // No value editor: a list or object is proposed as a comment only, never
       // String()-coerced into a text control (S3b P0-2).
       widgetRef = null
+    } else if (editableList) {
+      widgetRef = ChipEditor({ values: listValues, options: data.options,
+        onChange: function (values) { listValues = values } }, opts)
     } else if (fieldType === 'number') {
       widgetRef = FieldNumberWidget(data.value, opts)
     } else if (fieldType === 'boolean') {
@@ -3395,7 +3403,18 @@
         comment: commentTa.value,
       }
       if (!isComment) {
-        if (fieldType === 'number') {
+        if (editableList) {
+          var invalid = listValues.filter(function (value) {
+            return Array.isArray(data.options) && data.options.length && data.options.indexOf(value) === -1 &&
+              !(Array.isArray(data.value) && data.value.indexOf(value) !== -1)
+          })
+          if (invalid.length) {
+            saveError.textContent = 'Choose a declared option: ' + data.options.join(', ')
+            saveError.style.display = 'block'
+            return
+          }
+          result.proposed = listValues.slice()
+        } else if (fieldType === 'number') {
           var raw = widgetRef ? widgetRef.value : ''
           var num = Number(raw)
           if (String(raw).trim() === '' || !isFinite(num)) {

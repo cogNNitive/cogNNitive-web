@@ -9569,3 +9569,62 @@ pre.nn-file-preview-code {
   color: #7dd3fc;
 }
 
+
+/* Production dashboard navigation; scene review still uses the shared UI. */
+.nn-pipeline-dashboard { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 24px; }
+.nn-pipeline-dashboard [hidden] { display: none !important; }
+.nn-pipeline-nav { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-right: 1px solid var(--color-base-300, #e5e5e5); align-self: start; }
+.nn-pipeline-nav .btn { justify-content: flex-start; }
+.nn-pipeline-nav [aria-current="page"] { background: var(--color-base-200, #f4f4f5); font-weight: 600; }
+.nn-pipeline-workspace { min-width: 0; padding-top: 16px; }
+.nn-pipeline-workspace h2 { margin: 0 0 8px; }
+.nn-pipeline-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 24px 0; }
+.nn-pipeline-metrics .btn { height: auto; display: flex; flex-direction: column; align-items: flex-start; white-space: normal; padding: 16px; }
+.nn-pipeline-metrics strong { font-size: 28px; }
+.nn-pipeline-row { display: flex; justify-content: space-between; gap: 16px; align-items: center; padding: 18px 0; border-bottom: 1px solid var(--color-base-300, #e5e5e5); }
+.nn-pipeline-row > div { min-width: 0; overflow-wrap: anywhere; }
+.nn-pipeline-row h3 { margin: 4px 0 8px; }
+.nn-pipeline-row p { margin: 4px 0; }
+.nn-pipeline-player { width: min(100%, 560px); max-height: 360px; background: #171717; border-radius: 8px; }
+.nn-pipeline-dashboard .nn-scene-header .nn-src-badge { display: none; }
+.nn-pipeline-setting { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--nn-border); }
+.nn-pipeline-setting > div:first-child { flex: 1 1 220px; min-width: 0; overflow-wrap: anywhere; }
+.nn-pipeline-setting p { margin: 4px 0; }
+.nn-pipeline-settings > details { margin: 8px 0; }
+@media (max-width: 760px) {
+  .nn-pipeline-dashboard { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .nn-pipeline-nav { flex-direction: row; flex-wrap: wrap; border-right: 0; }
+  .nn-pipeline-metrics { grid-template-columns: minmax(0, 1fr); }
+  .nn-pipeline-row { flex-wrap: wrap; }
+  .nn-pipeline-dashboard .nn-scene-header { flex-wrap: wrap; }
+  .nn-pipeline-dashboard .nn-scene-title-group { flex: 1 1 100%; min-width: 0; }
+}
+
+/* Pipeline settings: scope cards, compact origins and on-demand field guidance. */
+.nn-pipeline-settings > .nn-conntent-fields, .nn-layer-settings { border: 1px solid var(--nn-border); border-radius: 10px; background: var(--nn-surface); overflow: hidden; }
+.nn-pipeline-settings > .nn-conntent-fields > summary, .nn-layer-settings > summary { padding: 14px 16px; font-size: 14px; font-weight: 650; color: var(--nn-text); background: var(--nn-surface-2); }
+.nn-layer-settings { margin: 10px 0; }
+.nn-layer-settings > summary { font-size: 15px; }
+.nn-layer-settings > .nn-pipeline-settings { padding: 4px 12px; }
+.nn-pipeline-settings > .nn-conntent-fields > .nn-pipeline-setting { margin: 0 16px; }
+.nn-pipeline-setting:last-child { border-bottom: 0; }
+.nn-pipeline-setting > div:first-child { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; }
+.nn-pipeline-setting .nn-source-from { font-size: 10px; }
+.nn-setting-help { display: inline-block; }
+.nn-setting-help > summary { list-style: none; cursor: pointer; color: var(--nn-muted); padding: 2px 6px; font-size: 16px; border-radius: 5px; }
+.nn-setting-help > summary::-webkit-details-marker { display: none; }
+.nn-setting-help > summary:hover, .nn-setting-help > summary:focus-visible { color: var(--nn-text); background: var(--nn-surface-2); }
+.nn-setting-help[open] { flex-basis: 100%; }
+.nn-setting-help-text { padding: 10px 12px; background: var(--nn-surface-2); border-radius: 6px; font-size: 12px; color: var(--nn-muted); line-height: 1.5; }
+.nn-source-from[data-nn-source-from="scene"], .nn-source-from[data-nn-source-from="layer"] { background: var(--nn-surface-2); color: var(--nn-text); }
+
+.nn-pipeline-layout-tabs, .nn-pipeline-hierarchy { grid-column: 1 / -1; }
+.nn-pipeline-layout-tabs { border-bottom: 1px solid var(--nn-border); padding-bottom: 12px; }
+.nn-pipeline-layout-tabs [aria-selected="true"] { background: var(--nn-text); color: var(--nn-surface); }
+.nn-hierarchy-card { border: 1px solid var(--nn-border); border-radius: 12px; background: var(--nn-surface); margin: 14px 0; overflow: hidden; }
+.nn-hierarchy-card > summary { cursor: pointer; padding: 16px; background: var(--nn-surface-2); }
+.nn-hierarchy-card > summary > * { margin-right: 12px; }
+.nn-hierarchy-series > summary { font-size: 17px; }
+.nn-hierarchy-contents { padding: 0 16px 12px; min-width: 0; }
+.nn-hierarchy-episode > .nn-hierarchy-contents > .nn-episode-card { margin: 0; }
+@media (max-width: 640px) { .nn-hierarchy-contents { padding: 0 8px 8px; } .nn-hierarchy-card > summary { padding: 12px; } }

@@ -859,15 +859,19 @@
             : typeof fieldVal === 'boolean'
               ? 'boolean'
               : 'string'
-      // A list or object value has no value editor: the modal opens comment-only
-      // with Propose disabled (Edit Modal Value Type Safety, S3b P0-2).
-      var valueIsContainer = fieldVal !== null && typeof fieldVal === 'object'
+      // Schema-declared string lists use the shared chip editor; untyped
+      // containers retain the comment-only safety boundary.
+      var editableList = schemaField && schemaField.multiple &&
+        (fieldVal == null || typeof fieldVal === 'string' ||
+          (Array.isArray(fieldVal) && fieldVal.every(function (v) { return typeof v === 'string' })))
+      var valueIsContainer = !editableList && fieldVal !== null && typeof fieldVal === 'object'
       return {
         title: 'Edit ' + (el.name || anchorData.elementId) + ' \u2192 ' + field,
         fieldName: field,
         type: fieldType,
         value: fieldVal,
         valueCommentOnly: valueIsContainer,
+        multiple: Boolean(schemaField && schemaField.multiple),
         options: schemaField ? schemaField.options : undefined,
         target_concepts: schemaField ? schemaField.target_concepts : undefined,
         candidates:
@@ -947,6 +951,7 @@
           })(),
           commentOnly: !!target.commentOnly,
           valueCommentOnly: !!target.valueCommentOnly,
+          multiple: !!target.multiple,
           connections: connectionsFor(targetEl),
           startTab: anchorData.startTab || (anchorData.info ? 'view' : (anchorData.edit ? 'edit' : 'view')),
         },

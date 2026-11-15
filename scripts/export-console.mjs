@@ -342,6 +342,8 @@ function coreBlueprintOf(parentSpecName) {
  */
 function isModelDocument(relPath, content) {
   const frontmatter = frontmatterOf(content)
+  // Notes without a YAML header are not models.
+  if (!frontmatter) return false
   if (payloadHelper.isConsoleModel({ path: relPath, frontmatter })) return true
   const parentName = payloadHelper.parentSpecNameOf(frontmatter)
   const role = payloadHelper.roleOf({ path: relPath, parentSpecName: parentName })

@@ -3970,7 +3970,8 @@
             }
             if (p.kind === 'correction') {
               // Same source the modal path uses (kuModalTarget): name and
-              // description live on the element, other fields under fields.
+              // description live on the element. Media paths in fields may be
+              // rebased for display; preconditions must use the document value.
               var src = (opts.state.elements || []).filter(function (e) {
                 return e && e.id === p.elementId
               })[0]
@@ -3981,9 +3982,9 @@
                     ? src.name
                     : p.field === 'description'
                       ? src.description
-                      : src.fields
-                        ? src.fields[p.field]
-                        : undefined
+                      : src.rawFields && Object.prototype.hasOwnProperty.call(src.rawFields, p.field)
+                        ? src.rawFields[p.field]
+                        : src.fields ? src.fields[p.field] : undefined
               }
             }
             var saved = controller().propose(anchor(p), payload)
@@ -6389,6 +6390,7 @@
     var isMatrix = !!matrixName
     var canUpdate = (!!d.field && d.proposed !== undefined) || (isMatrix && d.proposed !== undefined)
     var isRename = !isMatrix && canUpdate && String(d.field).toLowerCase() === 'name'
+    var isProse = !isMatrix && canUpdate && String(d.field).toLowerCase() === 'description'
     var op = isMatrix ? 'update_matrix_cell' : 'update_field'
     var target = isMatrix
       ? model + '@' + matrixName + '&' + oneLine(d.row) + '&' + oneLine(d.col)
@@ -6397,6 +6399,9 @@
       // Element display name is identity, not a field — the engine rejects
       // update_field on &name (PRECONDITION_FAILED). Emit rename_element.
       op = 'rename_element'
+      target = model + '@' + elementTarget
+    } else if (isProse) {
+      op = 'update_element_text'
       target = model + '@' + elementTarget
     } else if (d.kind === 'delete') {
       op = 'remove_element'
@@ -6423,13 +6428,13 @@
     if (Array.isArray(ev)) ev = ev.join(', ')
     lines.push('evidence:: ' + oneLine(ev))
     // The engine rejects the change if the element's content hash moved on since the draft.
-    if ((op === 'update_field' || op === 'remove_element' || op === 'rename_element') && d.base_hash) {
+    if ((op === 'update_field' || op === 'update_element_text' || op === 'remove_element' || op === 'rename_element') && d.base_hash) {
       lines.push('base_hash:: ' + oneLine(d.base_hash))
     }
     if (op === 'rename_element') {
       if (d.original !== undefined) lines.push('from:: ' + formatChangesetValue(d.original))
       lines.push('name:: ' + formatChangesetValue(d.proposed))
-    } else if (op === 'update_field') {
+    } else if (op === 'update_field' || op === 'update_element_text') {
       if (d.original !== undefined) lines.push('from:: ' + formatChangesetValue(d.original))
       lines.push('to:: ' + formatChangesetValue(d.proposed))
     } else if (op === 'update_matrix_cell') {

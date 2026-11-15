@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+import { BLUEPRINT_VERSION } from './helpers/blueprint-version.mjs'
 
 /**
  * nn-conntent/test/produce.test.mjs
@@ -42,11 +42,11 @@ const episodeDoc = ({
   budget = '1.5',
   review = 'skip',
   scenes = SCENE,
-  pin = 'V_0-20-0',
+  pin = BLUEPRINT_VERSION,
 } = {}) => `---
 level: 3
 parent_spec:
-  name: "coNNtent_V_0-20-0"
+  name: "coNNtent_${BLUEPRINT_VERSION}"
   url: "https://example.invalid/coNNtent/spec_NN.md"
 knowledge_version: "V_0-1-0"
 blueprint_version: "${pin}"
@@ -75,14 +75,14 @@ function workspace(doc = episodeDoc(), { series = true } = {}) {
   // and versioned (Tier 1b): a CI runner has no global blueprint cache to fall back on,
   // so the fixture must not depend on one.
   fs.mkdirSync(path.join(root, 'specs', 'bluepriNNts', 'coNNtent'), { recursive: true })
-  fs.mkdirSync(path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'V_0-20-0'), { recursive: true })
+  fs.mkdirSync(path.join(root, 'specs', 'bluepriNNts', 'coNNtent', BLUEPRINT_VERSION), { recursive: true })
   fs.copyFileSync(
     path.join(BLUEPRINT, 'spec_NN.md'),
     path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'spec_NN.md'),
   )
   fs.copyFileSync(
     path.join(BLUEPRINT, 'spec_NN.md'),
-    path.join(root, 'specs', 'bluepriNNts', 'coNNtent', 'V_0-20-0', 'spec_NN.md'),
+    path.join(root, 'specs', 'bluepriNNts', 'coNNtent', BLUEPRINT_VERSION, 'spec_NN.md'),
   )
   fs.copyFileSync(
     path.join(BLUEPRINT, 'defaults', 'video-defaults_NN.md'),
@@ -786,7 +786,7 @@ test('an episode pinned to another blueprint version is refused naming both', as
       (err) => {
         assert.equal(err.code, 'blueprint-version-mismatch')
         assert.match(err.message, /V_0-14-1/)
-        assert.match(err.message, /V_0-20-0/)
+        assert.ok(err.message.includes(BLUEPRINT_VERSION))
         return true
       },
     )

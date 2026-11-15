@@ -110,6 +110,58 @@ test('every field carries its effective value and source level', async () => {
   }
 });
 
+test('configuration separates episode defaults, local scene fields, kind presets and layer overrides', async () => {
+  const ws = workspace()
+  try {
+    fs.writeFileSync(path.join(ws.seriesDir, 's_coNNtent_NN.md'), SERIES.replace('language:: es', 'language:: es\ncomponents:: [title=plain, lower-third=bar]') + `
+# NN Preset
+## NN Preset: Studio Warm
+voice:: preset-voice
+
+# NN Scene Kind
+## NN Scene Kind: Explainer
+fixed:: none
+presets:: [Studio Warm]
+`)
+    const script = EPISODE.replace('status:: draft', 'status:: draft\nvoice:: episode-voice\nbudget:: 10\ncomponents:: [title=bold]')
+      .replace('kind:: Libre', 'kind:: Explainer\nvoice:: scene-voice\nvoice_speed:: 1.25') + `
+## NN Layer: Caption
+slug:: caption
+type:: text
+text:: Overlay copy
+fit:: contain
+`
+    const file = path.join(ws.episodeDir, 'e_coNNtent_NN.md')
+    fs.writeFileSync(file, script)
+    const data = await collect({ rootDir: ws.root })
+    const episode = data.tree.series[0].episodes[0]
+    const scene = episode.scenes[0]
+    assert.equal(episode.fields.voice.value, 'episode-voice')
+    assert.equal(scene.fields.voice.value, 'scene-voice')
+    assert.equal(scene.fields.voice.source, 'scene')
+    assert.equal(String(scene.recordFields.voice_speed), '1.25')
+    assert.equal(scene.fields.voice_speed.source, 'scene')
+    assert.equal(scene.recordFields.kind, 'Explainer')
+    assert.equal(scene.layers[0].fields.fit.value, 'contain')
+    assert.equal(scene.layers[0].fields.fit.source, 'layer')
+    assert.equal(scene.layers[0].elementId, 's/e@caption')
+    assert.equal(episode.recordFields.budget, 10)
+    assert.ok(episode.fields.components.value.includes('title=bold'))
+    assert.ok(episode.fields.components.value.includes('lower-third=bar'))
+    assert.ok(!episode.fields.components.value.includes('title=plain'))
+    assert.equal(episode.fields.components.origins.title, 'video')
+    assert.equal(episode.fields.components.origins['lower-third'], 'series')
+    assert.deepEqual(episode.sceneKinds, ['Libre', 'Explainer'])
+    assert.ok(episode.availablePresets.includes('Studio Warm'))
+    assert.ok(data.fieldDefinitions.kind.concepts.includes('Scene'))
+    fs.writeFileSync(file, script.replace('voice:: episode-voice\n', '').replace('voice:: scene-voice\n', ''))
+    const inherited = (await collect({ rootDir: ws.root })).tree.series[0].episodes[0]
+    assert.equal(inherited.scenes[0].fields.voice.value, 'preset-voice')
+    assert.match(inherited.scenes[0].fields.voice.source, /kind/)
+    assert.equal(inherited.fields.voice.value, 'series-voice')
+  } finally { ws.cleanup() }
+})
+
 test('the pending inbox lists every open gate with its scene', async () => {
   const ws = workspace()
   try {
@@ -242,3 +294,25 @@ test('a delivered episode reports its versions, path, contents and delivery page
     ws.cleanup();
   }
 });
+
+test('scene players address the last rendered master using manifest timings', async () => {
+  const ws = workspace()
+  try {
+    const script = path.join(ws.episodeDir, 'e_coNNtent_NN.md')
+    fs.writeFileSync(script, EPISODE.replace('status:: draft', 'status:: draft\nmaster:: master.mp4'))
+    fs.writeFileSync(path.join(ws.episodeDir, 'master.mp4'), 'test media')
+    fs.mkdirSync(path.join(ws.episodeDir, 'hyperframes'))
+    const manifest = path.join(ws.episodeDir, 'hyperframes', 'manifest.json')
+    fs.writeFileSync(manifest, JSON.stringify({ fps: 30, tracks: { scenes: [
+      { id: 'scene_one', fromFrame: 60, durationInFrames: 90 },
+    ] } }))
+    let scene = (await collect({ rootDir: ws.root })).tree.series[0].episodes[0].scenes[0]
+    assert.equal(scene.video, 'series/s/episodes/e/master.mp4#t=2.000,5.000')
+    assert.equal(scene.videoLabel, 'Last rendered scene')
+    fs.writeFileSync(manifest, JSON.stringify({ fps: 0, tracks: { scenes: [] } }))
+    scene = (await collect({ rootDir: ws.root })).tree.series[0].episodes[0].scenes[0]
+    assert.equal(scene.video, null)
+  } finally {
+    ws.cleanup()
+  }
+})

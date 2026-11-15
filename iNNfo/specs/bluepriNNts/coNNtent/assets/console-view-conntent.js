@@ -17,6 +17,7 @@
    `table`, `empty-state`); only the containers this view owns get a rule in
    `console/nn-ui.css`. */
 
+/* global registerView, setTimeout */
 registerView({
   title: 'Pipeline',
   icon: 'play',
@@ -26,6 +27,9 @@ registerView({
     var doc = ctx.container.ownerDocument
     var data = (ctx.viewData && ctx.viewData.tree) || { series: [] }
     var pending = (ctx.viewData && ctx.viewData.pending) || []
+    var fieldDefinitions = (ctx.viewData && ctx.viewData.fieldDefinitions) || {}
+    var fieldRefreshers = []
+    var fieldModal = null
 
     // What each gate protects. The strip shows it so a reviewer knows what a click freezes.
     var GATE_INFO = {
@@ -35,8 +39,6 @@ registerView({
       qa: { label: 'Automatic QA', protects: 'always on, no approval' },
     }
     var GATE_ORDER = ['script', 'preview', 'budget']
-    // Broadest to narrowest, so a reader starts at the level that shapes the most.
-    var CONTEXT_ORDER = ['blueprint', 'domain', 'series', 'kind', 'preset', 'video', 'scene']
     // The content a gate reviews, and the hash the payload published for it.
     function hashFor(scene, gate) {
       if (gate === 'preview') return scene.previewHash
@@ -121,7 +123,142 @@ registerView({
       return propose(change)
     }
 
-    var root = el('div', 'nn-conntent-view')
+    function settingGroup(name) {
+      if (/^voice|^language$/.test(name)) return 'Voice & language'
+      if (/^avatar|^image|^character$|^pose$|^background$|^frame$|^fit$/.test(name)) return 'Visuals'
+      if (/^background_audio|^transition$|^sounds$|^components$|^position$|^placement$|^timing$|animation$|^z_index$/.test(name)) return 'Audio & composition'
+      if (/^thumbnail|^output_formats$|^captions$|^caption_model$|^intro$/.test(name)) return 'Publishing'
+      if (/^review|^budget$|^status$|^master$|^delivered_version$/.test(name)) return 'Workflow & outputs'
+      return 'Content'
+    }
+
+    function closeFieldModal() {
+      if (!fieldModal) return
+      var modal = fieldModal
+      fieldModal = null
+      if (modal.open && typeof modal.close === 'function') modal.close()
+      modal.remove()
+    }
+
+    // The registry supplies coverage; the exported schema supplies catalog picklists.
+    function renderSettings(subject, concept, episode) {
+      var host = el('div', 'nn-pipeline-settings')
+      host.setAttribute('data-nn-settings', concept)
+      host.setAttribute('data-nn-element-id', subject.elementId || '')
+      var definitions = Object.assign({}, fieldDefinitions)
+      ;((ctx.payload && ctx.payload.schema && ctx.payload.schema.fields) || []).forEach(function (field) {
+        if (field.concept !== concept && field.concept !== '*') return
+        definitions[field.name] = Object.assign({}, definitions[field.name], field,
+          { concepts: [concept], cascade: !!(definitions[field.name] && definitions[field.name].cascade) })
+      })
+      definitions.name = { concepts: [concept], type: 'string', description: 'Display name. The stable address stays unchanged.' }
+      if (concept !== 'Scene') definitions.description = { concepts: [concept], type: 'markdown', description: 'Element description.' }
+      var groups = {}
+      Object.keys(definitions).filter(function (name) {
+        var concepts = definitions[name].concepts || []
+        return concepts.indexOf(concept) !== -1 || concepts.indexOf('*') !== -1
+      }).sort(function (a, b) {
+        var first = ['kind', 'type', 'title', 'name', 'description', 'presets', 'tags']
+        var left = first.indexOf(a), right = first.indexOf(b)
+        return (left < 0 ? first.length : left) - (right < 0 ? first.length : right) || a.localeCompare(b)
+      }).forEach(function (name) {
+        var definition = definitions[name]
+        var groupName = settingGroup(name)
+        if (!groups[groupName]) {
+          var group = el('details', 'nn-conntent-fields')
+          group.open = groupName === 'Content'
+          group.appendChild(el('summary', null, groupName))
+          groups[groupName] = group
+          host.appendChild(group)
+        }
+        var row = el('div', 'nn-pipeline-setting')
+        row.setAttribute('data-nn-setting', name)
+        var valueBox = el('div')
+        row.appendChild(valueBox)
+        var records = subject.recordFields || {}
+        var effective = subject.fields && subject.fields[name]
+        var local = Object.prototype.hasOwnProperty.call(records, name)
+        var value = definition.cascade && name !== 'presets' && effective ? effective.value : records[name]
+        var source = definition.cascade && name !== 'presets' && effective ? effective.source : local ? concept.toLowerCase() : null
+        var engineManaged = name === 'review' || name === 'master' || name === 'delivered_version'
+        var options = definition.options || []
+        if (name === 'kind') options = episode.sceneKinds || options
+        if (name === 'presets') options = episode.availablePresets || options
+        var draftValue
+        function refresh() {
+          var drafts = ctx.store && ctx.store.drafts ? ctx.store.drafts() : []
+          var matching = drafts.filter(function (draft) {
+            return draft.kind === 'correction' && draft.field === name &&
+              (draft.elementId || draft.element_id) === subject.elementId
+          })
+          var draft = matching[matching.length - 1]
+          draftValue = draft ? draft.proposed : value
+          valueBox.textContent = ''
+          if (ctx.ui && ctx.ui.FieldRow) valueBox.appendChild(ctx.ui.FieldRow({
+            name: name, value: draftValue == null ? '' : draftValue, type: definition.type,
+            model: episode.knowledgeId, element: subject.slug,
+          }, { doc: doc }))
+          else valueBox.appendChild(el('span', null, name + ': ' + (draftValue == null ? 'Not set' : String(draftValue))))
+          if (engineManaged || subject.editable === false) Array.prototype.forEach.call(valueBox.querySelectorAll('[data-ku-action="edit"]'), function (action) { action.remove() })
+          var origin = draft ? 'proposed' : engineManaged ? 'engine' : source || 'unset'
+          var originNames = { video: 'Episode', kind: 'Scene Kind', blueprint: 'Blueprint', mixed: 'Mixed origins', unset: 'Not set', engine: 'Engine managed', proposed: 'Proposed · not applied' }
+          var originBadge = el('span', 'badge badge-sm nn-source-from', originNames[origin] || origin.charAt(0).toUpperCase() + origin.slice(1))
+          originBadge.setAttribute('data-nn-source-from', origin)
+          originBadge.title = draft ? 'Pending proposal' : source === concept.toLowerCase() ? 'Assigned on this ' + concept.toLowerCase() : source ? 'Value origin: ' + originBadge.textContent : 'No assigned value'
+          valueBox.appendChild(originBadge)
+          var helpText = definition.description || ''
+          if (name === 'presets') helpText += ' Only presets assigned here. Inherited presets still apply.'
+          if (!draft && effective && effective.origins) helpText += ' Origins: ' + Object.keys(effective.origins).map(function (key) { return key + ': ' + effective.origins[key] }).join(' · ')
+          if (helpText) {
+            var help = el('details', 'nn-setting-help')
+            var helpToggle = el('summary', null, 'ⓘ')
+            helpToggle.setAttribute('aria-label', 'Information about ' + name)
+            helpToggle.title = 'Information about ' + name
+            help.appendChild(helpToggle)
+            help.appendChild(el('p', 'nn-setting-help-text', helpText))
+            valueBox.appendChild(help)
+          }
+          if (name === 'components') renderComponentSlotButtons(valueBox, { value: Array.isArray(draftValue) ? draftValue.join(',') : draftValue }, subject, episode)
+        }
+        fieldRefreshers.push(refresh)
+        refresh()
+        if (!engineManaged && subject.editable !== false && ctx.ui && ctx.ui.EditModal) {
+          var edit = button('Edit ' + name, function () {
+            closeFieldModal()
+            fieldModal = ctx.ui.EditModal({
+              title: 'Edit ' + (subject.name || subject.title || subject.slug) + ' → ' + name,
+              fieldName: name, type: options.length && !definition.multiple ? 'select' : definition.type,
+              multiple: !!definition.multiple, options: options,
+              value: draftValue == null ? (definition.multiple ? [] : '') : draftValue,
+              startTab: 'edit', modelId: episode.knowledgeId,
+            }, { doc: doc, onSave: function (result) {
+              propose(result.isComment ? { kind: 'comment', elementId: subject.elementId, field: name, comment: result.comment } :
+                { kind: 'correction', elementId: subject.elementId, field: name, proposed: result.proposed, comment: result.comment })
+            }, onCancel: closeFieldModal })
+            fieldModal.setAttribute('data-nn-setting-editor', name)
+            var opened = fieldModal
+            opened.addEventListener('close', function () {
+              if (fieldModal === opened) fieldModal = null
+              opened.remove()
+            }, { once: true })
+            doc.body.appendChild(fieldModal)
+            if (typeof fieldModal.showModal === 'function') fieldModal.showModal()
+            else fieldModal.setAttribute('open', '')
+          })
+          edit.setAttribute('data-nn-edit-setting', name)
+          row.appendChild(edit)
+        }
+        groups[groupName].appendChild(row)
+      })
+      ;['Content', 'Voice & language', 'Visuals', 'Audio & composition', 'Publishing', 'Workflow & outputs'].forEach(function (name) {
+        if (groups[name]) host.appendChild(groups[name])
+      })
+      host.appendChild(el('p', 'text-xs text-base-content/60', 'Edits are shared changeset proposals. Effective values and media refresh after applying changes and regenerating the console.'))
+      return host
+    }
+
+    var episodeCards = []
+    var root = el('div', 'nn-conntent-view nn-pipeline-dashboard')
     ctx.container.appendChild(root)
 
     /** The console's lightbox: the full still or the playable video of one scene. */
@@ -148,20 +285,20 @@ registerView({
       doc.addEventListener('keydown', onKey)
       card.appendChild(close)
       card.appendChild(el('h3', null, scene.kind || scene.slug))
-      if (scene.still) {
+      if (scene.video) {
+        var fullPlayer = doc.createElement('video')
+        fullPlayer.className = 'nn-lightbox-shot'
+        fullPlayer.src = scene.video
+        if (scene.still) fullPlayer.poster = scene.still
+        fullPlayer.controls = true
+        fullPlayer.setAttribute('playsinline', '')
+        card.appendChild(fullPlayer)
+      } else if (scene.still) {
         var shot = doc.createElement('img')
         shot.className = 'nn-lightbox-shot'
         shot.src = scene.still
         shot.alt = ''
         card.appendChild(shot)
-      } else if (scene.video) {
-        var player = doc.createElement('video')
-        player.className = 'nn-lightbox-shot'
-        player.src = scene.video
-        player.controls = true
-        player.autoplay = true
-        player.setAttribute('playsinline', '')
-        card.appendChild(player)
       }
       if (scene.narration) card.appendChild(el('p', 'nn-lightbox-storyboard', scene.narration))
       overlay.appendChild(card)
@@ -266,7 +403,7 @@ registerView({
             selectBtn.addEventListener('click', function () {
               var slots = parseComponentsMap(entry.value)
               slots[slot] = c.name
-              var proposed = Object.keys(slots).map(function (k) { return k + '=' + slots[k] }).join(', ')
+              var proposed = Object.keys(slots).map(function (k) { return k + '=' + slots[k] })
               propose({
                 kind: 'correction',
                 elementId: (scene && scene.elementId) || (episode && episode.elementId),
@@ -307,18 +444,20 @@ registerView({
       doc.body.appendChild(dialog)
     }
 
-    /** Reflect an approval in the card that issued it (or in every card, for the gate). */    function markApproved(sceneSlug, gate) {
-      var card = doc.querySelector('[data-nn-scene="' + sceneSlug + '"]')
+    /** A draft is a proposal, not an applied gate verdict. */
+    function markApproved(episode, sceneSlug, gate) {
+      var episodeCard = episodeCards.filter(function (item) { return item.episode === episode })[0]
+      var card = episodeCard && Array.prototype.find.call(episodeCard.node.querySelectorAll('[data-nn-scene]'), function (node) { return node.getAttribute('data-nn-scene') === sceneSlug })
       if (!card) return
       var pill = card.querySelector('[data-nn-verdict-pill]')
       if (pill) {
-        pill.textContent = 'approved'
-        pill.setAttribute('data-nn-verdict-pill', 'approved')
+        pill.textContent = 'Approval proposed'
+        pill.setAttribute('data-nn-verdict-pill', 'proposed')
       }
       var box = card.querySelector('[data-nn-subsection="verdict"]')
       if (!box) return
       box.textContent = ''
-      box.appendChild(el('p', 'nn-verdict-approved', 'Approved for ' + gate + '.'))
+      box.appendChild(el('p', 'nn-verdict-approved', 'Approval proposed for ' + gate + '. Apply the changeset to confirm it.'))
     }
 
     // 1. Pending inbox — home.
@@ -427,13 +566,14 @@ registerView({
           var approvedAll = states.length > 0 && states.every(function (g) {
             return g.state === 'approved'
           })
-          var state = approvedAll ? 'approved' : states.length > 0 ? states[0].state : 'open'
+          var approvedCount = states.filter(function (g) { return g.state === 'approved' }).length
+          var state = approvedAll ? 'approved' : states.some(function (g) { return g.state === 'needs-change' }) ? 'needs-change' : 'open'
           if (!approvedAll && !currentGate) currentGate = gate
           var cell = el('div', 'nn-gate-cell')
           cell.setAttribute('data-nn-gate-cell', gate)
           cell.setAttribute('data-nn-gate-cell-state', state)
           cell.appendChild(el('strong', null, (GATE_INFO[gate] || {}).label || gate))
-          var stateBadge = badge(state, 'nn-gate-state')
+          var stateBadge = badge(states.length ? approvedCount + ' / ' + states.length + ' approved' : state, 'nn-gate-state')
           stateBadge.setAttribute('data-nn-gate-state', state)
           cell.appendChild(stateBadge)
           cell.appendChild(el('span', 'nn-gate-protects', (GATE_INFO[gate] || {}).protects || ''))
@@ -470,11 +610,9 @@ registerView({
             approveAll.type = 'button'
             approveAll.setAttribute('data-nn-approve-gate', currentGate)
             approveAll.addEventListener('click', function () {
-              var done = 0
               openScenes.forEach(function (scene) {
                 if (proposeVerdict(episode, scene, currentGate, 'approved')) {
-                  done++
-                  markApproved(scene.slug, currentGate)
+                  markApproved(episode, scene.slug, currentGate)
                 }
               })
 
@@ -574,10 +712,11 @@ registerView({
           var nSection = labelled('Narration')
           var narration = el('textarea', 'nn-narration')
           narration.value = scene.narration || ''
+          narration.disabled = scene.editable === false
+          narration.setAttribute('aria-label', 'Narration for ' + (scene.name || scene.slug))
           narration.setAttribute('data-nn-scene-narration', '')
           narration.addEventListener('change', function () {
-            if (scene.elementId && propose({ kind: 'correction', elementId: scene.elementId, field: 'narration', proposed: narration.value })) {
-            }
+            if (scene.elementId) propose({ kind: 'correction', elementId: scene.elementId, field: 'description', proposed: narration.value })
           })
           nSection.appendChild(narration)
           sceneBody.appendChild(nSection)
@@ -592,72 +731,18 @@ registerView({
               chip.setAttribute('data-nn-layer', layer.slug)
               chip.title = layer.text || layer.asset || layer.slug
               pills.appendChild(chip)
+              var layerSettings = el('details', 'nn-conntent-fields nn-layer-settings')
+              layerSettings.appendChild(el('summary', null, layer.name || layer.slug))
+              layerSettings.appendChild(renderSettings(layer, 'Layer', episode))
+              lSection.appendChild(layerSettings)
             })
             lSection.appendChild(pills)
             sceneBody.appendChild(lSection)
           }
-          if ((scene.sources || []).length > 0) {
-            var sSection = labelled('Fields')
-            var sourceDetails = el('details', 'nn-conntent-fields nn-source-details')
-            sourceDetails.open = true
-            sourceDetails.setAttribute('data-nn-sources', '')
-            var perContext = {}
-            scene.sources.forEach(function (entry) {
-              perContext[entry.source] = (perContext[entry.source] || 0) + 1
-            })
-            var counts = Object.keys(perContext)
-              .sort(function (a, b) {
-                return CONTEXT_ORDER.indexOf(a) - CONTEXT_ORDER.indexOf(b)
-              })
-              .map(function (context) {
-                return perContext[context] + ' from ' + context
-              })
-              .join(', ')
-            sourceDetails.appendChild(
-              el('summary', null, scene.sources.length + ' field' + (scene.sources.length === 1 ? '' : 's') + ' · ' + counts),
-            )
-            var fieldGrid = el('div', 'nn-source-grid')
-            // One flat list, ordered by where each value comes from; the origin rides on the
-            // row as a badge, and the kebab opens the console's own unit sheet.
-            scene.sources
-              .slice()
-              .sort(function (a, b) {
-                var byContext = CONTEXT_ORDER.indexOf(a.source) - CONTEXT_ORDER.indexOf(b.source)
-                return byContext !== 0 ? byContext : a.name.localeCompare(b.name)
-              })
-              .forEach(function (entry) {
-                var row = el('div', 'nn-source-row')
-                row.setAttribute('data-nn-source', entry.name)
-                row.setAttribute('data-nn-source-from', entry.source)
-                // No `inherited` flag: it would replace the field name with "inherited from …"
-                // and point the address at a pseudo-element the console cannot open.
-                var fieldRow = ctx.ui && typeof ctx.ui.FieldRow === 'function'
-                  ? ctx.ui.FieldRow(
-                      {
-                        name: entry.name,
-                        value: entry.value,
-                        type: entry.type,
-                        model: episode.knowledgeId,
-                        element: scene.slug,
-                      },
-                      { doc: doc, modelId: episode.knowledgeId, elementId: scene.elementId },
-                    )
-                  : el('span', 'nn-param-label', entry.name)
-                row.appendChild(fieldRow)
-                var originBadge = badge(entry.source, 'nn-src-badge nn-source-from')
-                originBadge.setAttribute('data-nn-source-from', entry.source)
-                row.appendChild(originBadge)
-
-                if (entry.name === 'components') {
-                  renderComponentSlotButtons(row, entry, scene, episode)
-                }
-
-                fieldGrid.appendChild(row)
-              })
-            sourceDetails.appendChild(fieldGrid)
-            sSection.appendChild(sourceDetails)
-            sceneBody.appendChild(sSection)
-          }
+          var sceneSettings = labelled('Scene settings')
+          sceneSettings.appendChild(renderSettings(scene, 'Scene', episode))
+          if (scene.editable === false) sceneSettings.appendChild(el('p', 'text-xs text-base-content/60', 'Generated scene. Change its Scene Kind in the series configuration.'))
+          sceneBody.appendChild(sceneSettings)
 
           // Verdict: only for the current gate, and only while it is not approved.
           var verdictBox = el('div', 'nn-form-section nn-verdict-box')
@@ -673,7 +758,7 @@ registerView({
             approve.setAttribute('data-nn-verdict', 'approved')
             approve.addEventListener('click', function () {
               if (!proposeVerdict(episode, scene, currentGate, 'approved')) return
-              markApproved(scene.slug, currentGate)
+              markApproved(episode, scene.slug, currentGate)
             })
             var needs = el('button', 'nn-verdict', 'Needs change')
             needs.type = 'button'
@@ -709,38 +794,10 @@ registerView({
         }
         body.appendChild(scriptBox)
 
-        // ── Config: the resolved cascade of the first scene, collapsed ──────────────
-        var configBox = labelled('Config')
+        // Episode values are resolved before scene overrides, even with no scenes.
+        var configBox = labelled('Episode configuration')
         configBox.setAttribute('data-nn-subsection', 'config')
-        if (episode.scenes && episode.scenes.length > 0) {
-          var first = episode.scenes[0]
-          var names = Object.keys(first.fields || {})
-          var details = el('details', 'nn-conntent-fields')
-          details.appendChild(el('summary', null, 'Cascade fields · ' + first.slug + ' · ' + names.length))
-          if (names.length === 0) {
-            details.appendChild(el('p', 'empty-state', 'No cascade fields resolved.'))
-          } else {
-            var table = el('table', 'table nn-fields')
-            var headRow = el('tr')
-            ;['Field', 'Value', 'Source'].forEach(function (label) {
-              headRow.appendChild(el('th', null, label))
-            })
-            table.appendChild(headRow)
-            names.forEach(function (name) {
-              var field = first.fields[name]
-              var row = el('tr')
-              row.setAttribute('data-nn-field', name)
-              row.appendChild(el('td', null, name))
-              row.appendChild(el('td', null, field && field.value !== null ? String(field.value) : ''))
-              row.appendChild(el('td', null, String((field && field.source) || '')))
-              table.appendChild(row)
-            })
-            details.appendChild(table)
-          }
-          configBox.appendChild(details)
-        } else {
-          configBox.appendChild(el('p', 'empty-state', 'No cascade fields to show.'))
-        }
+        configBox.appendChild(renderSettings(episode, 'Video', episode))
         body.appendChild(configBox)
 
         var status = labelled('Status')
@@ -782,6 +839,7 @@ registerView({
 
         card.appendChild(body)
         episodeSection.appendChild(card)
+        episodeCards.push({ episode: episode, series: series, node: card })
       })
     })
     if (episodeSection.childNodes.length <= 1) {
@@ -789,7 +847,244 @@ registerView({
     }
     root.appendChild(episodeSection)
 
-    return {}
+    // Keep the canonical review controls; navigation selects which part is visible.
+    var navigation = el('nav', 'nn-pipeline-nav')
+    navigation.setAttribute('aria-label', 'Production workspace')
+    var workspace = el('div', 'nn-pipeline-workspace')
+    var home = el('section', 'nn-conntent-section')
+    home.appendChild(el('h2', null, 'Your production at a glance'))
+    home.appendChild(el('p', 'text-base-content/60', 'What needs attention and what to do next.'))
+    var episodeList = el('section', 'nn-conntent-section')
+    episodeList.appendChild(el('h2', null, 'Episodes'))
+    var filters = el('div', 'flex gap-2 flex-wrap my-4')
+    var search = el('input', 'input input-bordered input-sm')
+    search.placeholder = 'Search episodes or series'
+    search.setAttribute('aria-label', 'Search episodes or series')
+    var seriesFilter = el('select', 'select select-bordered select-sm')
+    seriesFilter.setAttribute('aria-label', 'Filter by series')
+    seriesFilter.appendChild(el('option', null, 'All series'))
+    seriesFilter.options[0].value = ''
+    data.series.forEach(function (series) {
+      var option = el('option', null, series.title)
+      option.value = series.slug
+      seriesFilter.appendChild(option)
+    })
+    filters.appendChild(search)
+    filters.appendChild(seriesFilter)
+    episodeList.appendChild(filters)
+    var rows = el('div')
+    episodeList.appendChild(rows)
+    var deliveryPage = el('section', 'nn-conntent-section')
+    deliveryPage.appendChild(el('h2', null, 'Deliveries'))
+    var heading = el('div', 'nn-conntent-section')
+    var activePage = 'Home'
+    var activeEpisode = null
+    var activeTab = 'Overview'
+    var navButtons = {}
+    function button(text, action, primary) {
+      var b = el('button', 'btn btn-sm' + (primary ? ' btn-primary' : ' btn-outline'), text)
+      b.type = 'button'
+      b.addEventListener('click', action)
+      return b
+    }
+    function showEpisode(item, tab, sceneSlug) {
+      activeEpisode = item
+      activeTab = tab || 'Overview'
+      activePage = 'Episode'
+      display()
+      if (sceneSlug) {
+        var scene = Array.prototype.find.call(item.node.querySelectorAll('[data-nn-scene]'), function (node) { return node.getAttribute('data-nn-scene') === sceneSlug })
+        if (scene) scene.scrollIntoView({ block: 'nearest' })
+      }
+    }
+    function episodeRow(item, target) {
+      var row = el('article', 'nn-pipeline-row')
+      var text = el('div')
+      text.appendChild(el('p', 'text-xs text-base-content/60', item.series.title))
+      var title = el('h3')
+      title.appendChild(ctx.ui && ctx.ui.Ku ? ctx.ui.Ku('element', {
+        model: item.episode.knowledgeId, id: item.episode.slug, label: item.episode.title,
+        concept: 'Video',
+      }, { doc: doc }) : el('span', null, item.episode.title))
+      text.appendChild(title)
+      text.appendChild(badge(item.episode.status || 'idea'))
+      row.appendChild(text)
+      row.appendChild(button(target === 'Deliveries' ? 'View delivery' : 'Open episode', function () { showEpisode(item, target) }))
+      return row
+    }
+    function filterRows() {
+      rows.textContent = ''
+      episodeCards.filter(function (item) {
+        return (!seriesFilter.value || item.series.slug === seriesFilter.value) &&
+          (item.episode.title + ' ' + item.series.title).toLowerCase().includes(search.value.toLowerCase())
+      }).forEach(function (item) { rows.appendChild(episodeRow(item)) })
+      if (!rows.children.length) rows.appendChild(el('p', 'empty-state', 'No episodes match your filters.'))
+    }
+    search.addEventListener('input', filterRows)
+    seriesFilter.addEventListener('change', filterRows)
+    var waiting = episodeCards.filter(function (item) { return (item.episode.pending || item.episode.gates || []).some(function (g) { return g.state !== 'approved' }) })
+    var delivered = episodeCards.filter(function (item) { return (item.episode.deliveries || []).length > 0 })
+    var metrics = el('div', 'nn-pipeline-metrics')
+    ;[[waiting.length, 'Need review', 'Home'], [episodeCards.length, 'Episodes', 'Episodes'], [delivered.length, 'With deliveries', 'Deliveries']].forEach(function (metric) {
+      var box = button('', function () { activePage = metric[2]; display() })
+      box.appendChild(el('strong', null, String(metric[0])))
+      box.appendChild(el('span', null, metric[1]))
+      metrics.appendChild(box)
+    })
+    if (ctx.ui && ctx.ui.KpiGrid) {
+      home.appendChild(ctx.ui.KpiGrid({ items: [
+        { label: 'Need review', value: waiting.length },
+        { label: 'Episodes', value: episodeCards.length },
+        { label: 'With deliveries', value: delivered.length },
+      ] }, { doc: doc }))
+    } else home.appendChild(metrics)
+    home.appendChild(el('h3', null, 'Continue here'))
+    waiting.forEach(function (item) {
+      var row = episodeRow(item, 'Script & review')
+      var gate = (item.episode.pending || item.episode.gates || []).filter(function (g) { return g.state !== 'approved' })[0]
+      row.firstChild.appendChild(el('p', 'text-sm text-base-content/60', 'Next: review ' + gate.gate + (gate.scene ? ' · ' + gate.scene : '')))
+      home.appendChild(row)
+    })
+    if (!waiting.length) home.appendChild(el('p', 'empty-state', 'No reviews are waiting for your decision.'))
+    var pendingDetails = el('details', 'nn-conntent-section')
+    pendingDetails.appendChild(el('summary', null, 'All review details (' + pending.length + ')'))
+    pendingDetails.appendChild(pendingSection)
+    home.appendChild(pendingDetails)
+    Array.prototype.forEach.call(pendingSection.querySelectorAll('.nn-pending-item'), function (row, index) {
+      var gate = pending[index]
+      var item = episodeCards.filter(function (entry) { return entry.series.slug === gate.series && entry.episode.slug === gate.episode })[0]
+      if (item) row.appendChild(button('Review scene', function () { showEpisode(item, 'Script & review', gate.scene) }))
+    })
+    var changesPage = el('section', 'nn-conntent-section')
+    changesPage.appendChild(el('h2', null, 'Proposed changes'))
+    changesPage.appendChild(el('p', 'text-base-content/60', 'Proposals are not applied to the domain yet. Export the shared changeset, then ask your agent to apply it.'))
+    var changeList = el('div')
+    changesPage.appendChild(changeList)
+    if (ctx.changeset && ctx.changeset.openExport) {
+      changesPage.appendChild(button('Export changeset', function () { ctx.changeset.openExport() }, true))
+    }
+    function updateChanges() {
+      fieldRefreshers.forEach(function (refresh) { refresh() })
+      changeList.textContent = ''
+      var drafts = ctx.store && ctx.store.drafts ? ctx.store.drafts() : []
+      if (!drafts.length) changeList.appendChild(el('p', 'empty-state', 'No changes proposed yet.'))
+      drafts.forEach(function (draft) {
+        var row = el('div', 'nn-pipeline-row')
+        row.appendChild(el('span', null, (draft.kind || 'Change') + ' · ' + (draft.elementId || draft.element_id || draft.id || 'Domain')))
+        row.appendChild(badge('Proposed · not applied'))
+        changeList.appendChild(row)
+      })
+      if (navButtons.Changes) navButtons.Changes.textContent = 'Changes (' + drafts.length + ')'
+    }
+    delivered.forEach(function (item) { deliveryPage.appendChild(episodeRow(item, 'Deliveries')) })
+    if (!delivered.length) deliveryPage.appendChild(el('p', 'empty-state', 'No deliveries yet.'))
+    ;['Home', 'Episodes', 'Deliveries', 'Changes', 'Configuration'].forEach(function (name) {
+      navButtons[name] = button(name, function () { activePage = name; display() })
+      navigation.appendChild(navButtons[name])
+    })
+    root.insertBefore(navigation, root.firstChild)
+    root.appendChild(workspace)
+    ;[home, episodeList, deliveryPage, changesPage, heading, domain, episodeSection].forEach(function (node) { workspace.appendChild(node) })
+    seriesSection.hidden = true
+    // Move the existing episode cards between layouts; editors and drafts stay shared.
+    var layout = 'Dashboard'
+    var layoutTabs = el('div', 'nn-pipeline-layout-tabs flex gap-2')
+    layoutTabs.setAttribute('role', 'tablist')
+    layoutTabs.setAttribute('aria-label', 'Pipeline layout')
+    var hierarchy = el('section', 'nn-pipeline-hierarchy')
+    hierarchy.setAttribute('aria-label', 'Production hierarchy')
+    hierarchy.appendChild(el('h2', null, 'Production hierarchy'))
+    hierarchy.appendChild(el('p', 'text-base-content/60', 'Expand a series, then an episode to review its scenes and settings.'))
+    var layoutButtons = {}
+    ;['Dashboard', 'Hierarchy'].forEach(function (name) {
+      var tab = button(name, function () { layout = name; display() })
+      tab.setAttribute('role', 'tab')
+      layoutButtons[name] = tab
+      layoutTabs.appendChild(tab)
+    })
+    root.insertBefore(layoutTabs, root.firstChild)
+    root.appendChild(hierarchy)
+    data.series.forEach(function (series) {
+      var branch = el('details', 'nn-hierarchy-card nn-hierarchy-series')
+      branch.setAttribute('data-nn-hierarchy-series', series.slug)
+      var summary = el('summary')
+      summary.appendChild(el('strong', null, series.title))
+      summary.appendChild(badge(series.episodes.length + ' episodes'))
+      branch.appendChild(summary)
+      var contents = el('div', 'nn-hierarchy-contents')
+      episodeCards.filter(function (item) { return item.series === series }).forEach(function (item) {
+        var episodeBranch = el('details', 'nn-hierarchy-card nn-hierarchy-episode')
+        episodeBranch.setAttribute('data-nn-hierarchy-episode', item.episode.slug)
+        var episodeSummary = el('summary')
+        episodeSummary.appendChild(el('strong', null, item.episode.title))
+        episodeSummary.appendChild(badge(item.episode.status || 'idea'))
+        episodeSummary.appendChild(badge((item.episode.scenes || []).length + ' scenes'))
+        episodeBranch.appendChild(episodeSummary)
+        var episodeContents = el('div', 'nn-hierarchy-contents')
+        var tabs = el('div', 'flex gap-2 flex-wrap my-4')
+        item.hierarchyTab = 'Script & review'
+        item.hierarchyButtons = {}
+        ;['Overview', 'Script & review', 'Configuration', 'Deliveries'].forEach(function (name) {
+          var tab = button(name, function () { item.hierarchyTab = name; display() })
+          item.hierarchyButtons[name] = tab
+          tabs.appendChild(tab)
+        })
+        episodeContents.appendChild(tabs)
+        item.hierarchyHost = episodeContents
+        episodeBranch.appendChild(episodeContents)
+        episodeBranch.addEventListener('toggle', function () {
+          if (!episodeBranch.open) Array.prototype.forEach.call(item.node.querySelectorAll('audio,video'), function (media) { media.pause() })
+        })
+        contents.appendChild(episodeBranch)
+      })
+      if (!series.episodes.length) contents.appendChild(el('p', 'empty-state', 'No episodes yet.'))
+      branch.appendChild(contents)
+      hierarchy.appendChild(branch)
+    })
+    if (!data.series.length) hierarchy.appendChild(el('p', 'empty-state', 'No series yet.'))
+    function display() {
+      var isHierarchy = layout === 'Hierarchy'
+      navigation.hidden = workspace.hidden = !isHierarchy ? false : true
+      hierarchy.hidden = !isHierarchy
+      Object.keys(layoutButtons).forEach(function (name) { layoutButtons[name].setAttribute('aria-selected', String(layout === name)) })
+      home.hidden = activePage !== 'Home'
+      episodeList.hidden = activePage !== 'Episodes'
+      deliveryPage.hidden = activePage !== 'Deliveries'
+      changesPage.hidden = activePage !== 'Changes'
+      domain.hidden = activePage !== 'Configuration'
+      heading.hidden = episodeSection.hidden = activePage !== 'Episode'
+      Object.keys(navButtons).forEach(function (name) { navButtons[name].setAttribute('aria-current', activePage === name || (activePage === 'Episode' && name === 'Episodes') ? 'page' : 'false') })
+      heading.textContent = ''
+      if (activePage === 'Episode' && activeEpisode) {
+        heading.appendChild(button('← All episodes', function () { activePage = 'Episodes'; display() }))
+        heading.appendChild(el('p', 'text-sm text-base-content/60 my-2', activeEpisode.series.title))
+        var tabs = el('div', 'flex gap-2 flex-wrap my-4')
+        ;['Overview', 'Script & review', 'Configuration', 'Deliveries'].forEach(function (name) {
+          var b = button(name, function () { activeTab = name; display() }, name === activeTab)
+          b.setAttribute('aria-pressed', String(name === activeTab))
+          tabs.appendChild(b)
+        })
+        heading.appendChild(tabs)
+      }
+      episodeCards.forEach(function (item) {
+        var parent = isHierarchy ? item.hierarchyHost : episodeSection
+        if (item.node.parentNode !== parent) parent.appendChild(item.node)
+        item.node.hidden = !isHierarchy && (activePage !== 'Episode' || item !== activeEpisode)
+        var selectedTab = isHierarchy ? item.hierarchyTab : activeTab
+        Object.keys(item.hierarchyButtons).forEach(function (name) { item.hierarchyButtons[name].setAttribute('aria-pressed', String(item.hierarchyTab === name)) })
+        Array.prototype.forEach.call(item.node.querySelectorAll('.nn-conntent-body > [data-nn-subsection]'), function (section) {
+          var id = section.getAttribute('data-nn-subsection')
+          section.hidden = selectedTab === 'Overview' ? ['review', 'status'].indexOf(id) === -1 : selectedTab === 'Script & review' ? ['review', 'script'].indexOf(id) === -1 : selectedTab === 'Configuration' ? id !== 'config' : id !== 'deliveries'
+        })
+        if (item.node.hidden) Array.prototype.forEach.call(item.node.querySelectorAll('audio,video'), function (media) { media.pause() })
+      })
+    }
+    filterRows()
+    updateChanges()
+    var unsubscribe = ctx.store && ctx.store.onChange ? ctx.store.onChange(updateChanges) : null
+    display()
+
+    return { unmount: function () { closeFieldModal(); if (typeof unsubscribe === 'function') unsubscribe() } }
   },
 })
 
@@ -823,7 +1118,6 @@ registerView({
     var scope = (ctx.payload && ctx.payload.meta && ctx.payload.meta.consoleScope) || (ctx.model && ctx.model.meta && ctx.model.meta.consoleScope) || {}
 
     var episode = null
-    var series = null
     if (tree && tree.series) {
       for (var si = 0; si < tree.series.length; si++) {
         var s = tree.series[si]
@@ -832,11 +1126,9 @@ registerView({
             var ep = s.episodes[ei]
             if (!episode) {
               episode = ep
-              series = s
             }
             if (scope.models && (scope.models.includes(ep.knowledgeId) || scope.models.includes(ep.modelId))) {
               episode = ep
-              series = s
               break
             }
           }
