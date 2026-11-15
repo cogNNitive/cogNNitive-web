@@ -230,6 +230,7 @@
     var timerSeconds = 0
     var timerInterval = null
     var timerElRef = null
+    var timerHidden = false
     var auditLogView = null
     var logDialog = null
     var refDialog = null
@@ -247,17 +248,36 @@
       startTimer()
     }
 
+    function tick() {
+      timerSeconds++
+      if (timerElRef) {
+        var mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0')
+        var secs = String(timerSeconds % 60).padStart(2, '0')
+        timerElRef.textContent = mins + ':' + secs
+      }
+    }
+
     function startTimer() {
       if (timerInterval) clearInterval(timerInterval)
       timerSeconds = 0
-      timerInterval = setInterval(function () {
-        timerSeconds++
-        if (timerElRef) {
-          var mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0')
-          var secs = String(timerSeconds % 60).padStart(2, '0')
-          timerElRef.textContent = mins + ':' + secs
-        }
-      }, 1000)
+      // Nothing a background tab does with this label is ever seen, so the interval
+      // stays parked until the tab is visible again.
+      if (timerHidden) {
+        timerInterval = null
+        return
+      }
+      timerInterval = setInterval(tick, 1000)
+    }
+
+    // Resuming must not restart the stopwatch: the elapsed time is real work time.
+    function onVisibilityChange() {
+      timerHidden = !!doc.hidden
+      if (timerHidden) {
+        if (timerInterval) clearInterval(timerInterval)
+        timerInterval = null
+        return
+      }
+      if (!timerInterval) timerInterval = setInterval(tick, 1000)
     }
 
     function addLog(text, author, status) {
@@ -1226,6 +1246,8 @@
     }
 
     // ---- Initial render ----
+    timerHidden = !!doc.hidden
+    if (doc && doc.addEventListener) doc.addEventListener('visibilitychange', onVisibilityChange)
     initRuntimeState()
     renderTabs()
     renderProcedures()
@@ -1245,6 +1267,7 @@
       unmount: function () {
         if (timerInterval) clearInterval(timerInterval)
         timerInterval = null
+        if (doc && doc.removeEventListener) doc.removeEventListener('visibilitychange', onVisibilityChange)
         if (container) container.innerHTML = ''
       },
     }

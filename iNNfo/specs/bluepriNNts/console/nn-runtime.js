@@ -3890,11 +3890,21 @@
       var View = doc.defaultView
       if (!View || typeof View.MutationObserver !== 'function') return
       var observer = new View.MutationObserver(function (records) {
-        records.forEach(function (r) {
-          ;[].slice.call(r.addedNodes).forEach(function (n) {
-            if (n.nodeType === 1 && scope.contains(n)) stripIframes(t, n)
-          })
-        })
+        // One pass per delivery. A mount can add thousands of nodes at once, so each
+        // candidate is visited once, and a leaf that cannot hold a frame is skipped
+        // instead of paying a querySelectorAll over its (empty) subtree.
+        var candidates = []
+        for (var i = 0; i < records.length; i++) {
+          var added = records[i].addedNodes
+          for (var j = 0; j < added.length; j++) {
+            var n = added[j]
+            if (n.nodeType !== 1) continue
+            if (!n.firstChild && FRAME_TAGS.indexOf(n.tagName) < 0) continue
+            if (scope.contains(n)) candidates.push(n)
+          }
+        }
+        if (candidates.length === 0) return
+        for (var k = 0; k < candidates.length; k++) stripIframes(t, candidates[k])
       })
       observer.observe(scope, { childList: true, subtree: true })
       observers.push(observer)
@@ -7312,6 +7322,20 @@
       cleanups.push(function () {
         target.removeEventListener(type, fn)
       })
+    }
+
+    // A console left open in a background tab must cost nothing. The class is the
+    // single switch the stylesheet hangs `animation-play-state: paused` on, and it
+    // parks every permanent `animation: ... infinite` (dock attention blink, ping,
+    // skeleton, spinners) that would otherwise repaint a huge document forever.
+    var rootEl = active.documentElement
+    var activeWindow = active.defaultView
+    if (rootEl && rootEl.classList && typeof rootEl.classList.toggle === 'function') {
+      var applyPaused = function () {
+        rootEl.classList.toggle('nn-paused', !!active.hidden)
+      }
+      applyPaused()
+      if (activeWindow && activeWindow.addEventListener) listen(activeWindow, 'visibilitychange', applyPaused)
     }
     var config = parseConfig(slotText(active, 'nn-config'))
     var slots = parseSlots(slotText(active, 'nn-schema'), slotText(active, 'nn-model'))

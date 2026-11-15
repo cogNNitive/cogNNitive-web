@@ -37,7 +37,7 @@
  */
 
 import { readdir, readFile, writeFile, mkdir, rename, rm, stat, open } from 'node:fs/promises'
-import { createReadStream, existsSync, realpathSync } from 'node:fs'
+import { createReadStream, existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { join, relative, basename, resolve, dirname, isAbsolute } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
@@ -725,6 +725,58 @@ export function openCommandFor(platform, file) {
   return null
 }
 
+/**
+ * Name of the marker written beside a console once it was opened in a browser.
+ *
+ * A regenerated console is rewritten IN PLACE at a stable path, so a tab that is
+ * already showing it only needs a reload. Launching the browser again instead
+ * adds a second instance of the same document, and a domain console is heavy
+ * enough (hundreds of thousands of nodes) that a handful of copies exhausts RAM
+ * and makes every renderer burn a core. The marker is what lets `open: true`
+ * coalesce instead.
+ */
+const OPEN_MARKER = '.nn-console-opened.json'
+
+/** Default coalescing window for `open: true`: at most one tab per console per window. */
+const DEFAULT_OPEN_COOLDOWN_MINUTES = 30
+
+/**
+ * Coalescing window in milliseconds for `open: true`.
+ * `INNFO_CONSOLE_OPEN_COOLDOWN_MINUTES=0` disables the coalescing entirely.
+ */
+export function openCooldownMs(env = process.env) {
+  const raw = env.INNFO_CONSOLE_OPEN_COOLDOWN_MINUTES
+  if (raw === undefined || raw === '') return DEFAULT_OPEN_COOLDOWN_MINUTES * 60 * 1000
+  const minutes = Number(raw)
+  if (!Number.isFinite(minutes) || minutes < 0) return DEFAULT_OPEN_COOLDOWN_MINUTES * 60 * 1000
+  return minutes * 60 * 1000
+}
+
+function openMarkerPath(file) {
+  return join(dirname(file), OPEN_MARKER)
+}
+
+/** True when this exact console was already opened inside the coalescing window. */
+function openedRecently(file, cooldownMs, now) {
+  if (cooldownMs <= 0) return false
+  try {
+    const marker = JSON.parse(readFileSync(openMarkerPath(file), 'utf-8'))
+    if (marker.file !== file) return false
+    const at = Date.parse(marker.at)
+    return Number.isFinite(at) && now >= at && now - at < cooldownMs
+  } catch {
+    return false
+  }
+}
+
+function recordOpened(file, now) {
+  try {
+    writeFileSync(openMarkerPath(file), JSON.stringify({ file, at: new Date(now).toISOString() }))
+  } catch {
+    // A marker that cannot be written only costs the coalescing: it never fails the export.
+  }
+}
+
 /** Default launcher: a detached, unref-ed child that never keeps this process alive. */
 async function defaultLauncher(command, args) {
   await new Promise((resolvePromise, reject) => {
@@ -737,9 +789,17 @@ async function defaultLauncher(command, args) {
   })
 }
 
-/** Open `file` when `open` is true. Never throws: failures come back as `opened: false` + `openError`. */
-async function openConsole(file, { open, launcher, platform }) {
+/**
+ * Open `file` when `open` is true. Never throws: failures come back as
+ * `opened: false` + `openError`. A console already opened inside the coalescing
+ * window comes back as `opened: false` + `alreadyOpen: true` instead of costing
+ * a second heavyweight tab.
+ */
+async function openConsole(file, { open, launcher, platform, cooldownMs, now = Date.now() }) {
   if (!open) return { opened: false }
+  if (openedRecently(file, cooldownMs ?? openCooldownMs(), now)) {
+    return { opened: false, alreadyOpen: true }
+  }
   const cmd = openCommandFor(platform, file)
   if (!cmd) {
     return {
@@ -756,6 +816,7 @@ async function openConsole(file, { open, launcher, platform }) {
   }
   try {
     await (launcher ?? defaultLauncher)(cmd.command, cmd.args)
+    recordOpened(file, now)
     return { opened: true }
   } catch (err) {
     return { opened: false, openError: String(err?.message ?? err) }
@@ -1231,6 +1292,7 @@ export async function writeConsole(opts = {}) {
     open = true,
     launcher,
     platform = process.platform,
+    openCooldownMinutes,
     log = () => {},
   } = opts
   const scopeObj = typeof scope === 'object' && scope !== null ? scope : {}
@@ -2162,13 +2224,19 @@ export async function writeConsole(opts = {}) {
     }
   }
 
-  const opening = await openConsole(absPath, { open, launcher, platform })
+  const opening = await openConsole(absPath, {
+    open,
+    launcher,
+    platform,
+    cooldownMs: openCooldownMinutes === undefined ? openCooldownMs() : openCooldownMinutes * 60 * 1000,
+  })
   return {
     path: absPath,
     relativePath: relPath,
     status,
     knowledgeVersions,
     opened: opening.opened,
+    ...(opening.alreadyOpen ? { alreadyOpen: true } : {}),
     ...(opening.openError ? { openError: opening.openError } : {}),
   }
 }
