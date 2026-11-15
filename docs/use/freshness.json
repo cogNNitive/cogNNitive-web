@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-15T19:27:56.539Z",
-  "head": "8db42769639b7870c43db4ac511ea2081eaf2f11",
+  "generatedAt": "2026-11-15T20:22:26.521Z",
+  "head": "9e8743a0653fd6e8ab5e3095a0c5b840e35481b2",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -11,27 +11,17 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.62.5",
-      "pinnedTagDate": "2026-11-15T20:12:23+01:00",
-      "commitsSincePin": 1,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/package.json"
-      ]
+      "pinnedTag": "blueprints-v0.62.6",
+      "pinnedTagDate": "2026-11-15T20:26:59+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.62.5",
-      "pinnedTagDate": "2026-11-15T20:12:23+01:00",
-      "commitsSincePin": 1,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/package.json"
-      ]
+      "pinnedTag": "blueprints-v0.62.6",
+      "pinnedTagDate": "2026-11-15T20:26:59+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
@@ -44,17 +34,10 @@
     },
     "nn-console": {
       "subsystem": "nn-console",
-      "pinnedTag": "nn-console-v0.37.2",
-      "pinnedTagDate": "2026-11-15T20:01:23+01:00",
-      "commitsSincePin": 6,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/nn-icons.js",
-        "iNNfo/specs/bluepriNNts/console/package.json",
-        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
-        "scripts/console-views.mjs"
-      ]
+      "pinnedTag": "nn-console-v0.37.3",
+      "pinnedTagDate": "2026-11-15T20:26:59+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     }
   }
 }
