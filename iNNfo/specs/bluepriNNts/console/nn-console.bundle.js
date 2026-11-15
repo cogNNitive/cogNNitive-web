@@ -1112,13 +1112,73 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     return String(name || '').toLowerCase().replace(/[^a-z0-9-]/g, '') || 'default';
   }
 
+  // Every icon instance used to inline its own path tree: ~3 nodes each, and a real
+  // domain console mounts ~25k icons, so that alone was 13% of the page's DOM. One
+  // <symbol> per icon name is mounted once per document and each instance is a single
+  // <use> pointing at it. Stroke/fill inherit from the instance, so the look is equal.
+  var SPRITE_ID = 'nn-icon-sprite';
+  var spriteDocs = typeof WeakMap === 'function' ? new WeakMap() : null;
+  var spriteSingle = null;
+
+  function symbolId(name) {
+    return 'nn-i-' + safeClassName(name);
+  }
+
+  function spriteOf(doc) {
+    if (!doc || typeof doc.createElementNS !== 'function') return null;
+    if (spriteDocs) {
+      var known = spriteDocs.get(doc);
+      if (known) return known;
+    } else if (spriteSingle && spriteSingle.doc === doc) {
+      return spriteSingle;
+    }
+    var host = doc.getElementById ? doc.getElementById(SPRITE_ID) : null;
+    if (!host) {
+      var root = doc.body || doc.documentElement;
+      if (!root) return null;
+      host = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      host.setAttribute('id', SPRITE_ID);
+      host.setAttribute('aria-hidden', 'true');
+      host.setAttribute('focusable', 'false');
+      host.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden');
+      root.insertBefore(host, root.firstChild);
+    }
+    var entry = { host: host, names: {}, doc: doc };
+    var mounted = host.getElementsByTagName('symbol');
+    for (var i = 0; i < mounted.length; i++) entry.names[mounted[i].getAttribute('id')] = true;
+    if (spriteDocs) spriteDocs.set(doc, entry);
+    else spriteSingle = entry;
+    return entry;
+  }
+
+  function ensureSymbol(doc, name) {
+    var sprite = spriteOf(doc);
+    if (!sprite) return null;
+    var id = symbolId(name);
+    if (!sprite.names[id]) {
+      var sym = doc.createElementNS('http://www.w3.org/2000/svg', 'symbol');
+      sym.setAttribute('id', id);
+      sym.setAttribute('viewBox', '0 0 24 24');
+      sym.innerHTML = getIconPaths(name);
+      sprite.host.appendChild(sym);
+      sprite.names[id] = true;
+    }
+    return id;
+  }
+
+  function iconInner(name, doc) {
+    var id = ensureSymbol(doc, name);
+    return id ? '<use href="#' + id + '"></use>' : getIconPaths(name);
+  }
+
   function getSvg(name, options) {
     var opts = options || {};
     var size = opts.size || 16;
     var cls = opts.class || opts.className || '';
     var strokeWidth = opts.strokeWidth || 2;
-    var paths = getIconPaths(name);
-    return '<svg class="lucide lucide-' + safeClassName(name) + (cls ? ' ' + cls : '') + '" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + strokeWidth + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + '</svg>';
+    var doc = opts.doc || (typeof document !== 'undefined' ? document : null);
+    var inner = iconInner(name, doc);
+    return '<svg class="lucide lucide-' + safeClassName(name) + (cls ? ' ' + cls : '') + '" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + strokeWidth + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + '</svg>';
   }
 
   function Icon(props) {
@@ -1126,9 +1186,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     var size = p.size || 16;
     var cls = p.class || p.className || '';
     var strokeWidth = p.strokeWidth || 2;
-    var paths = getIconPaths(p.name);
+    var doc = p.doc || (typeof document !== 'undefined' ? document : null);
+    var inner = iconInner(p.name, doc);
     if (typeof window !== 'undefined' && window.html) {
-      return window.html`<svg class=${"lucide lucide-" + safeClassName(p.name) + (cls ? " " + cls : "")} width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=${strokeWidth} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" dangerouslySetInnerHTML=${{ __html: paths }}></svg>`;
+      return window.html`<svg class=${"lucide lucide-" + safeClassName(p.name) + (cls ? " " + cls : "")} width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=${strokeWidth} stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" dangerouslySetInnerHTML=${{ __html: inner }}></svg>`;
     }
     return getSvg(p.name, p);
   }
@@ -3577,6 +3638,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         modelId: opts.modelId,
         collapsible: opts.collapsible !== false,
         open: opts.open === true,
+        // A changes tab renders one sheet per applied change: hundreds of them, all
+        // collapsed. The body is display:none until expanded, so building it at mount
+        // buys nothing and costs most of the page's DOM. Build it on first expand.
+        lazy: true,
         onCite: opts.onCite,
         head: head,
       },
@@ -3662,6 +3727,12 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
   // Renders the payload `changes` collection: one sheet per applied block (with
   // Revert for an `update_field`) and one per not-applied block, with the engine's
   // reason. Holds no state, reads no storage.
+  // A Changes tab reads a domain's whole applied log: real domains carry thousands of
+  // recorded changes (1,861 on iNNtake_NN). Each sheet is ~90 nodes, so mounting them
+  // all in one pass is most of the page's DOM. The entry list is built first (cheap
+  // objects) and the sheets mount a page at a time.
+  var CHANGE_PAGE = 100
+
   function ChangeHistory(data, opts) {
     if (!data || typeof data !== 'object') throw new TypeError('nnUI.ChangeHistory: data required')
     opts = opts || {}
@@ -3670,47 +3741,83 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     var byId = data.byId && typeof data.byId === 'object' ? data.byId : {}
     var host = makeEl(doc, 'div', 'nn-change-sheets')
     host.setAttribute('data-nn-component', 'change-history')
+
+    var entries = []
     changesets.forEach(function (cs) {
       var items = Array.isArray(cs && cs.changes) ? cs.changes : []
       items.forEach(function (c) {
         if (!c || typeof c !== 'object') return
         var status = c.status || (cs && cs.status)
         if (status !== 'applied' && status !== 'conflict' && status !== 'rejected') return
-        var applied = status === 'applied'
         var op = c.op
         var parts = cardTargetParts(c.target)
         var elementName = parts.element
         var el = byId[elementName] || byId[c.element_id]
         // Fold the changeset-level facts into the entry so the sheet reads the
         // change as one record: author, applied time and why it was skipped.
-        var entry = Object.assign({}, c, {
-          author: c.author || (cs && cs.author),
-          timestamp: (cs && cs.appliedAt) || c.timestamp,
-          resolution: applied ? undefined : c.resolution || (cs && cs.resolution),
+        entries.push({
+          op: op,
+          el: el,
+          elementName: elementName,
+          applied: status === 'applied',
+          entry: Object.assign({}, c, {
+            author: c.author || (cs && cs.author),
+            timestamp: (cs && cs.appliedAt) || c.timestamp,
+            resolution: status === 'applied' ? undefined : c.resolution || (cs && cs.resolution),
+          }),
         })
-        host.appendChild(
-          changeSheet(
-            { entry: entry, variant: 'applied' },
-            {
-              doc: doc,
-              title: cardTitle(op, el && el.name ? Object.assign({}, c, { element: el.name }) : c),
-              stateKind: applied ? 'applied' : 'not-applied',
-              stateLabel: applied ? COPY.applied : COPY.notApplied,
-              elementId: elementName || (el && el.id),
-              revertable: applied && (op === 'update_field' || op === 'set_fields'),
-              onRevert: typeof opts.onRevert === 'function' ? opts.onRevert : null,
-              onGoTo: typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
-              onCite:
-                typeof opts.onCitation === 'function'
-                  ? function (citeData) {
-                      opts.onCitation(citationSource(citeData))
-                    }
-                  : null,
-            },
-          ),
-        )
       })
     })
+
+    var shown = 0
+    var moreBtn = null
+    function mountSheet(item) {
+      host.appendChild(
+        changeSheet(
+          { entry: item.entry, variant: 'applied' },
+          {
+            doc: doc,
+            title: cardTitle(
+              item.op,
+              item.el && item.el.name ? Object.assign({}, item.entry, { element: item.el.name }) : item.entry,
+            ),
+            stateKind: item.applied ? 'applied' : 'not-applied',
+            stateLabel: item.applied ? COPY.applied : COPY.notApplied,
+            elementId: item.elementName || (item.el && item.el.id),
+            revertable:
+              item.applied && (item.op === 'update_field' || item.op === 'set_fields'),
+            onRevert: typeof opts.onRevert === 'function' ? opts.onRevert : null,
+            onGoTo: typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
+            onCite:
+              typeof opts.onCitation === 'function'
+                ? function (citeData) {
+                    opts.onCitation(citationSource(citeData))
+                  }
+                : null,
+          },
+        ),
+      )
+    }
+    function more() {
+      if (moreBtn && moreBtn.parentNode) moreBtn.parentNode.removeChild(moreBtn)
+      moreBtn = null
+      var end = Math.min(entries.length, shown + CHANGE_PAGE)
+      for (var i = shown; i < end; i++) mountSheet(entries[i])
+      shown = end
+      if (shown < entries.length) {
+        moreBtn = makeEl(
+          doc,
+          'button',
+          'nn-change-more',
+          '\u25be Show more (' + shown + ' of ' + entries.length + ')',
+        )
+        moreBtn.setAttribute('type', 'button')
+        moreBtn.setAttribute('data-nn-component', 'change-more')
+        moreBtn.addEventListener('click', more)
+        host.appendChild(moreBtn)
+      }
+    }
+    more()
     return host
   }
 

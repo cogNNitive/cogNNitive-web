@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-15T19:12:24.698Z",
-  "head": "c06cd8e40060559758ecb1917d1e0a7c4000c2b0",
+  "generatedAt": "2026-11-15T19:15:07.088Z",
+  "head": "131a8227468ce14db83edce8c7074cf5a6a0670e",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -13,15 +13,23 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.62.4",
       "pinnedTagDate": "2026-11-15T20:01:23+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-icons.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.62.4",
       "pinnedTagDate": "2026-11-15T20:01:23+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-icons.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js"
+      ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
@@ -34,8 +42,11 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.37.2",
       "pinnedTagDate": "2026-11-15T20:01:23+01:00",
-      "commitsSincePin": 2,
+      "commitsSincePin": 5,
       "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-icons.js",
+        "iNNfo/specs/bluepriNNts/console/ui-kit.js",
         "scripts/console-views.mjs"
       ]
     }

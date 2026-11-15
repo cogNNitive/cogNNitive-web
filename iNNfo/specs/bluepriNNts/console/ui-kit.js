@@ -2433,6 +2433,10 @@
         modelId: opts.modelId,
         collapsible: opts.collapsible !== false,
         open: opts.open === true,
+        // A changes tab renders one sheet per applied change: hundreds of them, all
+        // collapsed. The body is display:none until expanded, so building it at mount
+        // buys nothing and costs most of the page's DOM. Build it on first expand.
+        lazy: true,
         onCite: opts.onCite,
         head: head,
       },
@@ -2518,6 +2522,12 @@
   // Renders the payload `changes` collection: one sheet per applied block (with
   // Revert for an `update_field`) and one per not-applied block, with the engine's
   // reason. Holds no state, reads no storage.
+  // A Changes tab reads a domain's whole applied log: real domains carry thousands of
+  // recorded changes (1,861 on iNNtake_NN). Each sheet is ~90 nodes, so mounting them
+  // all in one pass is most of the page's DOM. The entry list is built first (cheap
+  // objects) and the sheets mount a page at a time.
+  var CHANGE_PAGE = 100
+
   function ChangeHistory(data, opts) {
     if (!data || typeof data !== 'object') throw new TypeError('nnUI.ChangeHistory: data required')
     opts = opts || {}
@@ -2526,47 +2536,83 @@
     var byId = data.byId && typeof data.byId === 'object' ? data.byId : {}
     var host = makeEl(doc, 'div', 'nn-change-sheets')
     host.setAttribute('data-nn-component', 'change-history')
+
+    var entries = []
     changesets.forEach(function (cs) {
       var items = Array.isArray(cs && cs.changes) ? cs.changes : []
       items.forEach(function (c) {
         if (!c || typeof c !== 'object') return
         var status = c.status || (cs && cs.status)
         if (status !== 'applied' && status !== 'conflict' && status !== 'rejected') return
-        var applied = status === 'applied'
         var op = c.op
         var parts = cardTargetParts(c.target)
         var elementName = parts.element
         var el = byId[elementName] || byId[c.element_id]
         // Fold the changeset-level facts into the entry so the sheet reads the
         // change as one record: author, applied time and why it was skipped.
-        var entry = Object.assign({}, c, {
-          author: c.author || (cs && cs.author),
-          timestamp: (cs && cs.appliedAt) || c.timestamp,
-          resolution: applied ? undefined : c.resolution || (cs && cs.resolution),
+        entries.push({
+          op: op,
+          el: el,
+          elementName: elementName,
+          applied: status === 'applied',
+          entry: Object.assign({}, c, {
+            author: c.author || (cs && cs.author),
+            timestamp: (cs && cs.appliedAt) || c.timestamp,
+            resolution: status === 'applied' ? undefined : c.resolution || (cs && cs.resolution),
+          }),
         })
-        host.appendChild(
-          changeSheet(
-            { entry: entry, variant: 'applied' },
-            {
-              doc: doc,
-              title: cardTitle(op, el && el.name ? Object.assign({}, c, { element: el.name }) : c),
-              stateKind: applied ? 'applied' : 'not-applied',
-              stateLabel: applied ? COPY.applied : COPY.notApplied,
-              elementId: elementName || (el && el.id),
-              revertable: applied && (op === 'update_field' || op === 'set_fields'),
-              onRevert: typeof opts.onRevert === 'function' ? opts.onRevert : null,
-              onGoTo: typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
-              onCite:
-                typeof opts.onCitation === 'function'
-                  ? function (citeData) {
-                      opts.onCitation(citationSource(citeData))
-                    }
-                  : null,
-            },
-          ),
-        )
       })
     })
+
+    var shown = 0
+    var moreBtn = null
+    function mountSheet(item) {
+      host.appendChild(
+        changeSheet(
+          { entry: item.entry, variant: 'applied' },
+          {
+            doc: doc,
+            title: cardTitle(
+              item.op,
+              item.el && item.el.name ? Object.assign({}, item.entry, { element: item.el.name }) : item.entry,
+            ),
+            stateKind: item.applied ? 'applied' : 'not-applied',
+            stateLabel: item.applied ? COPY.applied : COPY.notApplied,
+            elementId: item.elementName || (item.el && item.el.id),
+            revertable:
+              item.applied && (item.op === 'update_field' || item.op === 'set_fields'),
+            onRevert: typeof opts.onRevert === 'function' ? opts.onRevert : null,
+            onGoTo: typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
+            onCite:
+              typeof opts.onCitation === 'function'
+                ? function (citeData) {
+                    opts.onCitation(citationSource(citeData))
+                  }
+                : null,
+          },
+        ),
+      )
+    }
+    function more() {
+      if (moreBtn && moreBtn.parentNode) moreBtn.parentNode.removeChild(moreBtn)
+      moreBtn = null
+      var end = Math.min(entries.length, shown + CHANGE_PAGE)
+      for (var i = shown; i < end; i++) mountSheet(entries[i])
+      shown = end
+      if (shown < entries.length) {
+        moreBtn = makeEl(
+          doc,
+          'button',
+          'nn-change-more',
+          '\u25be Show more (' + shown + ' of ' + entries.length + ')',
+        )
+        moreBtn.setAttribute('type', 'button')
+        moreBtn.setAttribute('data-nn-component', 'change-more')
+        moreBtn.addEventListener('click', more)
+        host.appendChild(moreBtn)
+      }
+    }
+    more()
     return host
   }
 
