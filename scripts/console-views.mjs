@@ -400,7 +400,14 @@ export async function collectViewData({ views, rootDir, models = [] }) {
     if (!view.dataPath) continue
     let mod
     try {
-      mod = await import(pathToFileURL(view.dataPath).href)
+      /* The exporter runs inside a long-lived process (the MCP server calls it
+         again and again), so a plain import would keep the first version of the
+         module for the life of that process. The mtime in the query string makes
+         every export read the module as it is now: without it, a view owner's
+         edit to `*.data.mjs` is silently ignored and the console is written with
+         stale viewData. */
+      const info = await stat(view.dataPath)
+      mod = await import(`${pathToFileURL(view.dataPath).href}?v=${info.mtimeMs}`)
     } catch (err) {
       throw new Error(`cannot load the data module for view "${view.id}" (${view.dataPath}): ${err.message}`)
     }
