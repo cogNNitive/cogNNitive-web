@@ -71,7 +71,12 @@ function isCoNNtentDoc(name) {
 }
 
 const SHELL_FILENAME = 'artifact_shell.html'
+/** Consoles installed before the shell rename still carry this file name: read, never written. */
 const LEGACY_SHELL_FILENAME = 'artifact_blueprint.html'
+/** Shell file names in resolution order: the current name first, the legacy one as the fallback. */
+const SHELL_FILENAMES = [SHELL_FILENAME, LEGACY_SHELL_FILENAME]
+const BUNDLE_FILENAME = 'nn-console.bundle.js'
+const CSS_FILENAME = 'nn-ui.css'
 
 /** A failure the caller can report: `code` is stable, `message` is human-readable. */
 export class ConsoleExportError extends Error {
@@ -83,9 +88,26 @@ export class ConsoleExportError extends Error {
 }
 
 function findShell(dir) {
-  return [SHELL_FILENAME, LEGACY_SHELL_FILENAME]
-    .map((name) => join(dir, name))
-    .find((p) => existsSync(p))
+  return SHELL_FILENAMES.map((name) => join(dir, name)).find((p) => existsSync(p))
+}
+
+/** The console stylesheet every export inlines (the caller reports it when it is absent). */
+function uiCssPathFor(consoleDir) {
+  return join(consoleDir, CSS_FILENAME)
+}
+
+/**
+ * Where bluepriNNt packages (and their console views) live. In a repo checkout the console
+ * dir sits inside the packages folder; an installed set is flat in `~/.agents/console` and
+ * the packages are installed beside it in `~/.agents/bluepriNNts`.
+ */
+function consolePackagesDir(consoleDir) {
+  return (
+    process.env.INNFO_BLUEPRINTS_DIR ||
+    (consoleDir === repoConsoleDir
+      ? dirname(consoleDir)
+      : join(homedir(), '.agents', 'bluepriNNts'))
+  )
 }
 
 /** Console asset folder: `$INNFO_CONSOLE_DIR`, the repo checkout, this script's own folder, then `~/.agents/console`. */
@@ -134,10 +156,7 @@ function loadPayloadHelper(consoleDir) {
 async function ensureAssets() {
   const consoleDir = resolveConsoleDir()
   const shellPath = findShell(consoleDir) || join(consoleDir, SHELL_FILENAME)
-  const bundlePath =
-    ['nn-console.bundle.js', 'nn-console.bundle.js']
-      .map((name) => join(consoleDir, name))
-      .find((p) => existsSync(p)) || join(consoleDir, 'nn-console.bundle.js')
+  const bundlePath = join(consoleDir, BUNDLE_FILENAME)
   if (!existsSync(shellPath)) {
     throw new ConsoleExportError(
       `Console assets not found: ${shellPath}\n` +
@@ -154,6 +173,22 @@ function computeSha256(content) {
   return payloadHelper?.computeSha256
     ? payloadHelper.computeSha256(content)
     : createHash('sha256').update(content, 'utf8').digest('hex')
+}
+
+/** The console view library, which must sit next to this script. */
+async function loadViewsLib() {
+  const viewsLibUrl = new URL('./console-views.mjs', import.meta.url).href
+  try {
+    return await import(viewsLibUrl)
+  } catch (err) {
+    // Only the lib itself being absent is reported here; a missing module imported
+    // from inside it (err.url is that module) is a real fault and must surface.
+    if (err.code !== 'ERR_MODULE_NOT_FOUND' || err.url !== viewsLibUrl) throw err
+    throw new ConsoleExportError(
+      `console-views.mjs must sit next to this script (${fileURLToPath(viewsLibUrl)}).`,
+      'CONSOLE_ASSETS_NOT_FOUND',
+    )
+  }
 }
 
 function parseConsoleCdnRef(bundleText) {
@@ -485,43 +520,95 @@ async function inspectModelStatus(model, rootDir, consoles) {
 }
 
 /**
- * Freshness of the domain console: `uncompiled` when the file is absent, `fresh` when
- * every live model appears in the embedded `meta.models` with the same
- * `knowledge_version` and content `sha256` (and nothing else is embedded), else `stale`.
+ * Why the domain console does not reflect the workspace, or null when it does: `missing`
+ * for an absent file, `assets` when the page inlines an asset that changed since the export
+ * (shell, bundle, stylesheet or a view script), `models` when a model entry differs in
+ * count, identity, `knowledge_version` or content `sha256`.
  */
-async function inspectDomainConsole(models, rootDir) {
+async function domainConsoleStaleness(models, rootDir) {
   const file = join(rootDir, payloadHelper.consoleOutputPath('domain'))
-  if (!existsSync(file)) return 'uncompiled'
-  let embedded
+  if (!existsSync(file)) return 'missing'
+  let html
+  let fileStat
   try {
-    const fileStat = await stat(file)
-    try {
-      const { bundlePath, shellPath } = await ensureAssets()
-      if (existsSync(bundlePath)) {
-        const bundleStat = await stat(bundlePath)
-        if (bundleStat.mtimeMs > fileStat.mtimeMs + 2000) return 'stale'
-      }
-      if (existsSync(shellPath)) {
-        const shellStat = await stat(shellPath)
-        if (shellStat.mtimeMs > fileStat.mtimeMs + 2000) return 'stale'
-      }
-    } catch {
-      /* ignore asset stat failures */
-    }
-    embedded = extractModelMetaFromHtml(await readFile(file, 'utf-8'))?.models
+    fileStat = await stat(file)
+    html = await readFile(file, 'utf-8')
   } catch {
-    return 'stale'
+    return 'models'
   }
-  if (!Array.isArray(embedded) || embedded.length !== models.length) return 'stale'
+  // A view or a stylesheet edit leaves every model entry intact, so only the inlined
+  // assets can tell that the page is out of date.
+  let assetsMatch = true
+  try {
+    assetsMatch = await inlinedAssetsMatch(html, fileStat, rootDir, models)
+  } catch {
+    /* an asset that cannot be read is not evidence of staleness */
+  }
+  if (!assetsMatch) return 'assets'
+
+  const embedded = extractModelMetaFromHtml(html)?.models
+  if (!Array.isArray(embedded) || embedded.length !== models.length) return 'models'
   for (const m of models) {
     const relPath = relative(rootDir, m.filePath).replace(/\\/g, '/')
     const fileName = basename(relPath)
     const entry = embedded.find((e) => e && (e.filePath === fileName || e.filePath === relPath))
-    if (!entry) return 'stale'
-    if ((entry.version ?? null) !== (m.fm.knowledge_version || null)) return 'stale'
-    if (entry.sha256 !== computeSha256(m.content)) return 'stale'
+    if (!entry) return 'models'
+    if ((entry.version ?? null) !== (m.fm.knowledge_version || null)) return 'models'
+    if (entry.sha256 !== computeSha256(m.content)) return 'models'
   }
-  return 'fresh'
+  return null
+}
+
+/**
+ * Freshness of the domain console: `uncompiled` when the file is absent, `fresh` when every
+ * live model appears in the embedded `meta.models` with the same `knowledge_version` and
+ * content `sha256` (and nothing else is embedded) and the page still inlines the current
+ * assets, else `stale`.
+ */
+async function inspectDomainConsole(models, rootDir) {
+  const why = await domainConsoleStaleness(models, rootDir)
+  if (why === 'missing') return 'uncompiled'
+  return why ? 'stale' : 'fresh'
+}
+
+/**
+ * True when the page still inlines the assets on disk: the stylesheet byte for byte, every
+ * view at the sha256 its header comment records, and neither the bundle nor the shell newer
+ * than the page (an install that replaced an asset the page predates).
+ */
+async function inlinedAssetsMatch(html, fileStat, rootDir, models) {
+  const { consoleDir, shellPath, bundlePath } = await ensureAssets()
+  if (existsSync(bundlePath) && (await stat(bundlePath)).mtimeMs > fileStat.mtimeMs + 2000) {
+    return false
+  }
+  if (existsSync(shellPath) && (await stat(shellPath)).mtimeMs > fileStat.mtimeMs + 2000) {
+    return false
+  }
+  const viewsLib = await loadViewsLib()
+  const css = await readFile(uiCssPathFor(consoleDir), 'utf-8')
+  if (!html.includes(`<style>${viewsLib.escapeStyle(css)}</style>`)) return false
+
+  const views = await viewsLib.discoverViews({
+    domainRoot: rootDir,
+    specNames: viewSpecNamesFor(models, html),
+    packagesDir: consolePackagesDir(consoleDir),
+    onWarning: () => {},
+  })
+  const recorded = viewsLib.parseViewsHeader(html)
+  if (!recorded) return views.length === 0
+  if (recorded.size !== views.length) return false
+  const prefixLength = (recorded.values().next().value || '').length
+  return views.every((v) => recorded.get(v.id) === v.sha256.slice(0, prefixLength))
+}
+
+/**
+ * The view folders an export of these models reads: one per parent spec, plus the Changes
+ * view when the page carries it (the export adds that spec name only with changesets).
+ */
+function viewSpecNamesFor(models, html) {
+  const names = models.map((m) => payloadHelper.parentSpecNameOf(m.fm)).filter(Boolean)
+  if (String(html).includes('bluepriNNt:changes/')) names.push('changes')
+  return names
 }
 
 /** Scope family key: one model `<stem>`; several `<firstStem>-plus<N-1>-<hash6>`. */
@@ -1417,30 +1504,10 @@ export async function writeConsole(opts = {}) {
   // The single shell inlines its bundle, CSS and views, so every export — scoped or
   // whole-domaiNN — needs the sibling view lib and the CSS. A bad view or a missing
   // asset is reported before anything is written.
-  const viewsLibUrl = new URL('./console-views.mjs', import.meta.url).href
-  let viewsLib
-  try {
-    viewsLib = await import(viewsLibUrl)
-  } catch (err) {
-    // Only the lib itself being absent is reported here; a missing module imported
-    // from inside it (err.url is that module) is a real fault and must surface.
-    if (err.code !== 'ERR_MODULE_NOT_FOUND' || err.url !== viewsLibUrl) throw err
-    throw new ConsoleExportError(
-      `console-views.mjs must sit next to this script (${fileURLToPath(viewsLibUrl)}).`,
-      'CONSOLE_ASSETS_NOT_FOUND',
-    )
-  }
-  // Where bluepriNNt packages (and their console views) live. In a repo checkout the
-  // console dir sits inside the packages folder; an installed set is flat in
-  // ~/.agents/console and the packages are installed beside it in ~/.agents/bluepriNNts.
-  const packagesDir =
-    process.env.INNFO_BLUEPRINTS_DIR ||
-    (consoleDir === repoConsoleDir
-      ? dirname(consoleDir)
-      : join(homedir(), '.agents', 'bluepriNNts'))
-  const uiCssPath =
-    ['nn-ui.css', 'nn-ui.css'].map((name) => join(consoleDir, name)).find((p) => existsSync(p)) ||
-    join(consoleDir, 'nn-ui.css')
+  const viewsLib = await loadViewsLib()
+  // Where bluepriNNt packages (and their console views) live, resolved once.
+  const packagesDir = consolePackagesDir(consoleDir)
+  const uiCssPath = uiCssPathFor(consoleDir)
   if (!existsSync(uiCssPath)) {
     throw new ConsoleExportError(
       `${uiCssPath} not found; the console inlines its CSS.`,
@@ -1649,7 +1716,7 @@ export async function writeConsole(opts = {}) {
             }
             el.modelId = mId
             el.modelTitle = mTitle
-            el.modelFile = fileName
+            el.modelFile = relPath
             el.modelDir = dirname(relPath)
             const cName = el.concept || 'Element'
             const eName = el.name || el.id || ''
@@ -1664,7 +1731,7 @@ export async function writeConsole(opts = {}) {
           if (mat) {
             mat.modelId = mId
             mat.modelTitle = mTitle
-            mat.modelFile = fileName
+            mat.modelFile = relPath
             allMatrices.push(mat)
           }
         }
@@ -1698,7 +1765,7 @@ export async function writeConsole(opts = {}) {
       modelSummaries.push({
         id: mId,
         title: mTitle,
-        filePath: fileName,
+        filePath: relPath,
         blueprint: blueprintParsed ? blueprintParsed.base : null,
         family: blueprintFamily,
         version: (m.fm && m.fm.knowledge_version) || null,
@@ -2236,7 +2303,7 @@ export async function writeConsole(opts = {}) {
     }
     if (wholeDomain) {
       // Earlier exports wrote these beside the page; it inlines both now. Nothing is deleted.
-      const leftovers = ['nn-console.bundle.js', 'nn-ui.css'].filter((name) =>
+      const leftovers = [BUNDLE_FILENAME, CSS_FILENAME].filter((name) =>
         existsSync(join(root, name)),
       )
       if (leftovers.length > 0) {
@@ -2544,10 +2611,22 @@ async function runMain(argv, options = {}) {
     )
   }
 
+  // A view or stylesheet edit leaves every model entry fresh while the console still inlines
+  // the old assets, so `--stale` has to ask about the console itself. Its only repair is a
+  // full export: a scoped console would leave the domain page stale.
+  const staleAssets = Boolean(
+    args.stale &&
+      !args.filter &&
+      !args.model &&
+      !args.view &&
+      (await domainConsoleStaleness(models, root)) === 'assets',
+  )
+
   // No scope option narrows the model set: --domain and a lone --view cover the
   // whole domaiNN. Any selection (a model name, --filter, --all, --stale) only
-  // narrows candidateModels and produces ONE scoped console over the selected set.
-  const wholeDomain = args.domain || (args.view && !hasSelection)
+  // narrows candidateModels and produces ONE scoped console over the selected set,
+  // unless the console's own assets are what changed.
+  const wholeDomain = args.domain || (args.view && !hasSelection) || staleAssets
 
   let selected = []
   if (hasSelection) {
@@ -2555,7 +2634,7 @@ async function runMain(argv, options = {}) {
       for (const m of candidateModels) {
         if ((await inspectModelStatus(m, root, consoles)).status !== 'fresh') selected.push(m)
       }
-      if (selected.length === 0) {
+      if (selected.length === 0 && !staleAssets) {
         console.log('All models are fresh. Nothing to export.')
         return { exitCode: 0, writtenFiles: [] }
       }

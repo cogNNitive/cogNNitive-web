@@ -443,7 +443,7 @@ function escapeChecked(text, label) {
   return out
 }
 
-const escapeStyle = (text) => text.replace(/<\/(style)/gi, '<\\/$1')
+export const escapeStyle = (text) => text.replace(/<\/(style)/gi, '<\\/$1')
 const escapeAttr = (s) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 /**
@@ -496,6 +496,26 @@ export function viewsHeader(views) {
     (v) => `${clean(v.id)} ${v.origin} ${clean(v.source)} sha256:${v.sha256.slice(0, HASH_DISPLAY_LENGTH)}`,
   )
   return `<!-- nn-views (trusted code, full page access)\n${lines.join('\n')}\n-->`
+}
+
+const VIEWS_HEADER = /<!-- nn-views \(trusted code, full page access\)\n([\s\S]*?)\n-->/
+
+/**
+ * `viewsHeader`'s comment read back as `Map<view id, recorded sha256 prefix>`, or null when
+ * the page carries no header (a console exported before views, or a page with no views).
+ * Freshness compares these against the sha256 of the view files on disk.
+ */
+export function parseViewsHeader(html) {
+  const block = VIEWS_HEADER.exec(String(html ?? ''))
+  if (!block) return null
+  const out = new Map()
+  for (const line of block[1].split('\n')) {
+    const parts = line.trim().split(' ')
+    const hash = /^sha256:([0-9a-f]+)$/.exec(parts[parts.length - 1] || '')
+    if (parts.length < 4 || !hash) continue
+    out.set(parts[0], hash[1])
+  }
+  return out
 }
 
 const CSS_LINK = /<link rel="stylesheet" href="\.\/nn-ui\.css" ?\/>/
