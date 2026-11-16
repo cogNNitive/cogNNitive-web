@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-16T18:32:05.269Z",
-  "head": "38c2db7de846d91cf189de4315106d93bf48b621",
+  "generatedAt": "2026-11-16T19:02:12.100Z",
+  "head": "83c14d29f3d5b81be8e1854922e98bef3dac3c13",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -11,20 +11,20 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.66.1",
-      "pinnedTagDate": "2026-11-16T17:25:27Z",
+      "pinnedTag": "blueprints-v0.66.2",
+      "pinnedTagDate": "2026-11-16T19:31:08+01:00",
       "commitsSincePin": 1,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs"
+        "iNNfo/specs/bluepriNNts/catalog.json"
       ]
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.66.1",
-      "pinnedTagDate": "2026-11-16T17:25:27Z",
+      "pinnedTag": "blueprints-v0.66.2",
+      "pinnedTagDate": "2026-11-16T19:31:08+01:00",
       "commitsSincePin": 1,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs"
+        "iNNfo/specs/bluepriNNts/catalog.json"
       ]
     },
     "nn-mcp": {
