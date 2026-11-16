@@ -2228,7 +2228,7 @@ export async function writeConsole(opts = {}) {
   let budget = budgetOf(html)
 
   // Degrade instead of refusing to write, in a fixed order: the resolved citation
-  // payload first (the raw field values survive), then the per-element provenance
+  // payload first (the raw field values survive), then the per-element history
   // maps (the change log still holds the same facts). The strategy each step
   // applied travels in the gate's message.
   let strategy = 'none'
@@ -2238,11 +2238,11 @@ export async function writeConsole(opts = {}) {
       strategy = 'strip-citations'
       html = buildHtml(new Date().toISOString())
       budget = budgetOf(html, strategy)
-      let strippedProvenance = 0
+      let strippedHistory = 0
       if (budget.status === 'fail') {
-        strippedProvenance = viewsLib.stripConsoleProvenance(domainPayload)
-        if (strippedProvenance > 0) {
-          strategy = 'strip-citations+provenance'
+        strippedHistory = viewsLib.stripConsoleHistory(domainPayload)
+        if (strippedHistory > 0) {
+          strategy = 'strip-citations+history'
           html = buildHtml(new Date().toISOString())
           budget = budgetOf(html, strategy)
         }
@@ -2250,7 +2250,7 @@ export async function writeConsole(opts = {}) {
       process.stderr.write(
         `WARNING: [export-console] console exceeded ${sizeBudget.failBytes} B; ` +
           `exported degraded (${strategy}) — dropped the resolved citations of ${strippedCitations} elements` +
-          (strippedProvenance > 0 ? ` and the provenance of ${strippedProvenance}` : '') +
+          (strippedHistory > 0 ? ` and the history of ${strippedHistory} elements` : '') +
           ` (their raw field values are untouched).\n`,
       )
     }

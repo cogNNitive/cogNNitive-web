@@ -12525,16 +12525,6 @@ function parseChangesetTarget(target) {
     elementPart: rest.split("&")[0].trim()
   };
 }
-function fieldOfUnit(unit) {
-  const at = String(unit).indexOf("@");
-  if (at === -1) return void 0;
-  const rest = String(unit).slice(at + 1);
-  const amp = rest.indexOf("&");
-  if (amp === -1) return void 0;
-  const field = rest.slice(amp + 1);
-  if (!field || field.includes("&")) return void 0;
-  return field;
-}
 function stripWrappingQuotes(value) {
   if (typeof value !== "string") return value;
   const t = value.trim();
@@ -12627,22 +12617,12 @@ function attachChangesetHistory(elements, changesets, resolveEvidence, prebuiltL
       [el.slug, el.id, el.name].filter((value) => typeof value === "string" && value.length > 0).map((value) => value.toLowerCase())
     );
     if (keys.size === 0) continue;
-    const provenance = {};
     for (const change of log.all) {
-      const unit = unitOf(change);
-      const { elementPart } = parseChangesetTarget(unit);
+      const { elementPart } = parseChangesetTarget(unitOf(change));
       if (!elementPart || !keys.has(elementPart.toLowerCase())) continue;
       if (!el.history) el.history = [];
       el.history.push(historyItem(change, resolveEvidence));
-      if (!change.applied) continue;
-      const field = fieldOfUnit(unit);
-      if (!field || provenance[field]) continue;
-      provenance[field] = {
-        history: deriveValueHistory(log, unit),
-        origin: deriveFieldOrigin(log, unit)
-      };
     }
-    if (Object.keys(provenance).length > 0) el.provenance = provenance;
   }
 }
 

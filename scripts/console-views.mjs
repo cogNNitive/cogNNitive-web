@@ -651,30 +651,25 @@ export function stripConsoleCitations(payload) {
 }
 
 /**
- * The second degrade step: drops the per-element `provenance` maps (applied
- * history and field origin). They repeat the change log per element, so a domain
- * that is still over the hard limit after losing its citations often lands under
- * it here. The change log itself is untouched, so provenance stays reconstructible.
+ * The second degrade step: drops the per-element `history` maps (the change
+ * sheets behind the Changes tab). They repeat the change log per element, so a
+ * domain that is still over the hard limit after losing its citations often
+ * lands under it here. The change log itself is untouched, so the history stays
+ * reconstructible from `changes/`.
  *
  * @param {any} payload
- * @returns {number} how many elements lost their provenance
+ * @returns {number} how many elements lost their history
  */
-export function stripConsoleProvenance(payload) {
+export function stripConsoleHistory(payload) {
   const elements = payload?.model?.elements
   if (!Array.isArray(elements)) return 0
   let dropped = 0
   for (const element of elements) {
     if (!element) continue
-    let lost = false
-    if (element.provenance) {
-      delete element.provenance
-      lost = true
-    }
     if (element.history) {
       delete element.history
-      lost = true
+      dropped += 1
     }
-    if (lost) dropped += 1
   }
   return dropped
 }

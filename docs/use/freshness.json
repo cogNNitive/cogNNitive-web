@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-16T11:33:01.001Z",
-  "head": "fb14558106e725fcf9014550943e3ef89bca196c",
+  "generatedAt": "2026-11-16T11:37:34.669Z",
+  "head": "75daf23f8a2c93ccd4c0187dd90e9b7070e90e3c",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -11,52 +11,20 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.63.2",
-      "pinnedTagDate": "2026-11-16T11:47:10+01:00",
-      "commitsSincePin": 7,
+      "pinnedTag": "blueprints-v0.63.3",
+      "pinnedTagDate": "2026-11-16T12:31:57+01:00",
+      "commitsSincePin": 2,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/SKILL.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/references/overlay-slots.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/ensure-hyperframes.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/hyperframes-render.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/captions-stage.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/captions.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/compile.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/episode.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/library.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/captions.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/compile-banner.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/ensure-hyperframes.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/library.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/lifecycle.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs"
       ]
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.63.2",
-      "pinnedTagDate": "2026-11-16T11:47:10+01:00",
-      "commitsSincePin": 7,
+      "pinnedTag": "blueprints-v0.63.3",
+      "pinnedTagDate": "2026-11-16T12:31:57+01:00",
+      "commitsSincePin": 2,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/SKILL.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/references/overlay-slots.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/ensure-hyperframes.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/hyperframes-render.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/captions-stage.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/captions.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/compile.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/episode.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/library.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/captions.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/compile-banner.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/ensure-hyperframes.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/library.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/lifecycle.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs"
       ]
     },
     "nn-mcp": {
@@ -72,8 +40,9 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.37.4",
       "pinnedTagDate": "2026-11-15T21:48:06+01:00",
-      "commitsSincePin": 14,
+      "commitsSincePin": 16,
       "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
         "iNNfo/specs/bluepriNNts/console/nn-runtime.js",
         "scripts/console-views.mjs",
