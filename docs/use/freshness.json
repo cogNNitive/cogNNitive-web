@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-16T18:07:37.093Z",
-  "head": "1d3acfdc7775f80e6f02d65a7b97b9be9d007c0c",
+  "generatedAt": "2026-11-16T18:32:05.269Z",
+  "head": "38c2db7de846d91cf189de4315106d93bf48b621",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -13,24 +13,30 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.66.1",
       "pinnedTagDate": "2026-11-16T17:25:27Z",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.66.1",
       "pinnedTagDate": "2026-11-16T17:25:27Z",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs"
+      ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.37.2",
       "pinnedTagDate": "2026-11-15T20:01:23+01:00",
-      "commitsSincePin": 6,
+      "commitsSincePin": 7,
       "filesTouched": [
         "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js",
+        "iNNfo/packages/nn-mcp/src/tools/apply-change.ts",
         "iNNfo/packages/nn-mcp/src/tools/console-regeneration.ts",
+        "iNNfo/packages/nn-mcp/test/apply-change-delete-impact.test.ts",
         "iNNfo/packages/nn-mcp/tsup.config.ts"
       ]
     },

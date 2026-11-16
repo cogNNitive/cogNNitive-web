@@ -23731,17 +23731,32 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
     }
     if (csDoc.changes.some((c) => c.op === "remove_element")) {
       const allFiles = await findAllWorkspaceModelFiles(rootDir, DEFAULT_WORKSPACE_IGNORE, rootDir);
+      const unreadableCandidates = [];
       for (const f of allFiles) {
         const fStem = displayStem2((0, import_node_path18.basename)(f)).toLowerCase();
-        if (!workspaceModels.has(fStem)) {
-          try {
-            const m = await loadKnowledge(f);
-            workspaceModels.set(fStem, m);
-            if (m.frontmatter.knowledge_slug) {
-              workspaceModels.set(m.frontmatter.knowledge_slug.toLowerCase(), m);
-            }
-          } catch {
+        if (workspaceModels.has(fStem)) continue;
+        try {
+          const m = await loadKnowledge(f);
+          workspaceModels.set(fStem, m);
+          if (m.frontmatter.knowledge_slug) {
+            workspaceModels.set(m.frontmatter.knowledge_slug.toLowerCase(), m);
           }
+        } catch (err) {
+          unreadableCandidates.push({
+            path: (0, import_node_path18.relative)(rootDir, f).split("\\").join("/"),
+            detail: err instanceof Error ? err.message : String(err)
+          });
+        }
+      }
+      if (unreadableCandidates.length > 0) {
+        const named = unreadableCandidates.map((c) => `"${c.path}" (${c.detail})`).join(", ");
+        const candidate = unreadableCandidates.length === 1 ? "a discovered candidate" : "discovered candidates";
+        for (const change of csDoc.changes) {
+          if (change.op !== "remove_element" || blockedChanges.has(change.id)) continue;
+          blockedChanges.set(change.id, {
+            code: "DELETE_IMPACT_INCOMPLETE",
+            message: `DELETE_IMPACT_INCOMPLETE: the incoming references to "${change.target}" could not be scanned because ${candidate} could not be read: ${named}. The remove_element was not applied`
+          });
         }
       }
     }
