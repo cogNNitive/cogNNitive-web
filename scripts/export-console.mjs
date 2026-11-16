@@ -239,8 +239,31 @@ function parseArgs(argv) {
   return args
 }
 
+/* ── Scan diagnostics ──────────────────────────────────────────── */
+
+/**
+ * The export's one warning channel (`process.stderr.write`, read at call time so
+ * `runExportConsole` and the CLI both carry the message). Every scan diagnostic
+ * goes through here: there is no second channel.
+ */
+function writeExportWarning(message) {
+  process.stderr.write(`WARNING: [export-console] ${message}\n`)
+}
+
+/**
+ * The message for a filesystem failure during a scan, or null when nothing
+ * failed: `ENOENT`/`ENOTDIR` mean "this optional path is not there", which is a
+ * normal workspace (a domain without `evidence/`, a folder that was never
+ * created). Every other code means part of the workspace exists but could not be
+ * read, so the inventory would shrink in silence; name the path and operation.
+ */
+function scanReadWarning(operation, target, err) {
+  if (err?.code === 'ENOENT' || err?.code === 'ENOTDIR') return null
+  return `cannot ${operation} ${target}: ${err?.code ?? err?.message ?? err}`
+}
+
 /** Recursively find every non-sidecar `*_NN.md` file under `dir`, skipping heavy dirs. */
-async function findModelFiles(dir) {
+async function findModelFiles(dir, onWarning = writeExportWarning) {
   const out = []
   const skip = new Set(['node_modules', '.git', '.cogNNitive', 'artifacts', 'dist', 'docs'])
   // A legacy episode layout under `series/<s>/assets/` is rejected by coNNtent `layout.mjs`,
@@ -257,7 +280,10 @@ async function findModelFiles(dir) {
     let entries
     try {
       entries = await readdir(d, { withFileTypes: true })
-    } catch {
+    } catch (err) {
+      // A subtree that cannot be read would silently drop every model under it.
+      const problem = scanReadWarning('read directory', d, err)
+      if (problem) onWarning(problem)
       return
     }
     for (const e of entries) {
@@ -828,9 +854,9 @@ async function openConsole(file, { open, launcher, platform, cooldownMs, now = D
 
 /* ── Model discovery ───────────────────────────────────────────── */
 
-async function loadModels(root) {
+async function loadModels(root, onWarning = writeExportWarning) {
   const models = []
-  for (const f of await findModelFiles(root)) {
+  for (const f of await findModelFiles(root, onWarning)) {
     const content = await readFile(f, 'utf-8')
     if (isModelDocument(relative(root, f).replace(/\\/g, '/'), content) && isLevel3(content)) {
       const stem = payloadHelper.displayStem(basename(f))
@@ -980,12 +1006,14 @@ async function hashFileStream(filePath) {
  * origins declared by the sources catalog or recorded in sidecars.
  *
  * @param {string} workspaceRoot
- * @param {{ elements?: Array<any>, changesets?: Array<any> }} [options]
+ * @param {{ elements?: Array<any>, changesets?: Array<any>, onWarning?: (message: string) => void }} [options]
  */
 export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
   const root = resolve(workspaceRoot)
   const elements = options.elements || []
   const changesets = options.changesets || []
+  // The export's warning channel by default; a caller (or a test) may pass its own.
+  const onWarning = options.onWarning ?? writeExportWarning
 
   const scanDirs = ['sources', 'assets', 'evidence', 'artifacts', 'conversations']
   const inventory = []
@@ -993,6 +1021,8 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
   const sourceFilesList = []
 
   async function walk(dirAbs) {
+    // An optional scan folder that does not exist is a normal workspace, not a
+    // failure: nothing to report and nothing to walk.
     if (!existsSync(dirAbs)) return []
     const results = []
     try {
@@ -1007,8 +1037,10 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
           results.push(full)
         }
       }
-    } catch {
-      // ignore unreadable
+    } catch (err) {
+      // Ignoring an unreadable directory silently shrinks the domain; report it.
+      const problem = scanReadWarning('read directory', dirAbs, err)
+      if (problem) onWarning(problem)
     }
     return results
   }
@@ -1111,14 +1143,20 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
     let st
     try {
       st = await stat(fullPath)
-    } catch {
+    } catch (err) {
+      // `walk` listed this path and it then could not be stat'ed: a read failure
+      // (permissions, I/O) must be named, not silently dropped from the inventory.
+      const problem = scanReadWarning('stat', fullPath, err)
+      if (problem) onWarning(problem)
       continue
     }
 
     let sha256 = ''
     try {
       sha256 = await hashFileStream(fullPath)
-    } catch {
+    } catch (err) {
+      const problem = scanReadWarning('read file', fullPath, err)
+      if (problem) onWarning(problem)
       continue
     }
 
