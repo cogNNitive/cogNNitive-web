@@ -172,65 +172,45 @@ export function overlayCropRegion({ overlay, masterWidth = 1920, masterHeight = 
     }
   }
 
-  const pos = String(overlay?.config?.position || overlay?.props?.position || '').toLowerCase()
+  const pos = String(
+    overlay?.config?.position || overlay?.config?.anchor || overlay?.props?.position || '',
+  ).toLowerCase()
   const type = String(overlay?.type || overlay?.kind || '').toLowerCase()
 
-  // Safe area proportions relative to master
-  const wScale = masterWidth / 1920
-  const hScale = masterHeight / 1920
+  // The shipped components lay out inside the Open Gate safe square (21.875% inset on a square
+  // master), so the measuring band is derived from that square, never from the frame. A table of
+  // absolute 1920x1920 coordinates measured the wrong place three ways: the `position` branch for
+  // `bottom` ran before the `watermark` branch, a `top` title's band ended before the title drew,
+  // and a manifest records a title's anchor as `config.anchor`, so a title fell through to the
+  // centre band. The check then reported 0.0000 for an overlay that was visibly on screen.
+  const inset = 0.21875
+  const innerX = Math.round(masterWidth * inset)
+  const innerY = Math.round(masterHeight * inset)
+  const innerW = Math.round(masterWidth * (1 - 2 * inset))
+  const innerH = Math.round(masterHeight * (1 - 2 * inset))
 
-  let x = 420
-  let y = 1200
-  let w = 700
-  let h = 220
-
-  if (pos.includes('top-left')) {
-    x = 420
-    y = 420
-    w = 450
-    h = 200
-  } else if (pos.includes('top-right')) {
-    x = 1050
-    y = 420
-    w = 450
-    h = 200
+  let bandY = innerY
+  let bandH = innerH
+  if (
+    pos.includes('bottom') ||
+    type.includes('watermark') ||
+    type.includes('caption') ||
+    type.includes('lowerthird')
+  ) {
+    bandY = innerY + Math.round(innerH * 0.72)
+    bandH = Math.round(innerH * 0.28)
   } else if (pos.includes('top')) {
-    x = 474
-    y = 420
-    w = 700
-    h = 200
-  } else if (pos.includes('bottom-left') || type.includes('lowerthird')) {
-    x = 474
-    y = 1200
-    w = 756
-    h = 250
-  } else if (pos.includes('bottom-right')) {
-    x = 1050
-    y = 1200
-    w = 450
-    h = 250
-  } else if (pos.includes('bottom') || type.includes('caption')) {
-    x = 474
-    y = 1250
-    w = 700
-    h = 200
+    bandY = innerY
+    bandH = Math.round(innerH * 0.28)
   } else if (pos.includes('center') || type.includes('title') || type.includes('quote')) {
-    x = 450
-    y = 800
-    w = 1020
-    h = 320
-  } else if (type.includes('watermark')) {
-    x = 550
-    y = 1350
-    w = 820
-    h = 120
+    bandY = innerY + Math.round(innerH * 0.3)
+    bandH = Math.round(innerH * 0.4)
   }
 
-  // Scale and clamp inside [0, masterWidth], [0, masterHeight]
-  let cropW = Math.max(16, Math.min(masterWidth, Math.floor((w * wScale) / 2) * 2))
-  let cropH = Math.max(16, Math.min(masterHeight, Math.floor((h * hScale) / 2) * 2))
-  let cropX = Math.max(0, Math.min(masterWidth - cropW, Math.floor(x * wScale)))
-  let cropY = Math.max(0, Math.min(masterHeight - cropH, Math.floor(y * hScale)))
+  const cropW = Math.max(16, Math.min(masterWidth, Math.floor(innerW / 2) * 2))
+  const cropH = Math.max(16, Math.min(masterHeight, Math.floor(bandH / 2) * 2))
+  const cropX = Math.max(0, Math.min(masterWidth - cropW, Math.max(0, Math.floor(innerX))))
+  const cropY = Math.max(0, Math.min(masterHeight - cropH, Math.max(0, Math.floor(bandY))))
 
   return { width: cropW, height: cropH, x: cropX, y: cropY }
 }
@@ -667,14 +647,40 @@ export async function qaMaster({
       continue
     }
 
-    // Visible check
+    // Visible check. The reference frame MUST be free of the same overlay kind, or the comparison
+    // measures nothing: with a watermark on every scene, `start - 0.5` lands in the previous scene,
+    // which carries its own watermark, and the difference is 0.0000 even though both overlays are on
+    // screen. Prefer a frame with nothing at all on screen, then the nearest clean one, and skip the
+    // visual check when the kind covers every frame.
     const tMid = Number((item.start + item.duration / 2).toFixed(3))
-    const tRef =
-      item.start >= 0.5
-        ? Number(Math.max(0, item.start - 0.5).toFixed(3))
-        : item.start + item.duration + 0.5 <= manifestDuration
-          ? Number((item.start + item.duration + 0.5).toFixed(3))
-          : null
+    const sameKind = overlayItems.filter((o) => o !== item && o.type === item.type)
+    const isBusy = (t) => sameKind.some((o) => t >= o.start && t < o.start + o.duration)
+    const inItem = (t) => t >= item.start && t < item.start + item.duration
+    const anyActive = (t) =>
+      overlayItems.some((o) => o !== item && t >= o.start && t < o.start + o.duration)
+    const candidates = []
+    for (let t = 0; t <= manifestDuration; t += 0.25) {
+      const at = Number(t.toFixed(3))
+      if (inItem(at) || isBusy(at)) continue
+      candidates.push({ at, active: anyActive(at) ? 1 : 0 })
+    }
+    candidates.sort((a, b) => a.active - b.active || Math.abs(a.at - tMid) - Math.abs(b.at - tMid))
+    const tRef = candidates.length > 0 ? candidates[0].at : null
+    if (tRef === null) {
+      checks.push({
+        id: 'overlay-structural',
+        checkpoint: 'master',
+        status: 'pass',
+        scene: item.sceneId,
+        overlayKind: item.type,
+        text: item.text,
+        interval,
+        expected: 'a reference frame with no overlay of the same kind',
+        found: 'every frame carries this overlay kind; visual check skipped',
+        sampled: indexHtmlPath,
+      })
+      continue
+    }
 
     const crop = overlayCropRegion({
       overlay: item,
