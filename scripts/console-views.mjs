@@ -588,16 +588,86 @@ const HTML_COMMENT_OR_SCRIPT = /<!--[\s\S]*?-->|<script\b([^>]*)>([\s\S]*?)<\/sc
 const SCRIPT_SRC_ATTR = /\ssrc\s*=/i
 const SCRIPT_TYPE_ATTR = /\stype\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i
 const EXECUTABLE_SCRIPT_TYPES = new Set(['', 'text/javascript', 'application/javascript', 'module'])
-const CSP_META = /(<meta\s+http-equiv="Content-Security-Policy"\s+content=")([^"]*)(")/i
+const META_TAG = /<meta\b[^>]*>/gi
+const META_ATTR = /([^\s=/>]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g
+const DIRECTIVE_NAME = /^\s*([^\s;]+)/
+const CSP_HTTP_EQUIV = /^content-security-policy$/i
+
+/** Splits one `;`-separated policy segment into its directive tokens, without the name. */
+const directiveTokens = (segment) => segment.trim().split(/\s+/).slice(1)
+const directiveName = (segment) => DIRECTIVE_NAME.exec(segment)?.[1].toLowerCase() ?? ''
+
+/**
+ * The page's Content-Security-Policy meta element: the span of its `content` value and the
+ * policy itself. Attributes are read name by name, so the element is found whatever the
+ * attribute order or the quoting — a single regular expression fixes both and silently
+ * returns a page whose policy the caller believes it rewrote.
+ */
+function findCspMeta(html) {
+  for (const tag of html.matchAll(META_TAG)) {
+    const attrs = new Map()
+    META_ATTR.lastIndex = '<meta'.length
+    let attr
+    while ((attr = META_ATTR.exec(tag[0]))) {
+      const name = attr[1].toLowerCase()
+      const value = attr[2] ?? attr[3] ?? attr[4]
+      if (value === undefined) {
+        attrs.set(name, null) // a bare attribute: no value, so never the CSP meta's content
+        continue
+      }
+      const quoted = attr[4] === undefined
+      const end = tag.index + attr.index + attr[0].length - (quoted ? 1 : 0)
+      attrs.set(name, { value, start: end - value.length, end, quoted })
+    }
+    const httpEquiv = attrs.get('http-equiv')
+    const content = attrs.get('content')
+    if (httpEquiv?.value && content && CSP_HTTP_EQUIV.test(httpEquiv.value.trim())) {
+      return { policy: content.value, contentStart: content.start, contentEnd: content.end, quoted: content.quoted }
+    }
+  }
+  return null
+}
+
+/**
+ * The policy with `hashes` added to the directive that actually governs inline `<script>`
+ * elements: `script-src-elem` when declared, else `script-src`, else a `script-src` created
+ * from the `default-src` sources — creating one with only the hashes would narrow the page.
+ * Throws when the policy has none of the three and there is a hash to place.
+ */
+function withInlineScriptHashes(policy, hashes) {
+  const segments = policy.split(';')
+  const names = segments.map(directiveName)
+  // script-src-elem wins over script-src for an inline script element, and browsers apply
+  // the first declaration of a directive, so each is looked up in that order.
+  for (const name of ['script-src-elem', 'script-src']) {
+    const at = names.indexOf(name)
+    if (at === -1) continue
+    segments[at] += ` ${hashes.join(' ')}`
+    return segments.join(';')
+  }
+  const defaultAt = names.indexOf('default-src')
+  if (defaultAt === -1) {
+    throw new Error(
+      `console Content-Security-Policy has no script-src, script-src-elem or default-src, so the ` +
+        `${hashes.length} inline script hash(es) cannot be added without narrowing the page; ` +
+        'add one of those directives to the shell',
+    )
+  }
+  // `'none'` is only meaningful as a directive's sole source, so it is not carried over.
+  const sources = directiveTokens(segments[defaultAt]).filter((token) => token.toLowerCase() !== "'none'")
+  const directive = ['script-src', ...sources, ...hashes].join(' ')
+  const head = policy.replace(/[\s;]+$/, '')
+  return head ? `${head}; ${directive}` : directive
+}
 
 /**
  * Adds a `'sha256-...'` source to the page's `script-src` for every executable inline script
  * (the inlined bundle and views), so the CSP can forbid inline scripts in general. JSON data
  * islands and external scripts are not executed inline and get no hash. Returns the page
- * unchanged when it declares no Content-Security-Policy meta.
+ * unchanged when it declares no Content-Security-Policy meta or has no inline script.
  */
 export function allowInlineScripts(html) {
-  const meta = CSP_META.exec(html)
+  const meta = findCspMeta(html)
   if (!meta) return html
   const hashes = new Set()
   for (const m of html.matchAll(HTML_COMMENT_OR_SCRIPT)) {
@@ -612,8 +682,9 @@ export function allowInlineScripts(html) {
     hashes.add(`'sha256-${createHash('sha256').update(text, 'utf8').digest('base64')}'`)
   }
   if (hashes.size === 0) return html
-  const policy = meta[2].replace(/(script-src[^;]*)/, (directive) => `${directive} ${[...hashes].join(' ')}`)
-  return html.replace(CSP_META, (_all, open, _policy, close) => `${open}${policy}${close}`)
+  const policy = withInlineScriptHashes(meta.policy, [...hashes])
+  // An unquoted content value cannot hold a policy (it has spaces), so it is quoted here.
+  return html.slice(0, meta.contentStart) + (meta.quoted ? policy : `"${policy}"`) + html.slice(meta.contentEnd)
 }
 
 /**
