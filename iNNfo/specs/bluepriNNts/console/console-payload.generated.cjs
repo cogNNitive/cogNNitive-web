@@ -13276,22 +13276,6 @@ function buildConsolePayload(options) {
           slug: elementsByName.get(c.toLowerCase())?.slug || slugify(c)
         };
       }
-      let cellProvenance;
-      if (changeLog) {
-        const matrixSlug = slugify(mat.name);
-        for (const cell of mat.cells ?? []) {
-          if (String(cell.value ?? "").trim() === "") continue;
-          const unitKey = `${modelId}@${matrixSlug}&${headRows[cell.row]?.slug}&${headCols[cell.col]?.slug}`;
-          const origin = changeLog.origin(unitKey);
-          if (!origin) continue;
-          cellProvenance ??= {};
-          cellProvenance[cell.row] ??= {};
-          cellProvenance[cell.row][cell.col] = {
-            history: deriveValueHistory(changeLog, unitKey),
-            origin: deriveFieldOrigin(changeLog, unitKey)
-          };
-        }
-      }
       matrices.push({
         name: mat.name,
         slug: slugify(mat.name),
@@ -13300,8 +13284,7 @@ function buildConsolePayload(options) {
         rows,
         cols,
         head: { rows: headRows, cols: headCols },
-        cells: cellsObj,
-        ...cellProvenance ? { provenance: cellProvenance } : {}
+        cells: cellsObj
       });
     }
   }

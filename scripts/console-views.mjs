@@ -734,6 +734,10 @@ export function stripConsoleCitations(payload) {
  * lands under it here. The change log itself is untouched, so the history stays
  * reconstructible from `changes/`.
  *
+ * Matrices are not walked and need no step: a matrix ships its definition and its
+ * cells, no history map (`matrix.provenance` was never read by a console source and
+ * is gone), so there is nothing to strip there.
+ *
  * @param {any} payload
  * @returns {number} how many elements lost their history
  */

@@ -16633,7 +16633,6 @@ var init_payload_builder = __esm({
     init_field_values();
     init_compose();
     init_element_history();
-    init_element_history();
     init_load();
     init_files_inventory();
   }

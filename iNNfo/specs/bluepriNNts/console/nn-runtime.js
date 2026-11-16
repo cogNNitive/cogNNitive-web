@@ -8169,6 +8169,19 @@
       return false
     }
 
+    // A deep link is honored for one render: `chunked()` mounts the page holding the
+    // card, and every later refresh re-mounts the first page because the focus id is
+    // consumed once by contract. Keeping `#el-<id>` in the address bar would then
+    // name a card the DOM no longer holds, so the URL forgets it as soon as the boot
+    // or the hashchange has revealed it. A query hash the refresh wrote is left alone.
+    function forgetDeepLink() {
+      var loc = active.location
+      if (!loc || !/^#el-/.test(String(loc.hash || ''))) return
+      var hist = active.defaultView && active.defaultView.history ? active.defaultView.history : typeof history !== 'undefined' ? history : null
+      if (!hist || typeof hist.replaceState !== 'function') return
+      hist.replaceState(null, '', loc.pathname + loc.search)
+    }
+
     function onHash() {
       var raw = String(active.location ? active.location.hash || '' : '').replace(/^#/, '')
       // Deep link: #el-<model-qualified element id> opens that element's card.
@@ -8200,6 +8213,7 @@
         refresh(query, true)
         var card = active.getElementById('el-' + elemId)
         if (card && typeof card.scrollIntoView === 'function') card.scrollIntoView()
+        forgetDeepLink()
         return
       }
       var parsed = parseViewHash(active.location ? active.location.hash : '')
