@@ -17,17 +17,19 @@ concepts its `concept::` lists. Each step declares exactly one tool: `agent`, `e
 folder (`skills/nn-conntent/` in the coNNtent bluepriNNt package).
 
 ## NN Work: Configure Cascade Parameters
+slug:: configure-cascade-parameters
 step_type:: task
 level:: domaiNN, series or episode
 condition:: Set up the Domain is applied. For the series or video scope, the Series document exists.
-output:: [[Cascade Change]]
+output:: @cascade-change
 scope:: internal
 Sets one or more cascade parameters at the domain, series or video scope and proves the
 resolved values with the engine's dry run.
 
 ## NN Work: Choose the parameter and its scope
-parent:: [[Configure Cascade Parameters]]
-next:: [[Locate the scope document]]
+slug:: choose-the-parameter-and-its-scope
+parent:: @configure-cascade-parameters
+next:: @locate-the-scope-document
 step_type:: decision
 tool:: human
 decision:: the parameter, its value, and the scope that should own it — domain (every series), series (every episode of one series) or video (one episode)
@@ -38,8 +40,9 @@ episode belongs to the series, and a value repeated in every series belongs to t
 `presets`, never a direct parameter.
 
 ## NN Work: Locate the scope document
-parent:: [[Configure Cascade Parameters]]
-next:: [[Write the value or the Preset]]
+slug:: locate-the-scope-document
+parent:: @configure-cascade-parameters
+next:: @write-the-value-or-the-preset
 step_type:: task
 tool:: agent
 produces:: the target document and element — domain `video-defaults_NN.md` at the domaiNN root (its `Video Defaults` element), series `series/<series>/<series>_coNNtent_NN.md` (its `Series` element), or video `series/<series>/episodes/<episode>/<episode>_coNNtent_NN.md` (its `Video` element)
@@ -48,8 +51,9 @@ When the domain `video-defaults_NN.md` is absent, copy the package `defaults/vid
 there unchanged first, then tune the copy. Never write a default into the package copy.
 
 ## NN Work: Write the value or the Preset
-parent:: [[Configure Cascade Parameters]]
-next:: [[Approve the cascade change]]
+slug:: write-the-value-or-the-preset
+parent:: @configure-cascade-parameters
+next:: @approve-the-cascade-change
 step_type:: task
 tool:: agent
 produces:: a sealed `proposed` changeset written with `writeProposedChangeset` that sets the field on the target element, or adds a `## NN Preset: <name>` element and appends its bare name to that element's `presets::` list
@@ -60,8 +64,9 @@ last Preset of a list wins, and lists are additive across levels. A Preset that 
 parameter does not reset it. Dry-apply the changeset; the agent does not apply it.
 
 ## NN Work: Approve the cascade change
-parent:: [[Configure Cascade Parameters]]
-next:: [[Check the resolved values]]
+slug:: approve-the-cascade-change
+parent:: @configure-cascade-parameters
+next:: @check-the-resolved-values
 step_type:: decision
 tool:: human
 decision:: approve or reject the proposed changeset in the console (`Domain > Config` or `Series > Config`) or by replying OK
@@ -70,7 +75,8 @@ Only an applied change takes effect. A changed voice, voice model, speed or emot
 the synthesized-audio cache identity, so the next run re-synthesizes the narration it affects.
 
 ## NN Work: Check the resolved values
-parent:: [[Configure Cascade Parameters]]
+slug:: check-the-resolved-values
+parent:: @configure-cascade-parameters
 step_type:: task
 tool:: engine
 command:: node scripts/produce.mjs series/<series>/episodes/<episode>/<episode>_coNNtent_NN.md --dry-run
@@ -78,3 +84,8 @@ scope:: internal
 Run it on one affected episode. It reports every resolved value
 with its source trace, so the new value must appear with the intended scope as its source. A
 nearer level that still overrides it is named there.
+
+# NN Artifact
+
+## NN Artifact: Cascade Change
+slug:: cascade-change

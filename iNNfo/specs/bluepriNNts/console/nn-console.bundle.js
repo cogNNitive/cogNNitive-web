@@ -10268,6 +10268,10 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
   function cleanRefValue(raw) {
     var s = String(raw == null ? '' : raw).trim()
     if (s.slice(0, 2) === '[[' && s.slice(-2) === ']]') s = s.slice(2, -2).trim()
+    // A typed reference is written as an address (`@<slug>`): the `@` names the
+    // document itself and is not part of the slug. The wikilink strip above is
+    // only tolerance for a payload already on disk (the validator rejects it).
+    if (s.slice(0, 1) === '@') s = s.slice(1).trim()
     var pipe = s.indexOf('|')
     if (pipe !== -1) s = s.slice(0, pipe).trim()
     var colon = s.lastIndexOf(':')

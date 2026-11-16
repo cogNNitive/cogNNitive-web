@@ -18,18 +18,20 @@ does not define. Each step declares exactly one tool: `agent`, `engine`, `consol
 (`skills/nn-conntent/` in the coNNtent bluepriNNt package).
 
 ## NN Work: Author a Series
+slug:: author-a-series
 step_type:: task
 level:: series
 condition:: Set up the Domain is applied. The series slug is new in the domaiNN.
-output:: [[Series Document]]
+output:: @series-document
 scope:: internal
 Produces the Series anchor `series/<s>/<s>_coNNtent_NN.md` with its premise, its folders,
 its Scene Kinds, its Chrome per language and its Presets, proven by the engine's
 pre-compile guard on a test episode.
 
 ## NN Work: State the premise
-parent:: [[Author a Series]]
-next:: [[Create the series folders]]
+slug:: state-the-premise
+parent:: @author-a-series
+next:: @create-the-series-folders
 step_type:: decision
 tool:: human
 decision:: the series slug, its `title`, its `language`, and its premise in two or three sentences (subject, audience, tone)
@@ -38,8 +40,9 @@ The premise is prose in the Series element body; it guides every episode the age
 The slug is kebab-case and unique in the domaiNN: it names the folder and the anchor file.
 
 ## NN Work: Create the series folders
-parent:: [[Author a Series]]
-next:: [[Write the Series element]]
+slug:: create-the-series-folders
+parent:: @author-a-series
+next:: @write-the-series-element
 step_type:: task
 tool:: agent
 produces:: `series/<s>/` holding `episodes/` (one folder per episode, `series/<s>/episodes/<slug>/`) and `library/` (shared series media such as the bumper, the music bed and logos, under `library/<kind>/`)
@@ -48,8 +51,9 @@ Episodes never live under `series/<s>/assets/`: that layout is legacy and the fo
 check rejects it. Chrome media resolve as logical names under `series/<s>/library/media/`.
 
 ## NN Work: Write the Series element
-parent:: [[Author a Series]]
-next:: [[Declare the Scene Kinds]]
+slug:: write-the-series-element
+parent:: @author-a-series
+next:: @declare-the-scene-kinds
 step_type:: task
 tool:: agent
 produces:: the anchor `series/<s>/<s>_coNNtent_NN.md` with frontmatter `level: 3`, `scope: true` and `title`, and one `## NN Series: <title>` element carrying `slug::`, `title::`, `language::` and any series-level cascade field (`character`, `frame`, `presets`, `voice`, `budget`, `output_formats`, `review_gates`, `captions`)
@@ -60,8 +64,9 @@ series has a host character, set `character::` here and leave `voice` and `avata
 every Preset.
 
 ## NN Work: Declare the Scene Kinds
-parent:: [[Author a Series]]
-next:: [[Write the Chrome for each language]]
+slug:: declare-the-scene-kinds
+parent:: @author-a-series
+next:: @write-the-chrome-for-each-language
 step_type:: task
 tool:: agent
 produces:: one `## NN Scene Kind: <name>` element per kind, each with `slug::`, `role::`, `narration::` (`on` or `off`), `max_duration::`, `fixed::`, `chrome::` and `presets::`
@@ -76,8 +81,9 @@ animation. Declare every kind the series uses here: an episode never invents a k
 reserved `Libre` (which takes no chrome, so no watermark) is the only escape hatch.
 
 ## NN Work: Write the Chrome for each language
-parent:: [[Author a Series]]
-next:: [[Define the series Presets]]
+slug:: write-the-chrome-for-each-language
+parent:: @author-a-series
+next:: @define-the-series-presets
 step_type:: task
 tool:: agent
 produces:: one `## NN Chrome: <language>` element per language the series publishes in, each with `slug::`, `language::` and the `watermark::`, `cta::`, `bumper::` and `music::` items the kinds list
@@ -86,8 +92,9 @@ When a kind lists a chrome item that the Chrome element for the resolved languag
 declare, the run fails before spend and names the item and the language.
 
 ## NN Work: Define the series Presets
-parent:: [[Author a Series]]
-next:: [[Validate with the pre-compile guard]]
+slug:: define-the-series-presets
+parent:: @author-a-series
+next:: @validate-with-the-pre-compile-guard
 step_type:: task
 tool:: agent
 produces:: zero or more `## NN Preset: <name>` elements after the Series section, each carrying only fields whose `concept::` lists `Preset` (for example `voice_model`, `transition`, `frame`, `fit`, `components`, `sounds`, `background_audio`)
@@ -97,8 +104,9 @@ list (`presets:: [Studio Warm]`); the last Preset of a list wins and an element'
 fields beat its own Presets.
 
 ## NN Work: Validate with the pre-compile guard
-parent:: [[Author a Series]]
-next:: [[Fix the reported findings]]
+slug:: validate-with-the-pre-compile-guard
+parent:: @author-a-series
+next:: @fix-the-reported-findings
 step_type:: task
 tool:: engine
 command:: node scripts/produce.mjs series/<s>/episodes/<test-episode>/<test-episode>_coNNtent_NN.md --dry-run
@@ -109,10 +117,16 @@ render, spend or ledger record happens. Preflight does not validate a series gra
 preflight is not proof.
 
 ## NN Work: Fix the reported findings
-parent:: [[Author a Series]]
+slug:: fix-the-reported-findings
+parent:: @author-a-series
 step_type:: decision
 tool:: human
 decision:: accept the series once the dry run passes, or change the kind, Chrome or Preset each finding names and run the dry run again
 scope:: internal
 The procedure does not complete while the dry run fails. Accepted changes reach the domaiNN
 through a sealed `proposed` changeset that a human approves, as in the `Create a Series` wizard.
+
+# NN Artifact
+
+## NN Artifact: Series Document
+slug:: series-document

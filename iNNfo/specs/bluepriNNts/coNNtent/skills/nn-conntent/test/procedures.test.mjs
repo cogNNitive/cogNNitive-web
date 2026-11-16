@@ -10,7 +10,9 @@
  * Capability `conntent-procedures` (tasks 5a.1-5a.5). The document is parsed
  * as the console procedure stepper reads it: `## NN Work:` elements whose
  * `parent::` field links a step to its procedure, with `next::` ordering the
- * chain inside that procedure.
+ * chain inside that procedure. Both are addresses (`@<slug>`), the one form
+ * `validate_knowledge` accepts for a typed reference field
+ * (procedure-reference-form).
  */
 
 import test from 'node:test';
@@ -50,7 +52,11 @@ const CONSOLE_SECTION_RE = /^(Domain|Series|Episode) > [A-Z][\w ]+$/;
 const ELEMENT_RE = /^#{2,6}\s+NN\s+([^:]+):\s*(.+?)\s*$/;
 const FIELD_RE = /^([a-z_]+)::\s*(.*)$/;
 
-const stripRef = (value) => String(value || '').replace(/^\[\[/, '').replace(/\]\]$/, '').trim();
+/**
+ * The slug an address names. A typed reference field carries one form: `@<slug>`
+ * inside the document. The `@` is the document itself, not part of the slug.
+ */
+const addressSlug = (value) => String(value || '').trim().replace(/^@+/, '').trim();
 
 /**
  * Parses the document into the elements the console sees. `lines` keeps the raw
@@ -83,8 +89,14 @@ const { elements } = parseDocument(text);
 const work = elements.filter((element) => element.concept === 'Work');
 const procedures = work.filter((element) => !element.fields.parent);
 const procedureNames = procedures.map((element) => element.name);
+/** Every slug the document declares — the only thing an in-document address resolves to. */
+const declaredSlugs = new Set(
+  elements.map((element) => element.fields.slug).filter((slug) => Boolean(slug)),
+);
 const stepsOf = (procedure) =>
-  work.filter((element) => element.fields.parent && stripRef(element.fields.parent) === procedure.name);
+  work.filter(
+    (element) => element.fields.parent && addressSlug(element.fields.parent) === procedure.fields.slug,
+  );
 const allSteps = procedures.flatMap((procedure) => stepsOf(procedure));
 
 const body = (element) => element.lines.join('\n');
@@ -96,6 +108,42 @@ test('exactly the six procedures, in order, and nothing else', () => {
   assert.deepEqual(procedureNames, SIX);
   // "and nothing else": no other unparented Work element is a procedure.
   assert.equal(procedures.length, SIX.length);
+});
+
+test('every procedure declares a slug and every step addresses it', () => {
+  for (const procedure of procedures) {
+    assert.ok(
+      procedure.fields.slug,
+      `procedure "${procedure.name}" declares no slug::, so no step can address it`,
+    );
+    assert.ok(declaredSlugs.has(procedure.fields.slug), `slug:: ${procedure.fields.slug} is missing`);
+    assert.ok(
+      stepsOf(procedure).length > 0,
+      `no step addresses procedure "${procedure.name}" with parent:: @${procedure.fields.slug}`,
+    );
+  }
+});
+
+test('parent::, next:: and output:: carry an address, never a wikilink', () => {
+  // `procedure-reference-form`: one accepted form. `validate_knowledge` rejects
+  // `[[Name]]` with ADDRESS_MALFORMED, so nothing here may still write it.
+  const referenceFields = ['parent', 'next', 'output'];
+  for (const element of [...procedures, ...allSteps]) {
+    for (const field of referenceFields) {
+      const value = element.fields[field];
+      if (!value) continue;
+      assert.doesNotMatch(
+        value,
+        /\[\[|\]\]/,
+        `"${element.name}" writes the removed wikilink form in ${field}:: ${value}`,
+      );
+      assert.match(value, /^@/, `"${element.name}" must write ${field}:: as @<slug>, got "${value}"`);
+      assert.ok(
+        declaredSlugs.has(addressSlug(value)),
+        `"${element.name}" addresses ${field}:: ${value}, which is not a slug:: declared in the document`,
+      );
+    }
+  }
 });
 
 test('the document does not define a Deliver procedure', () => {
