@@ -1,15 +1,13 @@
 {
-  "generatedAt": "2026-11-16T16:52:42.641Z",
-  "head": "e3f5ac81133814d6e624a5d7a7fe3b372ba8351b",
+  "generatedAt": "2026-11-16T17:15:58.027Z",
+  "head": "77710ce421df3552ab436732275566c0760c80d7",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
-      "pinnedTag": "skills-v3.2.3",
-      "pinnedTagDate": "2026-11-15T20:01:23+01:00",
-      "commitsSincePin": 3,
-      "filesTouched": [
-        "skills/nn-innfo/SKILL.md"
-      ]
+      "pinnedTag": "skills-v3.2.4",
+      "pinnedTagDate": "2026-11-16T17:52:01+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "blueprints": {
       "subsystem": "blueprints",
