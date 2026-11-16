@@ -96,6 +96,12 @@ export function ttsCachePathFor(sc, opts) {
 
 /**
  * Collects the avatar jobs of a parsed script.
+ *
+ * A job needs a measurable narration: the paid clip is driven by the scene's TTS audio, so a
+ * Scene with no narration has nothing to lip-sync. Those Layers are reported in `skipped`, not
+ * in `problems`: they are not malformed, they are not jobs. The pre-compile guard refuses an
+ * `avatar` Layer in a Scene with no narration (`avatar-requires-narration`) and names the type
+ * that draws a still, so this list only matters when the stage is run directly.
  * @param {Object} o
  * @param {{ scenes: any[] }} o.parsed
  * @param {string} o.scriptDir
@@ -104,21 +110,25 @@ export function ttsCachePathFor(sc, opts) {
  * @param {{ voices?: object }} o.config Guard config (registered voices are part of the TTS key).
  * @param {{ tts?: string }} [o.models]
  * @param {object} [o.bags]
- * @returns {{ jobs: any[], problems: string[] }} `problems` lists missing images/audio (no job is created for them).
+ * @returns {{ jobs: any[], problems: string[], skipped: Array<{ sceneId: string, layerName: string }> }}
+ *   `problems` lists missing images/audio (no job is created for them); `skipped` lists avatar
+ *   Layers whose Scene carries no narration, which render as their still image.
  */
 export function collectAvatarJobs({ parsed, scriptDir, cacheManager, sceneIds, config, models = {}, bags = {} }) {
   const jobs = [];
   const problems = [];
+  const skipped = [];
   for (const sc of parsed.scenes) {
     if (sceneIds && !sceneIds.includes(sc.id)) continue;
     for (const layer of (sc.layers || []).filter(isAvatarLayer)) {
+      // No narration, nothing to lip-sync: the Layer stays a still. Never a job.
+      if (String(sc.narration || '').trim().length === 0) {
+        skipped.push({ sceneId: sc.id, layerName: layer.name });
+        continue;
+      }
       const src = layer.properties?.layer_asset_source;
       const imagePath = src ? path.resolve(scriptDir, src) : null;
-      const narrated = String(sc.narration || '').trim().length > 0;
-      const explicit = sc.properties?.audio_asset_source || sc.properties?.voiceover;
-      const audioPath = narrated
-        ? ttsCachePathFor(sc, { cacheManager, config, models, bags })
-        : explicit ? path.resolve(scriptDir, explicit) : undefined;
+      const audioPath = ttsCachePathFor(sc, { cacheManager, config, models, bags });
       if (!imagePath) {
         const prompted = layer.properties?.layer_prompt || layer.properties?.prompt;
         problems.push(
@@ -138,9 +148,7 @@ export function collectAvatarJobs({ parsed, scriptDir, cacheManager, sceneIds, c
       }
       if (!audioPath || !fs.existsSync(audioPath)) {
         problems.push(
-          'Scene ' + sc.id + ': ' + (narrated
-            ? 'no TTS cache entry for its current narration, voice and model. Run compile first to populate the TTS cache.'
-            : 'no narration and no audio_asset_source/voiceover file (' + (audioPath || 'none declared') + '). Declare one, or add narration and run compile first.'),
+          'Scene ' + sc.id + ': no TTS cache entry for its current narration, voice and model. Run compile first to populate the TTS cache.',
         );
         continue;
       }
@@ -158,7 +166,7 @@ export function collectAvatarJobs({ parsed, scriptDir, cacheManager, sceneIds, c
       });
     }
   }
-  return { jobs, problems };
+  return { jobs, problems, skipped };
 }
 
 /**

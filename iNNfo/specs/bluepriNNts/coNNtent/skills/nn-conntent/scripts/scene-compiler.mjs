@@ -352,8 +352,14 @@ export class SceneCompiler {
     // and the outer levels in `bags`. A conditional field may be satisfied there.
     const grammar = options.grammar || (options.scriptDir ? loadSeriesGrammar(options.scriptDir) : { kinds: {}, chrome: {} });
     const layerSceneFields = new Map();
+    // The owning Scene element, kept whole: the avatar guard needs its body, not just its fields.
+    const layerScene = new Map();
     assignLayersToScenes(elements.Scene || [], elements.Layer || []).forEach((bucket, i) => {
-      for (const l of bucket) layerSceneFields.set(l, (elements.Scene[i] || {}).fields || {});
+      const owner = elements.Scene[i] || {};
+      for (const l of bucket) {
+        layerSceneFields.set(l, owner.fields || {});
+        layerScene.set(l, owner);
+      }
     });
     const layerBags = (layer) => {
       const sceneFields = layerSceneFields.get(layer) || sceneFieldsBySlug.get(layer.parentSlug) || {};
@@ -404,6 +410,20 @@ export class SceneCompiler {
       if (!required) {
         errors.push({ code: 'unknown-layer-type', message: `Layer "${layer.name}" has type:: "${type}"` });
         continue;
+      }
+      // An `avatar` Layer is a paid lip-sync job driven by its Scene's narration, so a Scene
+      // with no narration has nothing to sync. Refuse it here, before any spend, and name the
+      // type that draws a still: the still image the animatic shows is a pipeline state, not a
+      // mode of the Layer (spec "Animatic and Avatars").
+      if (type === 'avatar' && !String(layerScene.get(layer)?.description || '').trim()) {
+        const sceneName = layerScene.get(layer)?.name || '(unowned)';
+        errors.push({
+          code: 'avatar-requires-narration',
+          message:
+            `Layer "${layer.name}" (type:: avatar) belongs to Scene "${sceneName}", which has no narration. ` +
+            `An avatar Layer is a paid lip-sync job and needs that Scene's narration; ` +
+            `a presenter that does not speak is type:: media with placement:: full and timing:: scene.`,
+        });
       }
       // caption defaults to the owning Scene body: `text` is not strictly required.
       if (type === 'caption' || (type === 'text' && layer.fields?.style === 'caption')) continue;

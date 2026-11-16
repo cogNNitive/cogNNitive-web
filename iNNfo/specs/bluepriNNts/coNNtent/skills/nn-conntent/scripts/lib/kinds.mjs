@@ -122,6 +122,19 @@ export function validateSceneKinds(model, grammar) {
         code: 'unknown-kind',
         message: `Scene "${scene.name}" states kind:: ${kind}, which the Series does not declare (available: ${[...names, LIBRE].join(', ')}).`,
       });
+      continue;
+    }
+    // `narration:: off` is a contract, not a hint: no TTS request is made for a scene of that
+    // kind, so a body it carries is never spoken and nothing measures it. The body would sit
+    // in the document looking like narration and reaching nobody.
+    const kindFields = grammar?.kinds?.[kind]?.fields || {};
+    if (String(kindFields.narration || '').trim() === 'off' && String(scene.description || '').trim() !== '') {
+      errors.push({
+        code: 'narration-off-with-body',
+        message:
+          `Scene "${scene.name}" uses kind:: ${kind}, which declares narration:: off, but the Scene carries a body. ` +
+          `A silent kind makes no TTS request, so the body is never spoken: delete it, or set narration:: on in the kind.`,
+      });
     }
   }
   return errors;

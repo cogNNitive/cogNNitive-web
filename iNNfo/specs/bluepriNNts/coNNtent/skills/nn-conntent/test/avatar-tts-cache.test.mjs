@@ -73,15 +73,14 @@ test('narrated scene without a cache entry reports "run compile first"', () => {
   }
 });
 
-test('scene without narration keeps the explicit audio_asset_source branch', () => {
+test('a scene without narration produces no job: the Layer is skipped, never billed', () => {
   const { dir, img, cacheManager } = setup();
   try {
-    const aud = path.join(dir, 'own.mp3');
-    fs.writeFileSync(aud, Buffer.from('own'));
-    const sc = scene(img, { narration: '', properties: { audio_asset_source: 'own.mp3' } });
-    const { jobs, problems } = run(cacheManager, dir, sc);
-    assert.deepEqual(problems, []);
-    assert.equal(jobs[0].audioPath, aud);
+    const sc = scene(img, { narration: '' });
+    const { jobs, problems, skipped } = run(cacheManager, dir, sc);
+    assert.deepEqual(problems, [], 'no narration is not a malformed Layer');
+    assert.equal(jobs.length, 0);
+    assert.deepEqual(skipped, [{ sceneId: 'scene_a', layerName: 'p' }]);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

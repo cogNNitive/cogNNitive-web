@@ -46,6 +46,7 @@ export const FIELD_CONSUMERS = {
   description: ['lib/pipeline.mjs'],
   language: ['lib/episode.mjs', 'scene-compiler.mjs'],
   kind: ['lib/kinds.mjs', 'lib/episode.mjs'],
+  narration: ['lib/kinds.mjs'],
   background_audio: ['scene-compiler.mjs'],
   background_audio_volume: ['scene-compiler.mjs'],
   transition: ['scene-compiler.mjs', 'lib/frame-tokens.mjs'],
@@ -86,7 +87,6 @@ export const FIELD_CONSUMERS = {
  */
 export const PLANNED_CONSUMERS = {
   role: '4',
-  narration: '4',
   max_duration: '4',
   fixed: '4',
   chrome: '4',

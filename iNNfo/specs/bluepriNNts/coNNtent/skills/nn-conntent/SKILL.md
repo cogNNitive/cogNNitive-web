@@ -2,8 +2,8 @@
 name: nn-conntent
 description: |
   iNNfo-native skill for authoring, compiling, and rendering cogNNitive Video scripts inside a workspace's Series/Video hierarchy. Lowers the structured model into a deterministic Composition Manifest, emits a HyperFrames project from it, measures duration with ffprobe, and renders headlessly via the pinned HyperFrames CLI; also supports thumbnail composition. This is the one skill that triggers for a coNNtent domaiNN: an episode, a series, a frame, a character or the production pipeline. Triggers: coNNtent domaiNN, coNNtent episode, series script, frame, character, produce episode, video script, cognnitive video, hyperframes, nn-conntent, coNNtent blueprint, finalize video, render video script.
-version: "V_0-15-11"
-last_updated: 2026-10-31
+version: "V_0-15-12"
+last_updated: 2026-11-16
 license: MIT
 depends_on:
   cli:
@@ -147,7 +147,7 @@ regenerates the domaiNN console, and opens it only when the exit needs a human (
    ```
    *Compile plans first and refuses the whole run before the first charge unless every model is allowed and the total fits the per-run `budgetPerRunUsd` and the rolling `dailyCapUsd` (cache hits stay free). The spending decision belongs to `produce`; `compile` never looks for an approval file. There is no model flag: the estimator and `compile` resolve the same ids from the same documents. Avatar jobs are serialized across processes and every billable call is appended to `.cognnitive/video-ledger.jsonl`. A `replicate/<vendor>/<model>` name in a script is normalized to the WaveSpeed id for the guard, pricing, URL, ledger and plan_hash. Voices are cloned once with `node scripts/voice-clone.mjs <name> <sample>`; `scene_voice` resolves by registered name or `voice_id`, or is a provider system voice listed in `systemVoices`; anything else fails before spend.*
 5b. **Synthesize Talking Avatars (guarded, and `produce` does it for you)**:
-   *`produce` runs this stage by itself whenever the episode has a Layer with `type:: avatar`, before the render: a render refuses an avatar Layer with no cached clip. The standalone command exists for a single scene, a resume, or a dry run:*
+   *`produce` runs this stage by itself whenever the episode has a Layer with `type:: avatar`, before the render: a render refuses an avatar Layer with no cached clip. An `avatar` Layer is driven by its Scene's narration, so the pre-compile guard refuses one in a Scene with no narration (`avatar-requires-narration`); a presenter that does not speak is `type:: media` with `placement:: full` and `timing:: scene`. The standalone command exists for a single scene, a resume, or a dry run:*
    ```bash
    node scripts/synthesize-avatar.mjs <script_NN.md> [--scene <id>]... [--dry-run] [--resume <task-id>] [--force-resubmit] [--poll-window <min>] [--allow-model <name>] [--cache-dir <dir>]
    node scripts/lib/compile.mjs compile <script_NN.md>   # picks the clips up, zero extra spend

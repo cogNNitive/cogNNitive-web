@@ -163,9 +163,15 @@ and runs the avatar stage itself whenever the episode declares an avatar Layer.
   must be a real `.jpg/.jpeg/.png/.webp` file referenced with `![media](path)`. A layer that only has a
   `layer_prompt` is refused with an explanation: generate the image first (compile generates prompt layers
   into the cache) and reference the file. The audio is the scene's TTS cache entry, populated by
-  `compile`, when the scene has narration (otherwise an explicit `audio_asset_source`/`voiceover`). No
-  staged `audio/` file exists. If the narration, voice or model changed, the entry for the CURRENT text is
-  missing and the run is refused: re-run `compile` first.
+  `compile` from that scene's narration; a Scene with no narration has nothing to drive the clip, so it
+  produces no job and the Layer renders as its still. No staged `audio/` file exists. If the narration,
+  voice or model changed, the entry for the CURRENT text is missing and the run is refused: re-run
+  `compile` first.
+- **A presenter that does not speak is not an avatar.** `type:: avatar` means a paid lip-sync job, and the
+  pre-compile guard refuses it (`avatar-requires-narration`) in a Scene with no narration, before any
+  spend. A still presenter is `type:: media` with an explicit `asset::`, `placement:: full` and
+  `timing:: scene`; the still image an `avatar` Layer shows in the animatic is a pipeline state, not a
+  mode of the Layer.
 - **Price**: ceil(measured audio seconds) x the catalog rate, the same function the estimator uses
   (a fractional second bills as a whole second). Missing or unmeasurable audio is refused, and so is audio
   over `maxAvatarSeconds` (default 300). The avatar line of the estimator is an ESTIMATE (scene_duration

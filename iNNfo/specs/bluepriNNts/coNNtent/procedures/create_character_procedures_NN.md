@@ -93,7 +93,11 @@ produces:: `character:: <slug>` on the Series element (the host) or on a Scene (
 scope:: internal
 The character supplies the voice for the episode language, the pose and the avatar model through
 the cascade. With a host character, leave `voice` and `avatar` out of every Preset. An
-`avatar` Layer takes no `placement::`: `placement` is defined only for `media` Layers.
+`avatar` Layer takes no `placement::`: `placement` is defined only for `media` Layers. An `avatar`
+Layer is a paid lip-sync job and needs the Scene's narration, so the pre-compile guard refuses one in a
+Scene with no narration (`avatar-requires-narration`). A character who appears but does not speak is a
+`type:: media` Layer with `asset::` pointing at the pose file and `placement:: full`, `timing:: scene`:
+`pose::` and `background::` resolve no path on their own.
 
 ## NN Work: Deliver the character proposal
 parent:: [[Author a Character]]

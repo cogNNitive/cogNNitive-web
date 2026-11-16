@@ -8,9 +8,10 @@
  *
  * One avatar job = one scene's narration audio + the avatar still image. The audio is the
  * scene's TTS cache entry that `compile` populates (run compile first; an entry for an older
- * narration/voice/model is never served). Scenes without narration use their explicit
- * `audio_asset_source` / `voiceover` file. Cost is ceil(seconds) of that audio, measured
- * before any spend. The finished clip
+ * narration/voice/model is never served). A scene with no narration has nothing to lip-sync, so
+ * its avatar Layers are skipped and render as stills (a presenter that does not speak is
+ * `type:: media`; the pre-compile guard refuses the Layer). Cost is ceil(seconds) of that audio,
+ * measured before any spend. The finished clip
  * is cached under the content-addressed key `compile` looks up, so a following compile + render
  * uses it for free.
  *
@@ -144,7 +145,7 @@ export async function synthesizeAvatars(o) {
 
   // 1. Collect and validate every job BEFORE any spend: image, audio (fresh), measurable, not too long.
   const readCache = new CacheManager({ baseDir: cacheDir, readOnly: true });
-  const { jobs: raw, problems } = collectAvatarJobs({
+  const { jobs: raw, problems, skipped } = collectAvatarJobs({
     parsed,
     scriptDir,
     cacheManager: readCache,
@@ -154,7 +155,6 @@ export async function synthesizeAvatars(o) {
     bags,
   });
   if (problems.length) throw new Error(problems.join('\n'));
-  if (raw.length === 0) throw new Error('No talking-avatar layers (layer_type: talking_avatar) found in ' + scriptPath + (sceneFilter ? ' for the selected scenes.' : '.'));
 
   const byKey = new Map();
   for (const j of raw) {
@@ -211,6 +211,20 @@ export async function synthesizeAvatars(o) {
     dailySpentUsd: planGuard.dailySpentUsd,
     withinBudget: planGuard.plannedTotalUsd <= loaded.config.budgetPerRunUsd,
   });
+  // Nothing to synthesize. A Layer skipped for lack of narration is not a failure: it renders
+  // as its still image, and the pre-compile guard already named the type that draws it.
+  if (jobs.length === 0) {
+    if (skipped.length > 0) {
+      const which = skipped.map((s) => s.sceneId + '/' + (s.layerName || 'avatar')).join(', ');
+      warn(
+        'Nothing to synthesize: ' + skipped.length + ' avatar Layer(s) sit in Scenes with no narration (' + which + '). ' +
+          'A paid lip-sync clip is driven by the Scene narration, so these Layers render as their still image. ' +
+          'A presenter that does not speak is type:: media with placement:: full and timing:: scene.',
+      );
+      return { dryRun: Boolean(o.dryRun), jobs: [], plan: plan(), skipped };
+    }
+    throw new Error('No talking-avatar layers (layer_type: talking_avatar) found in ' + scriptPath + (sceneFilter ? ' for the selected scenes.' : '.'));
+  }
   if (o.dryRun) {
     return {
       dryRun: true,
@@ -400,7 +414,7 @@ async function main() {
       return;
     }
     for (const j of res.jobs) console.log(j.status + ': ' + j.sceneIds.join(', ') + ' -> ' + j.assetPath);
-    console.log('Run compile again to pick the clips up (zero extra spend).');
+    if (res.jobs.length > 0) console.log('Run compile again to pick the clips up (zero extra spend).');
   } catch (err) {
     if (err instanceof AvatarBatchError) {
       for (const fl of err.failures) {
