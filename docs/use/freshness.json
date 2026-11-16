@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-16T09:16:36.722Z",
-  "head": "edae350d46599428ac3d7036e6a7e67288c8a536",
+  "generatedAt": "2026-11-16T09:43:29.761Z",
+  "head": "6fd4fb707eb212037342e24c0b0a15933d348772",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -34,8 +34,9 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.37.4",
       "pinnedTagDate": "2026-11-15T21:48:06+01:00",
-      "commitsSincePin": 2,
+      "commitsSincePin": 3,
       "filesTouched": [
+        "scripts/console-views.mjs",
         "scripts/export-console.mjs"
       ]
     }

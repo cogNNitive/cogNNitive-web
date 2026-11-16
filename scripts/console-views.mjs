@@ -154,12 +154,36 @@ async function readViews(dir, files, origin, sourcePrefix) {
 }
 
 /**
+ * Warns, naming the offending file and the name the convention expects, when a
+ * bluepriNNt `assets/` folder holds `.js` files that are not views. BluepriNNt views are
+ * flat and prefixed, so a bare `timeline.js` is never discovered and the export otherwise
+ * succeeds with that folder contributing nothing.
+ */
+function warnNonViewFiles(dir, entries, onWarning) {
+  const strays = entries
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.js') && !entry.name.endsWith('.data.mjs'))
+    .map((entry) => entry.name)
+    .filter((name) => !name.startsWith(BLUEPRINT_VIEW_PREFIX))
+    .sort(compareCodeUnits)
+  if (strays.length === 0) return
+  const stem = strays[0].slice(0, -'.js'.length)
+  onWarning(
+    `${strays.map((name) => join(dir, name)).join(', ')} ${strays.length === 1 ? 'is' : 'are'} not a console view: ` +
+      `a bluepriNNt view must be named console-view-<slug>.js, for example ` +
+      `${join(dir, `${BLUEPRINT_VIEW_PREFIX}${stem}.js`)}, so this folder contributes no views`,
+  )
+}
+
+/**
  * Finds every view for a domaiNN. `specNames` are the parent_spec names of the
  * exported models; each base resolves to one views folder, and models on several
  * versions of a base that resolve to different folders are an error. Throws before
  * returning on a bad id, a duplicate id, ES module syntax or such a conflict.
- * `onWarning` receives a message when a base has no bluepriNNt package anywhere it
- * looks, because its views (if it has any) cannot be found.
+ * `onWarning` receives a message, naming both the offending path and the one the
+ * discovery convention expects, when a base has no bluepriNNt package anywhere it
+ * looks, when a bluepriNNt `assets/` folder holds `.js` files without the
+ * `console-view-` prefix, when a folder that exists yields no views and a later tier
+ * is used instead, and when a domaiNN view file keeps the bluepriNNt prefix.
  * @param {{ domainRoot: string, specNames?: string[], packagesDir: string, onWarning?: (message: string) => void }} options
  */
 export async function discoverViews({ domainRoot, specNames = [], packagesDir, onWarning = () => {} }) {
@@ -170,10 +194,25 @@ export async function discoverViews({ domainRoot, specNames = [], packagesDir, o
   const hitsByBase = new Map()
   for (const specName of sortedNames) {
     const { base } = parseSpecName(specName)
+    const skipped = []
     for (const dir of viewRootCandidates({ domainRoot, specName, packagesDir })) {
       const entries = await listEntries(dir)
       const files = entries ? viewFiles(dir, entries, true) : null
-      if (files === null || files.length === 0) continue // missing or empty: next tier
+      if (files === null || files.length === 0) {
+        // Missing is silent (most bases ship no views); existing but empty is not, because
+        // a copy that ships no views hides whatever a later tier ships.
+        if (entries) {
+          skipped.push(dir)
+          warnNonViewFiles(dir, entries, onWarning)
+        }
+        continue // missing or empty: next tier
+      }
+      if (skipped.length > 0) {
+        onWarning(
+          `${skipped.join(' and ')} exists but holds no views, so ${dir} is used instead; ` +
+            `a domaiNN copy of a bluepriNNt that ships no views hides the views of the folder below it`,
+        )
+      }
       hitsByBase.set(base, [...(hitsByBase.get(base) ?? []), { specName, dir, files }])
       break
     }
@@ -203,7 +242,19 @@ export async function discoverViews({ domainRoot, specNames = [], packagesDir, o
   }
   const domainDir = join(domainRoot, ...DOMAIN_VIEWS_SUBPATH)
   const domainEntries = await listEntries(domainDir)
-  found.push(...(await readViews(domainDir, domainEntries ? viewFiles(domainDir, domainEntries, false) : [], 'domaiNN', 'domaiNN:consoles/views')))
+  const domainFiles = domainEntries ? viewFiles(domainDir, domainEntries, false) : []
+  for (const file of domainFiles) {
+    // The domaiNN root keeps the whole stem, so the bluepriNNt prefix would become part of
+    // the id. The view is still included as it is named; only the id is surprising.
+    if (!file.name.startsWith(BLUEPRINT_VIEW_PREFIX)) continue
+    const expectedSlug = file.slug.slice(BLUEPRINT_VIEW_PREFIX.length)
+    onWarning(
+      `${join(domainDir, file.name)} keeps the bluepriNNt "${BLUEPRINT_VIEW_PREFIX}" prefix, so it registers the id ` +
+        `"${file.slug}"; a domaiNN view is named <slug>.js and registers its whole stem, so ` +
+        `rename it to ${join(domainDir, `${expectedSlug}.js`)} to register "${expectedSlug}"`,
+    )
+  }
+  found.push(...(await readViews(domainDir, domainFiles, 'domaiNN', 'domaiNN:consoles/views')))
 
   const bySlug = new Map()
   for (const v of found) {
