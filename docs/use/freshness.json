@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-16T17:32:13.000Z",
-  "head": "2090e0bb017e5d03e21b1dc64f5f8fbac92e338a",
+  "generatedAt": "2026-11-16T17:37:04.976Z",
+  "head": "ab7651d3191fdf2b48674f893dde5d596a2f522e",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -11,33 +11,17 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.66.0",
-      "pinnedTagDate": "2026-11-16T17:25:24Z",
-      "commitsSincePin": 2,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/coNNtent/procedures/configure_cascade_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/procedures/create_character_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/procedures/create_series_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/procedures/usage_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/procedures.test.mjs",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/nn-runtime.js"
-      ]
+      "pinnedTag": "blueprints-v0.66.1",
+      "pinnedTagDate": "2026-11-16T17:25:27Z",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.66.0",
-      "pinnedTagDate": "2026-11-16T17:25:24Z",
-      "commitsSincePin": 2,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/coNNtent/procedures/configure_cascade_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/procedures/create_character_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/procedures/create_series_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/procedures/usage_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/procedures.test.mjs",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/nn-runtime.js"
-      ]
+      "pinnedTag": "blueprints-v0.66.1",
+      "pinnedTagDate": "2026-11-16T17:25:27Z",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
