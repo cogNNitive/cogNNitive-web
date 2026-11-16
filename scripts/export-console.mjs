@@ -549,6 +549,45 @@ const hashSlice = (text, len) =>
   createHash('sha256').update(text, 'utf8').digest('hex').slice(0, len)
 
 /**
+ * The nearest ancestor of `dir` (itself included) that carries a `.git` entry, which is
+ * how a project root is recognised. `.git` is a directory in a clone and a file in a
+ * worktree, so both count. Null when the folder is not inside a project at all.
+ */
+function projectRootOf(dir) {
+  let current = dir
+  for (;;) {
+    if (existsSync(join(current, '.git'))) return current
+    const parent = dirname(current)
+    if (parent === current) return null
+    current = parent
+  }
+}
+
+/**
+ * What `meta.domainId`'s short hash is derived from: the domain's path INSIDE its
+ * project, never the absolute checkout path. Two differently named checkouts of the
+ * same project place the same domain at the same project-relative path, so they derive
+ * the same draft-store key and export byte-identical consoles; hashing the absolute path
+ * made every worktree and every renamed copy a different domain (backlog
+ * console-domain-id-path-hash). The remaining branches, in order: a domain that IS the
+ * project root hashes `.`, so it stays distinct from a subfolder of the same name, and a
+ * folder that is not inside a project falls back to its absolute path, which is the only
+ * identity such a folder is guaranteed to have.
+ *
+ * The key is display-independent: lowercase, forward slashes, no trailing separator.
+ *
+ * @param {string} root - workspace root of the export
+ * @returns {string}
+ */
+export function domainIdSourcePath(root) {
+  const abs = resolve(root)
+  const projectRoot = projectRootOf(abs)
+  if (!projectRoot) return abs.split('\\').join('/').toLowerCase()
+  const rel = relative(projectRoot, abs).split('\\').join('/')
+  return (rel === '' ? '.' : rel).toLowerCase()
+}
+
+/**
  * Every console HTML that can report model status: `domaiNN_console.html` plus the
  * stable file of every `artifacts/<key>_console/` folder. A console lists the models it
  * covers in `meta.models`; a folder without its stable file (old stamped leftovers) is inert.
@@ -1730,6 +1769,14 @@ export async function writeConsole(opts = {}) {
         rootDir: root,
         parentName: fm.parent_spec.name,
         parentUrl: fm.parent_spec.url,
+        // The library tier is where bluepriNNt packages live, and it defaults to the
+        // machine's `~/.agents/bluepriNNts`. Pinning it to `consolePackagesDir` keeps a
+        // checkout exporting against the blueprints it carries: otherwise the same commit
+        // exports two consoles, one from the repository's `procedures` package and one from
+        // whatever that machine installed (observed in batch b18: a domain with
+        // `parent_spec: procedures_V_0-4-0` resolved a full Procedure/Work schema here and a
+        // derived one on CI, 11 KB apart in the schema slot).
+        globalDir: consolePackagesDir(consoleDir),
       })
       for (const warning of resolution.warnings) {
         warn(warning)
@@ -2135,7 +2182,7 @@ export async function writeConsole(opts = {}) {
   // (`domainId`) is deliberately NOT content-derived, or drafts would vanish on every
   // edit; a scoped console appends `::scope:<hash8 of sorted model ids>` so different
   // scopes never share a draft store (the runtime appends `::view:<id>`).
-  const baseDomainId = `${basename(root)}-${hashSlice(resolve(root).toLowerCase(), 8)}`
+  const baseDomainId = `${basename(root)}-${hashSlice(domainIdSourcePath(root), 8)}`
   const domainId = scoped
     ? `${baseDomainId}::scope:${hashSlice([...scopeModelIds].sort().join('\n'), 8)}`
     : baseDomainId
