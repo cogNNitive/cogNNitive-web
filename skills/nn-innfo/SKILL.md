@@ -169,7 +169,7 @@ When the user invokes the skill without an explicit intent (e.g., bare `/nn-innf
 - **[b]** Edit / extend an existing model (Conversational Wizard)
 - **[c]** Audit & validate model (MCP Syntax + Architecture Coherence)
 - **[d]** Export / update console artifacts (domaiNN console)
-- **[x]** Execute a model procedure — delegate selection and execution to the canonical Procedure Execution Protocol (§16-bis), which discovers procedures from model `## NN Procedure:` sections, blueprint frontmatter, and `workspace/procedures/`
+- **[x]** Execute a model procedure — delegate selection and execution to the canonical Procedure Execution Protocol (§16-bis), which discovers procedures from model `## NN Procedure:` sections, blueprint frontmatter, and the domaiNN root `procedures/` folder
 - **[w]** View & consult documentation — browse iNNfo specs, primitives, and guides
 - **[y]** Cancel / help
 
@@ -197,7 +197,7 @@ Before attempting to diagnose or repair child reference warnings, matrix mismatc
    - **Report to User**: Report the unresolved parent template to the user, displaying the searched paths `(searched: ...)` and offering concrete remediation options:
      - Correct `parent_spec.url` to a valid stable HTTP/HTTPS URL or workspace-relative path (`specs/...`).
      - Rehydrate the template into `specs/` using `nn-mcp_hydrate_blueprint` or canonical registry fallback.
-     - Check the MCP root configuration (`INNFO_MODELS_DIR`).
+     - Check the MCP root: `INNFO_DOMAIN_DIR`, else the nearest domaiNN root above the server's cwd, else the cwd.
 3. **Execution Condition**: Only after the schema resolution gate passes (`parent_spec` successfully resolved) SHALL the agent proceed to Phase 3/4 content, matrix, and reference remediation.
 
 ---
@@ -405,7 +405,7 @@ Do NOT hardcode specification URLs or versions in this skill: spec file names an
 1. A Level 3 model's `parent_spec.url` must be a **STABLE (http/https)** URL pointing at the Level 2 app, or a **workspace-relative path** (e.g. `specs/MyBlueprint_spec_NN.md`). The version lives in that file's `spec_version` frontmatter key, not in the path.
 2. **FORBIDDEN: absolute Windows paths** (e.g. `C:/Users/.../MyTemplate_spec_NN.md`): they break resolution in the Modeler (fetch over a local path) and in the MCP. The `nn-mcp` resolver (`resolver-node.ts`) looks for the app only under the workspace's `specs/` (recursively); the canonical form is the stable http URL.
 3. After setting `parent_spec.url`, ALWAYS verify resolution (see §5, parent-chain pre-check) before declaring the model done.
-4. **Relative paths resolve against the MCP server's root** (the `INNFO_MODELS_DIR` environment variable, or the process cwd when the server starts), NOT against the model file's own folder. Therefore, to validate a workspace with relative paths, the MCP root MUST be the workspace root; `root:` overrides only apply where the tool accepts them (`validate_knowledge` with `root`, `get_spec`/`get_blueprint` with `url`).
+4. **Relative paths resolve against the MCP server's root** (resolved as `INNFO_DOMAIN_DIR`, else the nearest domaiNN root above the process cwd, else the cwd), NOT against the model file's own folder. Therefore, to validate a workspace with relative paths, the MCP root MUST be the workspace root; `root:` overrides only apply where the tool accepts them (`validate_knowledge` with `root`, `get_spec`/`get_blueprint` with `url`).
 5. **The resolver AUTO-CACHES every resolved parent** (local or remote) into `<workspace>/specs/`, under the document's own canonical versioned file name (write-once: if a file with that name already exists, it is never overwritten). There is no separate cache directory — `specs/` is the only local lookup, recursive, relative to the MCP server's `root`. (Note: `.spec-cache/` and `.specs/` are scanned only by the in-browser editor, as an extra heuristic for a version notice — they are not part of the MCP's real resolution; do not copy files there expecting the MCP to use them.) If a resolution fails, check that the MCP `root` points at the workspace root so relative paths resolve correctly. NEVER copy files into `specs/` by hand — let the resolver sync them.
 
 ---
@@ -418,8 +418,12 @@ the change log (`read_lineage`, `resolve_sources`, `check_domain.provenance`).
 
 1. **The reserved source field is banned on Level 3.** That property is rejected
    (`SOURCES_FIELD_BANNED`), and so is a `type:: citation` field
-   (`CITATION_FIELD_BANNED`). The ONE allowed citation is `changes.evidence`; older
-   documents pinned to an earlier L1 stay valid under that L1.
+   (`CITATION_FIELD_BANNED`). The ONE allowed citation is `changes.evidence`, and
+   the ban holds whatever L1 the document's bluepriNNt pins (A14: it is
+   version-independent). A document that still carries the banned field is repaired
+   through the change log, not by hand:
+   `update_field` on `model@element&sources` with `to:: ""` (an empty `to` clears the
+   field line; `null` or `undefined` are not values and are refused).
 2. **Every change that derives from something carries `evidence::`.** One citation per
    change, in the `<path>@<unit>` grammar, domaiNN-relative and written in full:
 
@@ -467,7 +471,7 @@ the change log (`read_lineage`, `resolve_sources`, `check_domain.provenance`).
 5. **Parent-chain pre-check (MANDATORY before reporting done):** resolve the parent chain with `nn-mcp_get_blueprint({ model_id })` (or `{ url }`) BEFORE declaring the model done. If the app does NOT resolve (`Template could not be resolved` / `PARENT_RESOLUTION_FAILED`):
    - Do NOT report the model as done.
    - Warn that the app is unresolved, showing the problematic `parent_spec.url`.
-   - Read the new actionable `(searched: ...)` diagnostic returned by `validate_knowledge` / `get_blueprint`: it lists the directories the resolver searched for the parent. If the searched directories look wrong (e.g. they don't point at the workspace root), the problem is the **MCP root** (`INNFO_MODELS_DIR` or the server cwd), not the model: fix the root/URL and re-validate (see §2, rule 4).
+   - Read the new actionable `(searched: ...)` diagnostic returned by `validate_knowledge` / `get_blueprint`: it lists the directories the resolver searched for the parent. If the searched directories look wrong (e.g. they don't point at the workspace root), the problem is the **MCP root** (`INNFO_DOMAIN_DIR` or the server cwd), not the model: fix the root/URL and re-validate (see §2, rule 4).
    - Offer to fix it: a stable http/https URL or a workspace-relative path (never an absolute Windows path — see §2).
 6. When finished, show the **Visual Expectation Checklist (§12)** and the **Contextual Navigation Shortcuts (§13)** section.
 
@@ -857,11 +861,11 @@ source declares the named procedure, report it as unknown — never invent one.
 
 Discover candidate procedures from every source: (a) the active model's
 `## NN Procedure:` sections, (b) bluepriNNt `procedures:` frontmatter (also via
-MCP `list_blueprint_procedures`), and (c) `workspace/procedures/*_NN.md` files.
+MCP `list_blueprint_procedures`), and (c) the domaiNN root `procedures/*_NN.md` files.
 Discovery does not require an executor tool. List each result with its id and
 source; if none is found, say so. When the same name appears in more than one
-source, resolve it by precedence: model > nearest scope > ... > root (including
-`workspace/procedures/`) > bluepriNNt. The bluepriNNt is the floor; the domaiNN root is
+source, resolve it by precedence: model > nearest scope > ... > root (the domaiNN
+root `procedures/`) > bluepriNNt. The bluepriNNt is the floor; the domaiNN root is
 more specific. A procedure that loses a clash is reported as shadowed, naming the
 winner, never dropped silently. MCP `list_blueprint_procedures` with a `path`
 implements this order. The listing returns shadowed entries too: a picker MUST
@@ -1039,7 +1043,7 @@ When creating or editing a template, the agent must:
 In Level 3 data models, Elements relate to their Concepts by:
 
 1. **Section structure:** `## NN <Concept>: <Element>` declares that Element belongs to that Concept
-2. **Reference fields:** `location:: [[Element Name]]` establishes relationships between Elements
+2. **Reference fields:** `location:: @dining-room` (a same-document address, `<hierarchical-id>@<slug>` across models) establishes relationships between Elements
 3. **Matrices:** Matrices cross Elements from different Concepts
 
 NEVER by hierarchy in a Level 3 index.

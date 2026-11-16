@@ -56,7 +56,10 @@ Rules that hold everywhere:
 
 A Citation appears as the `evidence::` of an **applied change**. A kNNowledge unit has no
 citation field of its own: the reserved property and `type:: citation` are banned on Level 3,
-and its provenance is derived from the change log.
+and its provenance is derived from the change log. A document that still carries one is
+repaired the same way every other field is cleared: an `update_field` on the field with an
+empty `to:: ""` (not `null`, not `undefined`), applied as a sealed change, so the removal is
+itself recorded.
 
 ## Lineage
 

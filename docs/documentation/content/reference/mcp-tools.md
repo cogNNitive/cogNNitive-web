@@ -51,8 +51,8 @@ Most tools that read or write a domaiNN accept an optional `domain` argument nam
 
 Tools fall into two groups:
 
-- **Read-only** — scanning, reading, resolving, and validating. Examples: `list_knowledge`, `read_knowledge`, `get_spec`, `get_blueprint`, `list_blueprints`, `list_blueprint_procedures`, `list_blueprint_skills`, `validate_knowledge`, `validate_knowledge_url`, `validate_blueprint`, `check_domain`, `query_units`, `resolve_sources`, `resolve_effective`, `explain`. These never write to disk.
-- **Mutating** — creating or changing files. Examples: `init_domain`, `init_knowledge`, `apply_change`, `propose_changeset`, `regenerate_console`, `cognitivize`, `hydrate_blueprint`, `sync_domain_manifest`, `read_lineage`. A mutation of a Level-3 kNNowledge model is synthesized into a sealed, recorded changeset rather than written directly.
+- **Read-only** — scanning, reading, resolving, and validating. Examples: `list_knowledge`, `read_knowledge`, `get_spec`, `get_blueprint`, `list_blueprints`, `list_blueprint_procedures`, `list_blueprint_skills`, `validate_knowledge`, `validate_knowledge_url`, `validate_blueprint`, `check_domain`, `query_units`, `resolve_sources`, `resolve_effective`, `explain`, `read_lineage`. These never write to disk: `read_lineage` computes the lineage view from the filesystem and the applied changes and returns it, nothing more.
+- **Mutating** — creating or changing files. Examples: `init_domain`, `init_knowledge`, `apply_change`, `propose_changeset`, `regenerate_console`, `cognitivize`, `hydrate_blueprint`, `sync_domain_manifest`. A mutation of a Level-3 kNNowledge model is synthesized into a sealed, recorded changeset rather than written directly.
 
 ## The `next_steps.notice` contract
 
