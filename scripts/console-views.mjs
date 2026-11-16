@@ -31,11 +31,19 @@ const BLUEPRINT_VIEW_PREFIX = 'console-view-'
 const HASH_DISPLAY_LENGTH = 12
 
 const SPEC_BASE_RE = /^[A-Za-z0-9_-]+$/
+// One rule for every spec-name caller: the `_V_x-y-z` suffix is matched in any case, and
+// surrounding whitespace is never part of a name.
+const SPEC_VERSION_RE = /^(.+?)_(V_\d+-\d+-\d+)$/i
 
-/** `metrics_V_0-4-1` -> `{ base: 'metrics', version: 'V_0-4-1' }`. */
+/**
+ * `metrics_V_0-4-1` -> `{ base: 'metrics', version: 'V_0-4-1' }`. The base keeps its case
+ * (blueprint folders such as `coNNtent` and `domaiNN` are not lowercase); a caller that
+ * compares against lowercase keys lowercases it itself.
+ */
 export function parseSpecName(name) {
-  const m = /^(.+?)_(V_\d+-\d+-\d+)$/.exec(name)
-  return m ? { base: m[1], version: m[2] } : { base: name, version: null }
+  const text = String(name ?? '').trim()
+  const m = SPEC_VERSION_RE.exec(text)
+  return m ? { base: m[1], version: m[2] } : { base: text, version: null }
 }
 
 /** View directories for one parent_spec, in priority order; the first that holds views wins. */
@@ -116,6 +124,22 @@ function viewFiles(dir, entries, blueprint) {
   return files.sort((a, b) => compareCodeUnits(a.name, b.name))
 }
 
+// A second view a file registers, read from the file's own text. This scans raw text on
+// purpose (the shapes it accepts are pinned by a test table); the id it captures still has
+// to be one the runtime registrar accepts for this file, which is what makes it a view.
+const SECONDARY_VIEW_ID = /registerView\s*\(\s*\{[\s\S]*?\bid\s*:\s*['"]([a-z0-9-]+)['"]/g
+
+/**
+ * True when a file whose slug is `slug` really registers `extraId` as a second view.
+ * `registrar` in nn-runtime.js accepts a declared id only when it is the file slug or
+ * starts with `slug-` and rejects everything else at boot, so any other id is not a view
+ * this export can offer. The `slug-` prefix plus the capture class above imply VIEW_ID_RE,
+ * and the runtime refuses reserved ids too.
+ */
+function isRegistrableSecondaryId(slug, extraId) {
+  return Boolean(extraId) && extraId !== slug && extraId.startsWith(`${slug}-`) && !RESERVED_VIEW_IDS.includes(extraId)
+}
+
 async function readViews(dir, files, origin, sourcePrefix) {
   const views = []
   for (const { name, slug, dataName } of files) {
@@ -127,27 +151,12 @@ async function readViews(dir, files, origin, sourcePrefix) {
     if (RESERVED_VIEW_IDS.includes(id)) throw new Error(`view id "${id}" is reserved (${source})`)
     const code = await readFile(join(dir, name), 'utf8')
     assertClassicScript(code, source)
-    views.push({
-      id,
-      origin,
-      source,
-      code,
-      sha256: createHash('sha256').update(code, 'utf8').digest('hex'),
-      ...(dataName ? { dataPath: join(dir, dataName) } : {}),
-    })
-    const extraMatches = [...code.matchAll(/registerView\s*\(\s*\{[\s\S]*?\bid\s*:\s*['"]([a-z0-9-]+)['"]/g)]
-    for (const match of extraMatches) {
-      const extraId = match[1]
-      if (extraId && extraId !== id && VIEW_ID_RE.test(extraId) && !RESERVED_VIEW_IDS.includes(extraId)) {
-        views.push({
-          id: extraId,
-          origin,
-          source,
-          code,
-          sha256: createHash('sha256').update(code, 'utf8').digest('hex'),
-          ...(dataName ? { dataPath: join(dir, dataName) } : {}),
-        })
-      }
+    // Hashed once: one file is one artifact, however many views it registers.
+    const sha256 = createHash('sha256').update(code, 'utf8').digest('hex')
+    const entry = { origin, source, code, sha256, ...(dataName ? { dataPath: join(dir, dataName) } : {}) }
+    views.push({ id, ...entry })
+    for (const match of code.matchAll(SECONDARY_VIEW_ID)) {
+      if (isRegistrableSecondaryId(id, match[1])) views.push({ id: match[1], ...entry })
     }
   }
   return views
