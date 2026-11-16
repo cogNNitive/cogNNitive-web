@@ -29,6 +29,7 @@ import { parseKnowledgeDocument } from './knowledge-model.mjs'
 import {
   EpisodeError,
   assertProducible,
+  episodeIdentity,
   readEpisode,
   resolveForEpisode,
   unknownKeys,
@@ -129,19 +130,33 @@ export function resolveEpisodePath(input) {
 /**
  * The model id the changeset target uses. `Video` is a distributed concept, so an
  * episode is an instance model addressed by its container chain and its own slug
- * (`<series>/<episode>`), never by its file stem (`e_coNNtent`). A document placed
- * under `<container>/episodes/<slug>/` keeps the distributed rule; anything else uses
- * the compact-model rule: the stem.
+ * (`<series>/<slug>`), never by its file stem (`e_coNNtent`).
+ *
+ * That id is derived from the one layout `references/folder-contract.md` declares —
+ * `series/<series>/episodes/<slug>/` — and from nowhere else. A document outside it (the
+ * legacy `series/<s>/assets/<slug>/`, a series root, a domaiNN root) is refused with
+ * `episode-outside-contract` instead of falling back to the stem: a bare stem would make a
+ * second layout work silently while every changeset, review verdict and gate target the
+ * wrong model.
  */
 export const modelIdOf = (scriptPath) => {
-  const folder = path.dirname(scriptPath)
-  const slug = path.basename(folder)
-  const parent = path.basename(path.dirname(folder))
-  if (parent === 'episodes') {
-    const container = path.basename(path.dirname(path.dirname(folder)))
-    if (container) return `${container}/${slug}`
+  const folder = path.dirname(path.resolve(scriptPath))
+  const container = path.dirname(folder)
+  const seriesRoot = path.dirname(path.dirname(container))
+  const inContract =
+    path.basename(container) === 'episodes' && path.basename(seriesRoot) === 'series'
+  if (inContract) {
+    const { series, slug } = episodeIdentity(scriptPath)
+    if (series && slug) return `${series}/${slug}`
   }
-  return path.basename(scriptPath, '.md').replace(/_NN$/, '')
+  const slug = path.basename(folder)
+  throw new ProduceStop(
+    'episode-outside-contract',
+    `Episode ${path.basename(scriptPath)} is not under \`series/<series>/episodes/<slug>/\`, ` +
+      'the only location the folder contract gives an episode, so it has no Video model id. ' +
+      `Move it to \`series/<series>/episodes/${slug}/\`. The legacy ` +
+      '`series/<s>/assets/<slug>/` layout is rejected, never adapted.',
+  )
 }
 
 /**

@@ -59,6 +59,19 @@ export function loadFieldRegistry(file = REGISTRY_PATH) {
 }
 
 /**
+ * `<series>/<slug>` of an episode document, from the layout it sits in: the folder the
+ * document sits in is its slug, and the folder two levels above is the series. This is the
+ * one derivation of an episode's identity; `modelIdOf` (pipeline.mjs) gates it on the
+ * declared contract location (`series/<series>/episodes/<slug>/`) before using it.
+ */
+export function episodeIdentity(scriptPath) {
+  const dir = path.dirname(scriptPath);
+  const slug = path.basename(dir);
+  const series = path.basename(path.dirname(path.dirname(dir)));
+  return { series, slug };
+}
+
+/**
  * Reads the Video record and its Scenes from an episode document.
  * @param {string} scriptPath
  * @param {{ model?: object }} [deps]

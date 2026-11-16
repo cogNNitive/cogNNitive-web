@@ -11,7 +11,7 @@
 
 import path from 'node:path';
 
-import { readEpisode, resolveForEpisode } from './episode.mjs';
+import { episodeIdentity, readEpisode, resolveForEpisode } from './episode.mjs';
 import { loadCascadeBags, withScriptPresets } from './video-scope.mjs';
 import { lowerEpisode, scriptSubjectsFromScenes } from './review-subject.mjs';
 
@@ -20,14 +20,6 @@ export function translationRef(model) {
   const video = (model?.elements?.Video || [])[0];
   const ref = video?.fields?.translation_of;
   return ref === undefined || ref === null || String(ref).trim() === '' ? null : String(ref).trim();
-}
-
-/** `<series>/<slug>` of an episode document, from the layout it sits in. */
-export function episodeIdentity(scriptPath) {
-  const dir = path.dirname(scriptPath);
-  const slug = path.basename(dir);
-  const series = path.basename(path.dirname(path.dirname(dir)));
-  return { series, slug };
 }
 
 /**

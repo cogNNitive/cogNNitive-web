@@ -16,7 +16,7 @@ import test from 'node:test'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
-import { EXIT_BUDGET, EXIT_DONE, EXIT_REVIEW, produce, ProduceStop } from '../scripts/produce.mjs'
+import { EXIT_BUDGET, EXIT_DONE, EXIT_ERROR, EXIT_REVIEW, produce, ProduceStop } from '../scripts/produce.mjs'
 import { readEpisode } from '../scripts/lib/episode.mjs'
 import { isAvatarLayer } from '../scripts/lib/avatar-jobs.mjs'
 import { loadCascadeBags, withScriptPresets } from '../scripts/lib/video-scope.mjs'
@@ -770,6 +770,35 @@ test('an archived episode is refused naming the state', async () => {
       'refused-state',
       1,
     )
+  } finally {
+    done(ws.root)
+  }
+})
+
+test('an episode outside series/<s>/episodes/ is refused before any spend, and the legacy assets/ layout is named', async () => {
+  const ws = workspace(episodeDoc({ status: 'draft', review: 'skip' }))
+  const { render, calls } = fakeRender()
+  try {
+    // The layout the contract retired: an episode document under series/<s>/assets/<slug>/.
+    const legacy = path.join(ws.root, 'series', 's', 'assets', 'e')
+    fs.mkdirSync(legacy, { recursive: true })
+    const scriptPath = path.join(legacy, 'e_coNNtent_NN.md')
+    fs.renameSync(ws.scriptPath, scriptPath)
+    await assert.rejects(
+      produce({
+        episodePath: scriptPath,
+        deps: { ...thumbStubs(), render, log: () => {} },
+      }),
+      (err) => {
+        assert.equal(err.code, 'episode-outside-contract')
+        assert.equal(err.exitCode, EXIT_ERROR, 'a contract violation is an error, not a gate stop')
+        assert.match(err.message, /series\/<series>\/episodes\/<slug>\//, 'names the contract location')
+        assert.match(err.message, /series\/<s>\/assets\/<slug>\//, 'names the retired layout')
+        return true
+      },
+    )
+    assert.equal(calls.length, 0, 'nothing was spent')
+    assert.equal(readEpisode(scriptPath).status, 'draft', 'the state did not move')
   } finally {
     done(ws.root)
   }

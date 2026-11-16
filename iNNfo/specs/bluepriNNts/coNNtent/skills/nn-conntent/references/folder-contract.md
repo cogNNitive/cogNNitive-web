@@ -73,6 +73,15 @@ or `frames/` outside `library/` or `media/`, `video-guard.json`, and the old
 `.cognnitive/video-ledger.jsonl`. A domaiNN with a finding is recreated, not
 migrated.
 
+The episode identity follows the same rule, so location and model id can never
+disagree. An episode under `series/<s>/episodes/<slug>/` is the distributed `Video`
+instance model `<s>/<slug>`, derived from the folders it sits in
+(`scripts/lib/pipeline.mjs` `modelIdOf`; every changeset target, review verdict and gate
+uses that id). A document anywhere else — the legacy `series/<s>/assets/<slug>/`, a
+series root, a domaiNN root — has no id: `produce` refuses it with
+`episode-outside-contract`, naming the layout above. It is never addressed by its file
+stem, because a stem id addresses no model. There is one layout, and one identity.
+
 ## The no-upward-escape rule
 
 Every relative asset path inside a script MUST resolve inside that episode's

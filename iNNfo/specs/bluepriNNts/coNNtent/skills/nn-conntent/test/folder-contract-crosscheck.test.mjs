@@ -54,6 +54,17 @@ test('description.md: doc and the chapter printer agree', () => {
   assert.ok(read('scripts/lib/pipeline.mjs').includes('description'), 'the pipeline writes the chapter block for description.md');
 });
 
+test('episode identity: the doc and the id derivation agree on episodes/<slug>/', () => {
+  // The one layout is also the one identity: a misplaced episode is refused, never
+  // addressed by its file stem.
+  assert.ok(layout.includes('episodes/<slug>/'), 'the layout block homes episodes under episodes/<slug>/');
+  assert.ok(doc.includes('<s>/<slug>'), 'the doc names the derived model id');
+  assert.ok(doc.includes('episode-outside-contract'), 'the doc names the refusal');
+  const pipeline = read('scripts/lib/pipeline.mjs');
+  assert.ok(pipeline.includes("'episode-outside-contract'"), 'lib/pipeline.mjs refuses with the documented code');
+  assert.ok(pipeline.includes("=== 'episodes'"), 'the derivation requires the episodes/ parent');
+});
+
 test('render.tmp.mp4: doc and the render step agree', () => {
   assert.ok(layout.includes('render.tmp.mp4'));
   assert.match(doc, /`render\.tmp\.mp4` during a render/);
