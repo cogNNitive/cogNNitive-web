@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-16T14:27:54.631Z",
-  "head": "5bb42480169995c65ab2c70fd8fb99633fc81c2b",
+  "generatedAt": "2026-11-16T14:44:43.658Z",
+  "head": "e9b86d77871d001470060de741410f9a737b6b91",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -37,7 +37,7 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.37.4",
       "pinnedTagDate": "2026-11-15T21:48:06+01:00",
-      "commitsSincePin": 28,
+      "commitsSincePin": 29,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",

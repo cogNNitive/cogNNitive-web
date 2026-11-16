@@ -311,16 +311,69 @@ function parseArgs(argv) {
   return args
 }
 
-/* ── Scan diagnostics ──────────────────────────────────────────── */
+/* ── Output ────────────────────────────────────────────────────── */
 
 /**
- * The export's one warning channel (`process.stderr.write`, read at call time so
- * `runExportConsole` and the CLI both carry the message). Every scan diagnostic
- * goes through here: there is no second channel.
+ * The export prints through ONE writer, `{ out(line), err(line), warn(message) }`, so
+ * each caller decides where its lines land: `createProcessWriter()` writes exactly what
+ * `console.log` / `console.error` / `process.stderr.write` write today (the CLI), and
+ * `createBufferedWriter()` collects them (the programmatic entry point). One line per
+ * call, no formatting: `out`/`err` write `line` plus a newline, which is what
+ * `console.log(line)` writes, and `warn` owns the one warning prefix.
+ *
+ * This file must stay self-contained: the installer distributes it flat next to
+ * `console-views.mjs` and the console assets, with no `scripts/lib` around it.
+ */
+
+const WARNING_PREFIX = 'WARNING: [export-console] '
+
+/**
+ * The export's one warning channel (`process.stderr.write`). Every scan diagnostic and
+ * every `writeConsole` warning goes through an `onWarning`/`warn` sink that defaults to
+ * this one, so the MCP, which passes neither, keeps printing where it always did.
  */
 function writeExportWarning(message) {
-  process.stderr.write(`WARNING: [export-console] ${message}\n`)
+  process.stderr.write(`${WARNING_PREFIX}${message}\n`)
 }
+
+/** The CLI's writer: the export prints exactly as it would through the globals. */
+function createProcessWriter() {
+  return {
+    out: (line) => console.log(line),
+    err: (line) => console.error(line),
+    warn: writeExportWarning,
+  }
+}
+
+/**
+ * A writer that collects the export's lines in memory. `writeStderr` appends text that
+ * already carries its own line breaks: an error message or a stack trace.
+ */
+function createBufferedWriter() {
+  let stdout = ''
+  let stderr = ''
+  return {
+    out: (line) => {
+      stdout += `${line}\n`
+    },
+    err: (line) => {
+      stderr += `${line}\n`
+    },
+    warn: (message) => {
+      stderr += `${WARNING_PREFIX}${message}\n`
+    },
+    writeStderr: (text) => {
+      stderr += text
+    },
+    read: () => ({ stdout, stderr }),
+  }
+}
+
+/* ── Scan diagnostics ──────────────────────────────────────────── */
+
+// Every scan and console diagnostic reaches `writeExportWarning` through the sink its
+// function takes (`onWarning`, or `warn` on the console writer). There is no second
+// channel.
 
 /**
  * The message for a filesystem failure during a scan, or null when nothing
@@ -379,7 +432,7 @@ async function findModelFiles(dir, onWarning = writeExportWarning) {
             legacyFindings = null
           }
           for (const f of legacyFindings ?? []) {
-            process.stderr.write(`WARNING: [export-console] ${f.path}: ${f.message}\n`)
+            onWarning(`${f.path}: ${f.message}`)
           }
         }
       }
@@ -674,7 +727,7 @@ function scopeLabelOf(selected) {
   return titles.length <= 2 ? titles.join(', ') : `${titles[0]} + ${titles.length - 1} more`
 }
 
-async function renderTree(models, root, consoles) {
+async function renderTree(models, root, consoles, out) {
   const groups = new Map()
   for (const m of models) {
     const rel = relative(root, m.filePath).replace(/\\/g, '/')
@@ -685,7 +738,7 @@ async function renderTree(models, root, consoles) {
     groups.get(dirKey).push({ model: m, rel, statusInfo })
   }
 
-  console.log(`Workspace: . (${models.length} Level-3 models)`)
+  out(`Workspace: . (${models.length} Level-3 models)`)
   const dirKeys = Array.from(groups.keys())
   for (let i = 0; i < dirKeys.length; i++) {
     const dirKey = dirKeys[i]
@@ -695,7 +748,7 @@ async function renderTree(models, root, consoles) {
     // indent; every other group prints its line and indents its children.
     const atRoot = dirKey === '.'
     const childIndent = atRoot ? '' : isLastDir ? '    ' : '│   '
-    if (!atRoot) console.log(`${dirPrefix}${dirKey}`)
+    if (!atRoot) out(`${dirPrefix}${dirKey}`)
 
     const items = groups.get(dirKey)
     for (let j = 0; j < items.length; j++) {
@@ -703,11 +756,9 @@ async function renderTree(models, root, consoles) {
       const isLastItem = j === items.length - 1
       const itemPrefix = isLastItem ? '└── ' : '├── '
       const fileIndent = isLastItem ? '    ' : '│   '
-      console.log(
-        `${childIndent}${itemPrefix}${basename(item.model.filePath)} [${item.statusInfo.status}]`,
-      )
+      out(`${childIndent}${itemPrefix}${basename(item.model.filePath)} [${item.statusInfo.status}]`)
       const targetRel = relative(root, item.statusInfo.targetHtmlPath).replace(/\\/g, '/')
-      console.log(`${childIndent}${fileIndent}└── ${targetRel}`)
+      out(`${childIndent}${fileIndent}└── ${targetRel}`)
     }
   }
 }
@@ -1465,7 +1516,9 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
  * model, or { selected: models } for the CLI multi-model selection); view (a lone view
  * export, written as a write-once family); open (default true); launcher (injected
  * opener, for tests); platform (default process.platform); log (progress lines,
- * default silent so the MCP never writes to stdout); models (pre-scanned models);
+ * default silent so the MCP never writes to stdout); warn (the
+ * `WARNING: [export-console] …` stderr channel, default this process's stderr, which
+ * is what the MCP gets); models (pre-scanned models);
  * stagingDir (write the page there instead of at its final path, for a caller that then
  * moves it into place); changes (false omits the changesets).
  *
@@ -1487,6 +1540,7 @@ export async function writeConsole(opts = {}) {
     platform = process.platform,
     openCooldownMinutes,
     log = () => {},
+    warn = writeExportWarning,
   } = opts
   const scopeObj = typeof scope === 'object' && scope !== null ? scope : {}
   let view = opts.view ?? null
@@ -1497,7 +1551,7 @@ export async function writeConsole(opts = {}) {
   const shell = await readFile(shellPath, 'utf-8')
   const bundle = existsSync(bundlePath) ? await readFile(bundlePath, 'utf-8') : null
 
-  const models = opts.models ?? (await loadModels(root))
+  const models = opts.models ?? (await loadModels(root, warn))
 
   const wholeDomain = scope === 'domain'
   let selected = []
@@ -1593,7 +1647,7 @@ export async function writeConsole(opts = {}) {
         ...(Array.isArray(changesets) && changesets.length > 0 ? ['changes'] : []),
       ].filter(Boolean),
       packagesDir,
-      onWarning: (message) => process.stderr.write(`WARNING: [export-console] ${message}\n`),
+      onWarning: warn,
     })
   } catch (err) {
     throw new ConsoleExportError(err.message, 'VIEWS_INVALID')
@@ -1667,7 +1721,7 @@ export async function writeConsole(opts = {}) {
         parentUrl: fm.parent_spec.url,
       })
       for (const warning of resolution.warnings) {
-        process.stderr.write(`WARNING: [export-console] ${warning}\n`)
+        warn(warning)
       }
       return {
         schema: resolution.schema,
@@ -1675,9 +1729,7 @@ export async function writeConsole(opts = {}) {
         catalog: resolution.catalog,
       }
     } catch (err) {
-      process.stderr.write(
-        `WARNING: [export-console] Schema resolution failed: ${err?.message ?? err}\n`,
-      )
+      warn(`Schema resolution failed: ${err?.message ?? err}`)
       return { schema: undefined, procedures: [], catalog: null }
     }
   }
@@ -1858,9 +1910,8 @@ export async function writeConsole(opts = {}) {
           fieldIndex.set(key, f)
           allFields.push(f)
         } else if (JSON.stringify(kept) !== JSON.stringify(f)) {
-          process.stderr.write(
-            `WARNING: [export-console] Field ${f.concept}.${f.name} is declared differently by more than one bluepriNNt; keeping the first declaration
-`,
+          warn(
+            `Field ${f.concept}.${f.name} is declared differently by more than one bluepriNNt; keeping the first declaration`,
           )
         }
       }
@@ -2084,9 +2135,10 @@ export async function writeConsole(opts = {}) {
       filesData = await collectWorkspaceFiles(root, {
         elements: allElements,
         changesets,
+        onWarning: warn,
       })
     } catch (err) {
-      process.stderr.write(`WARNING: [export-console] error scanning files: ${err.message}\n`)
+      warn(`error scanning files: ${err.message}`)
     }
   }
 
@@ -2269,7 +2321,7 @@ export async function writeConsole(opts = {}) {
   }
   const sizeBudget = viewsLib.resolveSizeBudget(manifestFrontmatter)
   for (const problem of sizeBudget.problems) {
-    process.stderr.write(`WARNING: [export-console] ${problem}\n`)
+    warn(problem)
   }
 
   const budgetOf = (rendered, strategy = 'none') =>
@@ -2306,17 +2358,16 @@ export async function writeConsole(opts = {}) {
           budget = budgetOf(html, strategy)
         }
       }
-      process.stderr.write(
-        `WARNING: [export-console] console exceeded ${sizeBudget.failBytes} B; ` +
+      warn(
+        `console exceeded ${sizeBudget.failBytes} B; ` +
           `exported degraded (${strategy}) — dropped the resolved citations of ${strippedCitations} elements` +
           (strippedHistory > 0 ? ` and the history of ${strippedHistory} elements` : '') +
-          ` (their raw field values are untouched).\n`,
+          ` (their raw field values are untouched).`,
       )
     }
   }
   if (budget.status === 'fail') throw new ConsoleExportError(budget.message, 'CONSOLE_TOO_LARGE')
-  if (budget.status === 'warn')
-    process.stderr.write(`WARNING: [export-console] ${budget.message}\n`)
+  if (budget.status === 'warn') warn(budget.message)
   log(budget.breakdown)
 
   const inputs = payloadModels.map((m) => relative(root, m.filePath).replace(/\\/g, '/'))
@@ -2355,8 +2406,8 @@ export async function writeConsole(opts = {}) {
         existsSync(join(root, name)),
       )
       if (leftovers.length > 0) {
-        process.stderr.write(
-          `WARNING: [export-console] ${leftovers.join(' and ')} in the workspace root are leftover from an earlier export; domaiNN_console.html no longer uses them and they were not removed.\n`,
+        warn(
+          `${leftovers.join(' and ')} in the workspace root are leftover from an earlier export; domaiNN_console.html no longer uses them and they were not removed.`,
         )
       }
     }
@@ -2594,20 +2645,24 @@ registerView({
  * The CLI/worker body, without any `process.exit`. Resolves to
  * `{ exitCode, writtenFiles }`; throws `ConsoleExportError` for asset/model failures.
  * `argv` is the argument list after the script name (design D4 / console-export-cli spec).
+ * Every line it prints goes through `options.out`, the export's writer
+ * (`createProcessWriter`): the process writer by default, a buffered one when
+ * `runExportConsole` calls it.
  * @param {string[]} argv
- * @param {{ open?: boolean, launcher?: Function }} [options]
+ * @param {{ open?: boolean, launcher?: Function, out?: { out: (line: string) => void, err: (line: string) => void, warn: (message: string) => void } }} [options]
  */
 async function runMain(argv, options = {}) {
+  const out = options.out ?? createProcessWriter()
   const args = parseArgs(['node', 'export-console.mjs', ...argv])
   if (options.launcher !== undefined) args.launcher = options.launcher
   if (typeof options.open === 'boolean') args.open = options.open
   if (args.errors.length > 0) {
-    for (const message of args.errors) console.error(`Error: ${message}`)
-    console.error(USAGE)
+    for (const message of args.errors) out.err(`Error: ${message}`)
+    out.err(USAGE)
     return { exitCode: 2, writtenFiles: [] }
   }
   if (!args.root) {
-    console.error(USAGE)
+    out.err(USAGE)
     return { exitCode: 2, writtenFiles: [] }
   }
   const root = resolve(args.root)
@@ -2615,15 +2670,15 @@ async function runMain(argv, options = {}) {
   if (args.newView) {
     const template = VIEW_TEMPLATES.find((t) => t === args.template)
     if (!template) {
-      console.error(
+      out.err(
         `Error: unknown --template "${args.template}" (expected ${VIEW_TEMPLATES.join(' | ')}).`,
       )
       return { exitCode: 2, writtenFiles: [] }
     }
     const blueprintError = await blueprintNameError(args.blueprint)
     if (blueprintError) {
-      console.error(`Error: ${blueprintError}`)
-      console.error(USAGE)
+      out.err(`Error: ${blueprintError}`)
+      out.err(USAGE)
       return { exitCode: 2, writtenFiles: [] }
     }
     const created = await scaffoldConsoleView({
@@ -2633,52 +2688,52 @@ async function runMain(argv, options = {}) {
       blueprint: args.blueprint,
       title: args.title,
     })
-    console.log(
+    out.out(
       `Created console view "${created.title}" (${created.slug}):\n  ${created.targetPath}`,
     )
-    console.log(
+    out.out(
       `To compile the console with this view, run:\n  node scripts/export-console.mjs ${relative(process.cwd(), root) || '.'} --domain`,
     )
     return { exitCode: 0, writtenFiles: [created.targetPath] }
   }
   if (args.view && args.domain) {
-    console.error('Error: --view and --domain are mutually exclusive.')
+    out.err('Error: --view and --domain are mutually exclusive.')
     return { exitCode: 2, writtenFiles: [] }
   }
   const hasSelection = Boolean(args.all || args.stale || args.filter || args.model)
   if (args.domain && hasSelection) {
-    console.error(
+    out.err(
       'Error: --domain exports the whole domaiNN and cannot select models; drop the model name, --filter, --all or --stale.',
     )
     return { exitCode: 2, writtenFiles: [] }
   }
   await ensureAssets()
-  const models = await loadModels(root)
+  const models = await loadModels(root, out.warn)
 
   const consoles = await statusConsoles(root)
 
   if (args.status) {
-    console.log(`Status (${models.length} model(s)):`)
+    out.out(`Status (${models.length} model(s)):`)
     for (const m of models) {
       const rel = relative(root, m.filePath).replace(/\\/g, '/')
       const info = await inspectModelStatus(m, root, consoles)
-      console.log(`  ${rel} [${info.status}]`)
+      out.out(`  ${rel} [${info.status}]`)
     }
-    console.log(
+    out.out(
       `Domain console: ${payloadHelper.consoleOutputPath('domain')} [${await inspectDomainConsole(models, root)}]`,
     )
     return { exitCode: 0, writtenFiles: [] }
   }
 
   if (args.tree) {
-    await renderTree(models, root, consoles)
+    await renderTree(models, root, consoles, out.out)
     return { exitCode: 0, writtenFiles: [] }
   }
 
   if (args.list) {
-    console.log('Models:')
-    for (const m of models) console.log(`  ${relative(root, m.filePath).replace(/\\/g, '/')}`)
-    console.log(`(${models.length} models)`)
+    out.out('Models:')
+    for (const m of models) out.out(`  ${relative(root, m.filePath).replace(/\\/g, '/')}`)
+    out.out(`(${models.length} models)`)
     return { exitCode: 0, writtenFiles: [] }
   }
 
@@ -2724,7 +2779,7 @@ async function runMain(argv, options = {}) {
         if ((await inspectModelStatus(m, root, consoles)).status !== 'fresh') selected.push(m)
       }
       if (selected.length === 0 && !staleAssets) {
-        console.log('All models are fresh. Nothing to export.')
+        out.out('All models are fresh. Nothing to export.')
         return { exitCode: 0, writtenFiles: [] }
       }
     } else {
@@ -2733,7 +2788,7 @@ async function runMain(argv, options = {}) {
   }
 
   if (!wholeDomain && selected.length === 0) {
-    console.error(
+    out.err(
       'No models selected. Use --all, --stale, --domain, --filter <pattern>, or pass a model name/id substring.',
     )
     return { exitCode: 1, writtenFiles: [] }
@@ -2748,55 +2803,35 @@ async function runMain(argv, options = {}) {
     files: args.files,
     changes: args.changes,
     models,
-    log: (line) => console.log(line),
+    log: out.out,
+    warn: out.warn,
   })
   const written = result.status === 'written' ? 1 : 0
   const unchanged = result.status === 'unchanged' ? 1 : 0
   if ('openError' in result && result.openError) {
-    process.stderr.write(
-      `WARNING: [export-console] could not open the console: ${result.openError}\n`,
-    )
+    out.warn(`could not open the console: ${result.openError}`)
   }
-  console.log(
+  out.out(
     `Exported ${written} console artifact(s)${unchanged > 0 ? ` (${unchanged} unchanged)` : ''}.`,
   )
   return { exitCode: 0, writtenFiles: result.status === 'written' ? [result.path] : [] }
 }
 
 /**
- * Programmatic, in-process console export entry point: runs the CLI body while
- * capturing stdout/stderr, without ever calling `process.exit` or mutating globals.
+ * Programmatic, in-process console export entry point: runs the CLI body with its
+ * output written to a buffer instead of this process's stdout/stderr, and never calls
+ * `process.exit`. It passes a buffered writer to the body, so `console` and
+ * `process.stdout`/`process.stderr` are left exactly as the caller bound them, and two
+ * exports running in one process never receive each other's lines.
  * @param {string[]} [argv] - args after the script name, e.g. `[root, '--no-open']`.
  * @param {{ cwd?: string, env?: NodeJS.ProcessEnv, open?: boolean, launcher?: Function }} [options]
  * @returns {Promise<{ exitCode: number, code: number, stdout: string, stderr: string, writtenFiles: string[] }>}
  */
 export async function runExportConsole(argv = [], options = {}) {
-  let stdout = ''
-  let stderr = ''
-  const origLog = console.log
-  const origError = console.error
-  const origWarn = console.warn
-  const origStdoutWrite = process.stdout.write
-  const origStderrWrite = process.stderr.write
-  const capture = (sink) => (chunk, enc, cb) => {
-    sink(typeof chunk === 'string' ? chunk : chunk.toString())
-    if (typeof enc === 'function') enc()
-    else if (typeof cb === 'function') cb()
-    return true
-  }
-  console.log = (...a) => {
-    stdout += a.map(String).join(' ') + '\n'
-  }
-  console.error = (...a) => {
-    stderr += a.map(String).join(' ') + '\n'
-  }
-  console.warn = (...a) => {
-    stderr += a.map(String).join(' ') + '\n'
-  }
-  process.stdout.write = capture((s) => (stdout += s))
-  process.stderr.write = capture((s) => (stderr += s))
+  const capture = createBufferedWriter()
   try {
-    const result = await runMain(argv, options)
+    const result = await runMain(argv, { ...options, out: capture })
+    const { stdout, stderr } = capture.read()
     return {
       exitCode: result.exitCode,
       code: result.exitCode,
@@ -2805,15 +2840,13 @@ export async function runExportConsole(argv = [], options = {}) {
       writtenFiles: result.writtenFiles,
     }
   } catch (err) {
-    if (err instanceof ConsoleExportError) stderr += `Error: ${err.message}\n`
-    else stderr += `${err && err.stack ? err.stack : err}\n`
+    capture.writeStderr(
+      err instanceof ConsoleExportError
+        ? `Error: ${err.message}\n`
+        : `${err && err.stack ? err.stack : err}\n`,
+    )
+    const { stdout, stderr } = capture.read()
     return { exitCode: 1, code: 1, stdout, stderr, writtenFiles: [] }
-  } finally {
-    console.log = origLog
-    console.error = origError
-    console.warn = origWarn
-    process.stdout.write = origStdoutWrite
-    process.stderr.write = origStderrWrite
   }
 }
 
