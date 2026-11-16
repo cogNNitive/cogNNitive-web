@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-16T14:09:02.407Z",
-  "head": "fe097e5fb6b944981e57fed88f374e61158bc381",
+  "generatedAt": "2026-11-16T14:27:54.631Z",
+  "head": "5bb42480169995c65ab2c70fd8fb99633fc81c2b",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -27,16 +27,17 @@
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.37.2",
       "pinnedTagDate": "2026-11-15T20:01:23+01:00",
-      "commitsSincePin": 3,
+      "commitsSincePin": 4,
       "filesTouched": [
-        "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js"
+        "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js",
+        "iNNfo/packages/nn-mcp/src/tools/console-regeneration.ts"
       ]
     },
     "nn-console": {
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.37.4",
       "pinnedTagDate": "2026-11-15T21:48:06+01:00",
-      "commitsSincePin": 26,
+      "commitsSincePin": 28,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
