@@ -21,6 +21,7 @@
 - **💡 Architecture & Concepts**
   - [The mental model: from raw source to audited knowledge](content/concepts/mental-model.md)
   - [The four levels](content/concepts/levels.md)
+  - [The entity-relationship model](content/concepts/entity-relationship.md)
   - [Ecosystem architecture](content/concepts/ecosystem.md)
   - [The specification chain](content/concepts/specifications.md)
   - [Canonical vocabulary](content/vocabulary.md)

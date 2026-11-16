@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-16T20:47:49.881Z",
-  "head": "4bf116fd54a9a2c3ec7c0137dd06a9197caa6ee8",
+  "generatedAt": "2026-11-16T21:10:58.114Z",
+  "head": "5c3a1fa61fafe80df72758cbcc08ee3bd3dd245d",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -11,39 +11,17 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.69.0",
-      "pinnedTagDate": "2026-11-16T21:11:27+01:00",
-      "commitsSincePin": 3,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/references/folder-contract.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/episode.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/pipeline.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/translation-source.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/episode-location.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/folder-contract-crosscheck.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
-      ]
+      "pinnedTag": "blueprints-v0.69.1",
+      "pinnedTagDate": "2026-11-16T21:46:56+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.69.0",
-      "pinnedTagDate": "2026-11-16T21:11:27+01:00",
-      "commitsSincePin": 3,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/references/folder-contract.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/episode.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/pipeline.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/translation-source.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/episode-location.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/folder-contract-crosscheck.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/produce.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
-      ]
+      "pinnedTag": "blueprints-v0.69.1",
+      "pinnedTagDate": "2026-11-16T21:46:56+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",

@@ -235,6 +235,17 @@ tags:: [docs, concept, levels, grammar]
 
 The L0–L3 abstraction chain: defiNNition, iNNfo, bluepriNNt, kNNowledge — and the domaiNN container.
 
+## NN Page: The entity-relationship model
+slug:: entity-relationship
+title:: The entity-relationship model
+source:: content/concepts/entity-relationship.md
+route:: content/concepts/entity-relationship.md
+order:: 15
+parent:: [[Architecture & Concepts]]
+tags:: [docs, concept, entity-relationship, model, mermaid]
+
+The schema-and-data map of the model as Mermaid entity-relationship diagrams: concepts, fields, matrices, elements, values, and the domaiNN inventory around them.
+
 ## NN Page: Ecosystem architecture
 slug:: ecosystem
 title:: Ecosystem architecture
