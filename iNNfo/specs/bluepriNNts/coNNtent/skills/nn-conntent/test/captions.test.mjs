@@ -42,6 +42,21 @@ test('the match threshold is 90%: 89 stops, 90 passes', () => {
   assert.equal(stop.reason, 'caption-match-low');
 });
 
+test('a failed alignment names the script tokens that found no match', () => {
+  const stop = alignCaptions({
+    scriptText: 'tipo transicion barrido la escena se descubre de lado a lado',
+    words: wordsOf(['tipo', 'transicion', 'barrido', 'la', 'escena', 'se', 'lado', 'a']),
+  });
+  assert.equal(stop.ok, false);
+  assert.ok(Array.isArray(stop.unmatched), 'the failure carries the unmatched script tokens');
+  assert.ok(stop.unmatched.length > 0);
+  assert.ok(
+    stop.unmatched.every((token) => typeof token === 'string' && token.length > 0),
+    'unmatched tokens are strings, ready to print',
+  );
+  assert.match(stop.transcriptText, /tipo transicion barrido/, 'the transcript the aligner compared is reported');
+});
+
 test('the displayed text is the script, never the transcript', () => {
   const result = alignCaptions({
     scriptText: 'Café con leche',

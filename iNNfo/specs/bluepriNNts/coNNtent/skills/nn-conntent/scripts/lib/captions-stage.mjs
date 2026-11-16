@@ -279,9 +279,20 @@ export async function alignEpisodeCaptions(options = {}) {
 
       if (!aligned || !aligned.ok || Number(aligned.coverage) < CAPTION_MATCH_MIN) {
         const ratio = aligned && Number.isFinite(aligned.coverage) ? aligned.coverage.toFixed(2) : 'unknown';
+        // A ratio alone tells an author nothing actionable. Name the script tokens that found no
+        // match and show the transcript the aligner compared, so the fix is either rewriting the
+        // line or turning captions off for the video.
+        const unmatched = Array.isArray(aligned?.unmatched) ? aligned.unmatched.filter(Boolean) : [];
+        const shown = unmatched.slice(0, 8).map((word) => `"${word}"`).join(', ');
+        const transcriptText = String(aligned?.transcriptText || '').slice(0, 200);
+        const detail =
+          (shown ? ` Unmatched from the script: ${shown}${unmatched.length > 8 ? ', …' : ''}.` : '') +
+          (transcriptText ? ` Transcript: "${transcriptText}".` : ' No transcript was produced.') +
+          ' Short lines and words the synthesiser pronounces differently are the usual cause: ' +
+          'rewrite the line, or set `captions:: off` for the video.';
         throw new ProduceStop(
           'caption-alignment-failed',
-          `Caption alignment failed for scene "${sceneSlug}": match ratio ${ratio} is below threshold ${CAPTION_MATCH_MIN}`,
+          `Caption alignment failed for scene "${sceneSlug}": match ratio ${ratio} is below threshold ${CAPTION_MATCH_MIN}.${detail}`,
           { exitCode: 1, details: { scene: sceneSlug, coverage: aligned?.coverage, cause: aligned?.reason } },
         );
       }

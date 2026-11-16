@@ -36,6 +36,13 @@ export const EPISODE_STATUSES = [
 /** States `produce` refuses: the episode is discarded. `delivered` stays producible. */
 export const REFUSED_STATUSES = new Set(['archived']);
 
+/**
+ * States where an absent `blueprint_version` is tolerated. Before a document is approved it is not
+ * committed to any version yet, so refusing it asks the author for a pin that says nothing. Anywhere
+ * else the pin is what makes a re-produce replayable, so it is required.
+ */
+export const PIN_OPTIONAL_STATUSES = new Set(['idea', 'draft']);
+
 const REGISTRY_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), 'field-registry.generated.json');
 
 export class EpisodeError extends Error {
@@ -125,12 +132,22 @@ export function assertProducible(episode, installedVersion) {
       `Cannot produce ${path.basename(episode.scriptPath)}: "${episode.status}" is not an Episode status (${EPISODE_STATUSES.join(', ')}).`,
     );
   }
-  if (episode.blueprintVersion !== installedVersion) {
+  const pin = episode.blueprintVersion;
+  const hasPin = pin !== undefined && pin !== null && String(pin).trim() !== '';
+  if (hasPin && pin !== installedVersion) {
     throw new EpisodeError(
       'blueprint-version-mismatch',
       `Cannot produce ${path.basename(episode.scriptPath)}: it pins blueprint_version ` +
-        `${episode.blueprintVersion ?? '(none)'} but the installed coNNtent blueprint is ${installedVersion}. ` +
+        `${pin} but the installed coNNtent blueprint is ${installedVersion}. ` +
         'Old episodes stay archives; nothing was converted.',
+    );
+  }
+  if (!hasPin && !PIN_OPTIONAL_STATUSES.has(episode.status)) {
+    throw new EpisodeError(
+      'blueprint-version-missing',
+      `Cannot produce ${path.basename(episode.scriptPath)}: it declares no blueprint_version and its status is ` +
+        `"${episode.status}". Add blueprint_version: ${installedVersion} to the frontmatter, or move the episode ` +
+        'back to draft while it is still being written.',
     );
   }
   if (_captionsValidator) {

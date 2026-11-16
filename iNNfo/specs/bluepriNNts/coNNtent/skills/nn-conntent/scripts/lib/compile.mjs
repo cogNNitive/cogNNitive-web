@@ -775,7 +775,8 @@ export async function compileVideo(options) {
       phase: 'plan',
       ttsTotal,
       mediaTotal,
-      models: [...new Set(planGuard.planned.map((p) => p.model))],
+      plannedCount: planGuard.planned.length,
+      models: [...new Set(planGuard.planned.map((p) => p.model).filter(Boolean))],
       totalUsd: plannedTotalUsd,
     });
 
@@ -1012,9 +1013,30 @@ export function cliReporter(e) {
   const tag = (n, t) => `[${n}/${t}]`;
   const money = (v) => '$' + Number(v || 0).toFixed(4);
   switch (e.phase) {
-    case 'plan':
-      console.log(`🎙️ Hay que generar ${e.ttsTotal} audio(s) TTS y ${e.mediaTotal} imagen(es) con: ${e.models.join(', ') || 'local (gratis)'}. Estimado: ${money(e.totalUsd)}.`);
+    case 'plan': {
+      // The banner states the resolved models and the estimate, and never invents a provider.
+      // "local (gratis)" used to print whenever the planned-model list came back empty, which
+      // happens both when everything is cached and when a planned call carries no model id: the
+      // author read "free" and the run then charged. Three cases, no inference.
+      const plannedModels = Array.isArray(e.models) ? e.models.filter(Boolean) : [];
+      const pending = Number.isFinite(e.plannedCount)
+        ? e.plannedCount
+        : Number(e.ttsTotal || 0) + Number(e.mediaTotal || 0);
+      if (pending === 0) {
+        console.log(`Todo en caché: 0 llamadas al proveedor. Estimado: ${money(e.totalUsd)}.`);
+      } else if (plannedModels.length > 0) {
+        console.log(
+          `Hay que generar ${e.ttsTotal} audio(s) TTS y ${e.mediaTotal} imagen(es) con: ` +
+            `${plannedModels.join(', ')}. Estimado: ${money(e.totalUsd)}.`,
+        );
+      } else {
+        console.log(
+          `${pending} llamada(s) al proveedor planificadas, sin modelo resuelto que reportar. ` +
+            `Estimado: ${money(e.totalUsd)}.`,
+        );
+      }
       break;
+    }
     case 'tts-done':
       console.log(`🎙️ TTS ${tag(e.done, e.total)} escena ${e.scene} con ${e.model} — ${e.fromCache ? 'cache' : 'generado'} ${money(e.itemCostUsd)} (acumulado ${money(e.spentUsd)})`);
       break;

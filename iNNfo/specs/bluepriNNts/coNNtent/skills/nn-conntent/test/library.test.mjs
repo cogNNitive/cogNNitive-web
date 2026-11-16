@@ -108,3 +108,30 @@ test('a package-floor miss produces one warning and returns null', () => {
   assert.equal(r.level, 'package');
   fs.rmSync(root, { recursive: true, force: true });
 });
+
+test('a component resolves as a folder and a flat file is refused by name', () => {
+  const root = tmp('nn-lib-flat-');
+  const episodeDir = path.join(root, 'series', 's', 'episodes', 'e');
+  const components = path.join(root, 'library', 'components');
+  fs.mkdirSync(path.join(components, 'pill'), { recursive: true });
+  fs.mkdirSync(episodeDir, { recursive: true });
+  fs.writeFileSync(path.join(components, 'pill', 'index.html'), '<div id="root"></div>');
+
+  const folder = resolveLibrary({ kind: 'components', ref: 'components/pill', fromDir: episodeDir, root });
+  assert.equal(folder.level, 'domain');
+  assert.equal(path.basename(folder.file), 'pill', 'a folder kind resolves to its folder');
+  assert.equal(path.basename(path.join(folder.file, 'index.html')), 'index.html');
+
+  // The flat form the overlay-slots doc used to promise: never read by the walk, so it must fail.
+  fs.writeFileSync(path.join(components, 'badge.html'), '<div id="root"></div>');
+  assert.throws(
+    () => resolveLibrary({ kind: 'components', ref: 'components/badge', fromDir: episodeDir, root }),
+    /flat file/,
+  );
+  assert.throws(
+    () => resolveLibrary({ kind: 'components', ref: 'components/badge', fromDir: episodeDir, root }),
+    (err) => err.code === 'component-shape-invalid',
+  );
+
+  fs.rmSync(root, { recursive: true, force: true });
+});

@@ -21,9 +21,70 @@ test('reports ready (0) when the pinned CLI and GSAP resolve', async () => {
 
 test('a missing CLI exits 1 and prints the fix (installs nothing, no npx)', async () => {
   const lines = [];
-  const code = await runEnsureHyperframes({ ...ready({ resolveCli: () => null }), print: (l) => lines.push(l) });
+  let installed = 0;
+  const code = await runEnsureHyperframes({
+    ...ready({ resolveCli: () => null }),
+    print: (l) => lines.push(l),
+    installRuntime: () => {
+      installed++;
+      return { ok: true, status: 0, detail: '' };
+    },
+  });
   assert.equal(code, 1);
-  assert.match(lines.join('\n'), /skills-manager\.js update coNNtent/);
+  assert.equal(installed, 0, 'a readiness check never installs');
+  assert.match(lines.join('\n'), /--install/);
+});
+
+test('--install installs the pinned runtime once and then reports it', async () => {
+  const lines = [];
+  const state = { cli: null, gsap: null };
+  let installed = 0;
+  const code = await runEnsureHyperframes({
+    install: true,
+    pin: '0.8.192',
+    gsapPin: '3.14.2',
+    resolveCli: () => state.cli,
+    resolveGsap: () => state.gsap,
+    print: (l) => lines.push(l),
+    installRuntime: () => {
+      installed++;
+      state.cli = '0.8.192';
+      state.gsap = '3.14.2';
+      return { ok: true, status: 0, detail: '' };
+    },
+  });
+  assert.equal(installed, 1);
+  assert.equal(code, 0);
+  assert.match(lines.join('\n'), /CLI 0\.8\.192 present/);
+});
+
+test('--install on a ready runtime never touches the network', async () => {
+  const lines = [];
+  let installed = 0;
+  const code = await runEnsureHyperframes({
+    ...ready(),
+    install: true,
+    print: (l) => lines.push(l),
+    installRuntime: () => {
+      installed++;
+      return { ok: true, status: 0, detail: '' };
+    },
+  });
+  assert.equal(installed, 0);
+  assert.equal(code, 0);
+});
+
+test('a failed install exits 1 and names the command', async () => {
+  const lines = [];
+  const code = await runEnsureHyperframes({
+    ...ready({ resolveCli: () => null }),
+    install: true,
+    print: (l) => lines.push(l),
+    installRuntime: () => ({ ok: false, status: 1, detail: 'ERR_EACCES' }),
+  });
+  assert.equal(code, 1);
+  assert.match(lines.join('\n'), /install failed/);
+  assert.match(lines.join('\n'), /--install/);
 });
 
 test('a version different from the pin exits 1', async () => {

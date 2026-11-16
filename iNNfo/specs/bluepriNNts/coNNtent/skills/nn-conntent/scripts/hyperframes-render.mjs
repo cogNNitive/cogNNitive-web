@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { emitHyperframesProject, HYPERFRAMES_PIN, resolveHyperframesCli } from './scene-project.mjs';
+import { runEnsureHyperframes } from './ensure-hyperframes.mjs';
 import { SLOT_OF } from './overlay-blocks.mjs';
 import { assertGsapPresent } from './lib/stage-assets.mjs';
 import { emitHyperframesFrame } from './lib/frame-tokens.mjs';
@@ -26,6 +27,29 @@ function defaultRun(cmd, args, opts = {}) {
 }
 
 const DETAIL_MAX = 2000;
+
+/**
+ * Verifies the pinned runtime and installs it once when it is missing, unless the caller opted out.
+ * Auto-install is on by default because a render cannot start without it and the failure otherwise
+ * lands after synthesis has been paid for; `INNFO_RENDER_AUTOINSTALL=0` keeps a machine hermetic.
+ * @returns {Promise<{ ok: boolean, reason?: string, detail?: string }>}
+ */
+async function ensurePinnedRuntime({ skillDir, deps }) {
+  const verify = deps.ensureRuntime || runEnsureHyperframes;
+  const quiet = () => {};
+  const autoInstall = deps.autoInstall ?? process.env.INNFO_RENDER_AUTOINSTALL !== '0';
+
+  if ((await verify({ skillDir, print: quiet })) === 0) return { ok: true };
+  if (!autoInstall) {
+    return {
+      ok: false,
+      reason: 'hyperframes-missing',
+      detail: 'auto-install disabled by INNFO_RENDER_AUTOINSTALL=0; run: node scripts/ensure-hyperframes.mjs --install',
+    };
+  }
+  if ((await verify({ skillDir, install: true, print: quiet })) === 0) return { ok: true };
+  return { ok: false, reason: 'hyperframes-missing' };
+}
 
 /** Last `DETAIL_MAX` chars of a captured stream, trimmed; '' when there is nothing. */
 function outputTail(text) {
@@ -175,6 +199,23 @@ export async function tryHyperframesRender(input, deps = {}) {
 
   if (process.env.NN_HYPERFRAMES_DISABLE === '1') return { rendered: false, reason: 'disabled' };
 
+  const skillDir = deps.skillDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+  // The pinned runtime must exist before anything is emitted: the emitter vendors GSAP and the
+  // renderer runs the pinned CLI. Checking here turns "emit-failed: gsap is not installed" — which
+  // arrived after the caller had already paid for synthesis — into a one-time provision instead.
+  const injectedRuntime = deps.cliPath !== undefined || deps.run !== undefined;
+  if (!injectedRuntime) {
+    const ensured = await ensurePinnedRuntime({ skillDir, deps });
+    if (!ensured.ok) {
+      return {
+        rendered: false,
+        reason: ensured.reason,
+        ...(ensured.detail ? { detail: ensured.detail } : {}),
+      };
+    }
+  }
+
   try {
     buildHyperframesProject(manifest, projectDir, { gsapPath: input.gsapPath });
   } catch (err) {
@@ -184,7 +225,6 @@ export async function tryHyperframesRender(input, deps = {}) {
   // Resolve the pinned CLI from this skill's node_modules/.bin. A missing CLI or a
   // version different from the pin is returned as a named reason — never a silent
   // `npx` install. The caller raises a loud named error; there is no FFmpeg fallback.
-  const skillDir = deps.skillDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const injectedCli = deps.cliPath !== undefined;
   const cliPath = deps.cliPath || resolveHyperframesCli({ skillDir });
   const installedPkgPath = path.join(skillDir, 'node_modules', 'hyperframes', 'package.json');

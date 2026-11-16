@@ -210,7 +210,15 @@ export function alignCaptions({ scriptText, words = [], segments = [], audioDura
   }
 
   if (script.length === 0) return { ok: true, coverage: 1, words: [] };
-  if (transcript.length === 0) return { ok: false, reason: 'caption-match-low', coverage: 0, words: [] };
+  if (transcript.length === 0)
+    return {
+      ok: false,
+      reason: 'caption-match-low',
+      coverage: 0,
+      words: [],
+      unmatched: script,
+      transcriptText: '',
+    };
 
   const pairs = lcsPairs(
     scriptKeys,
@@ -227,7 +235,21 @@ export function alignCaptions({ scriptText, words = [], segments = [], audioDura
   }
   const coverage = timed.filter(Boolean).length / script.length;
   if (coverage < CAPTION_MATCH_MIN) {
-    return { ok: false, reason: 'caption-match-low', coverage, words: [] };
+    return {
+      ok: false,
+      reason: 'caption-match-low',
+      coverage,
+      words: [],
+      // What the author needs to fix the line: the script tokens that found no match, and the
+      // transcript the aligner actually compared against. Without them the error says a ratio
+      // and nothing else, and the usual causes stay invisible: a short line, or a word the
+      // synthesiser pronounces differently from how it is written.
+      unmatched: script.filter((_, index) => !timed[index]),
+      transcriptText: transcript
+        .map((word) => word.text || word.word || word.norm || '')
+        .filter(Boolean)
+        .join(' '),
+    };
   }
 
   // Timings for every script token: matched ones from the transcript, the rest

@@ -116,7 +116,7 @@ below is what `produce` does; the primitive commands are for debugging a single 
 regenerates the domaiNN console, and opens it only when the exit needs a human (`10`, `11`, `12`);
 `--no-open` (or `INNFO_CONSOLE_NO_OPEN=1`) keeps the browser closed.
 
-1. **Author** the episode's Level-3 kNNowledge document (adopting the `coNNtent` blueprint, following the Series' `includes` blueprint and its scope document plus its `Preset` elements; see `references/series-template-convention.md`). Allowed Field names and `type::` values are read from the `coNNtent` blueprint at run time — never restated as prose.
+1. **Author** the episode's Level-3 kNNowledge document (adopting the `coNNtent` blueprint, following the Series' `includes` blueprint and its scope document plus its `Preset` elements; see `references/series-template-convention.md`). Allowed Field names and `type::` values are read from the `coNNtent` blueprint at run time - never restated as prose. Every episode declares `blueprint_version` in its frontmatter and pins the installed blueprint; a `draft` or `idea` may omit it, but an episode that reaches `approved` without it is refused by name (`blueprint-version-missing`), because the pin is what makes a re-produce replayable.
 1b. **Review Gate** (the Episode document is the record; the console view is the UI):
    The episode declares `review::` (skip or required) and each scene carries its own approval.
    `produce` refuses to spend while a scene is unapproved and, when a reviewer left a

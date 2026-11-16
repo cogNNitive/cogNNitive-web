@@ -59,6 +59,41 @@ test('archived, an unknown state and a stale pin are refused by name', () => {
   }
 });
 
+test('an absent pin is tolerated only while the document is not committed to a version', () => {
+  for (const status of ['idea', 'draft']) {
+    assert.doesNotThrow(
+      () => assertProducible(episode({ status, blueprintVersion: undefined }), 'V_0-17-0'),
+      status,
+    );
+  }
+  for (const status of ['approved', 'produced', 'failed_qa', 'delivered']) {
+    assert.throws(
+      () => assertProducible(episode({ status, blueprintVersion: undefined }), 'V_0-17-0'),
+      /declares no blueprint_version/,
+      status,
+    );
+  }
+});
+
+test('a missing pin and a stale pin are different errors', () => {
+  const codeOf = (fn) => {
+    try {
+      fn();
+      return null;
+    } catch (err) {
+      return err.code;
+    }
+  };
+  assert.equal(
+    codeOf(() => assertProducible(episode({ status: 'approved', blueprintVersion: '' }), 'V_0-17-0')),
+    'blueprint-version-missing',
+  );
+  assert.equal(
+    codeOf(() => assertProducible(episode({ blueprintVersion: 'V_0-16-0' }), 'V_0-17-0')),
+    'blueprint-version-mismatch',
+  );
+});
+
 test('status follows the derived gate state', () => {
   const cases = [
     ['all gates approved', 'approved', [approved('s1'), approved('s2')], 'approved'],

@@ -31,11 +31,17 @@ reads `font`, `accent` and `fit` in CSS (`var(--font, Inter)`, `var(--accent, #7
 
 ## Where a component lives
 
-A component is named by the `components` cascade parameter (`components:: [lower-third=pill]`) and
-found as `components/<name>.html` by the nearest-folder walk — episode, then series, then domain,
-then this skill's `components/` fallback. A nearer file wins. A name set at any user level with no
-file fails pre-compile with `MissingAssetError` naming the name, the level and every path searched;
-a blueprint default with no file is skipped with one warning.
+A component is a **folder**: `library/components/<name>/index.html`. The folder is named by the
+`components` cascade parameter (`components:: [lower-third=pill]`) and found by the nearest-folder
+walk — episode, then series, then domain, then this skill's `components/` fallback. A nearer folder
+wins. A name set at any user level with no folder fails pre-compile with `MissingAssetError` naming
+the name, the level and every path searched; a blueprint default with no folder is skipped with one
+warning.
+
+A **flat file** `library/components/<name>.html` is never read. An earlier revision of this page said
+it was, and nothing warned when one existed: the file was simply ignored, so an author could edit it
+forever with no effect. That shape is now refused by name (`component-shape-invalid`) with the folder
+path it should have used, because the silent version of this mistake costs more than the error.
 
 ## Sound event keys
 

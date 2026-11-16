@@ -138,6 +138,20 @@ export function resolveLibrary({ kind, ref, fromDir, root, warn, packageFloor, t
   if (allowFloor && packageFloor) dirs.push(['package', packageFloor]);
 
   for (const [level, dir] of dirs) {
+    // A component is a folder (`<name>/index.html`). The walk below only matches directories for
+    // folder kinds, so a flat `<name>.html` is never read: an author edits it and nothing happens.
+    // Failing by name is the only honest answer; silence here is a trap.
+    if (kind === 'components' && !kindRel.includes('/')) {
+      const flat = path.join(dir, `${kindRel}.html`);
+      if (fs.existsSync(flat) && fs.statSync(flat).isFile()) {
+        const err = new Error(
+          `Component "${kindRel}" is declared as a flat file at ${flat}, which this engine never reads. ` +
+            `Move it to ${path.join(dir, kindRel, 'index.html')}: a component is a folder.`,
+        );
+        err.code = 'component-shape-invalid';
+        throw err;
+      }
+    }
     const file = matchFile(dir, kind, kindRel);
     searched.push(path.join(dir, kindRel));
     if (file) return { file, level, searched };
