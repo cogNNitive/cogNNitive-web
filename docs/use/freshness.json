@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-16T11:42:56.449Z",
-  "head": "2aa02173d6356ead73bea1e5e056fb5841154e1c",
+  "generatedAt": "2026-11-16T12:07:33.656Z",
+  "head": "629d5b6c301942c2c95a39fb40da59294badd2ac",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -11,45 +11,17 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.64.0",
-      "pinnedTagDate": "2026-11-16T12:33:16+01:00",
-      "commitsSincePin": 3,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/procedures/create_character_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/SKILL.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/references/cost-guardrails.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/avatar-jobs.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-consumers.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/kinds.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/scene-compiler.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/synthesize-avatar.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/avatar-narration.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/avatar-tts-cache.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
-      ]
+      "pinnedTag": "blueprints-v0.64.1",
+      "pinnedTagDate": "2026-11-16T12:37:36+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.64.0",
-      "pinnedTagDate": "2026-11-16T12:33:16+01:00",
-      "commitsSincePin": 3,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/procedures/create_character_procedures_NN.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/SKILL.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/references/cost-guardrails.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/avatar-jobs.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-consumers.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/kinds.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/scene-compiler.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/synthesize-avatar.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/avatar-narration.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/avatar-tts-cache.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
-      ]
+      "pinnedTag": "blueprints-v0.64.1",
+      "pinnedTagDate": "2026-11-16T12:37:36+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
@@ -64,7 +36,7 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.37.4",
       "pinnedTagDate": "2026-11-15T21:48:06+01:00",
-      "commitsSincePin": 16,
+      "commitsSincePin": 21,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
         "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",

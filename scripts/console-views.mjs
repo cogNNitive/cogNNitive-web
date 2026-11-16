@@ -70,7 +70,11 @@ async function dirExists(dir) {
   }
 }
 
-const compareCodeUnits = (a, b) => (a < b ? -1 : a > b ? 1 : 0)
+/**
+ * Code-unit string order. Every list this lib orders uses it (and so does the exporter,
+ * through this export): the result never depends on the machine's locale.
+ */
+export const compareCodeUnits = (a, b) => (a < b ? -1 : a > b ? 1 : 0)
 
 /** Directory entries, or null when the folder is absent (never for a permission error). */
 async function listEntries(dir) {

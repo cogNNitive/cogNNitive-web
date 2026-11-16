@@ -191,6 +191,16 @@ async function loadViewsLib() {
   }
 }
 
+/**
+ * The views lib, loaded once per process. It also owns `compareCodeUnits`, the single
+ * code-unit comparator every list in the exporter and the views lib is ordered with, so
+ * the two modules can never drift apart on locale behaviour.
+ */
+let viewsLibModule = null
+function viewsLibOnce() {
+  return (viewsLibModule ??= loadViewsLib())
+}
+
 function parseConsoleCdnRef(bundleText) {
   const m = bundleText && bundleText.match(/\bVersion (\d+\.\d+\.\d+)\./)
   return m ? `nn-console-v${m[1]}` : null
@@ -493,6 +503,7 @@ async function statusConsoles(rootDir) {
  * `filePath`), comparing the recorded `sha256` and `version`.
  */
 async function inspectModelStatus(model, rootDir, consoles) {
+  const { compareCodeUnits } = await viewsLibOnce()
   const relPath = relative(rootDir, model.filePath).replace(/\\/g, '/')
   const fileName = basename(relPath)
   const lists = (c) =>
@@ -500,7 +511,9 @@ async function inspectModelStatus(model, rootDir, consoles) {
     c.meta.models.some((mm) => mm && (mm.filePath === fileName || mm.filePath === relPath))
   const listing = (consoles || [])
     .filter(lists)
-    .sort((a, b) => String(b.meta.generated || '').localeCompare(String(a.meta.generated || '')))
+    .sort((a, b) =>
+      compareCodeUnits(String(b.meta.generated || ''), String(a.meta.generated || '')),
+    )
 
   if (listing.length === 0) {
     return { status: 'uncompiled', targetHtmlPath: join(rootDir, 'domaiNN_console.html') }
@@ -611,11 +624,21 @@ function viewSpecNamesFor(models, html) {
   return names
 }
 
-/** Scope family key: one model `<stem>`; several `<firstStem>-plus<N-1>-<hash6>`. */
-function scopeKeyOf(selected, rootDir) {
+/**
+ * Scope family key: one model `<stem>`; several `<firstStem>-plus<N-1>-<hash6>`.
+ * The multi-model key is order-independent: both the prefix and the hashed list come from
+ * the models sorted by their slash-normalized repository path, so any permutation of
+ * `selected` names the same family (the raw OS-separator path order the caller may have
+ * used never reaches the key).
+ */
+async function scopeKeyOf(selected, rootDir) {
   if (selected.length === 1) return selected[0].name
-  const rels = selected.map((m) => relative(rootDir, m.filePath).replace(/\\/g, '/')).sort()
-  return `${selected[0].name}-plus${selected.length - 1}-${hashSlice(rels.join('\n'), 6)}`
+  const { compareCodeUnits } = await viewsLibOnce()
+  const ordered = selected
+    .map((m) => ({ name: m.name, rel: relative(rootDir, m.filePath).replace(/\\/g, '/') }))
+    .sort((a, b) => compareCodeUnits(a.rel, b.rel))
+  const rels = ordered.map((entry) => entry.rel)
+  return `${ordered[0].name}-plus${selected.length - 1}-${hashSlice(rels.join('\n'), 6)}`
 }
 
 /** Human-readable scope label: `A, B` for a couple, `<first> + N more` beyond. */
@@ -641,33 +664,23 @@ async function renderTree(models, root, consoles) {
     const dirKey = dirKeys[i]
     const isLastDir = i === dirKeys.length - 1
     const dirPrefix = isLastDir ? '└── ' : '├── '
-    const childIndent = isLastDir ? '    ' : '│   '
+    // The root group needs no directory line (the header already names `.`) and no
+    // indent; every other group prints its line and indents its children.
+    const atRoot = dirKey === '.'
+    const childIndent = atRoot ? '' : isLastDir ? '    ' : '│   '
+    if (!atRoot) console.log(`${dirPrefix}${dirKey}`)
 
-    if (dirKey === '.') {
-      const items = groups.get(dirKey)
-      for (let j = 0; j < items.length; j++) {
-        const item = items[j]
-        const isLastItem = j === items.length - 1
-        const itemPrefix = isLastItem ? '└── ' : '├── '
-        const fileIndent = isLastItem ? '    ' : '│   '
-        console.log(`${itemPrefix}${basename(item.model.filePath)} [${item.statusInfo.status}]`)
-        const targetRel = relative(root, item.statusInfo.targetHtmlPath).replace(/\\/g, '/')
-        console.log(`${fileIndent}└── ${targetRel}`)
-      }
-    } else {
-      console.log(`${dirPrefix}${dirKey}`)
-      const items = groups.get(dirKey)
-      for (let j = 0; j < items.length; j++) {
-        const item = items[j]
-        const isLastItem = j === items.length - 1
-        const itemPrefix = isLastItem ? '└── ' : '├── '
-        const fileIndent = isLastItem ? '    ' : '│   '
-        console.log(
-          `${childIndent}${itemPrefix}${basename(item.model.filePath)} [${item.statusInfo.status}]`,
-        )
-        const targetRel = relative(root, item.statusInfo.targetHtmlPath).replace(/\\/g, '/')
-        console.log(`${childIndent}${fileIndent}└── ${targetRel}`)
-      }
+    const items = groups.get(dirKey)
+    for (let j = 0; j < items.length; j++) {
+      const item = items[j]
+      const isLastItem = j === items.length - 1
+      const itemPrefix = isLastItem ? '└── ' : '├── '
+      const fileIndent = isLastItem ? '    ' : '│   '
+      console.log(
+        `${childIndent}${itemPrefix}${basename(item.model.filePath)} [${item.statusInfo.status}]`,
+      )
+      const targetRel = relative(root, item.statusInfo.targetHtmlPath).replace(/\\/g, '/')
+      console.log(`${childIndent}${fileIndent}└── ${targetRel}`)
     }
   }
 }
@@ -946,6 +959,7 @@ async function openConsole(file, { open, launcher, platform, cooldownMs, now = D
 /* ── Model discovery ───────────────────────────────────────────── */
 
 async function loadModels(root, onWarning = writeExportWarning) {
+  const { compareCodeUnits } = await viewsLibOnce()
   const models = []
   for (const f of await findModelFiles(root, onWarning)) {
     const content = await readFile(f, 'utf-8')
@@ -959,7 +973,7 @@ async function loadModels(root, onWarning = writeExportWarning) {
       })
     }
   }
-  models.sort((a, b) => (a.filePath < b.filePath ? -1 : a.filePath > b.filePath ? 1 : 0))
+  models.sort((a, b) => compareCodeUnits(a.filePath, b.filePath))
   return models
 }
 
@@ -1664,6 +1678,21 @@ export async function writeConsole(opts = {}) {
   for (const m of payloadModels) schemaResolutions.set(m, await resolveModelSchema(m.content))
   const domainIndex = await buildExportDomainIndex(root, payloadModels, schemaResolutions)
 
+  // Change counts per model part, aggregated once: the per-model loop must not rescan
+  // every changeset. A model named by its stem, its id and its title in different
+  // changes is counted once per change, never once per alias.
+  const changeCountByModelPart = new Map()
+  for (const cs of Array.isArray(changesets) ? changesets : []) {
+    for (const c of Array.isArray(cs?.changes) ? cs.changes : []) {
+      if (!c || !c.target) continue
+      const target = String(c.target)
+      const at = target.indexOf('@')
+      const modelPart = (at === -1 ? target : target.slice(0, at)).trim().toLowerCase()
+      if (modelPart === '') continue
+      changeCountByModelPart.set(modelPart, (changeCountByModelPart.get(modelPart) || 0) + 1)
+    }
+  }
+
   for (const m of payloadModels) {
     const relPath = relative(root, m.filePath).replace(/\\/g, '/')
     const fileName = basename(relPath)
@@ -1745,22 +1774,15 @@ export async function writeConsole(opts = {}) {
               .replace(/[^a-z0-9]+/g, '-')
           : null
       // Per-model change count comes from the domain's changesets (the only change
-      // record), matched by the model part of each change's D5 target.
-      const modelKeys = [mTitle, mId, modelStem].map(function (v) {
-        return String(v || '').toLowerCase()
-      })
-      const changeCount = (Array.isArray(changesets) ? changesets : []).reduce(function (n, cs) {
-        const items = cs && Array.isArray(cs.changes) ? cs.changes : []
-        return (
-          n +
-          items.filter(function (c) {
-            if (!c || !c.target) return false
-            const t = String(c.target)
-            const at = t.indexOf('@')
-            const modelPart = (at === -1 ? t : t.slice(0, at)).trim().toLowerCase()
-            return modelPart !== '' && modelKeys.indexOf(modelPart) !== -1
-          }).length
-        )
+      // record), matched by the model part of each change's D5 target. A repeated
+      // spelling (title equal to stem) is one key, so it is not counted twice.
+      const modelKeys = new Set(
+        [mTitle, mId, modelStem].map(function (v) {
+          return String(v || '').toLowerCase()
+        }),
+      )
+      const changeCount = Array.from(modelKeys).reduce(function (n, key) {
+        return n + (changeCountByModelPart.get(key) || 0)
       }, 0)
       modelSummaries.push({
         id: mId,
@@ -2064,7 +2086,7 @@ export async function writeConsole(opts = {}) {
       // D2: the domain's changesets, newest first by file stamp. Read-only, never
       // written into a model.
       changes: (Array.isArray(payloadChangesets) ? payloadChangesets.slice() : []).sort((a, b) =>
-        String(b.path).localeCompare(String(a.path)),
+        viewsLib.compareCodeUnits(String(b.path), String(a.path)),
       ),
       ...(filesData ? { files: filesData } : {}),
     },
@@ -2134,7 +2156,7 @@ export async function writeConsole(opts = {}) {
   // Output location. A console (whole-domaiNN or model-scoped) owns ONE stable file
   // from the shared path builder; only a lone view export keeps a write-once family
   // (<view>_view/, <view>-<key>_view/).
-  const scopeKey = scoped ? scopeKeyOf(selected, root) : null
+  const scopeKey = scoped ? await scopeKeyOf(selected, root) : null
   let familyDir = null
   let familyKey = null
   let relativePath = null
@@ -2188,11 +2210,10 @@ export async function writeConsole(opts = {}) {
     let rendered = renderConsole(resolvedShell, null, config, domainPayload, outDirAbs, root)
     if (omitChanges)
       rendered = injectChangesNotice(rendered, { count: changeCount, bytes: changesBytes })
-    let html = viewsLib.inlineConsoleAssets(rendered, preparedAssets)
-    if (!html.includes('data-theme=')) {
-      html = html.replace('<html lang="en">', '<html lang="en" data-theme="light">')
-    }
-    return html
+    // The page theme is the shell's own `<html lang="en" data-theme="light">`: the inlined
+    // stylesheet always contains the `data-theme=` literal, so patching the document after
+    // inlining could never fire (backlog console-builder-d20).
+    return viewsLib.inlineConsoleAssets(rendered, preparedAssets)
   }
   // Final size gate, before the first write of this run.
   const bytes = (text) => Buffer.byteLength(text, 'utf8')
