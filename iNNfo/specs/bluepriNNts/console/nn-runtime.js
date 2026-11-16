@@ -14,7 +14,19 @@
   if (!Review) throw new Error('nnReview missing: load review.js first')
   if (!Studio) throw new Error('nnStudio missing: load studio.js first')
 
-  var CONSOLE_VERSION = '0.1.0'
+  // Release identity. `scripts/lib/console-bundle.js` injects the console package
+  // version here at compose time, the same value that forms the bundle banner, so the
+  // runtime and the release URL parsed from that banner cannot disagree. A
+  // source-module load (tests, direct use) reads that same package file instead. The
+  // marker below only exists in the source; it never reaches a composed bundle.
+  var CONSOLE_VERSION = '__NN_CONSOLE_RELEASE_VERSION__'
+  if (CONSOLE_VERSION === '__NN_CONSOLE_RELEASE_VERSION__' && typeof require === 'function') {
+    try {
+      CONSOLE_VERSION = String(require('./package.json').version)
+    } catch {
+      /* no injected version and no package file: a broken build, not a runtime path */
+    }
+  }
 
   var REVIEWER_STORAGE_KEY = 'nn_reviewer_name'
   // Fallback reviewer name used when none is stored. Treated as "no identifier"

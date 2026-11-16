@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-16T14:44:43.658Z",
-  "head": "e9b86d77871d001470060de741410f9a737b6b91",
+  "generatedAt": "2026-11-16T14:58:55.857Z",
+  "head": "0d9cee914bdc831585b390fe8cdc86f713dd95ec",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -13,15 +13,21 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.64.2",
       "pinnedTagDate": "2026-11-16T13:08:38+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.64.2",
       "pinnedTagDate": "2026-11-16T13:08:38+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-runtime.js"
+      ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
@@ -37,7 +43,7 @@
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.37.4",
       "pinnedTagDate": "2026-11-15T21:48:06+01:00",
-      "commitsSincePin": 29,
+      "commitsSincePin": 31,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
         "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",

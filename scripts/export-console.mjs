@@ -640,17 +640,28 @@ async function domainConsoleStaleness(models, rootDir) {
   if (!assetsMatch) return 'assets'
 
   const embedded = extractModelMetaFromHtml(html)?.models
-  if (!Array.isArray(embedded) || embedded.length !== models.length) return 'models'
+  if (!Array.isArray(embedded)) return 'models'
+  // The synthetic changes summary is not a model document: excluding it keeps a domain
+  // with changesets fresh, while every real entry (and the count itself) stays compared.
+  const embeddedModels = embedded.filter((e) => e && e.filePath !== CHANGES_SUMMARY_FILE_PATH)
+  if (embeddedModels.length !== models.length) return 'models'
   for (const m of models) {
     const relPath = relative(rootDir, m.filePath).replace(/\\/g, '/')
     const fileName = basename(relPath)
-    const entry = embedded.find((e) => e && (e.filePath === fileName || e.filePath === relPath))
+    const entry = embeddedModels.find((e) => e.filePath === fileName || e.filePath === relPath)
     if (!entry) return 'models'
     if ((entry.version ?? null) !== (m.fm.knowledge_version || null)) return 'models'
     if (entry.sha256 !== computeSha256(m.content)) return 'models'
   }
   return null
 }
+
+/**
+ * The one `meta.models` entry that is not a model document: the exporter summarizes the
+ * domain's changesets as a synthetic `<changes>` collection for the console's Changes
+ * view. Freshness compares real models, so it skips this sentinel by name.
+ */
+const CHANGES_SUMMARY_FILE_PATH = '<changes>'
 
 /**
  * Freshness of the domain console: `uncompiled` when the file is absent, `fresh` when every
@@ -2027,7 +2038,7 @@ export async function writeConsole(opts = {}) {
       modelSummaries.push({
         id: CHANGES_MODEL_ID,
         title: CHANGES_MODEL_TITLE,
-        filePath: '<changes>',
+        filePath: CHANGES_SUMMARY_FILE_PATH,
         blueprint: 'changes',
         family: 'changes',
         version: changesBlueprintVersion || null,
