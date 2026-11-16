@@ -12252,30 +12252,100 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
   // Progressive render window shared by every element view: render RENDER_PAGE
   // items, then append the rest on demand, so a broad query never builds the
   // whole (100k-node) DOM in one synchronous pass.
+  //
+  // `focusIndex` keeps a deep link from defeating that window. The page that HOLDS
+  // the focused item is mounted up front, so the link lands on a node that exists,
+  // while the pages before it and the tail stay unmounted until the reader asks for
+  // them. Everything else behaves exactly as the plain first-page window did.
   // ponytail: cap + "show more", not full virtualization (no row-height math);
   // upgrade to windowing only if this measurably falls short.
   var RENDER_PAGE = 100
-  function chunked(host, items, renderSlice, page, buttonHost) {
+  function chunked(host, items, renderSlice, page, buttonHost, focusIndex) {
     page = page || RENDER_PAGE
     buttonHost = buttonHost || host
-    var shown = 0
+    var total = items.length
+    var windows = [] // mounted [start, end) ranges, ascending; `first` is the range's first node
     var btn = null
-    function more() {
+
+    // Append a page where it belongs in document order: before the first mounted
+    // range that starts after it, else before the "show more" control, else last.
+    function insertRange(frag, start) {
+      for (var i = 0; i < windows.length; i++) {
+        var w = windows[i]
+        if (w.start > start && w.first && w.first.parentNode === host) {
+          host.insertBefore(frag, w.first)
+          return
+        }
+      }
+      if (btn && btn.parentNode === host) host.insertBefore(frag, btn)
+      else host.appendChild(frag)
+    }
+
+    function renderRange(start, end) {
+      var frag = renderSlice(items.slice(start, end), start)
+      var first = frag ? frag.firstChild : null
+      if (frag) insertRange(frag, start)
+      windows.push({ start: start, end: end, first: first })
+      windows.sort(function (a, b) {
+        return a.start - b.start
+      })
+    }
+
+    function mountedCount() {
+      var n = 0
+      windows.forEach(function (w) {
+        n += w.end - w.start
+      })
+      return n
+    }
+
+    // The next unmounted page, always in document order: a gap left by the focused
+    // page fills before the tail.
+    function nextGap() {
+      var cursor = 0
+      for (var i = 0; i < windows.length; i++) {
+        var w = windows[i]
+        if (w.start > cursor) return [cursor, Math.min(w.start, cursor + page)]
+        if (w.end > cursor) cursor = w.end
+      }
+      if (cursor >= total) return null
+      return [cursor, Math.min(total, cursor + page)]
+    }
+
+    function syncButton() {
       if (btn && btn.parentNode) btn.parentNode.removeChild(btn)
       btn = null
-      var end = Math.min(items.length, shown + page)
-      var frag = renderSlice(items.slice(shown, end), shown)
-      if (frag) host.appendChild(frag)
-      shown = end
-      if (shown < items.length) {
-        btn = el('button', 'btn btn-ghost btn-sm nn-load-more')
-        btn.setAttribute('type', 'button')
-        btn.textContent = '\u25be Show more (' + shown + ' of ' + items.length + ')'
-        btn.addEventListener('click', more)
-        buttonHost.appendChild(btn)
-      }
+      var shown = mountedCount()
+      if (shown >= total) return
+      btn = el('button', 'btn btn-ghost btn-sm nn-load-more')
+      btn.setAttribute('type', 'button')
+      btn.textContent = '\u25be Show more (' + shown + ' of ' + total + ')'
+      btn.addEventListener('click', more)
+      buttonHost.appendChild(btn)
     }
+
+    function more() {
+      var gap = nextGap()
+      if (gap) renderRange(gap[0], gap[1])
+      syncButton()
+    }
+
+    // Mount the page that holds item #index unless it is mounted already. Returns
+    // false for an index the list does not carry, so a stale link stays inert.
+    function reveal(index) {
+      if (index == null || index < 0 || index >= total) return false
+      for (var i = 0; i < windows.length; i++) {
+        if (index >= windows[i].start && index < windows[i].end) return true
+      }
+      var start = Math.floor(index / page) * page
+      renderRange(start, Math.min(total, start + page))
+      syncButton()
+      return true
+    }
+
     more()
+    if (focusIndex != null && focusIndex >= page) reveal(focusIndex)
+    return { more: more, reveal: reveal }
   }
 
   // Cards project live changes: a correction patches its field value, a new
@@ -12314,6 +12384,9 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     var content = doc.getElementById('nn-content')
     if (!content) return
     content.innerHTML = ''
+    // Any view that replaces #nn-content drops the previous card window first, so a
+    // stale window can never paint cards into a table or a badge list.
+    content.__nnCardWindow = null
 
     var projectedElements = sortElements(projectElements(elements, drafts), sortState)
     if (!projectedElements.length) return mountEmptyFilterState(content)
@@ -12483,7 +12556,21 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
       return card
     }
 
-    chunked(
+    // A deep link names one card. Mount the page that holds it instead of every
+    // card before it: a shared `#el-<id>` URL into a wide domain used to cost the
+    // fully expanded page (214 MB / 21k nodes at boot vs 621 MB / 222k expanded,
+    // measured on a 2,901-element domain).
+    var focusIndex = null
+    if (focusId != null) {
+      for (var fi = 0; fi < projectedElements.length; fi++) {
+        if (String(projectedElements[fi] && projectedElements[fi].id) === String(focusId)) {
+          focusIndex = fi
+          break
+        }
+      }
+    }
+
+    var cardWindow = chunked(
       content,
       projectedElements,
       function (pageElements) {
@@ -12493,14 +12580,29 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
         })
         return frag
       },
-      focusId != null ? projectedElements.length : RENDER_PAGE,
+      RENDER_PAGE,
+      undefined,
+      focusIndex,
     )
+    // Published so `focusElementCard` can mount the page of a card this window has
+    // not reached yet, then focus and scroll it.
+    content.__nnCardWindow = {
+      revealElement: function (id) {
+        for (var i = 0; i < projectedElements.length; i++) {
+          if (String(projectedElements[i] && projectedElements[i].id) === String(id)) {
+            return cardWindow.reveal(i)
+          }
+        }
+        return false
+      },
+    }
   }
 
   function mountElementBadges(doc, elements, drafts, concepts, refs, modelId, sortState) {
     var content = doc.getElementById('nn-content')
     if (!content) return
     content.innerHTML = ''
+    content.__nnCardWindow = null
     var wrap = el('div', 'nn-element-badges-wrap')
     wrap.setAttribute('data-nn-component', 'element-badges-view')
     var projectedElements = sortElements(projectElements(elements, drafts), sortState)
@@ -12541,6 +12643,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     var content = doc.getElementById('nn-content')
     if (!content) return
     content.innerHTML = ''
+    content.__nnCardWindow = null
     var grid = el('div', 'nn-element-minicards-grid')
     grid.setAttribute('data-nn-component', 'element-minicards-view')
     var projectedElements = sortElements(projectElements(elements, drafts), sortState)
@@ -12655,6 +12758,7 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     var content = doc.getElementById('nn-content')
     if (!content) return
     content.innerHTML = ''
+    content.__nnCardWindow = null
     var projected = projectElements(elements, drafts)
     var table = el('table', 'nn-element-table')
     if (!table) return
@@ -15142,6 +15246,16 @@ var uPlot=function(){"use strict";const e="u-off",l="u-label",t="width",n="heigh
     }
     // 2. Find card by id (cards carry the `el-` prefixed domId, matching `#el-` hrefs)
     var card = doc.getElementById('el-' + String(elementId))
+    // The card can sit in a page the progressive render window has not mounted yet:
+    // mount that one page first, then focus and scroll it. A card the current view
+    // does not carry at all leaves the DOM untouched (stale link, wrong view).
+    if (!card) {
+      var content = doc.getElementById('nn-content')
+      var cardWindow = content && content.__nnCardWindow
+      if (cardWindow && typeof cardWindow.revealElement === 'function' && cardWindow.revealElement(elementId)) {
+        card = doc.getElementById('el-' + String(elementId))
+      }
+    }
     if (card) {
       if (typeof card.setOpen === 'function' && card.getAttribute('data-open') === 'false') {
         card.setOpen(true)
