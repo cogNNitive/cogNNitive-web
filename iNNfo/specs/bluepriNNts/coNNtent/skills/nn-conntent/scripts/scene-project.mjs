@@ -68,6 +68,11 @@ function drawableLayers(scene) {
     .sort((a, b) => Number(a.layer_z_index ?? 0) - Number(b.layer_z_index ?? 0));
 }
 
+/** CSS blur radius for a `fit:: blur` backdrop on a 1920 box (see BLUR_TO_SIGMA). */
+export const FIT_BLUR_RADIUS_PX = 24
+/** Backdrop darkening for a `fit:: blur` layer: the same intent as render-formats' DEFAULT_BRIGHTNESS. */
+export const FIT_BLUR_BRIGHTNESS = 0.82
+
 function layerMarkup(layer, sceneDurationFrames, fps, trackBase, sceneSlug) {
   const name = String(layer.layer_asset_source);
   const dur = frameSeconds(sceneDurationFrames, fps);
@@ -90,10 +95,28 @@ function layerMarkup(layer, sceneDurationFrames, fps, trackBase, sceneSlug) {
   // A stable per-layer `id` gives HyperFrames Studio a target for its timeline and
   // canvas controls (an id-less clip triggers a lint warning).
   const id = `media-${esc(sceneSlug || 'scene')}-${trackBase}`;
+  const fit = String(layer.layer_fit || '').toLowerCase();
+  const zIndex = Number.isFinite(z) ? z : 0;
+  // `fit:: blur` keeps the WHOLE asset visible (contain) over a backdrop built from
+  // the same asset filling the box and blurred, so a 16:9 image in a 9:16 box shows
+  // no empty band. Both elements are the same file: no new palette is introduced,
+  // and the backdrop carries no audio of its own (`muted`).
+  if (fit === 'blur') {
+    const backdrop =
+      `<${tag} id="${id}-backdrop" class="clip nn-media nn-media-backdrop" data-start="0" data-duration="${dur}" ` +
+      `data-track-index="${trackBase}" ${mediaAttrs} aria-hidden="true" src="assets/${esc(name)}" ` +
+      `style="z-index:${zIndex};object-position:${objectPos};object-fit:cover;` +
+      `filter:blur(${FIT_BLUR_RADIUS_PX}px) brightness(${FIT_BLUR_BRIGHTNESS});"></${tag}>`;
+    const foreground =
+      `<${tag} id="${id}" class="clip nn-media nn-media-foreground" data-start="0" data-duration="${dur}" ` +
+      `data-track-index="${trackBase}" ${mediaAttrs} src="assets/${esc(name)}" ` +
+      `style="z-index:${zIndex};object-position:${objectPos};object-fit:contain;"></${tag}>`;
+    return backdrop + '\n      ' + foreground;
+  }
   return (
     `<${tag} id="${id}" class="clip nn-media" data-start="0" data-duration="${dur}" ` +
     `data-track-index="${trackBase}" ${mediaAttrs} src="assets/${esc(name)}" ` +
-    `style="z-index:${Number.isFinite(z) ? z : 0};object-position:${objectPos};"></${tag}>`
+    `style="z-index:${zIndex};object-position:${objectPos};"></${tag}>`
   );
 }
 

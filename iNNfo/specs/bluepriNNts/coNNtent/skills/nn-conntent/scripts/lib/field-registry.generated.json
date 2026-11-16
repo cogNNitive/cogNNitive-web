@@ -1,6 +1,6 @@
 {
   "blueprint": "coNNtent",
-  "blueprint_version": "V_0-22-0",
+  "blueprint_version": "V_0-23-0",
   "generated_from": "spec_NN.md",
   "fields": {
     "adapter": {
@@ -424,6 +424,28 @@
       "cascade": false,
       "description": "Exit motion of the Layer overlay. Optional."
     },
+    "fill": {
+      "concepts": [
+        "Video",
+        "Series",
+        "Video Defaults"
+      ],
+      "scope": "video",
+      "levels": [
+        "domain",
+        "series",
+        "video"
+      ],
+      "type": "select",
+      "options": [
+        "crop",
+        "blur",
+        "pad"
+      ],
+      "multiple": false,
+      "cascade": true,
+      "description": "How a derived delivery format reframes the square master. `crop` is the default and stays the default because the destinations this pipeline serves re-frame a padded file themselves: YouTube pads non-native video in its own player and asks creators not to pad, TikTok letterboxes without cropping, and Instagram letterboxes on a blurred background or Smart Zooms on its own. `blur` scales the whole square to FIT and centres it over a blurred, darkened, scaled-to-fill backdrop (suffix `_blur`). `pad` does the same over a solid background, black unless `fill_pad_color` supplies a colour (suffix `_pad`). Choose `blur` or `pad` only for a destination that honours the file as delivered: a brand-owned player, an embed, OTT, or a broadcast slot that permits it. Unset means `crop`, so an existing episode renders exactly as before."
+    },
     "fit": {
       "concepts": [
         "Layer",
@@ -444,11 +466,12 @@
       "type": "select",
       "options": [
         "cover",
-        "contain"
+        "contain",
+        "blur"
       ],
       "multiple": false,
       "cascade": true,
-      "description": "How a `media` Layer fits its box. `cover` fills and crops; `contain` shows the whole asset with margins. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies."
+      "description": "How a `media` Layer fits its box. `cover` fills and crops; `contain` shows the whole asset with margins; `blur` shows the whole asset (contain) over a blurred, slightly darkened backdrop built from the same asset filling the box, so a 16:9 image in a 9:16 box shows no empty band. The backdrop is the same file, so no new palette is introduced. The backdrop's CSS blur radius is 24px on a 1920 box, which is NOT the same operation as the ffmpeg `gblur` sigma 20 that `render-formats` uses: 24px approximates sigma 20 at that size, and the two are deliberately not claimed to be identical. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies."
     },
     "fixed": {
       "concepts": [

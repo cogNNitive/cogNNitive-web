@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-7-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"
 blueprint_name: "coNNtent"
-blueprint_version: "V_0-22-0"
+blueprint_version: "V_0-23-0"
 title: "coNNtent App"
 catalog: catalog/model-catalog_coNNtent_NN.md
 procedures:
@@ -411,8 +411,8 @@ description:: Optional output resolution for an `avatar` clip. The engine valida
 concept:: [Layer, Scene, Video, Preset, Series, Video Defaults]
   scope:: render
 type:: select
-options:: [cover, contain]
-description:: How a `media` Layer fits its box. `cover` fills and crops; `contain` shows the whole asset with margins. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies.
+options:: [cover, contain, blur]
+description:: How a `media` Layer fits its box. `cover` fills and crops; `contain` shows the whole asset with margins; `blur` shows the whole asset (contain) over a blurred, slightly darkened backdrop built from the same asset filling the box, so a 16:9 image in a 9:16 box shows no empty band. The backdrop is the same file, so no new palette is introduced. The backdrop's CSS blur radius is 24px on a 1920 box, which is NOT the same operation as the ffmpeg `gblur` sigma 20 that `render-formats` uses: 24px approximates sigma 20 at that size, and the two are deliberately not claimed to be identical. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies.
 
 ## NN Field Definition: voice
 concept:: [Video, Scene, Preset, Series, Video Defaults]
@@ -477,6 +477,13 @@ concept:: [Video, Series, Video Defaults]
 type:: select
 multiple:: true
 description:: Ordered list of delivery sizes as `<W>x<H>`. The first entry is the master size; the rest are derived from the master. Defaults to `[1920x1920, 1080x1920, 1920x1080, 1080x1080]`.
+
+## NN Field Definition: fill
+concept:: [Video, Series, Video Defaults]
+scope:: video
+type:: select
+options:: [crop, blur, pad]
+description:: How a derived delivery format reframes the square master. `crop` is the default and stays the default because the destinations this pipeline serves re-frame a padded file themselves: YouTube pads non-native video in its own player and asks creators not to pad, TikTok letterboxes without cropping, and Instagram letterboxes on a blurred background or Smart Zooms on its own. `blur` scales the whole square to FIT and centres it over a blurred, darkened, scaled-to-fill backdrop (suffix `_blur`). `pad` does the same over a solid background, black unless `fill_pad_color` supplies a colour (suffix `_pad`). Choose `blur` or `pad` only for a destination that honours the file as delivered: a brand-owned player, an embed, OTT, or a broadcast slot that permits it. Unset means `crop`, so an existing episode renders exactly as before.
 
 ## NN Field Definition: review_gates
 concept:: [Video, Series, Video Defaults]

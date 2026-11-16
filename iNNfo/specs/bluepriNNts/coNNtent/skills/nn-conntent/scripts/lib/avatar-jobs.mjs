@@ -35,6 +35,82 @@ export function validResolutionsFor(model) {
   return ['480p', '720p', '768p'];
 }
 
+/**
+ * The nominal pixel height a `480p` / `720p` / `768p` label declares. The label is a
+ * target, not a guarantee: see `checkAvatarClip`.
+ * @param {string} resolution
+ * @returns {number}
+ */
+export function declaredHeightOf(resolution) {
+  const m = /^(\d+)p$/i.exec(String(resolution || '').trim());
+  return m ? Number.parseInt(m[1], 10) : 0;
+}
+
+/** Tolerance when comparing an asset's aspect ratio to a square (a rounded PNG edge). */
+export const AVATAR_SQUARE_TOLERANCE = 0.02;
+
+/**
+ * Compares the clip's measured size against the resolution that was requested.
+ *
+ * The WaveSpeed avatar provider does not enforce `resolution`: measured A/B on the
+ * default InfiniTalk model with `avatar_resolution: 720p` returned 480x480 for a
+ * 1920x1920 input and 640x352 for a 2848x1600 input. It preserves the input aspect ratio
+ * and holds the pixel budget near 0.23 Mpx, so the declared label is advisory and the
+ * short side is the dimension that collapses. Nothing here changes the request or the
+ * cache key; it only reports what came back (#691).
+ *
+ * @param {{ resolution: string, width?: number, height?: number }} o
+ * @returns {{ ok: boolean, warning?: string, width?: number, height?: number, declaredHeight: number }}
+ */
+export function checkAvatarClip({ resolution, width, height }) {
+  const declaredHeight = declaredHeightOf(resolution);
+  if (!width || !height) {
+    return {
+      ok: false,
+      declaredHeight,
+      warning:
+        "could not read the produced avatar clip's dimensions, so the declared " +
+        resolution +
+        ' could not be verified. The provider treats `resolution` as advisory; check the output before delivery.',
+    };
+  }
+  const shortSide = Math.min(width, height);
+  if (declaredHeight > 0 && shortSide < declaredHeight) {
+    return {
+      ok: false,
+      declaredHeight,
+      width,
+      height,
+      warning:
+        'the avatar provider returned ' + width + 'x' + height + ' for a declared ' + resolution +
+        ' (short side ' + shortSide + ' < ' + declaredHeight + '). `resolution` is advisory: the provider keeps the ' +
+        "input aspect ratio and holds the pixel budget near 0.23 Mpx. Accept the clip as produced, or raise the " +
+        "input image's pixels.",
+    };
+  }
+  return { ok: true, declaredHeight, width, height };
+}
+
+/**
+ * A square master composes a full-frame avatar layer with `cover`, so a non-1:1 still
+ * loses roughly 31% of its frame (a 16:9 image keeps ~0.56 of its height once cropped to
+ * a square). Warn instead of rejecting, and never change the composition (#691).
+ *
+ * @param {{ width?: number, height?: number, label?: string }} o
+ * @returns {string | null}
+ */
+export function checkAvatarAssetAspect({ width, height, label = 'avatar image' }) {
+  if (!width || !height) return null;
+  const ratio = width / height;
+  if (Math.abs(ratio - 1) <= AVATAR_SQUARE_TOLERANCE) return null;
+  const kept = Math.round((Math.min(width, height) / Math.max(width, height)) * 100);
+  return (
+    label + ' is ' + width + 'x' + height + ' (' + ratio.toFixed(2) + ':1), not square. A square master ' +
+    'draws a full-frame avatar layer with `cover`, so only about ' + kept + '% of the frame survives ' +
+    '(roughly ' + (100 - kept) + '% is cropped). Compose it as square, or place it in a `contain` box.'
+  );
+}
+
 /** Model-appropriate fallback when the script declares no resolution. */
 export function defaultResolutionFor(model) {
   const m = normalizeModelId(model);

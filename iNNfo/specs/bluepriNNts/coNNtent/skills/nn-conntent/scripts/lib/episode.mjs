@@ -72,12 +72,17 @@ export function readEpisode(scriptPath, deps = {}) {
     throw new EpisodeError('missing-video', `${scriptPath} has no "## NN Video" element: it is not an episode.`);
   }
   const fields = video.fields || {};
+  const rawParent = model.frontmatter?.parent_spec;
   return {
     scriptPath,
     model,
     slug: String(fields.slug || video.slug || ''),
     status: String(fields.status || ''),
     blueprintVersion: model.frontmatter?.blueprint_version,
+    parentSpec:
+      rawParent && typeof rawParent === 'object'
+        ? { name: rawParent.name === undefined ? undefined : String(rawParent.name), url: rawParent.url === undefined ? undefined : String(rawParent.url) }
+        : undefined,
     fields,
     scenes: (model.elements?.Scene || []).map((scene) => ({
       name: scene.name,
@@ -111,14 +116,51 @@ export function unknownKeys(model, registry = loadFieldRegistry()) {
   return problems;
 }
 
+/** The version suffix of a spec name (`coNNtent_V_0-22-0` -> `V_0-22-0`), or undefined. */
+export function versionOfSpecName(name) {
+  const m = /(V_\d+-\d+-\d+)$/i.exec(String(name || '').trim());
+  return m ? m[1] : undefined;
+}
+
+/**
+ * The `parent_spec.name` that agrees with an installed blueprint version: the family
+ * name plus that version (`coNNtent` + `V_0-22-0` -> `coNNtent_V_0-22-0`).
+ * @param {string} family e.g. `coNNtent`
+ * @param {string} version e.g. `V_0-22-0`
+ */
+export function expectedParentSpecName(family, version) {
+  return version ? String(family) + '_' + version : String(family);
+}
+
 /**
  * Refuses an episode the engine cannot produce: a terminal state, or a blueprint pin
  * that is not the installed one (capability video-produce-command "Produce Refuses
  * Episodes It Cannot Produce").
- * @param {{ scriptPath: string, status: string, blueprintVersion?: string }} episode
+ *
+ * The pin and `parent_spec.name` are two statements of one fact, and two gates read
+ * them: `produce` reads the pin, the console reads `parent_spec.name`. When they
+ * disagree, no single document can satisfy both (#694), so this refuses with the ONE
+ * value that does satisfy both: `parent_spec.name: <family>_<installed version>`.
+ *
+ * @param {{ scriptPath: string, status: string, blueprintVersion?: string, parentSpec?: { name?: string } }} episode
  * @param {string} installedVersion
+ * @param {{ family?: string }} [opts]
  */
-export function assertProducible(episode, installedVersion) {
+export function assertProducible(episode, installedVersion, { family = 'coNNtent' } = {}) {
+  assertBlueprintPin(episode, installedVersion, { family });
+  if (_captionsValidator) {
+    _captionsValidator(episode);
+  }
+}
+
+/**
+ * The pin half of `assertProducible`: status, the installed version, and the
+ * `parent_spec.name` that must agree with it.
+ * @param {{ scriptPath: string, status: string, blueprintVersion?: string, parentSpec?: { name?: string } }} episode
+ * @param {string} installedVersion
+ * @param {{ family?: string }} [opts]
+ */
+export function assertBlueprintPin(episode, installedVersion, { family = 'coNNtent' } = {}) {
   if (REFUSED_STATUSES.has(episode.status)) {
     throw new EpisodeError(
       'refused-state',
@@ -134,11 +176,14 @@ export function assertProducible(episode, installedVersion) {
   }
   const pin = episode.blueprintVersion;
   const hasPin = pin !== undefined && pin !== null && String(pin).trim() !== '';
+  const expectedName = expectedParentSpecName(family, installedVersion);
+  const declaredParent = episode.parentSpec?.name;
   if (hasPin && pin !== installedVersion) {
     throw new EpisodeError(
       'blueprint-version-mismatch',
       `Cannot produce ${path.basename(episode.scriptPath)}: it pins blueprint_version ` +
         `${pin} but the installed coNNtent blueprint is ${installedVersion}. ` +
+        `Set blueprint_version: ${installedVersion} and parent_spec.name: ${expectedName}. ` +
         'Old episodes stay archives; nothing was converted.',
     );
   }
@@ -146,12 +191,25 @@ export function assertProducible(episode, installedVersion) {
     throw new EpisodeError(
       'blueprint-version-missing',
       `Cannot produce ${path.basename(episode.scriptPath)}: it declares no blueprint_version and its status is ` +
-        `"${episode.status}". Add blueprint_version: ${installedVersion} to the frontmatter, or move the episode ` +
-        'back to draft while it is still being written.',
+        `"${episode.status}". Add blueprint_version: ${installedVersion} (and parent_spec.name: ${expectedName}) ` +
+        'to the frontmatter, or move the episode back to draft while it is still being written.',
     );
   }
-  if (_captionsValidator) {
-    _captionsValidator(episode);
+  // A declared parent_spec.name that names a DIFFERENT version is the unsatisfiable
+  // pair: the console tells the author to track that other value while this gate
+  // refuses it. Report the one value both accept (#694).
+  if (declaredParent && versionOfSpecName(declaredParent) !== undefined) {
+    const declaredVersion = versionOfSpecName(declaredParent);
+    const expectedVersion = String(installedVersion || '').trim();
+    if (expectedVersion !== '' && declaredVersion !== expectedVersion) {
+      throw new EpisodeError(
+        'parent-spec-mismatch',
+        `Cannot produce ${path.basename(episode.scriptPath)}: parent_spec.name is "${declaredParent}" ` +
+          `(${declaredVersion}) but the installed coNNtent blueprint is ${expectedVersion}. ` +
+          `Set parent_spec.name: ${expectedName} and blueprint_version: ${expectedVersion}: one document must ` +
+          'satisfy both gates, and that is the only pair that does.',
+      );
+    }
   }
 }
 

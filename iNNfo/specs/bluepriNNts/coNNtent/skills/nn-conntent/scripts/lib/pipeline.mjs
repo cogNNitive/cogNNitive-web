@@ -57,7 +57,7 @@ import { normalizeModelId, resolveDefaultCacheDir } from './video-guard.mjs'
 import { resolve as cascadeResolve } from './cascade.mjs'
 import { estimateScriptCost } from '../asset-cost-estimator.mjs'
 import { randomUUID } from 'node:crypto'
-import { readTimingRows, readLedgerRows } from './facts.mjs'
+import { readTimingRows, sumLedgerSpend } from './facts.mjs'
 import { chapterLines, readManifestForFinalize, writeDescriptionFile } from './description.mjs'
 import { DELIVERY_FORMATS, renderFormats } from '../render-formats.mjs'
 import { renderVideo } from './render.mjs'
@@ -434,12 +434,7 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
       : Number(dailyBudget)
   if (dailyBudgetUsd !== null && Number.isFinite(dailyBudgetUsd)) {
     const now = Date.now()
-    const spent24h = readLedgerRows(rootDir).reduce((sum, row) => {
-      const ts = Date.parse(row.ts)
-      if (!Number.isFinite(ts) || now - ts > 24 * 60 * 60 * 1000) return sum
-      const usd = Number(row.est_usd)
-      return sum + (Number.isFinite(usd) && usd > 0 ? usd : 0)
-    }, 0)
+    const spent24h = sumLedgerSpend(rootDir, now - 24 * 60 * 60 * 1000)
     if (spent24h + total > dailyBudgetUsd + 1e-9) {
       throw new ProduceStop(
         'daily-budget-exceeded',
@@ -645,10 +640,18 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
   }
   let formats = []
   if (presets.length > 0) {
+    // `fill::` is a delivery concern resolved through the cascade; a document that
+    // declares nothing resolves to `crop`, so its output is byte-identical to before.
+    const fillValue = resolveForEpisode(episode.model, scriptPath, 'fill').value
+    const fill = fillValue === null || fillValue === undefined || fillValue === '' ? undefined : String(fillValue)
+    const padColorValue = resolveForEpisode(episode.model, scriptPath, 'fill_pad_color').value
+    const padColor = padColorValue === null || padColorValue === undefined || padColorValue === '' ? undefined : String(padColorValue)
     const made = await (deps.formats || renderFormats)({
       master: masterPath,
       outDir: path.join(episodeDir, 'formats'),
       formats: presets,
+      ...(fill ? { fill } : {}),
+      ...(padColor ? { padColor } : {}),
       force: true,
     })
     formats = made.variants || []

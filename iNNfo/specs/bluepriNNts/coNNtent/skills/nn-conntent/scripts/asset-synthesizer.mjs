@@ -19,8 +19,8 @@ import { resolveRegisteredVoice, mapTtsLanguage } from './lib/tts-options.mjs';
 import { resolve } from './lib/cascade.mjs';
 import { buildAvatarRequest } from './lib/avatar-request.mjs';
 import { estimateCallUsd, resolveModelId } from './asset-cost-estimator.mjs';
-import { probeDuration } from './lib/media-duration.mjs';
-import { defaultResolutionFor } from './lib/avatar-jobs.mjs';
+import { probeDuration, probeVideoSize } from './lib/media-duration.mjs';
+import { defaultResolutionFor, checkAvatarClip } from './lib/avatar-jobs.mjs';
 
 const require = createRequire(import.meta.url);
 let sharp;
@@ -560,9 +560,22 @@ export class AssetSynthesizer {
       fail(wrapped);
       throw wrapped;
     }
-    settle('ok'); // only after the clip is safely in the cache
+    // The provider does not enforce `resolution`: read the clip's real pixels back so
+    // the audit trail and the operator see what was actually produced (#691).
+    const size = await probeVideoSize(assetPath, this.probeDeps);
+    const clip = checkAvatarClip({ resolution, width: size?.width, height: size?.height });
+    if (clip.warning) meta.warn?.(clip.warning);
+    const sizeNote = clip.width ? `clip ${clip.width}x${clip.height}, declared ${resolution}` : `clip size unreadable, declared ${resolution}`;
+    settle('ok', sizeNote, estUsd > 0 ? { chargedUsd: estUsd } : {}); // only after the clip is safely in the cache
     meta.pending?.onResult?.('completed');
-    return { assetPath, sha256, fromCache: false, fileSizeBytes: fs.statSync(assetPath).size };
+    return {
+      assetPath,
+      sha256,
+      fromCache: false,
+      fileSizeBytes: fs.statSync(assetPath).size,
+      ...(clip.width ? { width: clip.width, height: clip.height } : {}),
+      declaredResolution: resolution,
+    };
   }
 
   /**

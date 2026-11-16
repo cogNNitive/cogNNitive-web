@@ -125,11 +125,14 @@ call. A bare synthesizer with no guard fails closed: it refuses billable calls.
 
 ## 5. Ledger
 
-Append-only `<workspaceRoot>/.cognnitive/video-ledger.jsonl`, one JSON line per
+Append-only `<workspaceRoot>/.cognnitive/video/ledger.jsonl`, one JSON line per
 event: `ts`, `kind`, `model`, `ref`, `estUsd`, `cacheHit` and `outcome`
-(`started` carries the estimate; `ok` / `failed` settle it; `cache-hit` is free).
-Readers skip corrupt or partial lines. Amounts are catalog estimates, not
-invoices; the TTS rate for `minimax/speech-2.8-hd` is explicitly unverified.
+(`started` carries the estimate before the call; `ok` / `failed` settle it and carry
+the amount that was really charged, marking themselves `supersedesStart` so the two
+lines count once; `cache-hit` is free). Readers skip corrupt or partial lines and sum
+through the one reducer in `lib/facts.mjs`, so the per-run budget, the rolling 24h cap
+and `produce`'s `daily_budget` all read the same figure. Amounts are catalog estimates,
+not invoices; the TTS rate for `minimax/speech-2.8-hd` is explicitly unverified.
 
 ## 6. Voices
 

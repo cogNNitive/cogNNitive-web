@@ -13392,8 +13392,9 @@ async function resolveBlueprintContent(rootDir, name, url, globalDir, skillsDir,
   const rawCurrent = parseFrontmatter(resolved.content)?.blueprint_version;
   const current = rawCurrent ? String(rawCurrent) : void 0;
   if (parsed.version && current && normalizeVersion(parsed.version) !== normalizeVersion(current)) {
+    const expectedName = `${parsed.base}_${current}`;
     warnings.push(
-      `parent_spec '${name}' references a stale version; the '${parsed.base}' blueprint is now '${current}'. Resolved to the current blueprint \u2014 update parent_spec.name to track it.`
+      `parent_spec '${name}' references a stale version; the '${parsed.base}' blueprint is now '${current}'. Resolved to the current blueprint \u2014 set parent_spec.name to '${expectedName}' (and blueprint_version: '${current}'), the one pair that also satisfies produce.`
     );
   }
   return resolved;

@@ -71,7 +71,7 @@ Legend: ● can be written at this scope, · cannot.
 | `z_index` | string | — | · | · | · | · | · | · | ● | · | · | · | · | · |
 | `avatar_model` | string | — | ● | ● | · | ● | ● | ● | ● | · | · | · | · | · |
 | `avatar_resolution` | select | `480p`, `720p`, `768p` | · | · | · | · | · | · | ● | · | · | · | · | · |
-| `fit` | select | `cover`, `contain` | ● | ● | · | ● | ● | ● | ● | · | · | · | · | · |
+| `fit` | select | `cover`, `contain`, `blur` | ● | ● | · | ● | ● | ● | ● | · | · | · | · | · |
 | `voice` | string | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
 | `voice_model` | string | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
 | `voice_speed` | string | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
@@ -82,6 +82,7 @@ Legend: ● can be written at this scope, · cannot.
 | `budget` | number | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
 | `daily_budget` | number | — | ● | · | · | · | · | · | · | · | · | · | · | · |
 | `output_formats` | select (multi) | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
+| `fill` | select | `crop`, `blur`, `pad` | ● | ● | · | · | ● | · | · | · | · | · | · | · |
 | `review_gates` | select (multi) | `script`, `preview` | ● | ● | · | · | ● | · | · | · | · | · | · | · |
 | `captions` | select | `off`, `words`, `lines` | ● | ● | · | · | ● | · | · | · | · | · | · | · |
 | `caption_model` | string | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
@@ -396,7 +397,7 @@ Settable at: `Layer`.
 
 ### `fit`
 
-How a `media` Layer fits its box. `cover` fills and crops; `contain` shows the whole asset with margins. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies.
+How a `media` Layer fits its box. `cover` fills and crops; `contain` shows the whole asset with margins; `blur` shows the whole asset (contain) over a blurred, slightly darkened backdrop built from the same asset filling the box, so a 16:9 image in a 9:16 box shows no empty band. The backdrop is the same file, so no new palette is introduced. The backdrop's CSS blur radius is 24px on a 1920 box, which is NOT the same operation as the ffmpeg `gblur` sigma 20 that `render-formats` uses: 24px approximates sigma 20 at that size, and the two are deliberately not claimed to be identical. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies.
 
 Settable at: `Layer`, `Scene`, `Video`, `Preset`, `Series`, `Video Defaults`.
 
@@ -457,6 +458,12 @@ Settable at: `Video Defaults`.
 ### `output_formats`
 
 Ordered list of delivery sizes as `<W>x<H>`. The first entry is the master size; the rest are derived from the master. Defaults to `[1920x1920, 1080x1920, 1920x1080, 1080x1080]`.
+
+Settable at: `Video`, `Series`, `Video Defaults`.
+
+### `fill`
+
+How a derived delivery format reframes the square master. `crop` is the default and stays the default because the destinations this pipeline serves re-frame a padded file themselves: YouTube pads non-native video in its own player and asks creators not to pad, TikTok letterboxes without cropping, and Instagram letterboxes on a blurred background or Smart Zooms on its own. `blur` scales the whole square to FIT and centres it over a blurred, darkened, scaled-to-fill backdrop (suffix `_blur`). `pad` does the same over a solid background, black unless `fill_pad_color` supplies a colour (suffix `_pad`). Choose `blur` or `pad` only for a destination that honours the file as delivered: a brand-owned player, an embed, OTT, or a broadcast slot that permits it. Unset means `crop`, so an existing episode renders exactly as before.
 
 Settable at: `Video`, `Series`, `Video Defaults`.
 

@@ -154,6 +154,58 @@ export function appendTimingRow(root, row, warn = console.warn) {
   }
 }
 
+/**
+ * Net spend of a ledger window, counting every billed call exactly once.
+ *
+ * A billable call writes a reservation row (`estUsd`, outcome `started`) BEFORE the
+ * network call and a terminal row afterwards. The terminal row carries the amount
+ * that was really charged and marks itself `supersedesStart`, so reading the two rows
+ * as independent charges would double the spend. Counting only terminal rows would
+ * lose every call whose process died mid-flight, which is the case the reservation
+ * exists for. Rows written before this rule (a terminal row of $0 plus `refundUsd`)
+ * keep working: an unmarked refund is subtracted.
+ *
+ * The amount is read from either spelling: `estUsd` (the guard's rows) and `est_usd`
+ * (the v2 `ledgerRow` shape). Two spellings in one file is what made the produce-side
+ * ceiling read zero for every avatar charge (#690).
+ *
+ * @param {Record<string, any>[]} rows
+ * @param {number} [sinceMs] Epoch milliseconds; rows older than this are ignored.
+ * @returns {number}
+ */
+export function spendOfRows(rows, sinceMs = 0) {
+  let sum = 0;
+  /** @type {Map<string, number[]>} Open reservations, per billed call. */
+  const open = new Map();
+  for (const row of rows) {
+    if (!row || typeof row !== 'object') continue;
+    const ts = Date.parse(row.ts);
+    if (Number.isFinite(ts) && ts < sinceMs) continue;
+    if (row.cacheHit === true) continue;
+    const usd = Number(row.estUsd ?? row.est_usd ?? 0);
+    if (!Number.isFinite(usd) || usd < 0) continue;
+    const key = String(row.kind || '') + '|' + String(row.ref ?? '') + '|' + String(row.model ?? '');
+    if (row.supersedesStart === true) {
+      const stack = open.get(key);
+      const reserved = stack && stack.length > 0 ? stack.pop() : null;
+      sum += reserved === null ? usd : usd - reserved;
+      continue;
+    }
+    if (row.outcome === 'started') {
+      if (!open.has(key)) open.set(key, []);
+      open.get(key).push(usd);
+    }
+    sum += usd;
+    if (Number.isFinite(row.refundUsd) && row.refundUsd > 0) sum -= row.refundUsd;
+  }
+  return Math.max(0, Math.round(sum * 1e6) / 1e6);
+}
+
+/** Net spend recorded at or after `sinceMs`, from the one ledger file. */
+export function sumLedgerSpend(root, sinceMs = 0) {
+  return spendOfRows(readLedgerRows(root), sinceMs);
+}
+
 /** Tolerant JSONL reader: corrupt or partial lines are skipped. */
 export function readRows(file) {
   if (!fs.existsSync(file)) return [];

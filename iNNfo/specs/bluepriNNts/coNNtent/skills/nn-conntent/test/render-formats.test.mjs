@@ -134,6 +134,70 @@ async function runTests() {
     console.log('OK blur is opt-in, suffixed and never applied to the square');
   }
 
+  // 5b. Pad is opt-in, suffixed `_pad`, centred, and honours a cascade colour.
+  {
+    const dir = tmpDir();
+    const master = makeFile(dir, 'ep_1920x1920.mp4');
+    const calls = [];
+    const run = (args) => {
+      calls.push(args);
+      fs.writeFileSync(args[args.length - 1], 'x');
+      return { status: 0 };
+    };
+    const res = await renderFormats({ master, fill: 'pad', probe: probeAs(square), run });
+    const names = res.variants.map((v) => path.basename(v.outputPath));
+    assert.deepStrictEqual(names, ['ep_1080x1080.mp4', 'ep_1080x1920_pad.mp4', 'ep_1920x1080_pad.mp4']);
+    const verticalGraph = calls[1][calls[1].indexOf('-filter_complex') + 1];
+    assert.match(verticalGraph, /scale=1080:1920:force_original_aspect_ratio=decrease/);
+    assert.match(verticalGraph, /pad=1080:1920:\(ow-iw\)\/2:\(oh-ih\)\/2:color=black/);
+    assert.doesNotMatch(verticalGraph, /gblur/, 'pad never blurs');
+    assert.strictEqual(calls[0][calls[0].indexOf('-filter_complex') + 1], `${DELIVERY_FORMATS.square.filter}[v]`);
+    fs.rmSync(dir, { recursive: true, force: true });
+
+    const dir2 = tmpDir();
+    const master2 = makeFile(dir2, 'ep2_1920x1920.mp4');
+    const calls2 = [];
+    const run2 = (args) => {
+      calls2.push(args);
+      fs.writeFileSync(args[args.length - 1], 'x');
+      return { status: 0 };
+    };
+    await renderFormats({ master: master2, fill: 'pad', padColor: '0x101010', probe: probeAs(square), run: run2 });
+    assert.match(calls2[1][calls2[1].indexOf('-filter_complex') + 1], /color=0x101010/, 'the cascade colour wins over black');
+    fs.rmSync(dir2, { recursive: true, force: true });
+    console.log('OK pad is opt-in, suffixed _pad, centred and never blurs');
+  }
+
+  // 5c. Nothing declared means crop: no suffix, no reframing.
+  {
+    const dir = tmpDir();
+    const master = makeFile(dir, 'ep_1920x1920.mp4');
+    const calls = [];
+    const run = (args) => {
+      calls.push(args);
+      fs.writeFileSync(args[args.length - 1], 'x');
+      return { status: 0 };
+    };
+    const res = await renderFormats({ master, probe: probeAs(square), run });
+    const names = res.variants.map((v) => path.basename(v.outputPath));
+    assert.deepStrictEqual(names, ['ep_1080x1080.mp4', 'ep_1080x1920.mp4', 'ep_1920x1080.mp4']);
+    assert.strictEqual(calls[1][calls[1].indexOf('-filter_complex') + 1], `${DELIVERY_FORMATS.vertical.filter}[v]`);
+    fs.rmSync(dir, { recursive: true, force: true });
+    console.log('OK an undeclared fill still crops, byte-identically to before');
+  }
+
+  // 5d. An unknown fill is a named error from the function, not a silent crop.
+  {
+    const dir = tmpDir();
+    const master = makeFile(dir, 'ep_1920x1920.mp4');
+    await assert.rejects(
+      () => renderFormats({ master, fill: 'stretch', probe: probeAs(square), run: () => ({ status: 0 }) }),
+      /Unknown fill "stretch" \(known: crop, blur, pad\)/,
+    );
+    fs.rmSync(dir, { recursive: true, force: true });
+    console.log('OK an unknown fill is refused by name wherever it comes from');
+  }
+
   // 6. An existing output is kept unless --force.
   {
     const dir = tmpDir();
@@ -205,7 +269,7 @@ async function runTests() {
       encoding: 'utf8',
     });
     assert.strictEqual(bad.status, 2);
-    assert.match(bad.stderr, /Unknown --fill "nope" \(known: crop, blur\)/);
+    assert.match(bad.stderr, /Unknown --fill "nope" \(known: crop, blur, pad\)/);
     fs.rmSync(dir, { recursive: true, force: true });
     console.log('OK --fill crop is accepted by the CLI and equals the default');
   }

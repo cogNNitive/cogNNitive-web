@@ -263,7 +263,54 @@ export function defaultMeasureFrameEdgeDensity({ masterPath, timeSeconds, crop, 
   return buf.length > 0 ? nonZero / buf.length : 0
 }
 
-/** Compare edge density at tMid against same-frame control crop or reference frame. */
+/**
+ * Splits an overlay crop into a small grid of measurable tiles.
+ *
+ * One averaged band is the wrong instrument for presence: the shipped bands are
+ * 6-20x the area an overlay actually covers, so a small mark's edge pixels get
+ * diluted below any threshold that still separates present from absent. A tile keeps
+ * the denominator near the mark's own size, and the check takes the strongest tile
+ * (#692). Sizes are even because the ffmpeg crop filter wants even dimensions.
+ *
+ * @param {{ width: number, height: number, x: number, y: number }} crop
+ * @param {{ cols?: number, rows?: number }} [opts]
+ * @returns {Array<{ width: number, height: number, x: number, y: number }>}
+ */
+export function tileRegions(crop, { cols = 4, rows = 2 } = {}) {
+  const bounds = {
+    width: Math.max(16, Math.floor(Number(crop?.width) || 0)),
+    height: Math.max(16, Math.floor(Number(crop?.height) || 0)),
+    x: Math.max(0, Math.floor(Number(crop?.x) || 0)),
+    y: Math.max(0, Math.floor(Number(crop?.y) || 0)),
+  }
+  const nCols = Math.max(1, Math.min(cols, Math.floor(bounds.width / 16)))
+  const nRows = Math.max(1, Math.min(rows, Math.floor(bounds.height / 16)))
+  const tileW = Math.max(16, Math.floor(bounds.width / nCols / 2) * 2)
+  const tileH = Math.max(16, Math.floor(bounds.height / nRows / 2) * 2)
+  const tiles = []
+  for (let r = 0; r < nRows; r++) {
+    for (let c = 0; c < nCols; c++) {
+      const x = bounds.x + c * tileW
+      const y = bounds.y + r * tileH
+      if (x + 16 > bounds.x + bounds.width || y + 16 > bounds.y + bounds.height) continue
+      tiles.push({
+        width: Math.min(tileW, bounds.x + bounds.width - x),
+        height: Math.min(tileH, bounds.y + bounds.height - y),
+        x,
+        y,
+      })
+    }
+  }
+  return tiles.length > 0 ? tiles : [{ ...bounds }]
+}
+
+/**
+ * Compare edge density at tMid against a same-frame control crop or a reference frame.
+ *
+ * The crop is measured as a grid of tiles and the strongest tile wins (#692). Averaging
+ * the whole band is what produced the 0.0004 false negative for a visible watermark:
+ * the same edge pixels are a 20x larger share of a tile than of the band.
+ */
 export function defaultSampleEdgeDensity({
   masterPath,
   time,
@@ -272,13 +319,25 @@ export function defaultSampleEdgeDensity({
   controlCrop,
   measureFn = defaultMeasureFrameEdgeDensity,
 }) {
-  const densityMid = measureFn({ masterPath, timeSeconds: time, crop })
   if (controlCrop) {
-    const densityControl = measureFn({ masterPath, timeSeconds: time, crop: controlCrop })
-    return Math.max(0, densityMid - densityControl)
+    let best = 0;
+    for (const tile of tileRegions(crop)) {
+      const offsetX = tile.x - crop.x;
+      const offsetY = tile.y - crop.y;
+      const control = {
+        width: Math.min(tile.width, controlCrop.width),
+        height: Math.min(tile.height, controlCrop.height),
+        x: controlCrop.x + offsetX,
+        y: controlCrop.y + offsetY,
+      };
+      const densityMid = measureFn({ masterPath, timeSeconds: time, crop: tile });
+      const densityControl = measureFn({ masterPath, timeSeconds: time, crop: control });
+      best = Math.max(best, densityMid - densityControl);
+    }
+    return Math.max(0, Math.round(best * 1e6) / 1e6);
   }
-  const densityRef = refTime !== null ? measureFn({ masterPath, timeSeconds: refTime, crop }) : 0
-  return Math.abs(densityMid - densityRef)
+  const densityRef = refTime !== null ? measureFn({ masterPath, timeSeconds: refTime, crop }) : 0;
+  return Math.abs(measureFn({ masterPath, timeSeconds: time, crop }) - densityRef);
 }
 
 /**

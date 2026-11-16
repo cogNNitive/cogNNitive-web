@@ -72,6 +72,28 @@ export const DERIVATION_ARGS = [
 export const DEFAULT_SIGMA = 20
 export const DEFAULT_BRIGHTNESS = -0.18
 
+/** The accepted `fill` values. `crop` is the default (see DEFAULT_FILL). */
+export const DELIVERY_FILLS = ['crop', 'blur', 'pad']
+export const DEFAULT_FILL = 'crop'
+/** Letterbox/pillarbox colour when the cascade supplies none. */
+export const DEFAULT_PAD_COLOR = 'black'
+
+/**
+ * Refuses an unknown fill by name. Called by the CLI and by `renderFormats`, so a
+ * caller that skips the CLI cannot silently fall back to `crop`.
+ * @param {string} fill
+ * @returns {string}
+ */
+export function assertFill(fill) {
+  const value = String(fill ?? DEFAULT_FILL).trim() || DEFAULT_FILL
+  if (!DELIVERY_FILLS.includes(value)) {
+    throw new RenderFormatsError(
+      `Unknown fill "${fill}" (known: ${DELIVERY_FILLS.join(', ')}).`,
+    )
+  }
+  return value
+}
+
 /**
  * Derives the variant slug from the square master's filename by stripping a
  * trailing `_<W>x<H>` dimension suffix (`master_1080x1080.mp4` → `master`).
@@ -112,6 +134,23 @@ export function buildBlurFillFilter(
     `[fg]scale=${width}:${height}:force_original_aspect_ratio=decrease[fg2]`,
     '[bg2][fg2]overlay=(W-w)/2:(H-h)/2[v]',
   ].join(';')
+}
+
+/**
+ * Builds the FFmpeg pad-fill filter graph: the square is scaled to fit WHOLE
+ * (decrease) and centred on a solid background that fills the target frame, so
+ * nothing is cropped and nothing is blurred. This is the letterbox/pillarbox
+ * variant for a destination that honours the file as delivered.
+ * @param {number} width
+ * @param {number} height
+ * @param {{ color?: string }} [opts]
+ * @returns {string}
+ */
+export function buildPadFillFilter(width, height, { color = DEFAULT_PAD_COLOR } = {}) {
+  return (
+    `[0:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,` +
+    `pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:color=${color}[v]`
+  )
 }
 
 /** Default runner: ffmpeg on PATH, output inherited. */
@@ -161,7 +200,8 @@ export async function renderFormats({
   master,
   outDir,
   formats = ['square', 'vertical', 'horizontal'],
-  fill = 'crop',
+  fill = DEFAULT_FILL,
+  padColor = DEFAULT_PAD_COLOR,
   force = false,
   sigma = DEFAULT_SIGMA,
   brightness = DEFAULT_BRIGHTNESS,
@@ -170,6 +210,8 @@ export async function renderFormats({
   dryRun = false,
 } = {}) {
   if (!master) throw new RenderFormatsError('A --master square MP4 is required.')
+  // An unknown fill is an error wherever it comes from, never a silent crop.
+  fill = assertFill(fill)
   const masterAbs = path.resolve(master)
   if (!fs.existsSync(masterAbs)) {
     throw new RenderFormatsError(`Master not found: ${masterAbs}`)
@@ -195,11 +237,11 @@ export async function renderFormats({
         `Unknown format "${name}" (known: ${Object.keys(DELIVERY_FORMATS).join(', ')}).`,
       )
     }
-    const blur = fill === 'blur' && (name === 'vertical' || name === 'horizontal')
-    const outputPath = path.join(
-      dir,
-      blur ? variantName(slug, { ...preset, suffix: '_blur' }) : variantName(slug, preset),
-    )
+    // `blur` and `pad` reframe a non-square target; the square master is already the
+    // whole frame, so it keeps its plain name and its plain filter.
+    const reframed = (name === 'vertical' || name === 'horizontal') ? fill : DEFAULT_FILL
+    const suffix = reframed === 'blur' ? '_blur' : reframed === 'pad' ? '_pad' : ''
+    const outputPath = path.join(dir, variantName(slug, suffix ? { ...preset, suffix } : preset))
     // Never overwrite the master with itself (ffmpeg refuses a same source/output).
     if (outputPath === masterAbs) {
       variants.push({
@@ -229,9 +271,11 @@ export async function renderFormats({
       '-i',
       masterAbs,
       '-filter_complex',
-      blur
+      reframed === 'blur'
         ? buildBlurFillFilter(preset.width, preset.height, { sigma, brightness })
-        : `${preset.filter}[v]`,
+        : reframed === 'pad'
+          ? buildPadFillFilter(preset.width, preset.height, { color: padColor })
+          : `${preset.filter}[v]`,
       '-map',
       '[v]',
       '-map',
@@ -281,14 +325,14 @@ async function main() {
   }
   const master = parsed.flags.master
   const dryRun = !!parsed.flags['dry-run']
-  const fill = parsed.flags.fill ? String(parsed.flags.fill) : 'crop'
-  if (!['crop', 'blur'].includes(fill)) {
-    console.error(`❌ [render-formats] Unknown --fill "${fill}" (known: crop, blur).`)
+  const fill = parsed.flags.fill ? String(parsed.flags.fill) : DEFAULT_FILL
+  if (!DELIVERY_FILLS.includes(fill)) {
+    console.error(`❌ [render-formats] Unknown --fill "${fill}" (known: ${DELIVERY_FILLS.join(', ')}).`)
     process.exit(2)
   }
   if (!master) {
     console.error(
-      'Usage: node render-formats.mjs --master <square.mp4> [--out-dir <dir>] [--formats square,vertical,horizontal] [--fill crop|blur] [--force] [--dry-run]',
+      `Usage: node render-formats.mjs --master <square.mp4> [--out-dir <dir>] [--formats square,vertical,horizontal] [--fill ${DELIVERY_FILLS.join('|')}] [--force] [--dry-run]`,
     )
     process.exit(2)
   }

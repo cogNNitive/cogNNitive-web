@@ -17,6 +17,7 @@ import {
   ledgerPath,
   appendLedgerRow,
   readLedgerRows as readLedger,
+  sumLedgerSpend,
 } from './facts.mjs';
 
 /**
@@ -40,24 +41,15 @@ export const LOCKS_RELATIVE_DIR = path.join('.cognnitive', 'locks');
 const DAY_MS = 24 * 3600 * 1000;
 
 /**
- * Sum of estimated spend recorded at or after `sinceMs` (cache hits and entries
- * with a missing/invalid timestamp or amount do not count). Reads the single
- * ledger owned by `facts.mjs` (`.cognnitive/video/ledger.jsonl`).
+ * Sum of spend recorded at or after `sinceMs` (cache hits do not count). Reads the
+ * single ledger owned by `facts.mjs` (`.cognnitive/video/ledger.jsonl`) through the
+ * one reducer, so a settled call is never counted twice.
  * @param {string} root
  * @param {number} sinceMs Epoch milliseconds
  * @returns {number}
  */
 export function sumLedgerSince(root, sinceMs) {
-  let sum = 0;
-  for (const e of readLedger(root)) {
-    const t = Date.parse(e.ts);
-    if (Number.isNaN(t) || t < sinceMs) continue;
-    if (e.cacheHit === true) continue;
-    if (typeof e.estUsd !== 'number' || !Number.isFinite(e.estUsd) || e.estUsd < 0) continue;
-    sum += e.estUsd - (Number.isFinite(e.refundUsd) && e.refundUsd > 0 ? e.refundUsd : 0);
-  }
-  sum = Math.max(0, sum);
-  return Math.round(sum * 1e6) / 1e6;
+  return sumLedgerSpend(root, sinceMs);
 }
 
 /** Safe defaults used when no video-guard.json is found (also the shape of the file). */
@@ -504,11 +496,23 @@ export class SpendGuard {
     });
 
     return {
-      settle: (outcome, detail, { refundUsd } = {}) => {
-        if (refundUsd > 0) this.budget.refund(refundUsd);
+      /**
+       * Writes the terminal row: the amount actually charged, never a bare $0 (#690).
+       * @param {string} outcome
+       * @param {string} [detail]
+       * @param {{ refundUsd?: number, chargedUsd?: number }} [extra]
+       *   `chargedUsd` is what the provider billed (defaults to the authorized
+       *   estimate). A call refused before any task existed passes `refundUsd`, which
+       *   settles at $0.
+       */
+      settle: (outcome, detail, { refundUsd, chargedUsd } = {}) => {
+        const refund = Number.isFinite(refundUsd) && refundUsd > 0 ? refundUsd : 0;
+        const charge = Number.isFinite(chargedUsd) ? chargedUsd : refund > 0 ? 0 : estUsd;
+        if (refund > 0) this.budget.refund(refund);
         appendLedger(this.root, {
-          kind, model, estUsd: 0, ref, outcome,
-          ...(refundUsd > 0 ? { refundUsd } : {}),
+          kind, model, estUsd: charge, ref, outcome,
+          supersedesStart: true,
+          ...(refund > 0 ? { refundUsd: refund } : {}),
           ...(detail ? { detail } : {}),
         });
       },

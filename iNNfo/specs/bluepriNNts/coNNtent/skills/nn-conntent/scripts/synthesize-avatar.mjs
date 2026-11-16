@@ -41,7 +41,8 @@ import { withScriptPresets } from './lib/video-scope.mjs';
 import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
 import { LOCKS_RELATIVE_DIR, SpendGuard, normalizeModelId, resolveDefaultCacheDir } from './lib/video-guard.mjs';
 import { loadGuardWithVoices } from './lib/guard-config.mjs';
-import { collectAvatarJobs } from './lib/avatar-jobs.mjs';
+import { collectAvatarJobs, checkAvatarAssetAspect } from './lib/avatar-jobs.mjs';
+import { probeVideoSize } from './lib/media-duration.mjs';
 import { appendPending, findOutstanding, latestPending } from './lib/pending-predictions.mjs';
 import { acquireLock } from './lib/file-lock.mjs';
 
@@ -157,12 +158,28 @@ export async function synthesizeAvatars(o) {
   if (problems.length) throw new Error(problems.join('\n'));
 
   const byKey = new Map();
+  // One ffprobe per distinct image, so a still reused across Scenes warns once.
+  const imageSizes = new Map();
+  const sizeOf = async (file) => {
+    if (!imageSizes.has(file)) {
+      const size = o.probeImageSize ? await o.probeImageSize(file) : await probeVideoSize(file, o.probeDeps || {});
+      imageSizes.set(file, size || null);
+    }
+    return imageSizes.get(file);
+  };
   for (const j of raw) {
     const existing = byKey.get(j.cacheKey);
     if (existing) {
       if (!existing.sceneIds.includes(j.sceneId)) existing.sceneIds.push(j.sceneId);
       continue;
     }
+    const size = await sizeOf(j.imagePath);
+    const aspectWarning = checkAvatarAssetAspect({
+      width: size?.width,
+      height: size?.height,
+      label: 'Scene ' + j.sceneId + ': avatar image ' + path.basename(j.imagePath),
+    });
+    if (aspectWarning) warn(aspectWarning);
     const { seconds, error: probeError } = await measure(j.audioPath);
     if (!Number.isFinite(seconds) || seconds <= 0) {
       throw new Error(
@@ -187,6 +204,7 @@ export async function synthesizeAvatars(o) {
     layerName: j.layerName,
     model: j.model,
     seconds: j.seconds,
+    resolution: j.resolution,
     estUsd: j.cachedPath ? 0 : j.estUsd,
     cacheKey: j.cacheKey,
     status: j.cachedPath ? 'cached' : 'planned',
@@ -320,7 +338,11 @@ export async function synthesizeAvatars(o) {
           pending,
         },
       );
-      return view(j, { status: res.fromCache ? 'cached' : o.resume ? 'resumed' : 'synthesized', assetPath: res.assetPath });
+      return view(j, {
+        status: res.fromCache ? 'cached' : o.resume ? 'resumed' : 'synthesized',
+        assetPath: res.assetPath,
+        ...(res.width ? { width: res.width, height: res.height } : {}),
+      });
     } finally {
       release();
     }
@@ -413,7 +435,7 @@ async function main() {
       console.log('   Spent in the last 24h: $' + p.dailySpentUsd.toFixed(4) + ' (daily cap: $' + p.dailyCapUsd.toFixed(2) + ')');
       return;
     }
-    for (const j of res.jobs) console.log(j.status + ': ' + j.sceneIds.join(', ') + ' -> ' + j.assetPath);
+    for (const j of res.jobs) console.log(j.status + ': ' + j.sceneIds.join(', ') + ' -> ' + j.assetPath + (j.width ? ' (' + j.width + 'x' + j.height + ', declared ' + j.resolution + ')' : ''));
     if (res.jobs.length > 0) console.log('Run compile again to pick the clips up (zero extra spend).');
   } catch (err) {
     if (err instanceof AvatarBatchError) {
