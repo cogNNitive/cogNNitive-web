@@ -41,6 +41,7 @@ import { createReadStream, existsSync, readFileSync, realpathSync, writeFileSync
 import { join, relative, basename, resolve, dirname, isAbsolute } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
+import { StringDecoder } from 'node:string_decoder'
 import { homedir } from 'node:os'
 import { createRequire } from 'node:module'
 import { spawn } from 'node:child_process'
@@ -1076,6 +1077,26 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
 
   // Sort paths deterministically
   const sortedFilePaths = Array.from(allFilePaths).sort()
+
+  // A reference resolves by path first: exact, then a suffix of one another. A
+  // directory-less reference has no path to compare, so it resolves by basename
+  // only when that name is unique among the inventory files; two same-named files
+  // in different folders must never each receive the other's citation.
+  const basenameCounts = new Map()
+  for (const fullPath of sortedFilePaths) {
+    const rel = relative(root, fullPath).replace(/\\/g, '/')
+    if (isSidecarRel(rel) || isBuildOutputRel(rel)) continue
+    const name = basename(rel)
+    basenameCounts.set(name, (basenameCounts.get(name) ?? 0) + 1)
+  }
+  function referenceMatches(norm, rel) {
+    if (norm.includes('/')) {
+      return norm === rel || rel.endsWith('/' + norm) || norm.endsWith('/' + rel)
+    }
+    if (norm === rel) return true
+    return basename(rel) === norm && basenameCounts.get(norm) === 1
+  }
+
   let snippetBudget = SNIPPET_TOTAL_BUDGET
 
   for (const fullPath of sortedFilePaths) {
@@ -1147,12 +1168,7 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
     let citationsCount = 0
     let excerptCount = 0
     for (const c of citationPaths) {
-      if (
-        c.norm === rel ||
-        rel.endsWith('/' + c.norm) ||
-        c.norm.endsWith('/' + rel) ||
-        basename(c.norm) === basename(rel)
-      ) {
+      if (referenceMatches(c.norm, rel)) {
         citationsCount++
         if (c.excerpt) excerptCount++
       }
@@ -1161,12 +1177,7 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
     // Cross-reference changes
     let changesCount = 0
     for (const ev of changeEvidencePaths) {
-      if (
-        ev === rel ||
-        rel.endsWith('/' + ev) ||
-        ev.endsWith('/' + rel) ||
-        basename(ev) === basename(rel)
-      ) {
+      if (referenceMatches(ev, rel)) {
         changesCount++
       }
     }
@@ -1191,7 +1202,9 @@ export async function collectWorkspaceFiles(workspaceRoot, options = {}) {
         } finally {
           await handle.close()
         }
-        snippet = buf.toString('utf8')
+        // StringDecoder withholds an incomplete trailing sequence, so a cut that
+        // lands inside a multi-byte code point never emits U+FFFD.
+        snippet = new StringDecoder('utf8').write(buf)
         snippetTruncated = want < st.size
         snippetBudget -= want
       } catch {
