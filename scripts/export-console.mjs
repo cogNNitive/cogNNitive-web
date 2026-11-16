@@ -1823,6 +1823,26 @@ export async function writeConsole(opts = {}) {
   for (const m of payloadModels) schemaResolutions.set(m, await resolveModelSchema(m.content))
   const domainIndex = await buildExportDomainIndex(root, payloadModels, schemaResolutions)
 
+  // A model no applied change names was written as a raw file and registered by
+  // `sync_domain_manifest`, outside every changeset (#587): its elements carry no
+  // history, so the console Changes tab opens empty. Report it on the warning
+  // channel — the guard moves no exit code and no payload byte, and a recorded
+  // model stays silent.
+  if (payloadHelper.auditModelRecords && payloadHelper.buildChangeLogFromChangesets) {
+    const exported = new Set(
+      payloadModels.map((m) => relative(root, m.filePath).replace(/\\/g, '/')),
+    )
+    const log = payloadHelper.buildChangeLogFromChangesets(Array.isArray(changesets) ? changesets : [])
+    for (const diagnostic of payloadHelper.auditModelRecords(
+      log,
+      domainIndex.models
+        .filter((m) => exported.has(m.path))
+        .map((m) => ({ modelId: m.id, path: m.path })),
+    )) {
+      warn(diagnostic.message)
+    }
+  }
+
   // Change counts per model part, aggregated once: the per-model loop must not rescan
   // every changeset. A model named by its stem, its id and its title in different
   // changes is counted once per change, never once per alias.

@@ -16658,6 +16658,15 @@ var init_unit_address = __esm({
   }
 });
 
+// iNNfo/packages/nn-core/dist/changelog/audit.js
+var init_audit = __esm({
+  "iNNfo/packages/nn-core/dist/changelog/audit.js"() {
+    "use strict";
+    init_resolved_target();
+    init_drift();
+  }
+});
+
 // iNNfo/packages/nn-core/dist/sync/declarations.js
 var init_declarations = __esm({
   "iNNfo/packages/nn-core/dist/sync/declarations.js"() {
@@ -16711,6 +16720,7 @@ var init_console = __esm({
     init_slot();
     init_unit_address();
     init_load();
+    init_audit();
     init_parser2();
     init_declarations();
     init_contract();

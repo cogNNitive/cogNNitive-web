@@ -7378,6 +7378,7 @@ __export(index_exports, {
   NORMALIZED_KNOWN_AGENT_TOOL_IDS: () => NORMALIZED_KNOWN_AGENT_TOOL_IDS,
   NO_OPEN_ENV: () => NO_OPEN_ENV,
   attachChangesetHistory: () => attachChangesetHistory,
+  auditModelRecords: () => auditModelRecords,
   buildChangeLogFromChangesets: () => buildChangeLogFromChangesets,
   buildConsolePayload: () => buildConsolePayload,
   buildConsoleSchemaSlot: () => buildConsoleSchemaSlot,
@@ -11719,6 +11720,24 @@ function unitsFromFold(fold, model) {
   return out;
 }
 
+// iNNfo/packages/nn-core/src/changelog/drift.ts
+function modelOfUnit(unit) {
+  return splitUnitKey(unit).model;
+}
+function touchedModels(log) {
+  const touched = /* @__PURE__ */ new Map();
+  for (const change of log.all) {
+    if (!change.applied) continue;
+    const model = modelOfUnit(change.resolvedTarget ?? change.target);
+    if (model && !touched.has(model)) touched.set(model, change);
+  }
+  for (const rekey of log.rekeys) {
+    if (touched.has(rekey.to)) continue;
+    if (rekey.change) touched.set(rekey.to, rekey.change);
+  }
+  return touched;
+}
+
 // iNNfo/packages/nn-core/src/changelog/index.ts
 function unitOf(change) {
   return change.resolvedTarget ?? change.target;
@@ -11946,6 +11965,12 @@ function buildChangeLogFromChangesets(changesets) {
   const changes = [];
   for (const cs of changesets) changes.push(...loggedChanges(cs));
   return createChangeLog(changes);
+}
+
+// iNNfo/packages/nn-core/src/changeset/resolved-target.ts
+var VERSION_TOKEN_RE2 = /_V_\d+-\d+-\d+$/;
+function canonicalUnitModelId(model) {
+  return String(model ?? "").trim().replace(VERSION_TOKEN_RE2, "");
 }
 
 // iNNfo/packages/nn-core/src/helpers.ts
@@ -13742,6 +13767,40 @@ function unitHome(address) {
   }
   return null;
 }
+
+// iNNfo/packages/nn-core/src/changelog/audit.ts
+function recordedModelIds(log) {
+  const recorded = /* @__PURE__ */ new Set();
+  for (const model of touchedModels(log).keys()) recorded.add(canonicalUnitModelId(model));
+  for (const change of log.all) {
+    if (!change.applied) continue;
+    const unit = change.resolvedTarget ?? change.target;
+    if (unit.includes("@")) continue;
+    const modelId = canonicalUnitModelId(unit);
+    if (modelId) recorded.add(modelId);
+  }
+  return recorded;
+}
+function auditModelRecords(log, models) {
+  const recorded = recordedModelIds(log);
+  const diagnostics = [];
+  for (const entry of models) {
+    const modelId = canonicalUnitModelId(entry.modelId);
+    if (!modelId) continue;
+    if (recorded.has(modelId)) continue;
+    if (log.identities(modelId).some((former) => recorded.has(canonicalUnitModelId(former)))) {
+      continue;
+    }
+    const where = entry.path ? ` (${entry.path})` : "";
+    diagnostics.push({
+      code: "MODEL_WITHOUT_RECORD",
+      severity: "warning",
+      message: `MODEL_WITHOUT_RECORD: model "${modelId}"${where} is named by no applied change, so it was created outside a changeset and its elements carry no lineage; record it with an applied add_model change`,
+      unit: modelId
+    });
+  }
+  return diagnostics;
+}
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   CHANGE_CONCEPT,
@@ -13753,6 +13812,7 @@ function unitHome(address) {
   NORMALIZED_KNOWN_AGENT_TOOL_IDS,
   NO_OPEN_ENV,
   attachChangesetHistory,
+  auditModelRecords,
   buildChangeLogFromChangesets,
   buildConsolePayload,
   buildConsoleSchemaSlot,
