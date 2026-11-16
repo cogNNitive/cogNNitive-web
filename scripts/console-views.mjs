@@ -30,7 +30,9 @@ const BLUEPRINT_VIEWS_SUBPATH = ['assets']
 const BLUEPRINT_VIEW_PREFIX = 'console-view-'
 const HASH_DISPLAY_LENGTH = 12
 
-const SPEC_BASE_RE = /^[A-Za-z0-9_-]+$/
+// A spec base or blueprint folder name: it becomes one path segment, so no separator,
+// no dot-dot and no absolute path can pass.
+export const SPEC_BASE_RE = /^[A-Za-z0-9_-]+$/
 // One rule for every spec-name caller: the `_V_x-y-z` suffix is matched in any case, and
 // surrounding whitespace is never part of a name.
 const SPEC_VERSION_RE = /^(.+?)_(V_\d+-\d+-\d+)$/i

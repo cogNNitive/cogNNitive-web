@@ -209,6 +209,37 @@ function parseConsoleCdnRef(bundleText) {
 /** @type {readonly ['table', 'kpi', 'dashboard', 'blank']} */
 const VIEW_TEMPLATES = ['table', 'kpi', 'dashboard', 'blank']
 
+/**
+ * Every flag the CLI accepts, spelled the way the usage line shows it. The usage line
+ * and the unknown-flag error both read this list, so a flag cannot be accepted without
+ * being announced. A bare positional is never a flag error: it is the workspace root or
+ * a model-name substring.
+ */
+const CLI_FLAGS = [
+  '--list',
+  '--status',
+  '--tree',
+  '--all',
+  '--stale',
+  '--domain',
+  '--view <id>',
+  '--new-view <slug>',
+  '--template <table|kpi|dashboard|blank>',
+  '--blueprint <name>',
+  '--title <text>',
+  '--filter <pattern>',
+  '--no-open',
+  '--no-files',
+  '--no-changes',
+]
+const KNOWN_FLAG_NAMES = CLI_FLAGS.map((flag) => flag.split(' ')[0])
+const USAGE =
+  `Usage: node scripts/export-console.mjs <workspaceRoot> ` +
+  `${CLI_FLAGS.map((flag) => `[${flag}]`).join(' ')} [<ModelName>]`
+
+/** Flags that take the next token as their value. */
+const VALUE_FLAGS = new Set(['--view', '--new-view', '--template', '--blueprint', '--title', '--filter'])
+
 function parseArgs(argv) {
   const args = {
     root: null,
@@ -219,7 +250,6 @@ function parseArgs(argv) {
     stale: false,
     domain: false,
     view: null,
-    viewMissing: false,
     newView: null,
     template: 'table',
     blueprint: null,
@@ -229,11 +259,27 @@ function parseArgs(argv) {
     open: true,
     files: true,
     changes: true,
+    errors: [],
   }
   const slice = argv.slice(2)
   for (let i = 0; i < slice.length; i++) {
     const a = slice[i]
-    if (a === '--list') {
+    if (VALUE_FLAGS.has(a)) {
+      const value = slice[i + 1]
+      // A value never starts with "-": a flag there means this one lost its value, and
+      // swallowing it would run the command with a default instead of refusing.
+      if (value === undefined || value.startsWith('-')) {
+        args.errors.push(a === '--view' ? '--view needs a view id.' : `${a} needs a value.`)
+        continue
+      }
+      i += 1
+      if (a === '--view') args.view = value
+      else if (a === '--new-view') args.newView = value
+      else if (a === '--template') args.template = value
+      else if (a === '--blueprint') args.blueprint = value
+      else if (a === '--title') args.title = value
+      else args.filter = value
+    } else if (a === '--list') {
       args.list = true
     } else if (a === '--status') {
       args.status = true
@@ -251,30 +297,11 @@ function parseArgs(argv) {
       args.files = false
     } else if (a === '--no-changes') {
       args.changes = false
-    } else if (a === '--new-view') {
-      i++
-      if (i < slice.length && !slice[i].startsWith('--')) args.newView = slice[i]
-    } else if (a === '--template') {
-      i++
-      if (i < slice.length && !slice[i].startsWith('--')) args.template = slice[i]
-    } else if (a === '--blueprint') {
-      i++
-      if (i < slice.length && !slice[i].startsWith('--')) args.blueprint = slice[i]
-    } else if (a === '--title') {
-      i++
-      if (i < slice.length && !slice[i].startsWith('--')) args.title = slice[i]
-    } else if (a === '--view') {
-      i++
-      if (i < slice.length && !slice[i].startsWith('--')) args.view = slice[i]
-      else {
-        args.viewMissing = true
-        if (i < slice.length) i--
-      }
-    } else if (a === '--filter') {
-      i++
-      if (i < slice.length) {
-        args.filter = slice[i]
-      }
+    } else if (a.startsWith('-')) {
+      // Only flag-shaped tokens are refused: a bare word is still the root or a model.
+      args.errors.push(
+        `unknown option "${a}". Accepted flags: ${KNOWN_FLAG_NAMES.join(', ')}.`,
+      )
     } else if (args.root === null) {
       args.root = a
     } else {
@@ -2387,6 +2414,39 @@ export async function writeConsole(opts = {}) {
 }
 
 /**
+ * A `--blueprint` value becomes one folder name under `specs/bluepriNNts`, so it must be a
+ * single path segment: no separator, no `..`, no absolute path.
+ * @returns {Promise<string | null>} the refusal message, or null when the name is usable.
+ */
+async function blueprintNameError(blueprint) {
+  if (blueprint === null || blueprint === undefined) return null
+  const { SPEC_BASE_RE } = await viewsLibOnce()
+  const text = String(blueprint)
+  if (SPEC_BASE_RE.test(text)) return null
+  return `Invalid --blueprint "${text}": expected one blueprint folder name, using letters, digits, "_" and "-" only.`
+}
+
+/**
+ * A scaffolded title is display text, but it is written into source: inside a single-quoted
+ * JS string and inside a block comment. Escape each in place — the template's quote style
+ * is part of the pinned scaffold output, so it is never switched.
+ */
+function jsSingleQuoted(value) {
+  return String(value)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, '\\r')
+    .replace(/\n/g, '\\n')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
+}
+
+/** A block comment has no escape character: split its terminator so it cannot end early. */
+function inBlockComment(value) {
+  return String(value).replace(/\*\//g, '*\\/')
+}
+
+/**
  * Scaffolds a new console view in a domain (`consoles/views/<slug>.js`)
  * or a blueprint (`<pkg>/assets/console-view-<slug>.js`).
  *
@@ -2418,6 +2478,9 @@ export async function scaffoldConsoleView({
   if (['explorer', 'matrices', 'review'].includes(cleanSlug)) {
     throw new ConsoleExportError(`View slug "${cleanSlug}" is reserved.`, 'VIEWS_INVALID')
   }
+  // Before any path is built: the blueprint name is a path segment, not free text.
+  const blueprintError = await blueprintNameError(blueprint)
+  if (blueprintError) throw new ConsoleExportError(blueprintError, 'VIEWS_INVALID')
 
   const viewTitle =
     title ||
@@ -2448,10 +2511,10 @@ export async function scaffoldConsoleView({
 
   let code
   if (template === 'kpi' || template === 'dashboard') {
-    code = `/* ${blueprint ? `assets/${filename}` : `consoles/views/${filename}`} — ${viewTitle} dashboard
+    code = `/* ${blueprint ? `assets/${filename}` : `consoles/views/${filename}`} — ${inBlockComment(viewTitle)} dashboard
    Declarative dashboard view using nnUI.KpiGrid with canonical KU badges. */
 registerView({
-  title: '${viewTitle}',
+  title: '${jsSingleQuoted(viewTitle)}',
   icon: 'dashboard',
   order: 25,
   kind: 'editable',
@@ -2472,9 +2535,9 @@ registerView({
 })
 `
   } else if (template === 'blank') {
-    code = `/* ${blueprint ? `assets/${filename}` : `consoles/views/${filename}`} — ${viewTitle} view */
+    code = `/* ${blueprint ? `assets/${filename}` : `consoles/views/${filename}`} — ${inBlockComment(viewTitle)} view */
 registerView({
-  title: '${viewTitle}',
+  title: '${jsSingleQuoted(viewTitle)}',
   icon: 'layout',
   order: 50,
   kind: 'editable',
@@ -2482,17 +2545,17 @@ registerView({
     var doc = ctx.container.ownerDocument
     var wrap = doc.createElement('div')
     wrap.className = 'empty-state'
-    wrap.textContent = '${viewTitle} view content.'
+    wrap.textContent = '${jsSingleQuoted(viewTitle)} view content.'
     ctx.container.appendChild(wrap)
   },
 })
 `
   } else {
     // Default: 'table'
-    code = `/* ${blueprint ? `assets/${filename}` : `consoles/views/${filename}`} — ${viewTitle} table view
+    code = `/* ${blueprint ? `assets/${filename}` : `consoles/views/${filename}`} — ${inBlockComment(viewTitle)} table view
    Declarative table view using nnUI.DataTable with canonical KU badges. */
 registerView({
-  title: '${viewTitle}',
+  title: '${jsSingleQuoted(viewTitle)}',
   icon: 'layers',
   order: 20,
   kind: 'editable',
@@ -2538,10 +2601,13 @@ async function runMain(argv, options = {}) {
   const args = parseArgs(['node', 'export-console.mjs', ...argv])
   if (options.launcher !== undefined) args.launcher = options.launcher
   if (typeof options.open === 'boolean') args.open = options.open
+  if (args.errors.length > 0) {
+    for (const message of args.errors) console.error(`Error: ${message}`)
+    console.error(USAGE)
+    return { exitCode: 2, writtenFiles: [] }
+  }
   if (!args.root) {
-    console.error(
-      'Usage: node scripts/export-console.mjs <workspaceRoot> [--status] [--tree] [--list] [--all] [--stale] [--domain] [--view <id>] [--new-view <slug>] [--filter <pattern>] [--no-open] [--no-files] [--no-changes] [<ModelName>]',
-    )
+    console.error(USAGE)
     return { exitCode: 2, writtenFiles: [] }
   }
   const root = resolve(args.root)
@@ -2552,6 +2618,12 @@ async function runMain(argv, options = {}) {
       console.error(
         `Error: unknown --template "${args.template}" (expected ${VIEW_TEMPLATES.join(' | ')}).`,
       )
+      return { exitCode: 2, writtenFiles: [] }
+    }
+    const blueprintError = await blueprintNameError(args.blueprint)
+    if (blueprintError) {
+      console.error(`Error: ${blueprintError}`)
+      console.error(USAGE)
       return { exitCode: 2, writtenFiles: [] }
     }
     const created = await scaffoldConsoleView({
@@ -2568,10 +2640,6 @@ async function runMain(argv, options = {}) {
       `To compile the console with this view, run:\n  node scripts/export-console.mjs ${relative(process.cwd(), root) || '.'} --domain`,
     )
     return { exitCode: 0, writtenFiles: [created.targetPath] }
-  }
-  if (args.viewMissing) {
-    console.error('Error: --view needs a view id.')
-    return { exitCode: 2, writtenFiles: [] }
   }
   if (args.view && args.domain) {
     console.error('Error: --view and --domain are mutually exclusive.')
