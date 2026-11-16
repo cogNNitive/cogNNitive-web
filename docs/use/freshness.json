@@ -1,41 +1,48 @@
 {
-  "generatedAt": "2026-11-16T19:02:12.100Z",
-  "head": "83c14d29f3d5b81be8e1854922e98bef3dac3c13",
+  "generatedAt": "2026-11-16T19:45:07.876Z",
+  "head": "afcb110204719cb77821098ed8553af4232a8b62",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v3.2.4",
       "pinnedTagDate": "2026-11-16T17:52:01+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "skills/nn-innfo/SKILL.md"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.66.2",
-      "pinnedTagDate": "2026-11-16T19:31:08+01:00",
+      "pinnedTag": "blueprints-v0.67.0",
+      "pinnedTagDate": "2026-11-16T20:01:05+01:00",
       "commitsSincePin": 1,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json"
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs"
       ]
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.66.2",
-      "pinnedTagDate": "2026-11-16T19:31:08+01:00",
+      "pinnedTag": "blueprints-v0.67.0",
+      "pinnedTagDate": "2026-11-16T20:01:05+01:00",
       "commitsSincePin": 1,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json"
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs"
       ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.37.2",
       "pinnedTagDate": "2026-11-15T20:01:23+01:00",
-      "commitsSincePin": 7,
+      "commitsSincePin": 8,
       "filesTouched": [
         "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js",
+        "iNNfo/packages/nn-mcp/src/server.ts",
         "iNNfo/packages/nn-mcp/src/tools/apply-change.ts",
         "iNNfo/packages/nn-mcp/src/tools/console-regeneration.ts",
+        "iNNfo/packages/nn-mcp/src/tools/workspace-sync.spec.ts",
+        "iNNfo/packages/nn-mcp/src/tools/workspace-sync.ts",
         "iNNfo/packages/nn-mcp/test/apply-change-delete-impact.test.ts",
         "iNNfo/packages/nn-mcp/tsup.config.ts"
       ]

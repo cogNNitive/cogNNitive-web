@@ -14672,20 +14672,21 @@ var init_fs_types = __esm({
   }
 });
 
-// iNNfo/packages/nn-core/dist/workspace/reconcileManifest.js
-var init_reconcileManifest = __esm({
-  "iNNfo/packages/nn-core/dist/workspace/reconcileManifest.js"() {
-    "use strict";
-    init_paths();
-  }
-});
-
 // iNNfo/packages/nn-core/dist/workspace/discoverModels.js
 var init_discoverModels = __esm({
   "iNNfo/packages/nn-core/dist/workspace/discoverModels.js"() {
     "use strict";
     init_paths();
     init_contract();
+  }
+});
+
+// iNNfo/packages/nn-core/dist/workspace/reconcileManifest.js
+var init_reconcileManifest = __esm({
+  "iNNfo/packages/nn-core/dist/workspace/reconcileManifest.js"() {
+    "use strict";
+    init_paths();
+    init_discoverModels();
   }
 });
 
