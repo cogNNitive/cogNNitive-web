@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-16T08:22:38.726Z",
-  "head": "8a747d1b2cd450f7817af8b32107034beaedc6d7",
+  "generatedAt": "2026-11-16T08:47:20.373Z",
+  "head": "3b125425a99a0353cce3c35cb449bb39219eb1d1",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -11,21 +11,17 @@
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.63.0",
-      "pinnedTagDate": "2026-11-15T21:48:06+01:00",
-      "commitsSincePin": 2,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/qa.mjs"
-      ]
+      "pinnedTag": "blueprints-v0.63.1",
+      "pinnedTagDate": "2026-11-16T09:21:04+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.63.0",
-      "pinnedTagDate": "2026-11-15T21:48:06+01:00",
-      "commitsSincePin": 2,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/qa.mjs"
-      ]
+      "pinnedTag": "blueprints-v0.63.1",
+      "pinnedTagDate": "2026-11-16T09:21:04+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
