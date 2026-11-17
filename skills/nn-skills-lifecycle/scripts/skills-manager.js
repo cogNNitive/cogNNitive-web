@@ -1714,6 +1714,11 @@ ${RETIRED_REPO_NOTICE}`);
         updated_at: (/* @__PURE__ */ new Date()).toISOString()
       };
     }
+    function statusRef(value) {
+      if (!value) return "-";
+      const text = String(value);
+      return /^[0-9a-f]{40}$/i.test(text) ? text.slice(0, 7) : text;
+    }
     function printStatusTable(rows) {
       const headers = ["Type", "Name", "Pinned", "Installed", "Status"];
       const cells = [headers, ...rows.map((r) => [r.type, r.name, r.pinned, r.installed, r.status])];
@@ -1785,8 +1790,8 @@ ${RETIRED_REPO_NOTICE}`);
         rows.push({
           type: "skill",
           name: skill.name,
-          pinned: skill.commit ? skill.commit.slice(0, 7) : "-",
-          installed: entry ? entry.commit.slice(0, 7) : "-",
+          pinned: statusRef(skill.commit),
+          installed: statusRef(entry && entry.commit),
           status
         });
         if (status === "outdated") outdatedSkills.push(skill);
@@ -1807,8 +1812,8 @@ ${RETIRED_REPO_NOTICE}`);
         rows.push({
           type: "template",
           name: template.name,
-          pinned: template.commit ? template.commit.slice(0, 7) : "-",
-          installed: entry ? entry.commit.slice(0, 7) : "-",
+          pinned: statusRef(template.commit),
+          installed: statusRef(entry && entry.commit),
           status
         });
         if (status === "outdated") outdatedBlueprints.push(template);
@@ -1829,8 +1834,8 @@ ${RETIRED_REPO_NOTICE}`);
         rows.push({
           type: "mcp",
           name: server.name,
-          pinned: server.commit ? server.commit.slice(0, 7) : "-",
-          installed: entry ? entry.commit.slice(0, 7) : "-",
+          pinned: statusRef(server.commit),
+          installed: statusRef(entry && entry.commit),
           status
         });
         if (status === "outdated") outdatedMcp.push(server);
@@ -1851,8 +1856,8 @@ ${RETIRED_REPO_NOTICE}`);
         rows.push({
           type: "console",
           name: fileName,
-          pinned: asset.commit ? asset.commit.slice(0, 7) : "-",
-          installed: entry ? entry.commit.slice(0, 7) : "-",
+          pinned: statusRef(asset.commit),
+          installed: statusRef(entry && entry.commit),
           status
         });
         if (status === "outdated") outdatedConsoleAssets.push(asset);
@@ -1876,8 +1881,8 @@ ${RETIRED_REPO_NOTICE}`);
         rows.push({
           type: "catalog",
           name,
-          pinned: catalogEntry && catalogEntry.release_tag ? String(catalogEntry.release_tag).slice(0, 7) : "-",
-          installed: installedTag ? String(installedTag).slice(0, 7) : "-",
+          pinned: statusRef(catalogEntry && catalogEntry.release_tag),
+          installed: statusRef(installedTag),
           status
         });
       }
@@ -2827,6 +2832,7 @@ Projected skills to agent directories:`);
       DEFAULT_STATE_FILE,
       LEGACY_STATE_FILE,
       getManifestUrl,
+      statusRef,
       requestFor,
       fetchString,
       fetchJson,
