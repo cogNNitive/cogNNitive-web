@@ -106,7 +106,11 @@ Please close any open files or editors accessing that folder and retry.`
     }
     function extractTarball(tarFile, destDir) {
       fs.mkdirSync(destDir, { recursive: true });
-      const res = spawnSync("tar", ["-xzf", tarFile, "-C", destDir], { cwd: destDir, encoding: "utf-8" });
+      const res = spawnSync("tar", ["-xzf", "-"], {
+        cwd: destDir,
+        input: fs.readFileSync(tarFile),
+        encoding: "utf-8"
+      });
       if (res.status !== 0) {
         throw new Error(`tar extraction failed: ${(res.stderr || res.stdout || "").trim()}`);
       }
