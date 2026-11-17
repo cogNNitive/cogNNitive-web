@@ -13,7 +13,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildProject, FIT_BLUR_RADIUS_PX, FIT_BLUR_BRIGHTNESS } from '../scripts/scene-project.mjs';
+import { buildProject, fitBlurRadiusPx, FIT_BLUR_REFERENCE_PX, FIT_BLUR_BRIGHTNESS } from '../scripts/scene-project.mjs';
 import { DEFAULT_SIGMA } from '../scripts/render-formats.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -61,9 +61,11 @@ const layerHtml = (manifest) => {
   return html;
 };
 
-test('fit accepts blur as a third option', () => {
-  const options = registry.fields.fit.options;
-  assert.deepEqual([...options].sort(), ['blur', 'contain', 'cover']);
+test('fit is a keyed list validated by the engine, not a closed option set', () => {
+  // V_0-25-0: `fit:: [native=<v>, mismatch=<v>]`. A select option list would reject
+  // `native=cover`, so the engine resolver checks the values (fit-keyed.test.mjs).
+  assert.equal(registry.fields.fit.multiple, true);
+  assert.deepEqual(registry.fields.fit.options, []);
 });
 
 test('a 16:9 image in a 9:16 box emits a blurred backdrop and a contained foreground', () => {
@@ -73,11 +75,12 @@ test('a 16:9 image in a 9:16 box emits a blurred backdrop and a contained foregr
   // Both elements are the same asset: no new image, no new palette.
   const srcs = [...html.matchAll(/src="assets\/([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(srcs, ['wide.jpg', 'wide.jpg']);
-  // Backdrop fills and blurs with the documented radius.
-  assert.match(html, /object-fit:cover;filter:blur\(24px\) brightness\(0\.82\)/);
+  // Backdrop fills and blurs with the documented radius, proportional to the box:
+  // 13.5px on this 1080x1920 canvas (24px at a 1920 shorter side).
+  assert.match(html, /object-fit:cover;filter:blur\(13\.5px\) brightness\(0\.82\)/);
   // Foreground keeps contain, so the whole image is visible and no band is empty.
   assert.match(html, /object-fit:contain/);
-  assert.equal(FIT_BLUR_RADIUS_PX, 24);
+  assert.equal(fitBlurRadiusPx(1080, 1920), 13.5);
   assert.equal(FIT_BLUR_BRIGHTNESS, 0.82);
 });
 
@@ -120,7 +123,7 @@ test('contain is untouched by the blur branch', () => {
 test('the documented CSS radius is not claimed to equal the ffmpeg sigma', () => {
   // The two are different operations; the doc says "roughly 24px against sigma 20".
   assert.equal(DEFAULT_SIGMA, 20);
-  assert.notEqual(FIT_BLUR_RADIUS_PX, DEFAULT_SIGMA);
+  assert.notEqual(FIT_BLUR_REFERENCE_PX, DEFAULT_SIGMA);
   const spec = fs.readFileSync(path.resolve(HERE, '..', '..', '..', 'spec_NN.md'), 'utf8');
   assert.match(spec, /NOT the same operation as the ffmpeg `gblur` sigma/);
 });

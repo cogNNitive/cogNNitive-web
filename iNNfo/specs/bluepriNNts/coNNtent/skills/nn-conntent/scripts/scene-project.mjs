@@ -68,12 +68,68 @@ function drawableLayers(scene) {
     .sort((a, b) => Number(a.layer_z_index ?? 0) - Number(b.layer_z_index ?? 0));
 }
 
-/** CSS blur radius for a `fit:: blur` backdrop on a 1920 box (see BLUR_TO_SIGMA). */
-export const FIT_BLUR_RADIUS_PX = 24
-/** Backdrop darkening for a `fit:: blur` layer: the same intent as render-formats' DEFAULT_BRIGHTNESS. */
+/**
+ * `fit` classification tolerance (spec S2): an asset is `native` when its aspect ratio
+ * is within 5% of the box aspect, |assetAspect / boxAspect - 1| <= 0.05, inclusive;
+ * otherwise it is `mismatch`. 5% absorbs encoder rounding (1366x768, 1920x1088) without
+ * calling a 4:3 asset native on a 16:9 canvas (a 25% difference).
+ */
+export const FIT_ASPECT_TOLERANCE = 0.05
+/** The backdrop blur radius is 24px when the box's shorter side is 1920px... */
+export const FIT_BLUR_REFERENCE_PX = 24
+/** ...and scales linearly with the shorter side (13.5px at 1080). */
+export const FIT_BLUR_REFERENCE_SIDE = 1920
+/** Backdrop darkening for a `fit:: blur`/`card` layer: the same intent as render-formats' DEFAULT_BRIGHTNESS. */
 export const FIT_BLUR_BRIGHTNESS = 0.82
+/** `card` geometry, as fractions of the box's shorter side: margin, corner radius, shadow offset and blur. */
+export const FIT_CARD = Object.freeze({ inset: 0.05, radius: 0.02, shadowY: 0.012, shadowBlur: 0.04, shadowAlpha: 0.45 })
 
-function layerMarkup(layer, sceneDurationFrames, fps, trackBase, sceneSlug) {
+const round2 = (n) => Math.round(n * 100) / 100
+
+/** The CSS blur radius of a `fit` backdrop for a box: proportional to its shorter side. */
+export function fitBlurRadiusPx(boxWidth, boxHeight) {
+  return round2((FIT_BLUR_REFERENCE_PX * Math.min(boxWidth, boxHeight)) / FIT_BLUR_REFERENCE_SIDE)
+}
+
+/** `native` when the asset aspect is within FIT_ASPECT_TOLERANCE of the box aspect, else `mismatch`. */
+export function classifyFit(assetWidth, assetHeight, boxWidth, boxHeight) {
+  const ratio = (assetWidth / assetHeight) / (boxWidth / boxHeight)
+  // Rounded to 1e-9 so a ratio exactly on the boundary is not lost to float noise.
+  return Math.round(Math.abs(ratio - 1) * 1e9) / 1e9 <= FIT_ASPECT_TOLERANCE ? 'native' : 'mismatch'
+}
+
+/** A manifest `layer_fit` as `{ native, mismatch }`: a legacy scalar means both keys; absent is null. */
+function fitMapOf(raw) {
+  if (raw === undefined || raw === null || raw === '') return null
+  if (typeof raw === 'object') return { native: String(raw.native || 'cover'), mismatch: String(raw.mismatch || 'cover') }
+  const v = String(raw).toLowerCase()
+  return { native: v, mismatch: v }
+}
+
+/** The asset size a layer carries (probed at compile), or a named error. */
+function assetSizeOf(layer, why) {
+  const w = Number(layer.layer_asset_width)
+  const h = Number(layer.layer_asset_height)
+  if (w > 0 && h > 0) return { width: w, height: h }
+  throw new Error(
+    `scene-project: layer "${layer.layer_asset_source}" has no asset size (layer_asset_width/height) and its fit ${why}; compile probes it`,
+  )
+}
+
+/**
+ * The treatment one layer gets on this canvas: null for an undeclared fit (today's cover
+ * markup), otherwise the value of the key its classification picks. Classification only
+ * runs when the two keys differ, so a single-valued fit needs no asset size.
+ */
+export function chosenFit(layer, box) {
+  const map = fitMapOf(layer.layer_fit)
+  if (!map) return null
+  if (map.native === map.mismatch) return map.native
+  const size = assetSizeOf(layer, 'needs a native/mismatch classification')
+  return map[classifyFit(size.width, size.height, box.width, box.height)]
+}
+
+function layerMarkup(layer, sceneDurationFrames, fps, trackBase, sceneSlug, box) {
   const name = String(layer.layer_asset_source);
   const dur = frameSeconds(sceneDurationFrames, fps);
   const z = Number(layer.layer_z_index ?? 0);
@@ -95,23 +151,53 @@ function layerMarkup(layer, sceneDurationFrames, fps, trackBase, sceneSlug) {
   // A stable per-layer `id` gives HyperFrames Studio a target for its timeline and
   // canvas controls (an id-less clip triggers a lint warning).
   const id = `media-${esc(sceneSlug || 'scene')}-${trackBase}`;
-  const fit = String(layer.layer_fit || '').toLowerCase();
+  const fit = chosenFit(layer, box);
   const zIndex = Number.isFinite(z) ? z : 0;
-  // `fit:: blur` keeps the WHOLE asset visible (contain) over a backdrop built from
-  // the same asset filling the box and blurred, so a 16:9 image in a 9:16 box shows
-  // no empty band. Both elements are the same file: no new palette is introduced,
-  // and the backdrop carries no audio of its own (`muted`).
+  // A `component:<name>` fit is mounted at the root (see fitComponentHosts), never here.
+  if (fit && fit.startsWith('component:')) return '';
+  // `blur` and `card` keep the WHOLE asset visible over a backdrop built from the same
+  // asset filling the box and blurred, so a 16:9 image in a 9:16 box shows no empty
+  // band. Both elements are the same file: no new palette is introduced, and the
+  // backdrop carries no audio of its own (`muted`). The radius scales with the box.
+  const backdrop = () =>
+    `<${tag} id="${id}-backdrop" class="clip nn-media nn-media-backdrop" data-start="0" data-duration="${dur}" ` +
+    `data-track-index="${trackBase}" ${mediaAttrs} aria-hidden="true" src="assets/${esc(name)}" ` +
+    `style="z-index:${zIndex};object-position:${objectPos};object-fit:cover;` +
+    `filter:blur(${fitBlurRadiusPx(box.width, box.height)}px) brightness(${FIT_BLUR_BRIGHTNESS});"></${tag}>`;
+  // `card` presents the whole asset, never cropped, as a card over the designed frame:
+  // the blurred self-backdrop. The card is sized to the asset's own aspect inside a
+  // margin of FIT_CARD.inset of the shorter side, centered, with rounded corners and a
+  // soft shadow, all proportional to the box.
+  if (fit === 'card') {
+    const size = assetSizeOf(layer, 'is card');
+    const side = Math.min(box.width, box.height);
+    const inset = Math.round(FIT_CARD.inset * side);
+    const scale = Math.min((box.width - 2 * inset) / size.width, (box.height - 2 * inset) / size.height);
+    const w = Math.round(size.width * scale);
+    const h = Math.round(size.height * scale);
+    const left = Math.round((box.width - w) / 2);
+    const top = Math.round((box.height - h) / 2);
+    const card =
+      `<${tag} id="${id}" class="clip nn-media nn-media-card" data-start="0" data-duration="${dur}" ` +
+      `data-track-index="${trackBase}" ${mediaAttrs} src="assets/${esc(name)}" ` +
+      `style="z-index:${zIndex};inset:auto;left:${left}px;top:${top}px;width:${w}px;height:${h}px;object-fit:contain;` +
+      `border-radius:${Math.round(FIT_CARD.radius * side)}px;` +
+      `box-shadow:0 ${Math.round(FIT_CARD.shadowY * side)}px ${Math.round(FIT_CARD.shadowBlur * side)}px rgba(0,0,0,${FIT_CARD.shadowAlpha});"></${tag}>`;
+    return backdrop() + '\n      ' + card;
+  }
+  if (fit === 'contain') {
+    return (
+      `<${tag} id="${id}" class="clip nn-media" data-start="0" data-duration="${dur}" ` +
+      `data-track-index="${trackBase}" ${mediaAttrs} src="assets/${esc(name)}" ` +
+      `style="z-index:${zIndex};object-position:${objectPos};object-fit:contain;"></${tag}>`
+    );
+  }
   if (fit === 'blur') {
-    const backdrop =
-      `<${tag} id="${id}-backdrop" class="clip nn-media nn-media-backdrop" data-start="0" data-duration="${dur}" ` +
-      `data-track-index="${trackBase}" ${mediaAttrs} aria-hidden="true" src="assets/${esc(name)}" ` +
-      `style="z-index:${zIndex};object-position:${objectPos};object-fit:cover;` +
-      `filter:blur(${FIT_BLUR_RADIUS_PX}px) brightness(${FIT_BLUR_BRIGHTNESS});"></${tag}>`;
     const foreground =
       `<${tag} id="${id}" class="clip nn-media nn-media-foreground" data-start="0" data-duration="${dur}" ` +
       `data-track-index="${trackBase}" ${mediaAttrs} src="assets/${esc(name)}" ` +
       `style="z-index:${zIndex};object-position:${objectPos};object-fit:contain;"></${tag}>`;
-    return backdrop + '\n      ' + foreground;
+    return backdrop() + '\n      ' + foreground;
   }
   return (
     `<${tag} id="${id}" class="clip nn-media" data-start="0" data-duration="${dur}" ` +
@@ -146,7 +232,10 @@ export function buildProject(manifest, plan = {}) {
     const dur = frameSeconds(scene.durationInFrames, fps);
     const layers = drawableLayers(scene);
     layers.forEach((l) => assets.push(String(l.layer_asset_source)));
-    const layerHtml = layers.map((l, i) => layerMarkup(l, scene.durationInFrames, fps, i + 1, slug)).join('\n      ');
+    const layerHtml = layers
+      .map((l, i) => layerMarkup(l, scene.durationInFrames, fps, i + 1, slug, { width, height }))
+      .filter(Boolean)
+      .join('\n      ');
     const transition = sceneTransitionFragment(scene.transition, fps);
     const tween = transition ? `      ${transition.js}` : '';
     const html = `<template>
@@ -224,6 +313,48 @@ ${tween}
     .filter(Boolean)
     .join('\n');
 
+  // `fit:: component:<name>` hosts: ROOT-level sub-compositions with global times, like
+  // the overlay and authored-animation hosts above. A scene is itself a sub-composition,
+  // and the slot components already mount at the root in one nesting level; mounting a
+  // component inside a scene would nest two levels, which no other mount in this
+  // project does. The host lasts the scene, paints above the scene hosts (DOM order)
+  // with the layer's own z-index, and stays below every overlay (z-index 200+). The
+  // component receives `{ src, width, height, asset_width, asset_height }`; the render
+  // driver stages it into `components/<name>.html` from `metadata.fitComponents`.
+  const fitComponentMap = plan.fitComponents || manifest?.metadata?.fitComponents || {};
+  let fitTrackIndex = 600;
+  const fitHosts = scenes
+    .flatMap((scene) => {
+      const slug = sceneSlug(scene);
+      return drawableLayers(scene).map((layer, i) => {
+        const fit = chosenFit(layer, { width, height });
+        if (!fit || !fit.startsWith('component:')) return '';
+        const name = fit.slice('component:'.length);
+        const size = assetSizeOf(layer, `is ${fit}`);
+        const values = JSON.stringify({
+          src: `assets/${layer.layer_asset_source}`,
+          width,
+          height,
+          asset_width: size.width,
+          asset_height: size.height,
+        })
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/'/g, '&#39;');
+        const z = Number(layer.layer_z_index ?? 0);
+        const noTimeline = fitComponentMap[name]?.noTimeline ? ' data-no-timeline' : '';
+        return (
+          `  <div id="fit-${esc(slug)}-${i + 1}" class="clip" data-composition-id="${esc(name)}" ` +
+          `data-composition-src="components/${esc(name)}.html" data-start="${frameSeconds(scene.fromFrame, fps)}" ` +
+          `data-duration="${frameSeconds(scene.durationInFrames, fps)}" data-track-index="${fitTrackIndex++}" ` +
+          `data-track-kind="graphics" data-width="${width}" data-height="${height}"${noTimeline} ` +
+          `data-variable-values='${values}' style="position:absolute;inset:0;z-index:${Number.isFinite(z) ? z : 0}"></div>`
+        );
+      });
+    })
+    .filter(Boolean)
+    .join('\n');
+
   const sceneHosts = scenes
     .map((scene) => {
       const slug = sceneSlug(scene);
@@ -289,7 +420,7 @@ ${tween}
 ${sceneHosts}
 ${overlayHosts}
 ${animationHosts}
-${captionsHostHtml}${audioEls}
+${fitHosts ? `${fitHosts}\n` : ''}${captionsHostHtml}${audioEls}
     </div>
     <script>window.__timelines[${JSON.stringify(compositionId)}] = gsap.timeline({ paused: true });</script>
   </body>

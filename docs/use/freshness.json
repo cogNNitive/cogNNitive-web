@@ -1,50 +1,76 @@
 {
-  "generatedAt": "2026-11-17T11:20:18.854Z",
-  "head": "d0b6329937ee7f8fea7072162afb6471cef24ce8",
+  "generatedAt": "2026-11-17T17:11:55.547Z",
+  "head": "34147cda6a74d6994acfe07599e13ba4f459daa6",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
-      "pinnedTag": "skills-v3.4.0",
-      "pinnedTagDate": "2026-11-17T11:49:36+01:00",
-      "commitsSincePin": 1,
-      "filesTouched": [
-        "skills/nn-skills-lifecycle/scripts/skills-manager.js"
-      ]
+      "pinnedTag": "skills-v3.4.1",
+      "pinnedTagDate": "2026-11-17T12:19:36+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.70.0",
-      "pinnedTagDate": "2026-11-17T11:49:36+01:00",
+      "pinnedTag": "blueprints-v0.70.1",
+      "pinnedTagDate": "2026-11-17T12:19:36+01:00",
       "commitsSincePin": 1,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json"
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/assets/console-view-conntent.data.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/defaults/video-defaults_NN.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/references/overlay-slots.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/references/parameters.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/hyperframes-render.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/cascade.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/compile.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-consumers.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/image-size.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/overlay-blocks.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/scene-compiler.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/scene-project.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/avatar-render-refusal.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/console-conntent-data.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/episode-project-layout.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/fit-blur.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/fit-keyed.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
       ]
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.70.0",
-      "pinnedTagDate": "2026-11-17T11:49:36+01:00",
+      "pinnedTag": "blueprints-v0.70.1",
+      "pinnedTagDate": "2026-11-17T12:19:36+01:00",
       "commitsSincePin": 1,
       "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json"
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/assets/console-view-conntent.data.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/defaults/video-defaults_NN.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/references/overlay-slots.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/references/parameters.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/hyperframes-render.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/cascade.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/compile.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-consumers.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/image-size.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/overlay-blocks.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/scene-compiler.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/scene-project.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/avatar-render-refusal.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/console-conntent-data.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/episode-project-layout.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/fit-blur.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/fit-keyed.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
       ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
-      "pinnedTag": "nn-mcp-v0.37.2",
-      "pinnedTagDate": "2026-11-15T20:01:23+01:00",
-      "commitsSincePin": 9,
-      "filesTouched": [
-        "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js",
-        "iNNfo/packages/nn-mcp/package.json",
-        "iNNfo/packages/nn-mcp/src/server.ts",
-        "iNNfo/packages/nn-mcp/src/tools/apply-change.ts",
-        "iNNfo/packages/nn-mcp/src/tools/console-regeneration.ts",
-        "iNNfo/packages/nn-mcp/src/tools/workspace-sync.spec.ts",
-        "iNNfo/packages/nn-mcp/src/tools/workspace-sync.ts",
-        "iNNfo/packages/nn-mcp/test/apply-change-delete-impact.test.ts",
-        "iNNfo/packages/nn-mcp/tsup.config.ts"
-      ]
+      "pinnedTag": "nn-mcp-v0.38.0",
+      "pinnedTagDate": "2026-11-17T12:19:36+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "nn-console": {
       "subsystem": "nn-console",

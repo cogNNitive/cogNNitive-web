@@ -142,7 +142,8 @@ fit:: contain
     assert.equal(String(scene.recordFields.voice_speed), '1.25')
     assert.equal(scene.fields.voice_speed.source, 'scene')
     assert.equal(scene.recordFields.kind, 'Explainer')
-    assert.equal(scene.layers[0].fields.fit.value, 'contain')
+    // A scalar `fit:: contain` sets both keys of the keyed fit (spec S2).
+    assert.deepEqual(scene.layers[0].fields.fit.value, ['native=contain', 'mismatch=contain'])
     assert.equal(scene.layers[0].fields.fit.source, 'layer')
     assert.equal(scene.layers[0].elementId, 's/e@caption')
     assert.equal(episode.recordFields.budget, 10)

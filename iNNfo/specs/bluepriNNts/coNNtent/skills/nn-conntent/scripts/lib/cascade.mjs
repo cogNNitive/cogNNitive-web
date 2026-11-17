@@ -85,6 +85,97 @@ export function resolveKeyed(param, key, bags = {}) {
   };
 }
 
+/** The keys of `fit` (spec S2): the asset matches the box aspect, or it does not. */
+export const FIT_KEYS = ['native', 'mismatch'];
+/** The built-in `fit` treatments; `component:<name>` names a HyperFrames component instead. */
+export const FIT_BUILTINS = ['cover', 'contain', 'blur', 'card'];
+
+/** A `fit` value or key the engine does not know. Code `FIT_INVALID`. */
+export class FitValueError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'FitValueError';
+    this.code = 'FIT_INVALID';
+  }
+}
+
+function checkFitValue(value, raw) {
+  const v = String(value ?? '').trim();
+  if (FIT_BUILTINS.includes(v)) return v;
+  if (/^component:[A-Za-z0-9][A-Za-z0-9._-]*$/.test(v)) return v;
+  throw new FitValueError(
+    `fit: unknown value "${v}" in ${JSON.stringify(raw)}; expected cover | contain | blur | card | component:<name>`,
+  );
+}
+
+/**
+ * Normalizes one level's raw `fit` into a partial `{ native?, mismatch? }` map. A scalar
+ * (`cover`, or a one-item list without `=`) broadcasts to both keys; a keyed list sets
+ * only the keys it names. This runs BEFORE the keyed union, because nn-core drops a list
+ * item without `=` (M6). Returns null when the level sets nothing.
+ * @param {unknown} raw
+ * @returns {{ native?: string, mismatch?: string } | null}
+ */
+export function normalizeFit(raw) {
+  if (raw === undefined || raw === null) return null;
+  let items;
+  if (Array.isArray(raw)) items = raw.map((x) => String(x).trim());
+  else if (typeof raw === 'object') items = Object.entries(raw).map(([k, v]) => `${k}=${v}`);
+  else {
+    let text = String(raw).trim();
+    if (text.startsWith('[') && text.endsWith(']')) text = text.slice(1, -1);
+    items = text.split(',').map((s) => s.trim());
+  }
+  items = items.filter((s) => s !== '');
+  if (items.length === 0) return null;
+  const keyed = items.filter((s) => s.includes('=') && !s.startsWith('component:'));
+  if (keyed.length === 0) {
+    if (items.length !== 1) throw new FitValueError(`fit: a scalar takes one value, got ${JSON.stringify(raw)}`);
+    const v = checkFitValue(items[0], raw);
+    return { native: v, mismatch: v };
+  }
+  if (keyed.length !== items.length) throw new FitValueError(`fit: mix of keyed and scalar items in ${JSON.stringify(raw)}`);
+  const out = {};
+  for (const item of items) {
+    const at = item.indexOf('=');
+    const key = item.slice(0, at).trim();
+    if (!FIT_KEYS.includes(key)) {
+      throw new FitValueError(`fit: unknown key "${key}" in ${JSON.stringify(raw)}; expected native | mismatch`);
+    }
+    out[key] = checkFitValue(item.slice(at + 1), raw);
+  }
+  return out;
+}
+
+/**
+ * Resolves the keyed `fit` per key through the cascade (layer > scene > video > kind >
+ * series > domain > blueprint, Presets included, the order of `bagsToChain`). Every level
+ * is normalized first, then the keyed union keeps the nearest value of each key, so an
+ * inner level setting one key keeps the outer value of the other. A key no level sets is
+ * `cover`. Returns `value: null` when no level sets `fit` at all.
+ * @param {Record<string, unknown>} [bags]
+ * @returns {{ value: { native: string, mismatch: string } | null, source: { native: string|null, mismatch: string|null } }}
+ */
+export function resolveFit(bags = {}) {
+  const loaded = bagsToChain(bags);
+  const norm = (node) => {
+    if (!node || !Object.hasOwn(node.values || {}, 'fit')) return node;
+    const map = normalizeFit(node.values.fit);
+    const values = { ...node.values };
+    if (map) values.fit = map;
+    else delete values.fit;
+    return { ...node, values };
+  };
+  const chain = { floor: norm(loaded.floor), nodes: loaded.nodes.map(norm) };
+  const r = coreResolve(chain, 'fit', 'union');
+  const source = { native: null, mismatch: null };
+  if (!r.present || !Array.isArray(r.value) || r.value.length === 0) return { value: null, source };
+  const value = { native: 'cover', mismatch: 'cover' };
+  for (const entry of r.value) value[entry.name] = entry.value;
+  for (const e of r.explain?.entries || []) source[e.name] = e.from?.scope ?? null;
+  return { value, source };
+}
+
 /** Error code when a cascade field is set at a level its scope class forbids. */
 export const CASCADE_LEVEL_FORBIDDEN = 'CASCADE_LEVEL_FORBIDDEN';
 

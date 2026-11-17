@@ -169,9 +169,14 @@ function stageComponents(manifest, projectDir) {
   const overlays = manifest?.tracks?.overlays || [];
   const resolved = manifest?.metadata?.components || {};
   const slots = new Set(overlays.map((o) => SLOT_OF[o.type]).filter(Boolean));
-  if (slots.size === 0) return;
+  // `fit:: component:<name>` components, resolved before spend by compile.
+  const fitComponents = Object.values(manifest?.metadata?.fitComponents || {});
+  if (slots.size === 0 && fitComponents.length === 0) return;
   const componentsDir = path.join(projectDir, 'components');
   fs.mkdirSync(componentsDir, { recursive: true });
+  for (const entry of fitComponents) {
+    if (entry?.path && fs.existsSync(entry.path)) fs.copyFileSync(entry.path, path.join(componentsDir, `${entry.name}.html`));
+  }
   const skillDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   for (const slot of slots) {
     const entry = resolved[slot];

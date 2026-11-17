@@ -22,7 +22,7 @@ image_size:: 1024x1024
 avatar_model:: wavespeed-ai/infinitetalk-fast
 background_audio_volume:: 0.2
 transition:: none
-fit:: cover
+fit:: [native=cover, mismatch=blur]
 frame:: neutral
 output_formats:: [1920x1920, 1080x1920, 1920x1080, 1080x1080]
 review_gates:: [script, preview]

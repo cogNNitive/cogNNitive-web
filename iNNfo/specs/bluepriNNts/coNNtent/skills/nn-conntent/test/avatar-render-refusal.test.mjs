@@ -50,7 +50,11 @@ function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'avatar-refusal-'));
   fs.writeFileSync(path.join(root, 'domaiNN_NN.md'), '# NN DomaiNN\n', 'utf8');
   fs.mkdirSync(path.join(root, 'media'));
-  fs.writeFileSync(path.join(root, 'media', 'face.png'), Buffer.from('png-bytes'));
+  // A PNG signature + IHDR (1080x1080): the keyed `fit` default needs a readable size.
+  fs.writeFileSync(
+    path.join(root, 'media', 'face.png'),
+    Buffer.from('89504e470d0a1a0a0000000d494844520000043800000438080200000000', 'hex'),
+  );
   const scriptPath = path.join(root, 'avatar-refusal_NN.md');
   fs.writeFileSync(scriptPath, avatarScript, 'utf8');
   return { root, scriptPath };

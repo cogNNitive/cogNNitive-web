@@ -19,7 +19,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { isKnowledgeModel, slugify } from './lib/knowledge-model.mjs';
-import { resolve } from './lib/cascade.mjs';
+import { resolve, resolveFit } from './lib/cascade.mjs';
 import { chromeFieldsFor, kindBagOf, loadSeriesGrammar, validateLanguage, validateSceneKinds } from './lib/kinds.mjs';
 
 /**
@@ -647,7 +647,10 @@ export class SceneCompiler {
     const declared = fields.type;
     const effectiveType = declared === 'text' ? fields.style : declared;
     const binding = TYPE_RENDERERS[effectiveType] || { kind: 'layer', manifest: declared };
-    const fit = resolve('fit', { ...bags, layer: fields }).value;
+    // The format-independent `{ native, mismatch }` map (M5): which key applies is decided
+    // per canvas at projection, so the lowered model (and the script-gate hash) never
+    // depends on the output format.
+    const fit = resolveFit({ ...bags, layer: fields }).value ?? undefined;
     const avatarModel = resolve('avatar_model', { ...bags, layer: fields }).value;
     // A presenter with no local asset takes the cascaded `avatar` as its source
     // (design D7); every other Layer type uses `asset` only.

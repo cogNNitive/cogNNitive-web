@@ -17,7 +17,7 @@ import { join } from 'node:path'
 import { loadKnowledgeModel } from '../skills/nn-conntent/scripts/lib/knowledge-model.mjs'
 import { bagsToChain, loadCascadeBags, withScriptPresets } from '../skills/nn-conntent/scripts/lib/video-scope.mjs'
 import { resolve as resolveScope } from '../skills/nn-conntent/scripts/lib/nn-core.generated.cjs'
-import { createCascade } from '../skills/nn-conntent/scripts/lib/cascade.mjs'
+import { createCascade, resolveFit } from '../skills/nn-conntent/scripts/lib/cascade.mjs'
 import { kindBagOf, loadSeriesGrammar } from '../skills/nn-conntent/scripts/lib/kinds.mjs'
 import { assignLayersToScenes } from '../skills/nn-conntent/scripts/scene-compiler.mjs'
 import { lowerEpisode, scriptSubjectsFromScenes } from '../skills/nn-conntent/scripts/lib/review-subject.mjs'
@@ -118,6 +118,19 @@ function fieldsFor(cascade, scene, layer, bags) {
         const levels = [...new Set(Object.values(origins))]
         out[name] = { value: union.value.map((entry) => entry.name + '=' + entry.value),
           source: levels.length === 1 ? levels[0] : 'mixed', origins }
+      }
+    }
+    // `fit` is keyed per asset/canvas relation and merges per key (spec S2): the engine's
+    // own resolver normalizes a scalar to both keys before the union.
+    if (bags && name === 'fit') {
+      const fit = resolveFit(bags)
+      if (fit.value) {
+        const levels = [...new Set(Object.values(fit.source))]
+        // Per-key origins only when the keys come from different levels; otherwise
+        // `source` already names the one level (keeps the payload text-sized).
+        out[name] = levels.length === 1
+          ? { value: ['native=' + fit.value.native, 'mismatch=' + fit.value.mismatch], source: levels[0] }
+          : { value: ['native=' + fit.value.native, 'mismatch=' + fit.value.mismatch], source: 'mixed', origins: fit.source }
       }
     }
   }

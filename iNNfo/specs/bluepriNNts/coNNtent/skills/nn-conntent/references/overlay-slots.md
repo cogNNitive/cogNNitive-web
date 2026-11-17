@@ -14,7 +14,9 @@ variables: <names>`.
 Every slot declares `text`, `src`, `position`, `enter`, `exit`, `font` and `accent`; `b-roll` also
 declares `fit`. The host passes the overlay's `text`/`src`/`position` and its `enter`/`exit`
 animations, plus the cascaded `frame`'s `font` and `accent`, as `data-variable-values` (a JSON
-object keyed by variable id). `b-roll` adds the cascaded `fit`.
+object keyed by variable id). `b-roll` adds the cascaded `fit` as one CSS `object-fit` value: the
+keyed `fit`'s `native` value when it is `cover` or `contain`, and `contain` for a treatment the
+slot cannot draw (`blur`, `card`, `component:<name>`), so the whole asset stays visible.
 
 | Slot (`type::`) | Manifest `type` | Variables | Registry hint |
 | --- | --- | --- | --- |

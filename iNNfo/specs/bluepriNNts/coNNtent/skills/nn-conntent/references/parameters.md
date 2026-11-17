@@ -71,7 +71,7 @@ Legend: ● can be written at this scope, · cannot.
 | `z_index` | string | — | · | · | · | · | · | · | ● | · | · | · | · | · |
 | `avatar_model` | string | — | ● | ● | · | ● | ● | ● | ● | · | · | · | · | · |
 | `avatar_resolution` | select | `480p`, `720p`, `768p` | · | · | · | · | · | · | ● | · | · | · | · | · |
-| `fit` | select | `cover`, `contain`, `blur` | ● | ● | · | ● | ● | ● | ● | · | · | · | · | · |
+| `fit` | select (multi) | — | ● | ● | · | ● | ● | ● | ● | · | · | · | · | · |
 | `voice` | string | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
 | `voice_model` | string | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
 | `voice_speed` | string | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
@@ -397,7 +397,7 @@ Settable at: `Layer`.
 
 ### `fit`
 
-How a `media` Layer fits its box. `cover` fills and crops; `contain` shows the whole asset with margins; `blur` shows the whole asset (contain) over a blurred, slightly darkened backdrop built from the same asset filling the box, so a 16:9 image in a 9:16 box shows no empty band. The backdrop is the same file, so no new palette is introduced. The backdrop's CSS blur radius is 24px on a 1920 box, which is NOT the same operation as the ffmpeg `gblur` sigma 20 that `render-formats` uses: 24px approximates sigma 20 at that size, and the two are deliberately not claimed to be identical. Resolves through the Universal Parameter Cascade; when no level sets it the blueprint Video Defaults value applies.
+How a `media` Layer fits the canvas it is rendered on. A keyed list with two keys, `fit:: [native=<value>, mismatch=<value>]`: each Layer is classified per output canvas by the aspect ratio of its asset, probed at compile time (PNG, JPEG, WebP, GIF and SVG headers; ffprobe for a video), against the aspect ratio of the canvas. The asset is `native` when |asset aspect / canvas aspect - 1| <= 0.05 (a 5% tolerance, boundary inclusive), otherwise `mismatch`, and that key's value applies. A scalar `fit:: X` sets both keys. Values: `cover` fills and crops; `contain` shows the whole asset with margins (`object-fit: contain`); `blur` shows the whole asset (contain) over a blurred, slightly darkened backdrop built from the same asset filling the canvas, so no band is empty and no new palette is introduced; `card` shows the whole asset, never cropped, as a card (inset 5% of the canvas's shorter side, with rounded corners and a soft shadow proportional to it) over the same blurred self-backdrop; `component:<name>` mounts the HyperFrames component `components/<name>` (library walk: episode, series, domain, skill), which receives `src`, `width`, `height`, `asset_width` and `asset_height` and must declare them; it is resolved before anything is spent, and a missing one fails. The backdrop blur radius is proportional to the canvas: 24px when its shorter side is 1920px, 13.5px at 1080px; it is a CSS blur and NOT the same operation as the ffmpeg `gblur` sigma that `render-formats` uses. An asset whose size cannot be read fails the compile when its fit needs it (keys that differ, `card` or a component). Each key resolves on its own through the Universal Parameter Cascade (Presets included), so a level that sets one key keeps the outer value of the other; a key no level sets is `cover`. An unknown key or value is an error. When no level sets it the blueprint Video Defaults value applies.
 
 Settable at: `Layer`, `Scene`, `Video`, `Preset`, `Series`, `Video Defaults`.
 

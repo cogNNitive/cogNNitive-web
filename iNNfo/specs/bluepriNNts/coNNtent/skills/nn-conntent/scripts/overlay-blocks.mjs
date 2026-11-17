@@ -89,8 +89,21 @@ function overlayVariables(overlay, frame) {
     font: f.fontFamily || '',
     accent: f.accent || '',
   };
-  if (overlay.type === 'broll') values.fit = cfg.fit || 'cover';
+  if (overlay.type === 'broll') values.fit = brollCssFit(cfg.fit);
   return values;
+}
+
+/**
+ * The b-roll slot draws its asset inside its own card box with CSS `object-fit`, so a
+ * keyed `fit` collapses to one CSS value: the `native` key decides (the card is not the
+ * canvas, so there is no canvas classification for it yet). `cover` and `contain` pass
+ * through; any treatment the slot cannot draw (blur, card, component) keeps the whole
+ * asset visible with `contain`.
+ */
+function brollCssFit(fit) {
+  if (fit === undefined || fit === null || fit === '') return 'cover';
+  const v = String(typeof fit === 'object' ? fit.native || 'cover' : fit).toLowerCase();
+  return v === 'cover' ? 'cover' : 'contain';
 }
 
 /**

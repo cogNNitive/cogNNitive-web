@@ -53,7 +53,7 @@ export const FIELD_CONSUMERS = {
   frame: ['scene-compiler.mjs', 'lib/frame-tokens.mjs'],
   components: ['scene-compiler.mjs'],
   sounds: ['lib/compile.mjs'],
-  fit: ['scene-compiler.mjs', 'scene-project.mjs'],
+  fit: ['lib/cascade.mjs', 'scene-compiler.mjs', 'scene-project.mjs', 'lib/compile.mjs', 'overlay-blocks.mjs'],
   fill: ['lib/pipeline.mjs', 'render-formats.mjs'],
   type: ['scene-compiler.mjs'],
   asset: ['scene-compiler.mjs'],

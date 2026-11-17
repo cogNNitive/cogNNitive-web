@@ -39,7 +39,8 @@ import { sceneAudioPath, sceneCaptionPlans } from './captions-stage.mjs';
 import { probeDuration } from './media-duration.mjs';
 import { checkMissingAsset } from './missing-asset.mjs';
 import { resolveAnimations, assertAnimationIds } from './animations.mjs';
-import { assertSlotContract, SLOT_OF } from '../overlay-blocks.mjs';
+import { assertSlotContract, readVariableIds, SLOT_OF } from '../overlay-blocks.mjs';
+import { probeAssetSize, AssetSizeUnknownError } from './image-size.mjs';
 import { parseArgs, CliUsageError } from './cli-args.mjs';
 import { assetName, linkOrCopy } from './stage-assets.mjs';
 
@@ -144,6 +145,103 @@ export function resolveComponents({ slots, bags, scriptDir, workspaceRoot, skill
     resolved[slot] = { name, path: componentFile, noTimeline: /data-no-timeline/.test(compHtml) };
   }
   return resolved;
+}
+
+/** A `fit:: component:<name>` that cannot be mounted: no folder, or a broken contract. */
+export class FitComponentError extends Error {
+  constructor(message, { name, searched = [], missing = [] } = {}) {
+    super(message);
+    this.name = 'FitComponentError';
+    this.code = 'FIT_COMPONENT';
+    this.component = name;
+    this.searched = searched;
+    this.missing = missing;
+  }
+}
+
+/** The variables a `fit` component receives; it must declare every one. */
+export const FIT_COMPONENT_VARIABLES = ['src', 'width', 'height', 'asset_width', 'asset_height'];
+
+/** Every `component:<name>` any key of any layer's lowered `fit` names. */
+function fitComponentNames(scenes) {
+  const names = new Set();
+  for (const scene of scenes || []) {
+    for (const layer of Array.isArray(scene.layers) ? scene.layers : []) {
+      const fit = layer?.properties?.layer_fit;
+      if (!fit || typeof fit !== 'object') continue;
+      for (const v of Object.values(fit)) {
+        if (typeof v === 'string' && v.startsWith('component:')) names.add(v.slice('component:'.length));
+      }
+    }
+  }
+  return [...names];
+}
+
+/**
+ * Resolves every HyperFrames component a `fit` names BEFORE any spend (spec S2), with the
+ * same library walk as the slot components (`components/<name>`, episode > series >
+ * domain > skill fallback). A miss or a component that does not declare the fit
+ * variables throws `FitComponentError`: a name a user wrote never silently degrades.
+ * Both keys are resolved, whichever one a format will pick.
+ * @param {{ scenes: object[], scriptDir: string, workspaceRoot: string, skillDir?: string }} params
+ * @returns {Record<string, { name: string, path: string, noTimeline: boolean }>}
+ */
+export function resolveFitComponents({ scenes, scriptDir, workspaceRoot, skillDir = PACKAGE_FLOOR }) {
+  const resolved = {};
+  for (const name of fitComponentNames(scenes)) {
+    const { file, searched } = resolveLibrary({
+      kind: 'components',
+      ref: `components/${name}`,
+      fromDir: scriptDir,
+      root: workspaceRoot,
+      packageFloor: path.join(skillDir, 'library', 'components'),
+      throwOnMiss: false,
+    });
+    if (!file) {
+      throw new FitComponentError(
+        `fit: component "${name}" not found; searched:\n${(searched || []).map((p) => `  - ${p}`).join('\n')}`,
+        { name, searched },
+      );
+    }
+    const componentFile = fs.statSync(file).isDirectory() ? path.join(file, 'index.html') : file;
+    const html = fs.existsSync(componentFile) ? fs.readFileSync(componentFile, 'utf8') : '';
+    const declared = new Set(readVariableIds(html));
+    const missing = FIT_COMPONENT_VARIABLES.filter((v) => !declared.has(v));
+    if (missing.length > 0) {
+      throw new FitComponentError(
+        `fit: component "${name}" (${componentFile}) does not declare the fit variable(s) ${missing.join(', ')}`,
+        { name, missing },
+      );
+    }
+    resolved[name] = { name, path: componentFile, noTimeline: /data-no-timeline/.test(html) };
+  }
+  return resolved;
+}
+
+/**
+ * Records `layer_asset_width`/`layer_asset_height` on every staged media layer whose fit
+ * needs the asset size: a fit whose keys differ (native/mismatch classification), or a
+ * `card`/`component:` treatment (their geometry follows the asset). A size that cannot
+ * be read throws `AssetSizeUnknownError`; nothing is guessed. A single-valued `cover`,
+ * `contain` or `blur` fit needs no size and is not probed.
+ * @param {object} manifest compiled manifest whose layer sources are staged names
+ * @param {{ publicDir: string, probe?: (file: string) => Promise<{ width: number, height: number } | null> }} opts
+ */
+export async function probeMediaLayerSizes(manifest, { publicDir, probe = probeAssetSize } = {}) {
+  for (const scene of manifest?.tracks?.scenes || []) {
+    for (const layer of scene?.props?.layers || []) {
+      const fit = layer?.layer_fit;
+      const src = layer?.layer_asset_source;
+      if (!src || !fit || typeof fit !== 'object') continue;
+      const values = [fit.native, fit.mismatch].map(String);
+      const needs = fit.native !== fit.mismatch || values.some((v) => v === 'card' || v.startsWith('component:'));
+      if (!needs) continue;
+      const size = await probe(path.join(publicDir, src));
+      if (!size) throw new AssetSizeUnknownError(src);
+      layer.layer_asset_width = size.width;
+      layer.layer_asset_height = size.height;
+    }
+  }
 }
 
 /** Overlay slots that carry enter/exit sound events (b-roll is a layer event). */
@@ -375,6 +473,7 @@ export function resolveMediaLayers(manifest, opts) {
  * @property {boolean} [dryRun=false] List uncached billable work + estimated total; spend nothing, write nothing.
  * @property {string[]} [allowModels] Models explicitly unlocked past the guard blocklist/allowlist (--allow-model).
  * @property {(file: string) => Promise<{ seconds?: number }>} [soundProbe] Test seam for the `video-end` sound-length probe.
+ * @property {(file: string) => Promise<{ width: number, height: number } | null>} [assetSizeProbe] Test seam for the `fit` asset-size probe.
  * @property {Record<string, unknown>} [synthesizerOptions] Extra AssetSynthesizer options (test seam: env, fetch, sleep).
  * @property {{ link?: Function, copy?: Function, warn?: Function }} [stageDeps] Staging seams (tests force the copy fallback).
  * @property {{ rootDir: string, runId?: string, episode?: string, planHash?: string, linkMode?: string }} [facts] Timing-log context; each stage appends one row.
@@ -688,6 +787,8 @@ export async function compileVideo(options) {
   const captionPlans = sceneCaptionPlans({ model, scriptPath, bags: scriptBags }).filter((p) => p.mode !== 'off' && p.narration);
   if (captionPlans.length > 0 && !overlaySlots.includes('caption')) overlaySlots.push('caption');
   const components = resolveComponents({ slots: overlaySlots, bags, scriptDir, workspaceRoot: loaded.root });
+  // A `fit:: component:<name>` is resolved here too, before any spend (spec S2).
+  const fitComponents = resolveFitComponents({ scenes: parsed.scenes, scriptDir, workspaceRoot: loaded.root });
   // Resolve every authored animation project BEFORE any synthesis (design D7/D8):
   // a missing project fails loudly with nothing spent, and an id that would
   // collide with a scene slug, the root composition id, a component id or another
@@ -697,7 +798,7 @@ export async function compileVideo(options) {
     animations,
     sceneSlugs: parsed.scenes.map((sc) => sc.slug),
     rootId: compositionIdOf(parsed.title),
-    componentIds: Object.entries(components).flatMap(([slot, c]) => [slot, c.name]),
+    componentIds: [...Object.entries(components).flatMap(([slot, c]) => [slot, c.name]), ...Object.keys(fitComponents)],
   });
   // Resolve and D21-check every sound name BEFORE any synthesis (design D6/D21):
   // a user-level name with no file fails here, with nothing spent; a blueprint-only
@@ -958,6 +1059,12 @@ export async function compileVideo(options) {
         `(resolved against ${scriptDir}): ${staging.missing.join(', ')}`,
     );
   }
+
+  // Asset sizes for `fit` (spec S2): probed from the staged files, after every source is
+  // known to exist, so a missing file reports as missing and an unreadable size as
+  // `asset-size-unknown`. The fit components ride on the manifest for the render driver.
+  await probeMediaLayerSizes(manifest, { publicDir: assetsDir, probe: options.assetSizeProbe });
+  if (Object.keys(fitComponents).length > 0) manifest.metadata.fitComponents = fitComponents;
 
   // The manifest always lands at hyperframes/manifest.json: it is engine output, not
   // a user-chosen file, and the HyperFrames project folder is regenerable.

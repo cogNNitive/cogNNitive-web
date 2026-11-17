@@ -58,7 +58,11 @@ function fixture() {
     '---\nlevel: 3\nscope: true\ntitle: "S"\n---\n\n# NN Series\n\n## NN Series: S\nslug:: s\n',
     'utf8',
   );
-  fs.writeFileSync(path.join(episode, 'media', 'bg.png'), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+  // A PNG signature + IHDR (1920x1920): the keyed `fit` default needs a readable size.
+  fs.writeFileSync(
+    path.join(episode, 'media', 'bg.png'),
+    Buffer.from('89504e470d0a1a0a0000000d494844520000078000000780080200000000', 'hex'),
+  );
   const scriptPath = path.join(episode, 'e_coNNtent_NN.md');
   fs.writeFileSync(scriptPath, SAMPLE, 'utf8');
   return { root, series, episode, scriptPath, cacheDir: path.join(root, 'cache') };
