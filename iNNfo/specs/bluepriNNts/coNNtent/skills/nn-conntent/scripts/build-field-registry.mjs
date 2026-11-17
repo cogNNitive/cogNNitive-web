@@ -33,7 +33,7 @@ const CASCADE_CONCEPTS = ['Video Defaults', 'Series', 'Scene Kind', 'Preset', 'V
 
 /** Non-cascading fields that MAY sit on cascade concepts but are record-class (spec list). */
 const RECORD_FIELDS = new Set([
-  'tags', 'title', 'description', 'script', 'master', 'thumbnail', 'status', 'translation_of', 'kind',
+  'tags', 'title', 'description', 'script', 'thumbnail', 'status', 'translation_of', 'kind',
   'review', 'role', 'narration', 'max_duration', 'fixed', 'chrome', 'asset', 'prompt', 'text', 'text_from',
   'position', 'type', 'placement', 'timing', 'style', 'source', 'enter_animation', 'exit_animation', 'z_index',
   'log', 'version', 'file', 'delivered_version',

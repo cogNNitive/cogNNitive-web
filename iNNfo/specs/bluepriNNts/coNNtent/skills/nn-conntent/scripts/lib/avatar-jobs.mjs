@@ -112,6 +112,32 @@ export function checkAvatarAssetAspect({ width, height, label = 'avatar image' }
 }
 
 /** Model-appropriate fallback when the script declares no resolution. */
+
+export const DEFAULT_MAX_AVATAR_UPSCALE = 3.0;
+
+/**
+ * Warns when the centered-cover upscale factor of an avatar asset in any configured
+ * output format exceeds the threshold (spec S4).
+ * @param {{ width?: number, height?: number, formats?: Array<{ width: number, height: number, size?: string }>, maxUpscale?: number, label?: string }} o
+ * @returns {string[]}
+ */
+export function checkAvatarUpscale({ width, height, formats = [], maxUpscale = DEFAULT_MAX_AVATAR_UPSCALE, label = 'avatar' }) {
+  if (!width || !height || !Array.isArray(formats) || formats.length === 0) return [];
+  const warnings = [];
+  for (const fmt of formats) {
+    if (!fmt.width || !fmt.height) continue;
+    const scale = Math.max(fmt.width / width, fmt.height / height);
+    if (scale > maxUpscale) {
+      const tag = fmt.size || `${fmt.width}x${fmt.height}`;
+      warnings.push(
+        `${label} (${width}x${height}) requires a ${scale.toFixed(2)}x upscale to cover ${tag} (threshold: ${maxUpscale}x). ` +
+        `Centered \`cover\` may show blur or pixelation. Opt in to a dedicated format clip or provide a higher-resolution portrait.`
+      );
+    }
+  }
+  return warnings;
+}
+
 export function defaultResolutionFor(model) {
   const m = normalizeModelId(model);
   return m.includes('pruna') ? '480p' : '720p';
@@ -266,6 +292,8 @@ export function applyCachedAvatars({ parsed, scriptDir, cacheManager, config, mo
     job.layer.properties.layer_type = 'video';
     job.layer.properties.layer_asset_source = cached;
     job.layer.properties.layer_muted = true;
+    job.layer.properties.layer_avatar_origin = true;
+    job.layer.properties.layer_fit = { native: 'cover', mismatch: 'cover' };
     clips.push(cached);
     applied++;
   }

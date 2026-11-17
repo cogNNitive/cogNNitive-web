@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-7-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"
 blueprint_name: "coNNtent"
-blueprint_version: "V_0-25-0"
+blueprint_version: "V_0-27-0"
 title: "coNNtent App"
 catalog: catalog/model-catalog_coNNtent_NN.md
 procedures:
@@ -171,11 +171,6 @@ concept:: Video
 type:: file
 description:: The episode's script document, resolved under the owning model's directory.
 
-## NN Field Definition: master
-concept:: Video
-type:: video
-description:: The episode's master `<slug>_<W>x<H>.mp4`, sized by the first entry of `output_formats`. Delivery formats are derived from it and never modeled.
-
 ## NN Field Definition: delivered_version
 concept:: Video
 type:: string
@@ -331,13 +326,13 @@ description:: Intro media reused by the episode's fixed first Scene. Resolves th
 concept:: Layer
 type:: select
 options:: [avatar, media, text, animation]
-description:: Required Layer behaviour type. `avatar` is a lip-synced paid job; `media` is an image or a video; `text` is overlay text; `animation` mounts an authored HyperFrames project as a sub-composition. Appearance and visual components come from Presets, never from the type.
+description:: Required Layer behaviour type. `avatar` is a lip-synced paid job; `media` is an image or a video; `text` is overlay text; `animation` mounts an authored HyperFrames project as a sub-composition; every format project root declares its canvas safe area as the CSS variables `--safe-top`, `--safe-right`, `--safe-bottom` and `--safe-left` (pixels), so an authored animation lays out per canvas by reading them. Appearance and visual components come from Presets, never from the type.
 
 ## NN Field Definition: placement
 concept:: Layer
 type:: select
 options:: [full, inset]
-description:: For a `media` Layer: `full` covers the frame, `inset` places it inside the safe area. Required on `media`.
+description:: For a `media` Layer: `full` covers the whole canvas; `inset` places it inside the safe area of each output canvas: its title-safe area (10% of each side, the 80% title-safe of HyperFrames' safe areas), and on a vertical canvas (height greater than width) also clear of the platform interface bands, 14% of the height at the top and 35% at the bottom (the Instagram Reels safe box, the strictest of the HyperFrames safe-area presets). Each output format computes its own box, and `fit` classifies the asset against that box. Required on `media`.
 
 ## NN Field Definition: timing
 concept:: Layer
@@ -376,7 +371,7 @@ description:: Inline text for a `text` Layer. One of `text` or `source` is requi
 concept:: Layer
 type:: select
 options:: [top, center, bottom, bottom-left, bottom-right]
-description:: Overlay anchor inside the central safe square (the central 1080x1080 of the master).
+description:: Overlay anchor inside the safe area of each output canvas: its title-safe area (10% of each side, the 80% title-safe of HyperFrames' safe areas), and on a vertical canvas (height greater than width) also clear of the platform interface bands, 14% of the height at the top and 35% at the bottom (the Instagram Reels safe box, the strictest of the HyperFrames safe-area presets). Captions, overlays and their animations lay out against the safe area of the canvas they are rendered on.
 
 ## NN Field Definition: enter_animation
 concept:: Layer
@@ -412,7 +407,7 @@ concept:: [Layer, Scene, Video, Preset, Series, Video Defaults]
   scope:: render
 type:: select
 multiple:: true
-description:: How a `media` Layer fits the canvas it is rendered on. A keyed list with two keys, `fit:: [native=<value>, mismatch=<value>]`: each Layer is classified per output canvas by the aspect ratio of its asset, probed at compile time (PNG, JPEG, WebP, GIF and SVG headers; ffprobe for a video), against the aspect ratio of the canvas. The asset is `native` when |asset aspect / canvas aspect - 1| <= 0.05 (a 5% tolerance, boundary inclusive), otherwise `mismatch`, and that key's value applies. A scalar `fit:: X` sets both keys. Values: `cover` fills and crops; `contain` shows the whole asset with margins (`object-fit: contain`); `blur` shows the whole asset (contain) over a blurred, slightly darkened backdrop built from the same asset filling the canvas, so no band is empty and no new palette is introduced; `card` shows the whole asset, never cropped, as a card (inset 5% of the canvas's shorter side, with rounded corners and a soft shadow proportional to it) over the same blurred self-backdrop; `component:<name>` mounts the HyperFrames component `components/<name>` (library walk: episode, series, domain, skill), which receives `src`, `width`, `height`, `asset_width` and `asset_height` and must declare them; it is resolved before anything is spent, and a missing one fails. The backdrop blur radius is proportional to the canvas: 24px when its shorter side is 1920px, 13.5px at 1080px; it is a CSS blur and NOT the same operation as the ffmpeg `gblur` sigma that `render-formats` uses. An asset whose size cannot be read fails the compile when its fit needs it (keys that differ, `card` or a component). Each key resolves on its own through the Universal Parameter Cascade (Presets included), so a level that sets one key keeps the outer value of the other; a key no level sets is `cover`. An unknown key or value is an error. When no level sets it the blueprint Video Defaults value applies.
+description:: How a `media` Layer fits the canvas it is rendered on. A keyed list with two keys, `fit:: [native=<value>, mismatch=<value>]`: each Layer is classified per output canvas by the aspect ratio of its asset, probed at compile time (PNG, JPEG, WebP, GIF and SVG headers; ffprobe for a video), against the aspect ratio of the canvas. The asset is `native` when |asset aspect / canvas aspect - 1| <= 0.05 (a 5% tolerance, boundary inclusive), otherwise `mismatch`, and that key's value applies. A scalar `fit:: X` sets both keys. Values: `cover` fills and crops; `contain` shows the whole asset with margins (`object-fit: contain`); `blur` shows the whole asset (contain) over a blurred, slightly darkened backdrop built from the same asset filling the canvas, so no band is empty and no new palette is introduced; `card` shows the whole asset, never cropped, as a card (inset 5% of the canvas's shorter side, with rounded corners and a soft shadow proportional to it) over the same blurred self-backdrop; `component:<name>` mounts the HyperFrames component `components/<name>` (library walk: episode, series, domain, skill), which receives `src`, `width`, `height`, `asset_width` and `asset_height` and must declare them; it is resolved before anything is spent, and a missing one fails. The backdrop blur radius is proportional to the canvas: 24px when its shorter side is 1920px, 13.5px at 1080px; it is a CSS blur. An asset whose size cannot be read fails the compile when its fit needs it (keys that differ, `card` or a component). Each key resolves on its own through the Universal Parameter Cascade (Presets included), so a level that sets one key keeps the outer value of the other; a key no level sets is `cover`. An unknown key or value is an error. When no level sets it the blueprint Video Defaults value applies.
 
 ## NN Field Definition: voice
 concept:: [Video, Scene, Preset, Series, Video Defaults]
@@ -476,14 +471,7 @@ concept:: [Video, Series, Video Defaults]
   scope:: video
 type:: select
 multiple:: true
-description:: Ordered list of delivery sizes as `<W>x<H>`. The first entry is the master size; the rest are derived from the master. Defaults to `[1920x1920, 1080x1920, 1920x1080, 1080x1080]`.
-
-## NN Field Definition: fill
-concept:: [Video, Series, Video Defaults]
-scope:: video
-type:: select
-options:: [crop, blur, pad]
-description:: How a derived delivery format reframes the square master. `crop` is the default and stays the default because the destinations this pipeline serves re-frame a padded file themselves: YouTube pads non-native video in its own player and asks creators not to pad, TikTok letterboxes without cropping, and Instagram letterboxes on a blurred background or Smart Zooms on its own. `blur` scales the whole square to FIT and centres it over a blurred, darkened, scaled-to-fill backdrop (suffix `_blur`). `pad` does the same over a solid background, black unless `fill_pad_color` supplies a colour (suffix `_pad`). Choose `blur` or `pad` only for a destination that honours the file as delivered: a brand-owned player, an embed, OTT, or a broadcast slot that permits it. Unset means `crop`, so an existing episode renders exactly as before.
+description:: Ordered list of output formats as `<W>x<H>`. Every entry is rendered natively from the episode composition, into its own HyperFrames project `hyperframes/<W>x<H>/` and its own output `<slug>_<W>x<H>.mp4` in the episode folder; all formats share one timeline (same audio, scenes and durations) and only the layout differs per canvas. The first entry is the primary format: its output is the primary output and the source of the thumbnail first-frame fallback and of the preview animatic. Resolves through the cascade at domain, series and video level only (never per scene). Defaults to `[1920x1080, 1080x1920, 1080x1080]`. An entry that is not `<W>x<H>` fails before anything is spent.
 
 ## NN Field Definition: review_gates
 concept:: [Video, Series, Video Defaults]
@@ -631,7 +619,7 @@ reach the document only through changesets applied by the apply engine.
 
 - **Video** — a distributed concept: one Video instance model per episode, at
   `series/<s>/episodes/<slug>/<slug>_coNNtent_NN.md`, holding exactly one Video element.
-  Carries the episode record (`status`, `script`, `master`, `thumbnail`, `translation_of`),
+  Carries the episode record (`status`, `script`, `thumbnail`, `translation_of`),
   the human `title` and the pinned `blueprint_version` in the document frontmatter.
 - **Scene** — child of Video. Order equals the order of the `# NN index` list; no `order::`
   field exists. Its free-form prose BODY is the narration, synthesized by TTS and timed by
@@ -752,7 +740,8 @@ this blueprint.
 
 The retired names `template`, `tool`, `tts_model`, `speed`, `emotion`, `music_volume`,
 `presenter_asset`, `intro_asset`, `voice_tone`, `scene_duration`, `scene_tts_model` and
-`master_resolution` MUST NOT be defined. `level` and `model` are retired on Layer;
+`master_resolution`, `master` and `fill` MUST NOT be defined (V_0-26-0 renders every
+`output_formats` entry natively: there is no square master and no derived format). `level` and `model` are retired on Layer;
 `voice_id` is retired on Video; the Layer and type names `presenter`, `talking_avatar` and
 `talking-avatar` MUST NOT exist as a value or alias. `music` is retired on Scene and Preset
 and valid only on `Chrome`. A document using a retired name fails validation with no alias,
@@ -771,7 +760,7 @@ record and the script.
 
 One `## NN Video: <name>` element models one episode. Its `slug::` is the stable identity the
 engine uses to name the output. The record fields — `description`, `status`, `script`,
-`master`, `thumbnail` and `translation_of` — make the same document both the
+`thumbnail` and `translation_of` — make the same document both the
 episode's catalogue entry and its script. The document frontmatter pins
 `blueprint_version: V_0-15-0`; `produce` refuses any other pin. A second Video element in
 the same document violates the one-video-per-script constraint.
@@ -781,9 +770,10 @@ the same document violates the one-video-per-script constraint.
 - Keep exactly one Video element per instance model; it is the single entry point of the
   document.
 - Never add ordering, duration or timing fields to the Video.
-- Point `script`, `master` and `thumbnail` at one file each, resolved under the owning
-  model's directory.
-- Never model a format variant: every delivery file and thumbnail is derived from `master`.
+- Point `script` and `thumbnail` at one file each, resolved under the owning model's
+  directory.
+- Never model a format variant: the outputs are the `output_formats` list, rendered
+  natively from the one composition; the primary output is `<slug>_<output_formats[0]>.mp4`.
 
 ### Prompts
 

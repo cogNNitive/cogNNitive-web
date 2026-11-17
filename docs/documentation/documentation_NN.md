@@ -70,6 +70,17 @@ tags:: [docs, home, overview]
 
 Entry point: what cogNNitive is, how this documentation is organized, and where to start.
 
+## NN Page: Master document
+slug:: master
+title:: Master document: every page in one file
+source:: master.md
+route:: master.md
+order:: 100
+parent:: [[cogNNitive Documentation]]
+tags:: [docs, master, single-file, offline, llm]
+
+The whole documentation suite concatenated into one file, in sidebar order, generated from this model: for offline reading and for handing the docs to an agent in a single read.
+
 ## NN Page: Create your first domaiNN
 slug:: first-domain
 title:: Create your first domaiNN

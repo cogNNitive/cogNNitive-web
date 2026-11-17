@@ -21,12 +21,14 @@ test('the doc has a canonical layout block', () => {
   assert.ok(layout.includes('series/<s>/'), 'the layout block lists the episode tree');
 });
 
-test('master suffix: doc and the render step agree', () => {
-  assert.ok(layout.includes('<slug>_<W>x<H>.mp4'), 'the layout names the master as <slug>_<W>x<H>.mp4');
-  assert.ok(doc.includes('`<slug>_<W>x<H>.mp4`'), 'the prose names the master');
+test('output suffix: doc and the render step agree', () => {
+  assert.ok(layout.includes('<slug>_<W>x<H>.mp4'), 'the layout names each output as <slug>_<W>x<H>.mp4');
+  assert.ok(layout.includes('<W>x<H>/'), 'the layout has one project per output format');
+  assert.ok(doc.includes('`<slug>_<W>x<H>.mp4`'), 'the prose names the outputs');
+  assert.doesNotMatch(doc, /formats\/<slug>|the master,/, 'no derived formats/ folder and no master');
   assert.ok(
-    read('scripts/lib/render.mjs').includes('${slug}_${masterWidth}x${masterHeight}.mp4'),
-    'lib/render.mjs names the master from the Video slug and the master resolution',
+    read('scripts/lib/render.mjs').includes('${slug}_${width}x${height}.mp4'),
+    'lib/render.mjs names each output from the Video slug and its format',
   );
 });
 

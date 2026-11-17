@@ -128,7 +128,7 @@ function fakeRender({ indexHtml, overlayManifest } = {}) {
     const dir = path.dirname(opts.scriptPath)
     const master = path.join(dir, 'probe_1920x1920.mp4')
     fs.writeFileSync(master, 'master-bytes')
-    const hyperframesDir = path.join(dir, 'hyperframes')
+    const hyperframesDir = path.join(dir, 'hyperframes', '1920x1920')
     fs.mkdirSync(hyperframesDir, { recursive: true })
     const manifest = {
       fps: 30,
@@ -229,7 +229,8 @@ const thumbStubs = () => ({
     opened: open === true,
   }),
   qa: {
-    qaMaster: async () => ({ ok: true, checks: [] }),
+    hyperframesCheck: async () => ({ ok: true }),
+    qaOutput: async () => ({ ok: true, checks: [] }),
     qaOutputSet: async () => ({ ok: true, checks: [] }),
   },
 })
@@ -902,6 +903,209 @@ test('a second run on a produced episode is idempotent and keeps produced', asyn
     assert.equal(calls.length, 1, 'the master is rendered again (cache makes it free)')
     const after = readEpisode(ws.scriptPath)
     assert.equal(after.status, 'delivered')
+  } finally {
+    done(ws.root)
+  }
+})
+
+// ---------------------------------------------------------------------------
+// Native per-format outputs (spec S3, S7, S8, S9)
+// ---------------------------------------------------------------------------
+
+const THREE_FORMATS = ['1920x1080', '1080x1920', '1080x1080']
+
+/**
+ * A render seam for N formats: one MP4 per format at the episode root, and one project
+ * `hyperframes/<W>x<H>/` with its own manifest (same timeline, own canvas) per format.
+ * `durationOf(format)` lets a test break the shared timeline; `bytesOf(format)` the bytes.
+ */
+function fakeFormatRender({ formats = THREE_FORMATS, durationOf = () => 180, bytesOf = (f) => `mp4 ${f}` } = {}) {
+  const calls = []
+  const render = async (opts) => {
+    calls.push(opts)
+    const dir = path.dirname(opts.scriptPath)
+    const outputs = formats.map((format) => {
+      const [width, height] = format.split('x').map(Number)
+      const projectDir = path.join(dir, 'hyperframes', format)
+      fs.mkdirSync(projectDir, { recursive: true })
+      const manifest = {
+        fps: 30,
+        width,
+        height,
+        totalDurationInFrames: durationOf(format),
+        tracks: {
+          scenes: [{ id: 'scene_one', slug: 'one', fromFrame: 0, durationInFrames: durationOf(format), props: { title: 'Opening', layers: [] } }],
+          audio: [],
+          overlays: [],
+        },
+        metadata: {
+          scriptSource: opts.scriptPath,
+          videoSlug: 'e',
+          hyperframesDir: projectDir,
+          generatedAt: new Date(Date.now() + calls.length).toISOString(),
+        },
+      }
+      const manifestPath = path.join(projectDir, 'manifest.json')
+      fs.writeFileSync(manifestPath, JSON.stringify(manifest))
+      fs.writeFileSync(path.join(projectDir, 'index.html'), '<div id="root"></div>')
+      const file = path.join(dir, `e_${format}.mp4`)
+      fs.writeFileSync(file, bytesOf(format))
+      return { format, width, height, path: file, manifestPath, projectDir }
+    })
+    return { outputVideoPath: outputs[0].path, outputs, renderTimeMs: 1, linkMode: 'link', spentUsd: 0 }
+  }
+  return { render, calls }
+}
+
+const formatsDoc = (formats = '[1920x1080, 1080x1920, 1080x1080]') =>
+  episodeDoc({ status: 'draft', review: 'skip' }).replace('output_formats:: [1920x1920]', `output_formats:: ${formats}`)
+
+/** QA and check seams that record what they were asked to judge. */
+function recordingQa({ failCheck = null } = {}) {
+  const seen = { checks: [], outputs: [], outputSet: null }
+  return {
+    seen,
+    qa: {
+      hyperframesCheck: async ({ projectDir, format }) => {
+        seen.checks.push({ projectDir, format })
+        return format === failCheck
+          ? { ok: false, reason: 'hyperframes-check-exit-1', detail: 'outside_safe_zone' }
+          : { ok: true }
+      },
+      qaOutput: async ({ outputPath, declaredSize, projectDir, manifest }) => {
+        seen.outputs.push({ outputPath, declaredSize, projectDir, width: manifest.width, height: manifest.height })
+        return { ok: true, checks: [{ id: 'duration', checkpoint: 'output', status: 'pass', format: declaredSize }] }
+      },
+      qaOutputSet: async ({ outputs }) => {
+        seen.outputSet = outputs
+        return { ok: true, checks: [] }
+      },
+    },
+  }
+}
+
+test('produce renders every output format, checks and QAs each one, and delivers the whole set', async () => {
+  const ws = workspace(formatsDoc())
+  const { render } = fakeFormatRender()
+  const { seen, qa } = recordingQa()
+  let firstFrameOf = null
+  try {
+    const result = await produce({
+      episodePath: ws.scriptPath,
+      deps: {
+        ...thumbStubs(),
+        thumbnailBase: undefined,
+        firstFrameFrom: (video, out) => {
+          firstFrameOf = video
+          return out
+        },
+        render,
+        qa,
+        log: () => {},
+      },
+    })
+    assert.equal(result.code, EXIT_DONE)
+    const rel = (p) => path.relative(ws.episode, p).split(path.sep).join('/')
+    assert.deepEqual(
+      seen.checks.map((c) => [c.format, rel(c.projectDir)]),
+      THREE_FORMATS.map((f) => [f, `hyperframes/${f}`]),
+      'hyperframes check runs once per format project',
+    )
+    assert.deepEqual(
+      seen.outputs.map((o) => [o.declaredSize, rel(o.outputPath), rel(o.projectDir), `${o.width}x${o.height}`]),
+      THREE_FORMATS.map((f) => [f, `e_${f}.mp4`, `hyperframes/${f}`, f]),
+      'every output is judged against its own manifest and project',
+    )
+    assert.deepEqual(
+      seen.outputSet.map((o) => [o.format, rel(o.path)]),
+      THREE_FORMATS.map((f) => [f, `e_${f}.mp4`]),
+      'the output set is the outputs of this run',
+    )
+    assert.equal(rel(firstFrameOf), 'e_1920x1080.mp4', 'the thumbnail fallback comes from the primary output')
+    assert.equal(rel(result.summary.primary), 'e_1920x1080.mp4')
+    const meta = JSON.parse(fs.readFileSync(path.join(ws.episode, 'deliveries', 'v1', 'delivery.json'), 'utf8'))
+    const delivered = meta.files.map((f) => f.name)
+    for (const f of THREE_FORMATS) assert.ok(delivered.includes(`e_${f}.mp4`), `delivery lists e_${f}.mp4`)
+    for (const f of THREE_FORMATS) assert.ok(fs.existsSync(path.join(ws.episode, "deliveries", "v1", `e_${f}.mp4`)))
+    assert.equal(readEpisode(ws.scriptPath).status, 'delivered')
+    assert.doesNotMatch(fs.readFileSync(ws.scriptPath, 'utf8'), /^master::/m, 'no master field is written')
+  } finally {
+    done(ws.root)
+  }
+})
+
+test('a format project that fails hyperframes check stops at failed_qa and delivers nothing', async () => {
+  const ws = workspace(formatsDoc())
+  const { render } = fakeFormatRender()
+  const { qa } = recordingQa({ failCheck: '1080x1920' })
+  try {
+    await assertStop(
+      produce({ episodePath: ws.scriptPath, deps: { ...thumbStubs(), render, qa, log: () => {} } }),
+      'qa-failed',
+      12,
+    )
+    const report = JSON.parse(fs.readFileSync(path.join(ws.episode, 'qa.json'), 'utf8'))
+    const failed = report.checks.filter((c) => c.status === 'fail')
+    assert.deepEqual(failed.map((c) => [c.id, c.format]), [['hyperframes-check-failed', '1080x1920']])
+    assert.equal(readEpisode(ws.scriptPath).status, 'failed_qa')
+    assert.equal(fs.existsSync(path.join(ws.episode, 'deliveries')), false, 'no delivery when one format fails')
+  } finally {
+    done(ws.root)
+  }
+})
+
+test('formats whose timelines differ fail the cross-format check and deliver nothing', async () => {
+  const ws = workspace(formatsDoc())
+  const { render } = fakeFormatRender({ durationOf: (f) => (f === '1080x1080' ? 181 : 180) })
+  const { qa } = recordingQa()
+  try {
+    await assertStop(
+      produce({ episodePath: ws.scriptPath, deps: { ...thumbStubs(), render, qa, log: () => {} } }),
+      'qa-failed',
+      12,
+    )
+    const report = JSON.parse(fs.readFileSync(path.join(ws.episode, 'qa.json'), 'utf8'))
+    const failed = report.checks.filter((c) => c.status === 'fail')
+    assert.deepEqual(failed.map((c) => [c.id, c.format]), [['cross-format-mismatch', '1080x1080']])
+    assert.equal(fs.existsSync(path.join(ws.episode, 'deliveries')), false)
+  } finally {
+    done(ws.root)
+  }
+})
+
+test('an unchanged rerun keeps the delivery and its fingerprint; changed bytes make a new version', async () => {
+  const ws = workspace(formatsDoc())
+  const { qa } = recordingQa()
+  const run = (render) => produce({ episodePath: ws.scriptPath, deps: { ...thumbStubs(), render, qa, log: () => {} } })
+  try {
+    const first = await run(fakeFormatRender().render)
+    assert.equal(first.summary.delivery.version, 'v1')
+    const again = await run(fakeFormatRender().render)
+    assert.equal(again.summary.delivery.created, false, 'same bytes: no new version')
+    assert.equal(
+      again.summary.delivery.inputFingerprint,
+      first.summary.delivery.inputFingerprint,
+      'generatedAt does not move the fingerprint',
+    )
+    const changed = await run(fakeFormatRender({ bytesOf: (f) => (f === '1080x1920' ? 'new bytes' : `mp4 ${f}`) }).render)
+    assert.equal(changed.summary.delivery.created, true, 'changed bytes: a new version')
+    assert.equal(changed.summary.delivery.version, 'v2')
+    assert.equal(changed.summary.delivery.inputFingerprint, first.summary.delivery.inputFingerprint, 'even with the same inputs')
+  } finally {
+    done(ws.root)
+  }
+})
+
+test('an output format that is not <W>x<H> stops the run before any spend', async () => {
+  const ws = workspace(formatsDoc('[1920x1080, vertical]'))
+  const { render, calls } = fakeFormatRender()
+  try {
+    await assertStop(
+      produce({ episodePath: ws.scriptPath, deps: { ...thumbStubs(), render, log: () => {} } }),
+      'unsupported-output-format',
+      1,
+    )
+    assert.equal(calls.length, 0, 'nothing rendered')
   } finally {
     done(ws.root)
   }

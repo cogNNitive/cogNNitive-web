@@ -21,7 +21,8 @@ import { loadCascadeBags, withScriptPresets } from '../scripts/lib/video-scope.m
 import { resolve } from '../scripts/lib/cascade.mjs';
 import { CacheManager } from '../scripts/cache-manager.mjs';
 import { buildTtsVoiceOptions, resolveRegisteredVoice } from '../scripts/lib/tts-options.mjs';
-import { buildImageOptions } from '../scripts/lib/image-options.mjs';
+import { buildImageOptions, imageModelsFor } from '../scripts/lib/image-options.mjs';
+import { loadMergedCatalog } from '../scripts/lib/catalog.mjs';
 import { collectAvatarJobs } from '../scripts/lib/avatar-jobs.mjs';
 import { computePlanHash } from '../scripts/lib/plan.mjs';
 
@@ -98,9 +99,11 @@ function lower(scriptPath) {
 function resolvedModels(scriptPath) {
   const model = loadKnowledgeModel(scriptPath);
   const bags = withScriptPresets(loadCascadeBags(path.dirname(scriptPath)), model, scriptPath);
+  const parsed = new SceneCompiler({}).lowerKnowledgeModel(model, { bags });
+  const { image, imageSize } = imageModelsFor({ bags, parsed, catalog: loadMergedCatalog({ overlay: null }) });
   return {
-    image: resolve('image_model', bags).value,
-    imageSize: resolve('image_size', bags).value,
+    image,
+    imageSize,
     tts: resolve('voice_model', bags).value,
     avatar: resolve('avatar_model', bags).value,
   };

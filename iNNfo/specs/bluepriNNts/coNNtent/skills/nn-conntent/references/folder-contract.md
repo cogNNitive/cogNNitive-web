@@ -21,21 +21,24 @@ tools that enforce it.
       media/  animations/<project>/          # episode-only files
       asset_plan.md
       description.md                        # the publication body
-      <slug>_<W>x<H>.mp4                    # the master, sized by output_formats
-      formats/<slug>_<W>x<H>.mp4            # derived delivery files
+      <slug>_<W>x<H>.mp4                    # one output per output_formats entry; the first is primary
+      <slug>_animatic_<W>x<H>.mp4           # the preview animatic, in the primary aspect
       <slug>_thumbnail_<W>x<H>.png
-      hyperframes/                          # engine project, gitignored and regenerable
-        manifest.json  index.html  render.tmp.mp4
-        compositions/  components/  authored/  vendor/gsap.min.js  assets/
+      hyperframes/                          # engine projects, gitignored and regenerable
+        <W>x<H>/                            # one project per output format
+          manifest.json  index.html  render.tmp.mp4  frame.md
+          compositions/  components/  authored/  vendor/gsap.min.js  assets/
+        animatic/                           # the animatic's own project
 ```
 
-The `hyperframes/` project is the engine's only output folder: `manifest.json`,
-`index.html`, `compositions/`, `components/`, `authored/`, `vendor/` (the pinned
-GSAP build, loaded as `vendor/gsap.min.js` so a render needs no network) and
-`assets/`. Its `assets/` holds hardlinks to the provider cache. A link refused by
+`hyperframes/` is the engine's only output folder. It holds one project per output
+format, `hyperframes/<W>x<H>/`, plus `hyperframes/animatic/`. Each project has its own
+`manifest.json`, `index.html`, `compositions/`, `components/`, `authored/`, `vendor/`
+(the pinned GSAP build, loaded as `vendor/gsap.min.js` so a render needs no network)
+and `assets/`. Its `assets/` holds hardlinks to the provider cache. A link refused by
 the filesystem (`EXDEV`/`EPERM`/`ENOTSUP`) falls back to a copy, records
-`link_mode: copy` and then deletes `hyperframes/assets/` after a successful
-render. There is no `build/`, no `public/` and no `audio/` handoff.
+`link_mode: copy` and then deletes that project's `assets/` after its own successful
+render (every format stages its own, so a later format keeps what it needs). There is no `build/`, no `public/` and no `audio/` handoff.
 
 
 Three naming classes, and nothing outside them:
@@ -98,31 +101,32 @@ because it "looks relative".
 
 ## Engine output lives only under hyperframes/
 
-`hyperframes/` holds every file the engine generates: `manifest.json`, the emitted
-HyperFrames project, `render.tmp.mp4` during a render and the `assets/` hardlinks
-into the provider cache. Nothing else is tracked at the episode root as an engine
+`hyperframes/` holds every file the engine generates: one HyperFrames project per output
+format with its `manifest.json`, `render.tmp.mp4` during a render and its `assets/`
+hardlinks into the provider cache. Nothing else is tracked at the episode root as an engine
 artifact: `asset_plan.md` is the estimate the human reads, and no approval file exists.
 
 The episode `.gitignore` block is `**/hyperframes/`, `.cognnitive/cache/` and
 `.cognnitive/video/`. `audio/` is NOT ignored: real episodes hold authored audio
 there.
 
-## One master, derived delivery files
+## One composition, one native output per format
 
-The only master is `<slug>_<W>x<H>.mp4`, whose size is the first entry of the
-cascaded `output_formats` (default `1920x1920`). Everything else is a pure
-function of it and lands under `formats/`: the vertical and horizontal files are
-the central 1080 crops of the Open Gate safe square, and the square file is a
-lanczos scale. No format is rendered on its own; there is no `--format`, no 9:16
-recompile and no separate vertical master.
+The episode composition (scenes, layers, narration, timing) is the only source. Every
+entry of the cascaded `output_formats` (default `[1920x1080, 1080x1920, 1080x1080]`) is
+rendered natively from it to `<slug>_<W>x<H>.mp4` at the episode root; the first entry is
+the primary output. Narration, alignment, avatars and AI images are made once; every
+format pass reads them from the cache, so all outputs share one timeline and only the
+layout differs. There is no square master, no crop derivation and no `formats/` folder.
 
 ## Produce
 
 `scripts/produce.mjs <episode-dir> [--dry-run] [--no-open]` is the single
 pipeline command: intake, review gate, `status:: approved`, estimate, budget gate,
-compile + render, then the derived delivery files under `formats/` plus the
-`description.md` chapters and the `master::`/`thumbnail::` values, and finally
-`status:: produced`. It copies nothing and writes no model by hand. The primitives it
+compile once + render every output format, `hyperframes check` and QA per format, a
+cross-format timeline check, then the thumbnails (first-frame fallback from the primary
+output), the `description.md` chapters and the delivery of the whole set, and finally
+`status:: delivered`. It copies nothing and writes no model by hand. The primitives it
 drives are `scripts/lib/compile.mjs` and `scripts/lib/render.mjs`.
 
 ## Cost estimate
@@ -137,5 +141,5 @@ domain root, not in a series or episode folder. See `cost-guardrails.md`.
 `prune-duplicates.mjs <episode-or-series-dir> [--apply] [--json]` reports the files whose
 exact bytes and extension already exist in the provider cache and, with `--apply`, deletes
 them. The default is a dry run because this is the only cleanup that removes authored
-files; `hyperframes/`, `formats/` and `.cognnitive/` are never scanned, and a cache entry
+files; `hyperframes/`, `.cognnitive/` and a legacy `formats/` folder are never scanned, and a cache entry
 is never deleted.

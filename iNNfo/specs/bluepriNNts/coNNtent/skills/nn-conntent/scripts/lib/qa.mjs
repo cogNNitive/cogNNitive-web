@@ -2,16 +2,19 @@
  * nn-conntent/scripts/lib/qa.mjs
  *
  * Full QA validation module (capability conntent-qa; design D-P5).
- * Two checkpoints:
- * 1. Master checkpoint (after render, before formats):
+ * Checkpoints, run per output format (spec S9):
+ * 1. Output checkpoint (after each format renders), `qaOutput`:
  *    - Structural overlay check against index.html (start and duration matching manifest)
  *    - Visible text edge density measurement (midpoint frame vs reference frame);
  *      skipped for an overlay with no text, never used for captions (checked by
  *      structure and manifest timing instead)
- *    - Master properties (duration +- 1 frame, resolution, audio stream when narrated)
+ *    - Output properties (duration +- 1 frame, resolution, audio stream when narrated)
  *    - Deterministic scene sampling
- * 2. Output-set checkpoint (after formats, thumbnails and description, before delivery):
- *    - Output formats, thumbnails and description existence, non-empty, and matching dimensions
+ *    Overlays are measured inside the safe area of the output's own canvas.
+ * 2. Cross-format checkpoint, `qaCrossFormat`: every format manifest shares one timeline.
+ * 3. Output-set checkpoint (after thumbnails and description, before delivery):
+ *    - The current run's outputs, thumbnails and description: existence, non-empty, and
+ *      matching dimensions; an unreadable size fails (never passes by default)
  *
  * Deterministic qa.json report written to episode folder.
  * Exit 12 and status failed_qa on any check failure.
@@ -22,6 +25,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { spawnTool } from './spawn-tool.mjs'
+import { safeArea } from './safe-area.mjs'
 
 /**
  * Presence heuristic, not a legibility measure: the minimum edge-density
@@ -29,12 +33,12 @@ import { spawnTool } from './spawn-tool.mjs'
  * reference frame outside it.
  *
  * Evidence: an absent overlay measures about 0.0000 (compression noise stays
- * below 0.001); present overlays measured 0.005264-0.100208 on the pilot master
+ * below 0.001); present overlays measured 0.005264-0.100208 on the pilot render
  * (9bd659de) but only 0.0029 for a visible lower-third over a textured background
  * in a later production (#610), which the former 0.004 rejected. 0.0015 sits
  * 1.5x above the absent ceiling and about 2x below the lowest present value, so
  * the two populations separate on both sides. Captions are not judged by this
- * number (adjacent captions differ by design); see qaMaster.
+ * number (adjacent captions differ by design); see qaOutput.
  */
 export const QA_TEXT_EDGE_MIN = 0.0015
 
@@ -66,8 +70,8 @@ export function defaultCheckTools() {
   }
 }
 
-/** Probe video master properties (dimensions, duration, audio stream) using ffprobe. */
-export function defaultProbeMaster(filePath) {
+/** Probe a video output's properties (dimensions, duration, audio stream) using ffprobe. */
+export function defaultProbeVideo(filePath) {
   if (!filePath || !fs.existsSync(filePath)) {
     return { error: `file not found: ${filePath}` }
   }
@@ -161,8 +165,17 @@ export function defaultProbeOutputSize(filePath) {
   }
 }
 
-/** Compute bounding box / crop region for an overlay based on type and position. */
-export function overlayCropRegion({ overlay, masterWidth = 1920, masterHeight = 1920 }) {
+/**
+ * Compute the measuring band for an overlay on one canvas.
+ *
+ * The shipped components lay out inside the safe area of the canvas they are rendered on
+ * (spec S6, `safe-area.mjs`), so the band is derived from that same safe area, never from the
+ * whole frame and never from a fixed square. Positional bands (the bottom 28%, the top 28% or
+ * the centre 40% of the safe area) keep the rules that fixed three wrong-place readings: a
+ * `bottom` position wins over the overlay type, a `top` title's band starts where the title
+ * draws, and a title's anchor recorded as `config.anchor` is honoured.
+ */
+export function overlayCropRegion({ overlay, canvasWidth, canvasHeight }) {
   if (overlay?.bbox && typeof overlay.bbox === 'object') {
     return {
       width: Math.max(16, Math.floor(overlay.bbox.width / 2) * 2),
@@ -177,17 +190,11 @@ export function overlayCropRegion({ overlay, masterWidth = 1920, masterHeight = 
   ).toLowerCase()
   const type = String(overlay?.type || overlay?.kind || '').toLowerCase()
 
-  // The shipped components lay out inside the Open Gate safe square (21.875% inset on a square
-  // master), so the measuring band is derived from that square, never from the frame. A table of
-  // absolute 1920x1920 coordinates measured the wrong place three ways: the `position` branch for
-  // `bottom` ran before the `watermark` branch, a `top` title's band ended before the title drew,
-  // and a manifest records a title's anchor as `config.anchor`, so a title fell through to the
-  // centre band. The check then reported 0.0000 for an overlay that was visibly on screen.
-  const inset = 0.21875
-  const innerX = Math.round(masterWidth * inset)
-  const innerY = Math.round(masterHeight * inset)
-  const innerW = Math.round(masterWidth * (1 - 2 * inset))
-  const innerH = Math.round(masterHeight * (1 - 2 * inset))
+  const safe = safeArea({ width: canvasWidth, height: canvasHeight })
+  const innerX = safe.x
+  const innerY = safe.y
+  const innerW = safe.width
+  const innerH = safe.height
 
   let bandY = innerY
   let bandH = innerH
@@ -207,25 +214,25 @@ export function overlayCropRegion({ overlay, masterWidth = 1920, masterHeight = 
     bandH = Math.round(innerH * 0.4)
   }
 
-  const cropW = Math.max(16, Math.min(masterWidth, Math.floor(innerW / 2) * 2))
-  const cropH = Math.max(16, Math.min(masterHeight, Math.floor(bandH / 2) * 2))
-  const cropX = Math.max(0, Math.min(masterWidth - cropW, Math.max(0, Math.floor(innerX))))
-  const cropY = Math.max(0, Math.min(masterHeight - cropH, Math.max(0, Math.floor(bandY))))
+  const cropW = Math.max(16, Math.min(canvasWidth, Math.floor(innerW / 2) * 2))
+  const cropH = Math.max(16, Math.min(canvasHeight, Math.floor(bandH / 2) * 2))
+  const cropX = Math.max(0, Math.min(canvasWidth - cropW, Math.max(0, Math.floor(innerX))))
+  const cropY = Math.max(0, Math.min(canvasHeight - cropH, Math.max(0, Math.floor(bandY))))
 
   return { width: cropW, height: cropH, x: cropX, y: cropY }
 }
 
 /** Compute a control crop region in the same frame that does not overlap the overlay. */
-export function overlayControlCropRegion({ crop, masterWidth = 1920, masterHeight = 1920 }) {
+export function overlayControlCropRegion({ crop, canvasHeight }) {
   let yControl = crop.y >= crop.height ? crop.y - crop.height : crop.y + crop.height
-  if (yControl + crop.height > masterHeight) {
+  if (yControl + crop.height > canvasHeight) {
     yControl = Math.max(0, crop.y - crop.height)
   }
   return {
     width: crop.width,
     height: crop.height,
     x: crop.x,
-    y: Math.max(0, Math.min(masterHeight - crop.height, Math.floor(yControl))),
+    y: Math.max(0, Math.min(canvasHeight - crop.height, Math.floor(yControl))),
   }
 }
 
@@ -237,7 +244,7 @@ export function overlayControlCropRegion({ crop, masterWidth = 1920, masterHeigh
  * bytes from a spawnSync pipe was reported to come back empty on Windows, so
  * every overlay measured 0 and looked missing (#616).
  */
-export function defaultMeasureFrameEdgeDensity({ masterPath, timeSeconds, crop, run = spawnTool }) {
+export function defaultMeasureFrameEdgeDensity({ videoPath, timeSeconds, crop, run = spawnTool }) {
   const cropFilter = `crop=${crop.width}:${crop.height}:${crop.x}:${crop.y},edgedetect,format=gray`
   const ss = Math.max(0, timeSeconds).toFixed(3)
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-frame-'))
@@ -246,7 +253,7 @@ export function defaultMeasureFrameEdgeDensity({ masterPath, timeSeconds, crop, 
   try {
     const res = run(
       'ffmpeg',
-      ['-v', 'error', '-y', '-ss', ss, '-i', masterPath, '-vframes', '1', '-filter:v', cropFilter, '-f', 'rawvideo', framePath],
+      ['-v', 'error', '-y', '-ss', ss, '-i', videoPath, '-vframes', '1', '-filter:v', cropFilter, '-f', 'rawvideo', framePath],
       { stdio: 'ignore' },
     )
     if (res?.error || res?.status !== 0 || !fs.existsSync(framePath)) return 0
@@ -312,7 +319,7 @@ export function tileRegions(crop, { cols = 4, rows = 2 } = {}) {
  * the same edge pixels are a 20x larger share of a tile than of the band.
  */
 export function defaultSampleEdgeDensity({
-  masterPath,
+  videoPath,
   time,
   refTime,
   crop,
@@ -330,14 +337,14 @@ export function defaultSampleEdgeDensity({
         x: controlCrop.x + offsetX,
         y: controlCrop.y + offsetY,
       };
-      const densityMid = measureFn({ masterPath, timeSeconds: time, crop: tile });
-      const densityControl = measureFn({ masterPath, timeSeconds: time, crop: control });
+      const densityMid = measureFn({ videoPath, timeSeconds: time, crop: tile });
+      const densityControl = measureFn({ videoPath, timeSeconds: time, crop: control });
       best = Math.max(best, densityMid - densityControl);
     }
     return Math.max(0, Math.round(best * 1e6) / 1e6);
   }
-  const densityRef = refTime !== null ? measureFn({ masterPath, timeSeconds: refTime, crop }) : 0;
-  return Math.abs(measureFn({ masterPath, timeSeconds: time, crop }) - densityRef);
+  const densityRef = refTime !== null ? measureFn({ videoPath, timeSeconds: refTime, crop }) : 0;
+  return Math.abs(measureFn({ videoPath, timeSeconds: time, crop }) - densityRef);
 }
 
 /**
@@ -388,17 +395,32 @@ const isCaption = (item) => /^(captions?|caption-word)$/i.test(String(item.type 
 const isMediaOverlay = (item) => /^b-?roll$/i.test(String(item.type || '')) || Boolean(item.config?.assetPath)
 
 /**
- * Checkpoint 1: Master QA.
- * Evaluates duration, dimensions, audio stream, and structural + visible overlay emission.
+ * Checkpoint 1: one output's QA (spec S9), run once per format.
+ * Evaluates duration, dimensions, audio stream, and structural + visible overlay emission
+ * of `outputPath` against its own format manifest and project. Every check carries the
+ * output's `format`.
  */
-export async function qaMaster({
+export async function qaOutput(input) {
+  const result = await qaOneOutput(input)
+  const format = input.declaredSize || formatOf(input.manifest)
+  return { ok: result.ok, checks: result.checks.map((c) => ({ ...c, format })) }
+}
+
+/** `<W>x<H>` of a manifest. */
+function formatOf(manifest) {
+  return `${Number(manifest?.width) || 0}x${Number(manifest?.height) || 0}`
+}
+
+async function qaOneOutput({
   episodeDir,
   manifest,
-  masterPath,
-  declaredSize = '1920x1920',
+  outputPath,
+  declaredSize,
+  projectDir,
   deps = {},
 }) {
   const checks = []
+  declaredSize = declaredSize || formatOf(manifest)
 
   // 1. Tool check
   const checkTools = deps.checkTools || defaultCheckTools
@@ -406,26 +428,26 @@ export async function qaMaster({
   if (!tools.ok) {
     checks.push({
       id: 'qa-unavailable',
-      checkpoint: 'master',
+      checkpoint: 'output',
       status: 'fail',
       expected: 'ffprobe and ffmpeg available on PATH',
       found: tools.error || 'tool check failed',
-      sampled: masterPath,
+      sampled: outputPath,
     })
     return { ok: false, checks }
   }
 
-  // 2. Master readable check & probe
-  const probeMaster = deps.probeMaster || defaultProbeMaster
-  const probed = probeMaster(masterPath)
+  // 2. Output readable check & probe
+  const probeVideo = deps.probeVideo || defaultProbeVideo
+  const probed = probeVideo(outputPath)
   if (probed.error) {
     checks.push({
       id: 'qa-unavailable',
-      checkpoint: 'master',
+      checkpoint: 'output',
       status: 'fail',
-      expected: 'master file readable by ffprobe',
+      expected: 'output file readable by ffprobe',
       found: probed.error,
-      sampled: masterPath,
+      sampled: outputPath,
     })
     return { ok: false, checks }
   }
@@ -438,20 +460,20 @@ export async function qaMaster({
   if (probed.width !== expW || probed.height !== expH) {
     checks.push({
       id: 'size-mismatch',
-      checkpoint: 'master',
+      checkpoint: 'output',
       status: 'fail',
       expected: declaredSize,
       found: `${probed.width}x${probed.height}`,
-      sampled: masterPath,
+      sampled: outputPath,
     })
   } else {
     checks.push({
       id: 'size',
-      checkpoint: 'master',
+      checkpoint: 'output',
       status: 'pass',
       expected: declaredSize,
       found: `${probed.width}x${probed.height}`,
-      sampled: masterPath,
+      sampled: outputPath,
     })
   }
 
@@ -464,20 +486,20 @@ export async function qaMaster({
   if (durationDiff > frameDuration + 0.001) {
     checks.push({
       id: 'duration-mismatch',
-      checkpoint: 'master',
+      checkpoint: 'output',
       status: 'fail',
       expected: manifestDuration,
       found: probed.duration,
-      sampled: masterPath,
+      sampled: outputPath,
     })
   } else {
     checks.push({
       id: 'duration',
-      checkpoint: 'master',
+      checkpoint: 'output',
       status: 'pass',
       expected: manifestDuration,
       found: probed.duration,
-      sampled: masterPath,
+      sampled: outputPath,
     })
   }
 
@@ -489,18 +511,18 @@ export async function qaMaster({
     if (sEnd > probed.duration + frameDuration + 0.001) {
       checks.push({
         id: 'duration-mismatch',
-        checkpoint: 'master',
+        checkpoint: 'output',
         status: 'fail',
         scene: scene.id || scene.slug,
         expected: `<= ${probed.duration.toFixed(3)}s`,
         found: `${sEnd.toFixed(3)}s`,
-        sampled: masterPath,
+        sampled: outputPath,
       })
     }
     // Fixed position sampling records
     checks.push({
       id: 'scene-sampling',
-      checkpoint: 'master',
+      checkpoint: 'output',
       status: 'pass',
       scene: scene.id || scene.slug,
       sampled: {
@@ -523,31 +545,34 @@ export async function qaMaster({
   if (hasNarration && !probed.hasAudio) {
     checks.push({
       id: 'audio-missing',
-      checkpoint: 'master',
+      checkpoint: 'output',
       status: 'fail',
-      expected: 'master has audio stream',
+      expected: 'output has audio stream',
       found: 'no audio stream',
-      sampled: masterPath,
+      sampled: outputPath,
     })
   } else if (hasNarration) {
     checks.push({
       id: 'audio',
-      checkpoint: 'master',
+      checkpoint: 'output',
       status: 'pass',
-      expected: 'master has audio stream',
+      expected: 'output has audio stream',
       found: 'audio stream present',
-      sampled: masterPath,
+      sampled: outputPath,
     })
   }
 
   // 6. Overlays check: structural and visible
-  const indexHtmlPath = path.join(episodeDir, 'hyperframes', 'index.html')
+  // The project this output rendered from: its own `hyperframes/<W>x<H>/` (spec S7).
+  const project =
+    projectDir || manifest?.metadata?.hyperframesDir || path.join(episodeDir, 'hyperframes', declaredSize)
+  const indexHtmlPath = path.join(project, 'index.html')
   if (!fs.existsSync(indexHtmlPath)) {
     checks.push({
       id: 'overlay-missing',
-      checkpoint: 'master',
+      checkpoint: 'output',
       status: 'fail',
-      expected: 'hyperframes/index.html exists',
+      expected: `${path.relative(episodeDir, indexHtmlPath).split(path.sep).join('/')} exists`,
       found: 'index.html missing',
       sampled: indexHtmlPath,
     })
@@ -625,7 +650,7 @@ export async function qaMaster({
     if (!host) {
       checks.push({
         id: 'overlay-missing',
-        checkpoint: 'master',
+        checkpoint: 'output',
         status: 'fail',
         scene: item.sceneId,
         overlayKind: item.type,
@@ -646,7 +671,7 @@ export async function qaMaster({
       ) {
         checks.push({
           id: 'overlay-missing',
-          checkpoint: 'master',
+          checkpoint: 'output',
           status: 'fail',
           scene: item.sceneId,
           overlayKind: item.type,
@@ -676,7 +701,7 @@ export async function qaMaster({
         end <= bounds[1] + tol
       checks.push({
         id: inTime ? 'caption-present' : 'caption-timing',
-        checkpoint: 'master',
+        checkpoint: 'output',
         status: inTime ? 'pass' : 'fail',
         scene: item.sceneId,
         overlayKind: item.type,
@@ -693,7 +718,7 @@ export async function qaMaster({
     if (!String(item.text || '').trim() && !isMediaOverlay(item)) {
       checks.push({
         id: 'overlay-structural',
-        checkpoint: 'master',
+        checkpoint: 'output',
         status: 'pass',
         scene: item.sceneId,
         overlayKind: item.type,
@@ -728,7 +753,7 @@ export async function qaMaster({
     if (tRef === null) {
       checks.push({
         id: 'overlay-structural',
-        checkpoint: 'master',
+        checkpoint: 'output',
         status: 'pass',
         scene: item.sceneId,
         overlayKind: item.type,
@@ -743,17 +768,16 @@ export async function qaMaster({
 
     const crop = overlayCropRegion({
       overlay: item,
-      masterWidth: probed.width,
-      masterHeight: probed.height,
+      canvasWidth: probed.width,
+      canvasHeight: probed.height,
     })
     const controlCrop = overlayControlCropRegion({
       crop,
-      masterWidth: probed.width,
-      masterHeight: probed.height,
+      canvasHeight: probed.height,
     })
 
     const edgeDiff = sampleEdgeDensity({
-      masterPath,
+      videoPath: outputPath,
       time: tMid,
       refTime: tRef,
       crop,
@@ -763,7 +787,7 @@ export async function qaMaster({
     if (edgeDiff < QA_TEXT_EDGE_MIN) {
       checks.push({
         id: 'overlay-missing',
-        checkpoint: 'master',
+        checkpoint: 'output',
         status: 'fail',
         scene: item.sceneId,
         overlayKind: item.type,
@@ -776,7 +800,7 @@ export async function qaMaster({
     } else {
       checks.push({
         id: 'overlay-present',
-        checkpoint: 'master',
+        checkpoint: 'output',
         status: 'pass',
         scene: item.sceneId,
         overlayKind: item.type,
@@ -792,13 +816,15 @@ export async function qaMaster({
 }
 
 /**
- * Checkpoint 2: Output-set QA.
- * Evaluates existence, non-empty, and dimensions for video formats, thumbnails, and description.
+ * Checkpoint 3: Output-set QA.
+ * Evaluates existence, non-empty, and dimensions for this run's outputs (`outputs`, one
+ * `{ format, path }` per format), the thumbnails, and the description. An output or a
+ * thumbnail whose size cannot be read fails.
  */
 export async function qaOutputSet({
   episodeDir,
   slug,
-  outputFormats = [],
+  outputs = [],
   thumbnailFormats = [],
   deps = {},
 }) {
@@ -837,23 +863,24 @@ export async function qaOutputSet({
     })
   }
 
-  // 2. Video formats
-  const formatsList = Array.isArray(outputFormats) ? outputFormats : []
-  for (const size of formatsList) {
-    const sizeStr = String(size)
-    const subPath = path.join(episodeDir, 'formats', `${slug}_${sizeStr}.mp4`)
-    const rootPath = path.join(episodeDir, `${slug}_${sizeStr}.mp4`)
-    const filePath = fs.existsSync(subPath) ? subPath : fs.existsSync(rootPath) ? rootPath : null
+  // 2. The outputs this run rendered, one per format: a stale file from an earlier run,
+  // or a derived variant under `formats/`, is never what QA reads (fail closed).
+  const outputList = Array.isArray(outputs) ? outputs : []
+  for (const output of outputList) {
+    const sizeStr = String(output.format)
+    const filePath = output.path
+    const fileName = path.basename(String(filePath || `${slug}_${sizeStr}.mp4`))
 
-    if (!filePath) {
+    if (!filePath || !fs.existsSync(filePath)) {
       checks.push({
         id: 'output-missing',
         checkpoint: 'output-set',
         status: 'fail',
-        file: `${slug}_${sizeStr}.mp4`,
-        expected: `format video ${slug}_${sizeStr}.mp4 exists`,
+        format: sizeStr,
+        file: fileName,
+        expected: `output video ${fileName} exists`,
         found: 'file missing',
-        sampled: subPath,
+        sampled: filePath || null,
       })
       continue
     }
@@ -863,7 +890,8 @@ export async function qaOutputSet({
         id: 'output-empty',
         checkpoint: 'output-set',
         status: 'fail',
-        file: path.basename(filePath),
+        format: sizeStr,
+        file: fileName,
         expected: 'non-empty video file',
         found: '0 bytes',
         sampled: filePath,
@@ -873,12 +901,24 @@ export async function qaOutputSet({
 
     const [expW, expH] = sizeStr.split('x').map(Number)
     const actual = await probeSize(filePath)
-    if (actual && (actual.width !== expW || actual.height !== expH)) {
+    if (!actual) {
+      checks.push({
+        id: 'output-unreadable',
+        checkpoint: 'output-set',
+        status: 'fail',
+        format: sizeStr,
+        file: fileName,
+        expected: sizeStr,
+        found: 'size unreadable',
+        sampled: filePath,
+      })
+    } else if (actual.width !== expW || actual.height !== expH) {
       checks.push({
         id: 'output-size-mismatch',
         checkpoint: 'output-set',
         status: 'fail',
-        file: path.basename(filePath),
+        format: sizeStr,
+        file: fileName,
         expected: sizeStr,
         found: `${actual.width}x${actual.height}`,
         sampled: filePath,
@@ -888,7 +928,8 @@ export async function qaOutputSet({
         id: 'output-format',
         checkpoint: 'output-set',
         status: 'pass',
-        file: path.basename(filePath),
+        format: sizeStr,
+        file: fileName,
         sampled: filePath,
       })
     }
@@ -929,7 +970,17 @@ export async function qaOutputSet({
 
     const [expW, expH] = sizeStr.split('x').map(Number)
     const actual = await probeSize(thumbPath)
-    if (actual && (actual.width !== expW || actual.height !== expH)) {
+    if (!actual) {
+      checks.push({
+        id: 'output-unreadable',
+        checkpoint: 'output-set',
+        status: 'fail',
+        file: fileName,
+        expected: sizeStr,
+        found: 'size unreadable',
+        sampled: thumbPath,
+      })
+    } else if (actual.width !== expW || actual.height !== expH) {
       checks.push({
         id: 'output-size-mismatch',
         checkpoint: 'output-set',
@@ -955,6 +1006,64 @@ export async function qaOutputSet({
 }
 
 /**
+ * Checkpoint 2: the cross-format check (spec S9). Every format manifest must carry the same
+ * timeline as the primary: fps, total duration, and every scene, audio and overlay track's
+ * start and length. Only the canvas may differ.
+ * @param {object[]} manifests one per output format, primary first
+ * @returns {{ ok: boolean, checks: object[] }}
+ */
+export function qaCrossFormat(manifests = []) {
+  const timeline = (m) => ({
+    fps: Number(m?.fps) || 0,
+    totalDurationInFrames: Number(m?.totalDurationInFrames) || 0,
+    scenes: (m?.tracks?.scenes || []).map((t) => [t.id, t.fromFrame, t.durationInFrames]),
+    audio: (m?.tracks?.audio || []).map((t) => [t.id || t.kind || '', t.fromFrame, t.durationInFrames]),
+    overlays: (m?.tracks?.overlays || []).map((t) => [t.id, t.fromFrame, t.durationInFrames]),
+  })
+  const list = Array.isArray(manifests) ? manifests : []
+  if (list.length === 0) return { ok: true, checks: [] }
+  const primary = list[0]
+  const expected = JSON.stringify(timeline(primary))
+  const checks = list.slice(1).map((m) => {
+    const found = JSON.stringify(timeline(m))
+    const same = found === expected
+    const diff = []
+    if (!same) {
+      const a = timeline(primary)
+      const b = timeline(m)
+      for (const key of Object.keys(a)) if (JSON.stringify(a[key]) !== JSON.stringify(b[key])) diff.push(key)
+    }
+    return {
+      id: same ? 'cross-format-timeline' : 'cross-format-mismatch',
+      checkpoint: 'cross-format',
+      status: same ? 'pass' : 'fail',
+      format: formatOf(m),
+      expected: `the timeline of ${formatOf(primary)}`,
+      found: same ? 'same duration and timeline' : `differs in ${diff.join(', ')}`,
+    }
+  })
+  return { ok: checks.every((c) => c.status === 'pass'), checks }
+}
+
+/**
+ * Turns one `hyperframes check` result per format project into QA checks (spec S9): a
+ * project passes only when the pinned CLI ran and exited 0. An unavailable checker fails.
+ * @param {Array<{ format: string, projectDir: string, ok: boolean, reason?: string, detail?: string }>} results
+ */
+export function qaHyperframesCheck(results = []) {
+  const checks = (Array.isArray(results) ? results : []).map((r) => ({
+    id: r.ok ? 'hyperframes-check' : 'hyperframes-check-failed',
+    checkpoint: 'hyperframes-check',
+    status: r.ok ? 'pass' : 'fail',
+    format: r.format,
+    expected: '`hyperframes check` exits 0 for the format project',
+    found: r.ok ? 'passed' : `${r.reason || 'failed'}${r.detail ? `: ${r.detail}` : ''}`,
+    sampled: r.projectDir,
+  }))
+  return { ok: checks.every((c) => c.status === 'pass'), checks }
+}
+
+/**
  * Deterministic serialization of the QA report into qa.json.
  * Sorts checks by checkpoint, id, scene, and file so identical inputs produce byte-identical reports.
  */
@@ -962,6 +1071,8 @@ export function writeQaReport(episodeDir, report) {
   const sortedChecks = [...(report.checks || [])].sort((a, b) => {
     const cp = String(a.checkpoint || '').localeCompare(String(b.checkpoint || ''))
     if (cp !== 0) return cp
+    const fm = String(a.format || '').localeCompare(String(b.format || ''))
+    if (fm !== 0) return fm
     const id = String(a.id || '').localeCompare(String(b.id || ''))
     if (id !== 0) return id
     const sc = String(a.scene || '').localeCompare(String(b.scene || ''))

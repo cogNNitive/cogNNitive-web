@@ -19,7 +19,7 @@ import { bagsToChain, loadCascadeBags, withScriptPresets } from '../skills/nn-co
 import { resolve as resolveScope } from '../skills/nn-conntent/scripts/lib/nn-core.generated.cjs'
 import { createCascade, resolveFit } from '../skills/nn-conntent/scripts/lib/cascade.mjs'
 import { kindBagOf, loadSeriesGrammar } from '../skills/nn-conntent/scripts/lib/kinds.mjs'
-import { assignLayersToScenes } from '../skills/nn-conntent/scripts/scene-compiler.mjs'
+import { assignLayersToScenes, parseOutputFormats } from '../skills/nn-conntent/scripts/scene-compiler.mjs'
 import { lowerEpisode, scriptSubjectsFromScenes } from '../skills/nn-conntent/scripts/lib/review-subject.mjs'
 import { previewSubjectsFromScenes } from '../skills/nn-conntent/scripts/lib/preview-subject.mjs'
 import { evaluateGate, readAppliedVerdicts, reopenCause } from '../skills/nn-conntent/scripts/lib/gates.mjs'
@@ -77,17 +77,20 @@ async function readPlanHash(episodeDir) {
   }
 }
 
-/** A playable segment of the last master; no media is generated or embedded. */
-async function renderedScenes(rootDir, episodeDir, master) {
+/**
+ * A playable segment of the last primary output (spec S8: `<slug>_<output_formats[0]>.mp4`,
+ * timed by its own `hyperframes/<W>x<H>/manifest.json`); no media is generated or embedded.
+ */
+async function renderedScenes(rootDir, episodeDir, primary) {
   const clips = new Map()
-  if (!master) return clips
-  const masterPath = join(episodeDir, String(master))
-  if (!fs.existsSync(masterPath)) return clips
-  const relative = rootRelative(rootDir, masterPath)
+  if (!primary) return clips
+  const primaryPath = join(episodeDir, primary.file)
+  if (!fs.existsSync(primaryPath)) return clips
+  const relative = rootRelative(rootDir, primaryPath)
   if (!relative) return clips
   let manifest
   try {
-    manifest = JSON.parse(await readFile(join(episodeDir, 'hyperframes', 'manifest.json'), 'utf8'))
+    manifest = JSON.parse(await readFile(join(episodeDir, 'hyperframes', primary.format, 'manifest.json'), 'utf8'))
   } catch {
     return clips
   }
@@ -226,6 +229,37 @@ function inheritedSources(fields) {
   return out.sort((a, b) => a.name.localeCompare(b.name))
 }
 
+/**
+ * The episode's N outputs (spec S8), one per resolved `output_formats` entry, primary
+ * first: the file name, its root-relative path once rendered, and the format's QA verdict
+ * from the last `qa.json` (`passed`, `failed`, or null when QA has not judged it).
+ */
+async function episodeOutputs(rootDir, episodeDir, slug, formatsValue) {
+  let formats = []
+  try {
+    formats = parseOutputFormats(formatsValue)
+  } catch {
+    return []
+  }
+  let checks = []
+  try {
+    checks = JSON.parse(await readFile(join(episodeDir, 'qa.json'), 'utf8')).checks || []
+  } catch {
+    /* no QA yet */
+  }
+  return formats.map(({ size }) => {
+    const file = `${slug}_${size}.mp4`
+    const abs = join(episodeDir, file)
+    const own = checks.filter((c) => c && c.format === size)
+    return {
+      format: size,
+      file,
+      path: fs.existsSync(abs) ? rootRelative(rootDir, abs) : null,
+      qa: own.length === 0 ? null : own.some((c) => c.status === 'fail') ? 'failed' : 'passed',
+    }
+  })
+}
+
 async function episodeFacts({ rootDir, series, episode, sourceHashes = {} }) {
   const model = loadKnowledgeModel(episode.scriptPath)
   const video = (model.elements?.Video || [])[0] || {}
@@ -289,7 +323,8 @@ async function episodeFacts({ rootDir, series, episode, sourceHashes = {} }) {
     gates.push({ gate: 'budget', scene: null, ...evaluateGate({ gate: 'budget', scene: null, currentHash: planHash || '', planHash: planHash || null, verdicts }) })
   }
 
-  const rendered = await renderedScenes(rootDir, episode.dir, fields.master)
+  const outputs = await episodeOutputs(rootDir, episode.dir, slug, cascade.at().get('output_formats').value)
+  const rendered = await renderedScenes(rootDir, episode.dir, outputs[0])
   const sourceScenes = model.elements?.Scene || []
   const layerBuckets = assignLayersToScenes(sourceScenes, model.elements?.Layer || [])
   const sceneViews = (parsed.scenes || []).map((scene) => {
@@ -380,6 +415,7 @@ async function episodeFacts({ rootDir, series, episode, sourceHashes = {} }) {
     pending: gates.filter((g) => g.state !== 'approved'),
     deliveries,
     latestDelivery: deliveries.length > 0 ? deliveries[0].version : null,
+    outputs,
     thumbnail: fields.thumbnail ? String(fields.thumbnail) : null,
   }
 }

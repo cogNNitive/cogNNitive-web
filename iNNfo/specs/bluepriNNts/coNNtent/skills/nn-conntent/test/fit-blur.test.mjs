@@ -14,7 +14,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { buildProject, fitBlurRadiusPx, FIT_BLUR_REFERENCE_PX, FIT_BLUR_BRIGHTNESS } from '../scripts/scene-project.mjs';
-import { DEFAULT_SIGMA } from '../scripts/render-formats.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REGISTRY = path.resolve(HERE, '..', 'scripts', 'lib', 'field-registry.generated.json');
@@ -120,10 +119,9 @@ test('contain is untouched by the blur branch', () => {
   assert.doesNotMatch(html, /backdrop|filter:blur/);
 });
 
-test('the documented CSS radius is not claimed to equal the ffmpeg sigma', () => {
-  // The two are different operations; the doc says "roughly 24px against sigma 20".
-  assert.equal(DEFAULT_SIGMA, 20);
-  assert.notEqual(FIT_BLUR_REFERENCE_PX, DEFAULT_SIGMA);
+test('the documented radius is a CSS blur and names no retired derivation step', () => {
   const spec = fs.readFileSync(path.resolve(HERE, '..', '..', '..', 'spec_NN.md'), 'utf8');
-  assert.match(spec, /NOT the same operation as the ffmpeg `gblur` sigma/);
+  assert.match(spec, /it is a CSS blur\./);
+  assert.doesNotMatch(spec, /render-formats|gblur/);
+  assert.equal(FIT_BLUR_REFERENCE_PX, 24);
 });

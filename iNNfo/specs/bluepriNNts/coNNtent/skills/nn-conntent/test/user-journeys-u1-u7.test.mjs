@@ -145,7 +145,7 @@ function fakeRender() {
     const slug = path.basename(opts.scriptPath).replace(/_coNNtent_NN\.md$/, '')
     const master = path.join(dir, `${slug}_1920x1920.mp4`)
     fs.writeFileSync(master, MP4_BYTES)
-    const hyperframesDir = path.join(dir, 'hyperframes')
+    const hyperframesDir = path.join(dir, 'hyperframes', '1920x1920')
     fs.mkdirSync(hyperframesDir, { recursive: true })
     const manifest = {
       fps: 30,
@@ -188,16 +188,6 @@ function thumbStubs() {
       fs.writeFileSync(p1, PNG_1x1)
       fs.writeFileSync(p2, PNG_1x1)
       return [{ path: p1 }, { path: p2 }]
-    },
-    formats: async ({ outDir, formats }) => {
-      fs.mkdirSync(outDir, { recursive: true })
-      return {
-        variants: (formats || []).map((f) => {
-          const p = path.join(outDir, `ep_${f.name}.mp4`)
-          fs.writeFileSync(p, MP4_BYTES)
-          return { path: p, outputPath: p }
-        }),
-      }
     },
   }
 }
@@ -547,7 +537,8 @@ character:: lucas
       planHashes: scenePlanHashesV1,
       cacheDir,
       qa: {
-        qaMaster: async () => ({ ok: true, checks: [] }),
+        hyperframesCheck: async () => ({ ok: true }),
+        qaOutput: async () => ({ ok: true, checks: [] }),
         qaOutputSet: async () => ({ ok: true, checks: [] }),
       },
       log: () => {},
@@ -851,7 +842,7 @@ asset:: media/face2.png
           render: async (opts) => {
             const master = path.join(path.dirname(opts.scriptPath), 'ep2_1920x1920.mp4')
             fs.writeFileSync(master, MP4_BYTES)
-            const hyperframesDir = path.join(path.dirname(opts.scriptPath), 'hyperframes')
+            const hyperframesDir = path.join(path.dirname(opts.scriptPath), 'hyperframes', '1920x1920')
             fs.mkdirSync(hyperframesDir, { recursive: true })
             const manifest = {
               fps: 30,

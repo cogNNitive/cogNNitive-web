@@ -21,6 +21,8 @@ import { buildAvatarRequest } from './lib/avatar-request.mjs';
 import { estimateCallUsd, resolveModelId } from './asset-cost-estimator.mjs';
 import { probeDuration, probeVideoSize } from './lib/media-duration.mjs';
 import { defaultResolutionFor, checkAvatarClip } from './lib/avatar-jobs.mjs';
+import { parseImageSize } from './lib/image-options.mjs';
+import zlib from 'node:zlib';
 
 const require = createRequire(import.meta.url);
 let sharp;
@@ -338,13 +340,17 @@ export class AssetSynthesizer {
     );
   }
 
-  /** Replicate image prediction with the same fail-loud contract. @private */
-  async _runReplicateImageJob(prompt) {
+  /**
+   * Replicate image prediction with the same fail-loud contract. `aspectRatio` is the
+   * resolved size's aspect (spec S4); without one the provider default applies. @private
+   */
+  async _runReplicateImageJob(prompt, aspectRatio) {
     const token = this.env.REPLICATE_API_TOKEN;
+    const input = aspectRatio ? { prompt, aspect_ratio: aspectRatio } : { prompt };
     const res = await this._fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Token ' + token },
-      body: JSON.stringify({ version: 'black-forest-labs/flux-schnell', input: { prompt, aspect_ratio: '16:9' } }),
+      body: JSON.stringify({ version: 'black-forest-labs/flux-schnell', input }),
     });
     if (!res.ok) throw new BillingFailureError('Replicate image request failed (HTTP ' + res.status + ').');
     const prediction = await res.json();
@@ -631,12 +637,15 @@ export class AssetSynthesizer {
 
 
   /**
-   * Generates a 1920x1080 visual asset: a billable provider image when a key is configured
+   * Generates a visual asset at the resolved `options.size` (spec S4, derived from the
+   * primary format unless set): a billable provider image when a key is configured
    * (WaveSpeed first, otherwise Replicate; one provider only, never both), or a free local
-   * scenic composition when no key exists. Returns null in dry-run.
+   * placeholder when no key exists, drawn at that size or else at `meta.canvas` (the
+   * primary canvas). Returns null in dry-run.
    * @private
    */
   async _generateMediaFromPrompt(prompt, options = {}, meta = {}) {
+    const size = parseImageSize(options.size);
     if (this.env.WAVESPEED_API_KEY) {
       const model = this._resolveMediaModel(options, meta);
       const ticket = await this.guard.authorize({
@@ -652,7 +661,8 @@ export class AssetSynthesizer {
           what: 'Image',
           maxPolls: 30,
           intervalMs: 2000,
-          body: { prompt, size: options.size || '1024*1024' },
+          // WaveSpeed takes `W*H`; without a resolved size the provider default applies.
+          body: size ? { prompt, size: size.width + '*' + size.height } : { prompt },
         }),
       );
     }
@@ -666,7 +676,7 @@ export class AssetSynthesizer {
         ref: meta.ref,
       });
       if (!ticket) return null;
-      return this._billed(ticket, () => this._runReplicateImageJob(prompt));
+      return this._billed(ticket, () => this._runReplicateImageJob(prompt, size ? replicateAspectRatio(size) : undefined));
     }
 
     // 3. High-quality artistic visual scene composition
@@ -694,8 +704,11 @@ export class AssetSynthesizer {
     const gradEnd = is60s ? '#090d16' : is70s ? '#1e1b4b' : is80s ? '#0f172a' : '#18181b';
     const themeHighlight = is60s ? '#38bdf8' : is70s ? '#ec4899' : is80s ? '#f59e0b' : accent;
 
+    // The placeholder follows the resolved size, else the primary canvas (spec S4); the
+    // 1920x1080 artwork is centered in it, and the background fills the whole canvas.
+    const canvas = offlineCanvas(size, meta.canvas);
     const svg = `
-    <svg width="1920" height="1920" xmlns="http://www.w3.org/2000/svg">
+    <svg width="${canvas.width}" height="${canvas.height}" viewBox="0 0 ${canvas.width} ${canvas.height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="${gradStart}"/>
@@ -715,9 +728,10 @@ export class AssetSynthesizer {
           <rect x="2" y="2" width="2" height="2" fill="#000000" fill-opacity="0.05"/>
         </pattern>
       </defs>
-      <rect width="1920" height="1080" fill="url(#bg)"/>
-      <rect width="1920" height="1080" fill="url(#stageGlow)"/>
-      <rect width="1920" height="1080" fill="url(#filmGrain)"/>
+      <rect width="${canvas.width}" height="${canvas.height}" fill="url(#bg)"/>
+      <rect width="${canvas.width}" height="${canvas.height}" fill="url(#stageGlow)"/>
+      <rect width="${canvas.width}" height="${canvas.height}" fill="url(#filmGrain)"/>
+      <svg x="0" y="0" width="${canvas.width}" height="${canvas.height}" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid meet">
 
       <!-- Ambient Stage Lights -->
       <circle cx="300" cy="180" r="400" fill="${themeHighlight}" fill-opacity="0.12"/>
@@ -761,6 +775,7 @@ export class AssetSynthesizer {
       <text x="960" y="1000" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="500" fill="#64748b" text-anchor="middle">
         cogNNitive Video • WaveSpeed &amp; HyperFrames Unified Pipeline
       </text>
+      </svg>
     </svg>`;
 
     if (sharp) {
@@ -770,25 +785,85 @@ export class AssetSynthesizer {
         console.error('SVG Sharp Error:', e);
       }
     }
-    return this._generatePlaceholderImage(prompt, options);
+    return this._generatePlaceholderImage(canvas);
   }
 
   /**
-   * Generates a 1x1/placeholder PNG buffer for media synthesis fallback.
+   * A solid placeholder PNG at `canvas` (the resolved size or the primary canvas), used
+   * when `sharp` cannot rasterize the offline composition. Its header carries the real
+   * size, so `fit` classifies it like the provider image it stands in for.
    * @private
    */
-  _generatePlaceholderImage(prompt, options) {
-    const minimalPng = Buffer.from([
-      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
-      0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52,
-      0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-      0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4,
-      0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41,
-      0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00,
-      0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00,
-      0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae,
-      0x42, 0x60, 0x82,
-    ]);
-    return minimalPng;
+  _generatePlaceholderImage(canvas = OFFLINE_DEFAULT_CANVAS) {
+    return solidPng(canvas.width, canvas.height, [24, 24, 27]);
   }
+}
+
+/** The canvas of an offline placeholder when neither a size nor a primary canvas is known. */
+const OFFLINE_DEFAULT_CANVAS = Object.freeze({ width: 1920, height: 1080 });
+
+/** The offline placeholder canvas: the resolved size, else the primary canvas, else 1920x1080. */
+function offlineCanvas(size, canvas) {
+  if (size) return size;
+  if (canvas && Number(canvas.width) > 0 && Number(canvas.height) > 0) return { width: Number(canvas.width), height: Number(canvas.height) };
+  return OFFLINE_DEFAULT_CANVAS;
+}
+
+/**
+ * The `aspect_ratio` values the Replicate flux-schnell input accepts. Taken from the
+ * provider's published model schema; only `16:9` is exercised by a real request in this
+ * repository, the rest are not verified against the live API.
+ */
+const REPLICATE_ASPECT_RATIOS = ['1:1', '16:9', '21:9', '3:2', '2:3', '4:5', '5:4', '3:4', '4:3', '9:16', '9:21'];
+
+/** The Replicate `aspect_ratio` nearest to a resolved size (smallest log-ratio distance). */
+export function replicateAspectRatio(size) {
+  const goal = Math.log(size.width / size.height);
+  let best = REPLICATE_ASPECT_RATIOS[0];
+  let bestD = Infinity;
+  for (const label of REPLICATE_ASPECT_RATIOS) {
+    const [w, h] = label.split(':').map(Number);
+    const d = Math.abs(Math.log(w / h) - goal);
+    if (d < bestD - 1e-12) {
+      best = label;
+      bestD = d;
+    }
+  }
+  return best;
+}
+
+/** A valid RGB PNG of one solid color (no external dependency). */
+function solidPng(width, height, [r, g, b]) {
+  const row = Buffer.alloc(1 + width * 3);
+  for (let x = 0; x < width; x++) row.set([r, g, b], 1 + x * 3);
+  const raw = Buffer.alloc(row.length * height);
+  for (let y = 0; y < height; y++) row.copy(raw, y * row.length);
+  const crcTable = new Int32Array(256).map((_, n) => {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    return c;
+  });
+  const crc = (buf) => {
+    let c = -1;
+    for (const byte of buf) c = crcTable[(c ^ byte) & 0xff] ^ (c >>> 8);
+    return (c ^ -1) >>> 0;
+  };
+  const chunk = (type, data) => {
+    const len = Buffer.alloc(4);
+    len.writeUInt32BE(data.length);
+    const body = Buffer.concat([Buffer.from(type, 'ascii'), data]);
+    const sum = Buffer.alloc(4);
+    sum.writeUInt32BE(crc(body));
+    return Buffer.concat([len, body, sum]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr.set([8, 2, 0, 0, 0], 8);
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', ihdr),
+    chunk('IDAT', zlib.deflateSync(raw)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
 }

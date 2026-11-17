@@ -21,6 +21,7 @@ import { loadCascadeBags, withScriptPresets } from './lib/video-scope.mjs';
 import { resolve } from './lib/cascade.mjs';
 import { isAvatarLayer, collectAvatarJobs, ttsCachePathFor, AVATAR_CACHE_EXT, AVATAR_CACHE_CATEGORY } from './lib/avatar-jobs.mjs';
 import { layerPrompt, imageCachePathFor } from './lib/image-options.mjs';
+import { imageModelsFor } from './lib/image-options.mjs';
 import { loadMergedCatalog, assertImageSize, isPriceStale, DEFAULT_STALE_AFTER_DAYS } from './lib/catalog.mjs';
 import { CacheManager } from './cache-manager.mjs';
 import { resolveDefaultCacheDir } from './lib/video-guard.mjs';
@@ -177,8 +178,9 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
   const guard = compiler.checkScript(model, { ...options, bags, scriptDir });
   if (!guard.ok) throw new ScriptValidationError(guard.errors);
   const parsed = compiler.lowerKnowledgeModel(model, { ...options, bags, scriptDir });
-  const defaultImageModel = normalizeModelId(resolve('image_model', bags).value);
-  const defaultImageSize = resolve('image_size', bags).value;
+  const loaded = scriptDir ? loadGuardWithVoices(scriptDir) : { config: {}, root: null };
+  const catalog = loadMergedCatalog({ domainRoot: loaded.root });
+  const { image: defaultImageModel, imageSize: defaultImageSize, imageSizing } = imageModelsFor({ bags, parsed, catalog });
   const defaultAvatarModel = normalizeModelId(resolve('avatar_model', bags).value);
   const defaultTtsModel = normalizeModelId(resolve('voice_model', bags).value);
   const planModels = new Set();
@@ -193,14 +195,8 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
   const cacheDir = options.cacheDir || (scriptDir ? resolveDefaultCacheDir(scriptDir) : null);
   const cache = cacheDir ? new CacheManager({ baseDir: cacheDir, readOnly: true }) : null;
   const models = { image: defaultImageModel, imageSize: defaultImageSize, tts: defaultTtsModel, avatar: defaultAvatarModel };
-  const loaded = scriptDir ? loadGuardWithVoices(scriptDir) : { config: {}, root: null };
   const config = loaded.config;
   warnUnpricedAllowedModels(config);
-  // An `image_size` the resolved model does not offer fails the ESTIMATE, before any spend,
-  // against the same merged catalog (reference + domaiNN overlay) the compile reads.
-  if (defaultImageSize) {
-    assertImageSize(loadMergedCatalog({ domainRoot: loaded.root }), defaultImageModel, defaultImageSize);
-  }
   const cachedAvatarLayers = new Set();
   if (cache && scriptDir) {
     try {
@@ -361,6 +357,7 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
   return {
     planHash,
     planModels: [...planModels].sort(),
+    imageSizing,
     stalePrices: stalePricesOf([...planModels], options.now instanceof Date ? options.now : new Date()),
     scenes: sceneEstimates,
     summary: {
@@ -456,6 +453,13 @@ export function formatAssetPlanMarkdown(estimateResult) {
   md += `Models this plan will call (stamped on the first line; approval covers exactly these):\n\n`;
   if (estimateResult.planModels.length === 0) md += `- none (nothing billable)\n`;
   for (const m of estimateResult.planModels) md += `- \`${m}\`\n`;
+  if (estimateResult.imageSizing?.size) {
+    const s = estimateResult.imageSizing;
+    const detail = s.source === 'derived'
+      ? ` (derived from the primary format ${s.target}${s.nearest ? '; nearest supported size' : ''})`
+      : s.source === 'explicit' ? ' (explicit)' : '';
+    md += `- **Image size**: ${s.size}${detail}\n`;
+  }
   md += `\nBudget to approve: \$${summary.grandTotalCost.toFixed(4)} USD (cap 1.25x).\n`;
 
   return md;

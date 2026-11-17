@@ -24,6 +24,7 @@ import { fileURLToPath } from 'node:url';
 import { sceneTransitionFragment } from './scene-transition.mjs';
 import { overlayMount, SLOT_OF } from './overlay-blocks.mjs';
 import { writeGuarded } from './lib/emit-guard.mjs';
+import { safeArea, safeAreaCssVars } from './lib/safe-area.mjs';
 
 /**
  * The pinned HyperFrames CLI version, read from this skill's `package.json` (the
@@ -79,7 +80,7 @@ export const FIT_ASPECT_TOLERANCE = 0.05
 export const FIT_BLUR_REFERENCE_PX = 24
 /** ...and scales linearly with the shorter side (13.5px at 1080). */
 export const FIT_BLUR_REFERENCE_SIDE = 1920
-/** Backdrop darkening for a `fit:: blur`/`card` layer: the same intent as render-formats' DEFAULT_BRIGHTNESS. */
+/** Backdrop darkening for a `fit:: blur`/`card` layer. */
 export const FIT_BLUR_BRIGHTNESS = 0.82
 /** `card` geometry, as fractions of the box's shorter side: margin, corner radius, shadow offset and blur. */
 export const FIT_CARD = Object.freeze({ inset: 0.05, radius: 0.02, shadowY: 0.012, shadowBlur: 0.04, shadowAlpha: 0.45 })
@@ -122,6 +123,7 @@ function assetSizeOf(layer, why) {
  * runs when the two keys differ, so a single-valued fit needs no asset size.
  */
 export function chosenFit(layer, box) {
+  if (layer.layer_avatar_origin) return 'cover';
   const map = fitMapOf(layer.layer_fit)
   if (!map) return null
   if (map.native === map.mismatch) return map.native
@@ -146,13 +148,20 @@ function layerMarkup(layer, sceneDurationFrames, fps, trackBase, sceneSlug, box)
     else if (p === 'center') objectPos = 'center center';
     else objectPos = layer.layer_position;
   }
-  // The master is square, so there is no widescreen headroom to compensate: the
-  // retired `center 12%` offset is gone (design D5).
+  // Every format renders natively, so there is no headroom to compensate: the retired
+  // `center 12%` offset is gone (design D5).
   // A stable per-layer `id` gives HyperFrames Studio a target for its timeline and
   // canvas controls (an id-less clip triggers a lint warning).
   const id = `media-${esc(sceneSlug || 'scene')}-${trackBase}`;
   const fit = chosenFit(layer, box);
   const zIndex = Number.isFinite(z) ? z : 0;
+  // `placement:: inset` (spec S6): the layer's box is the canvas safe area, so every
+  // element is placed there explicitly; a full-canvas box keeps the shared `inset: 0`.
+  const geom = Number.isFinite(box.x)
+    ? `inset:auto;left:${box.x}px;top:${box.y}px;width:${box.width}px;height:${box.height}px;`
+    : '';
+  const ox = Number.isFinite(box.x) ? box.x : 0;
+  const oy = Number.isFinite(box.y) ? box.y : 0;
   // A `component:<name>` fit is mounted at the root (see fitComponentHosts), never here.
   if (fit && fit.startsWith('component:')) return '';
   // `blur` and `card` keep the WHOLE asset visible over a backdrop built from the same
@@ -162,7 +171,7 @@ function layerMarkup(layer, sceneDurationFrames, fps, trackBase, sceneSlug, box)
   const backdrop = () =>
     `<${tag} id="${id}-backdrop" class="clip nn-media nn-media-backdrop" data-start="0" data-duration="${dur}" ` +
     `data-track-index="${trackBase}" ${mediaAttrs} aria-hidden="true" src="assets/${esc(name)}" ` +
-    `style="z-index:${zIndex};object-position:${objectPos};object-fit:cover;` +
+    `style="z-index:${zIndex};${geom}object-position:${objectPos};object-fit:cover;` +
     `filter:blur(${fitBlurRadiusPx(box.width, box.height)}px) brightness(${FIT_BLUR_BRIGHTNESS});"></${tag}>`;
   // `card` presents the whole asset, never cropped, as a card over the designed frame:
   // the blurred self-backdrop. The card is sized to the asset's own aspect inside a
@@ -175,8 +184,8 @@ function layerMarkup(layer, sceneDurationFrames, fps, trackBase, sceneSlug, box)
     const scale = Math.min((box.width - 2 * inset) / size.width, (box.height - 2 * inset) / size.height);
     const w = Math.round(size.width * scale);
     const h = Math.round(size.height * scale);
-    const left = Math.round((box.width - w) / 2);
-    const top = Math.round((box.height - h) / 2);
+    const left = ox + Math.round((box.width - w) / 2);
+    const top = oy + Math.round((box.height - h) / 2);
     const card =
       `<${tag} id="${id}" class="clip nn-media nn-media-card" data-start="0" data-duration="${dur}" ` +
       `data-track-index="${trackBase}" ${mediaAttrs} src="assets/${esc(name)}" ` +
@@ -189,33 +198,43 @@ function layerMarkup(layer, sceneDurationFrames, fps, trackBase, sceneSlug, box)
     return (
       `<${tag} id="${id}" class="clip nn-media" data-start="0" data-duration="${dur}" ` +
       `data-track-index="${trackBase}" ${mediaAttrs} src="assets/${esc(name)}" ` +
-      `style="z-index:${zIndex};object-position:${objectPos};object-fit:contain;"></${tag}>`
+      `style="z-index:${zIndex};${geom}object-position:${objectPos};object-fit:contain;"></${tag}>`
     );
   }
   if (fit === 'blur') {
     const foreground =
       `<${tag} id="${id}" class="clip nn-media nn-media-foreground" data-start="0" data-duration="${dur}" ` +
       `data-track-index="${trackBase}" ${mediaAttrs} src="assets/${esc(name)}" ` +
-      `style="z-index:${zIndex};object-position:${objectPos};object-fit:contain;"></${tag}>`;
+      `style="z-index:${zIndex};${geom}object-position:${objectPos};object-fit:contain;"></${tag}>`;
     return backdrop() + '\n      ' + foreground;
   }
   return (
     `<${tag} id="${id}" class="clip nn-media" data-start="0" data-duration="${dur}" ` +
     `data-track-index="${trackBase}" ${mediaAttrs} src="assets/${esc(name)}" ` +
-    `style="z-index:${zIndex};object-position:${objectPos};"></${tag}>`
+    `style="z-index:${zIndex};${geom}object-position:${objectPos};"></${tag}>`
   );
+}
+
+/**
+ * The box a media layer is drawn in: the whole canvas, or with `placement:: inset` the
+ * canvas safe area (spec S6), which is also the box `fit` classifies the asset against.
+ */
+function layerBox(layer, width, height) {
+  if (String(layer.layer_placement || '') !== 'inset') return { width, height };
+  const safe = safeArea({ width, height });
+  return { x: safe.x, y: safe.y, width: safe.width, height: safe.height };
 }
 
 /** Pure: build the project text without touching the filesystem. */
 export function buildProject(manifest, plan = {}) {
   const fps = Number(manifest.fps) || 30;
-  // Width and height are required: the master size is declared data, so the
+  // Width and height are required: the canvas is one declared output format, so the
   // projector never invents 1920x1080 (design D3).
   const width = Number(manifest.width);
   const height = Number(manifest.height);
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
     throw new Error(
-      'scene-project: the manifest carries no width/height; compile with a master_resolution declaration',
+      'scene-project: the manifest carries no width/height; compile with an output_formats declaration',
     );
   }
   const total = roundMs(Number(manifest.totalDurationInSeconds) || 0);
@@ -233,7 +252,7 @@ export function buildProject(manifest, plan = {}) {
     const layers = drawableLayers(scene);
     layers.forEach((l) => assets.push(String(l.layer_asset_source)));
     const layerHtml = layers
-      .map((l, i) => layerMarkup(l, scene.durationInFrames, fps, i + 1, slug, { width, height }))
+      .map((l, i) => layerMarkup(l, scene.durationInFrames, fps, i + 1, slug, layerBox(l, width, height)))
       .filter(Boolean)
       .join('\n      ');
     const transition = sceneTransitionFragment(scene.transition, fps);
@@ -416,7 +435,7 @@ ${tween}
     <script src="vendor/gsap.min.js"></script>
   </head>
   <body>
-    <div id="root" data-composition-id="${esc(compositionId)}" data-start="0" data-duration="${total}" data-width="${width}" data-height="${height}" data-fps="${fps}" style="position:relative;width:${width}px;height:${height}px;overflow:hidden;">
+    <div id="root" data-composition-id="${esc(compositionId)}" data-start="0" data-duration="${total}" data-width="${width}" data-height="${height}" data-fps="${fps}" style="position:relative;width:${width}px;height:${height}px;overflow:hidden;${safeAreaCssVars({ width, height })};">
 ${sceneHosts}
 ${overlayHosts}
 ${animationHosts}

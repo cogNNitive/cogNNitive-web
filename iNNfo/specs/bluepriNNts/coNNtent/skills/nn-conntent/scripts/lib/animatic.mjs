@@ -18,12 +18,13 @@ export const ANIMATIC_WIDTH = 640;
 export const ANIMATIC_FPS = 15;
 
 /**
- * The animatic profile for a master size: 640 px wide, the master aspect, 15 fps.
- * @param {{ masterWidth: number, masterHeight: number }} input
+ * The animatic profile for the primary format (spec S7): 640 px wide, the primary
+ * format's aspect, 15 fps.
+ * @param {{ primaryWidth: number, primaryHeight: number }} input
  */
-export function animaticProfile({ masterWidth, masterHeight }) {
+export function animaticProfile({ primaryWidth, primaryHeight }) {
   const width = ANIMATIC_WIDTH;
-  const height = Math.max(2, Math.round((width * Number(masterHeight)) / Number(masterWidth)));
+  const height = Math.max(2, Math.round((width * Number(primaryHeight)) / Number(primaryWidth)));
   return { width, height, fps: ANIMATIC_FPS };
 }
 
@@ -33,10 +34,11 @@ export function animaticName({ slug, width, height }) {
 }
 
 /**
- * Renders the animatic beside the episode. The output name and the low-res profile are
- * owned here; the render primitive does the work.
+ * Renders the one animatic beside the episode, in the primary format's aspect, from its
+ * own project `hyperframes/animatic/`. The output name and the low-res profile are owned
+ * here; the render primitive does the work.
  */
-export async function renderAnimatic({ scriptPath, masterWidth, masterHeight, render = renderVideo, ...options }) {
-  const profile = animaticProfile({ masterWidth, masterHeight });
+export async function renderAnimatic({ scriptPath, primaryWidth, primaryHeight, render = renderVideo, ...options }) {
+  const profile = animaticProfile({ primaryWidth, primaryHeight });
   return render({ scriptPath, ...profile, kind: 'animatic', ...options });
 }

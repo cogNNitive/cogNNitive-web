@@ -50,7 +50,7 @@ test('the reported number comes from averaging: 0.0004 of the band, 0.0032 of a 
 
 test('tiling the band finds a visible watermark', () => {
   const delta = defaultSampleEdgeDensity({
-    masterPath: 'unused.mp4',
+    outputPath: 'unused.mp4',
     time: 1,
     crop: BAND,
     controlCrop: controlOf(BAND),
@@ -61,7 +61,7 @@ test('tiling the band finds a visible watermark', () => {
 
 test('an absent overlay stays at zero under tiling', () => {
   const delta = defaultSampleEdgeDensity({
-    masterPath: 'unused.mp4',
+    outputPath: 'unused.mp4',
     time: 1,
     crop: BAND,
     controlCrop: controlOf(BAND),
@@ -93,7 +93,7 @@ test('a tile rect is never larger than the crop it comes from', () => {
 test('a tight layout rect still measures the mark directly', () => {
   const tight = { width: 200, height: 80, x: MARK.x, y: MARK.y };
   const delta = defaultSampleEdgeDensity({
-    masterPath: 'unused.mp4',
+    outputPath: 'unused.mp4',
     time: 1,
     crop: tight,
     controlCrop: { width: 200, height: 80, x: MARK.x, y: 0 },

@@ -41,7 +41,7 @@ import { withScriptPresets } from './lib/video-scope.mjs';
 import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
 import { LOCKS_RELATIVE_DIR, SpendGuard, normalizeModelId, resolveDefaultCacheDir } from './lib/video-guard.mjs';
 import { loadGuardWithVoices } from './lib/guard-config.mjs';
-import { collectAvatarJobs, checkAvatarAssetAspect } from './lib/avatar-jobs.mjs';
+import { collectAvatarJobs, checkAvatarAssetAspect, checkAvatarUpscale } from './lib/avatar-jobs.mjs';
 import { probeVideoSize } from './lib/media-duration.mjs';
 import { appendPending, findOutstanding, latestPending } from './lib/pending-predictions.mjs';
 import { acquireLock } from './lib/file-lock.mjs';
@@ -180,6 +180,13 @@ export async function synthesizeAvatars(o) {
       label: 'Scene ' + j.sceneId + ': avatar image ' + path.basename(j.imagePath),
     });
     if (aspectWarning) warn(aspectWarning);
+    const upscaleWarnings = checkAvatarUpscale({
+      width: size?.width,
+      height: size?.height,
+      formats: parsed?.outputFormats,
+      label: 'Scene ' + j.sceneId + ': avatar image ' + path.basename(j.imagePath),
+    });
+    for (const w of upscaleWarnings) warn(w);
     const { seconds, error: probeError } = await measure(j.audioPath);
     if (!Number.isFinite(seconds) || seconds <= 0) {
       throw new Error(

@@ -30,7 +30,6 @@ Legend: ● can be written at this scope, · cannot.
 | `description` | markdown_inline | — | · | · | · | · | ● | · | · | · | · | · | · | · |
 | `status` | select | `idea`, `draft`, `approved`, `produced`, `failed_qa`, `delivered`, `archived` | · | · | · | · | ● | · | · | · | · | · | · | · |
 | `script` | file | — | · | · | · | · | ● | · | · | · | · | · | · | · |
-| `master` | video | — | · | · | · | · | ● | · | · | · | · | · | · | · |
 | `delivered_version` | string | — | · | · | · | · | ● | · | · | · | · | · | · | · |
 | `thumbnail` | image | — | · | · | · | · | ● | · | · | · | · | · | · | · |
 | `translation_of` | string | — | · | · | · | · | ● | · | · | · | · | · | · | · |
@@ -82,7 +81,6 @@ Legend: ● can be written at this scope, · cannot.
 | `budget` | number | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
 | `daily_budget` | number | — | ● | · | · | · | · | · | · | · | · | · | · | · |
 | `output_formats` | select (multi) | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
-| `fill` | select | `crop`, `blur`, `pad` | ● | ● | · | · | ● | · | · | · | · | · | · | · |
 | `review_gates` | select (multi) | `script`, `preview` | ● | ● | · | · | ● | · | · | · | · | · | · | · |
 | `captions` | select | `off`, `words`, `lines` | ● | ● | · | · | ● | · | · | · | · | · | · | · |
 | `caption_model` | string | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
@@ -146,12 +144,6 @@ Settable at: `Video`.
 ### `script`
 
 The episode's script document, resolved under the owning model's directory.
-
-Settable at: `Video`.
-
-### `master`
-
-The episode's master `<slug>_<W>x<H>.mp4`, sized by the first entry of `output_formats`. Delivery formats are derived from it and never modeled.
 
 Settable at: `Video`.
 
@@ -313,13 +305,13 @@ Settable at: `Video`, `Preset`, `Series`, `Video Defaults`.
 
 ### `type`
 
-Required Layer behaviour type. `avatar` is a lip-synced paid job; `media` is an image or a video; `text` is overlay text; `animation` mounts an authored HyperFrames project as a sub-composition. Appearance and visual components come from Presets, never from the type.
+Required Layer behaviour type. `avatar` is a lip-synced paid job; `media` is an image or a video; `text` is overlay text; `animation` mounts an authored HyperFrames project as a sub-composition; every format project root declares its canvas safe area as the CSS variables `--safe-top`, `--safe-right`, `--safe-bottom` and `--safe-left` (pixels), so an authored animation lays out per canvas by reading them. Appearance and visual components come from Presets, never from the type.
 
 Settable at: `Layer`.
 
 ### `placement`
 
-For a `media` Layer: `full` covers the frame, `inset` places it inside the safe area. Required on `media`.
+For a `media` Layer: `full` covers the whole canvas; `inset` places it inside the safe area of each output canvas: its title-safe area (10% of each side, the 80% title-safe of HyperFrames' safe areas), and on a vertical canvas (height greater than width) also clear of the platform interface bands, 14% of the height at the top and 35% at the bottom (the Instagram Reels safe box, the strictest of the HyperFrames safe-area presets). Each output format computes its own box, and `fit` classifies the asset against that box. Required on `media`.
 
 Settable at: `Layer`.
 
@@ -361,7 +353,7 @@ Settable at: `Layer`.
 
 ### `position`
 
-Overlay anchor inside the central safe square (the central 1080x1080 of the master).
+Overlay anchor inside the safe area of each output canvas: its title-safe area (10% of each side, the 80% title-safe of HyperFrames' safe areas), and on a vertical canvas (height greater than width) also clear of the platform interface bands, 14% of the height at the top and 35% at the bottom (the Instagram Reels safe box, the strictest of the HyperFrames safe-area presets). Captions, overlays and their animations lay out against the safe area of the canvas they are rendered on.
 
 Settable at: `Layer`.
 
@@ -397,7 +389,7 @@ Settable at: `Layer`.
 
 ### `fit`
 
-How a `media` Layer fits the canvas it is rendered on. A keyed list with two keys, `fit:: [native=<value>, mismatch=<value>]`: each Layer is classified per output canvas by the aspect ratio of its asset, probed at compile time (PNG, JPEG, WebP, GIF and SVG headers; ffprobe for a video), against the aspect ratio of the canvas. The asset is `native` when |asset aspect / canvas aspect - 1| <= 0.05 (a 5% tolerance, boundary inclusive), otherwise `mismatch`, and that key's value applies. A scalar `fit:: X` sets both keys. Values: `cover` fills and crops; `contain` shows the whole asset with margins (`object-fit: contain`); `blur` shows the whole asset (contain) over a blurred, slightly darkened backdrop built from the same asset filling the canvas, so no band is empty and no new palette is introduced; `card` shows the whole asset, never cropped, as a card (inset 5% of the canvas's shorter side, with rounded corners and a soft shadow proportional to it) over the same blurred self-backdrop; `component:<name>` mounts the HyperFrames component `components/<name>` (library walk: episode, series, domain, skill), which receives `src`, `width`, `height`, `asset_width` and `asset_height` and must declare them; it is resolved before anything is spent, and a missing one fails. The backdrop blur radius is proportional to the canvas: 24px when its shorter side is 1920px, 13.5px at 1080px; it is a CSS blur and NOT the same operation as the ffmpeg `gblur` sigma that `render-formats` uses. An asset whose size cannot be read fails the compile when its fit needs it (keys that differ, `card` or a component). Each key resolves on its own through the Universal Parameter Cascade (Presets included), so a level that sets one key keeps the outer value of the other; a key no level sets is `cover`. An unknown key or value is an error. When no level sets it the blueprint Video Defaults value applies.
+How a `media` Layer fits the canvas it is rendered on. A keyed list with two keys, `fit:: [native=<value>, mismatch=<value>]`: each Layer is classified per output canvas by the aspect ratio of its asset, probed at compile time (PNG, JPEG, WebP, GIF and SVG headers; ffprobe for a video), against the aspect ratio of the canvas. The asset is `native` when |asset aspect / canvas aspect - 1| <= 0.05 (a 5% tolerance, boundary inclusive), otherwise `mismatch`, and that key's value applies. A scalar `fit:: X` sets both keys. Values: `cover` fills and crops; `contain` shows the whole asset with margins (`object-fit: contain`); `blur` shows the whole asset (contain) over a blurred, slightly darkened backdrop built from the same asset filling the canvas, so no band is empty and no new palette is introduced; `card` shows the whole asset, never cropped, as a card (inset 5% of the canvas's shorter side, with rounded corners and a soft shadow proportional to it) over the same blurred self-backdrop; `component:<name>` mounts the HyperFrames component `components/<name>` (library walk: episode, series, domain, skill), which receives `src`, `width`, `height`, `asset_width` and `asset_height` and must declare them; it is resolved before anything is spent, and a missing one fails. The backdrop blur radius is proportional to the canvas: 24px when its shorter side is 1920px, 13.5px at 1080px; it is a CSS blur. An asset whose size cannot be read fails the compile when its fit needs it (keys that differ, `card` or a component). Each key resolves on its own through the Universal Parameter Cascade (Presets included), so a level that sets one key keeps the outer value of the other; a key no level sets is `cover`. An unknown key or value is an error. When no level sets it the blueprint Video Defaults value applies.
 
 Settable at: `Layer`, `Scene`, `Video`, `Preset`, `Series`, `Video Defaults`.
 
@@ -457,13 +449,7 @@ Settable at: `Video Defaults`.
 
 ### `output_formats`
 
-Ordered list of delivery sizes as `<W>x<H>`. The first entry is the master size; the rest are derived from the master. Defaults to `[1920x1920, 1080x1920, 1920x1080, 1080x1080]`.
-
-Settable at: `Video`, `Series`, `Video Defaults`.
-
-### `fill`
-
-How a derived delivery format reframes the square master. `crop` is the default and stays the default because the destinations this pipeline serves re-frame a padded file themselves: YouTube pads non-native video in its own player and asks creators not to pad, TikTok letterboxes without cropping, and Instagram letterboxes on a blurred background or Smart Zooms on its own. `blur` scales the whole square to FIT and centres it over a blurred, darkened, scaled-to-fill backdrop (suffix `_blur`). `pad` does the same over a solid background, black unless `fill_pad_color` supplies a colour (suffix `_pad`). Choose `blur` or `pad` only for a destination that honours the file as delivered: a brand-owned player, an embed, OTT, or a broadcast slot that permits it. Unset means `crop`, so an existing episode renders exactly as before.
+Ordered list of output formats as `<W>x<H>`. Every entry is rendered natively from the episode composition, into its own HyperFrames project `hyperframes/<W>x<H>/` and its own output `<slug>_<W>x<H>.mp4` in the episode folder; all formats share one timeline (same audio, scenes and durations) and only the layout differs per canvas. The first entry is the primary format: its output is the primary output and the source of the thumbnail first-frame fallback and of the preview animatic. Resolves through the cascade at domain, series and video level only (never per scene). Defaults to `[1920x1080, 1080x1920, 1080x1080]`. An entry that is not `<W>x<H>` fails before anything is spent.
 
 Settable at: `Video`, `Series`, `Video Defaults`.
 

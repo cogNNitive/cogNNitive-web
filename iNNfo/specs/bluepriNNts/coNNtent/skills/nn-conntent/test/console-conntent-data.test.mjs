@@ -296,23 +296,51 @@ test('a delivered episode reports its versions, path, contents and delivery page
   }
 });
 
-test('scene players address the last rendered master using manifest timings', async () => {
+test('scene players address the last rendered primary output using its manifest timings', async () => {
   const ws = workspace()
   try {
     const script = path.join(ws.episodeDir, 'e_coNNtent_NN.md')
-    fs.writeFileSync(script, EPISODE.replace('status:: draft', 'status:: draft\nmaster:: master.mp4'))
-    fs.writeFileSync(path.join(ws.episodeDir, 'master.mp4'), 'test media')
-    fs.mkdirSync(path.join(ws.episodeDir, 'hyperframes'))
-    const manifest = path.join(ws.episodeDir, 'hyperframes', 'manifest.json')
+    fs.writeFileSync(script, EPISODE.replace('output_formats:: [1920x1920]', 'output_formats:: [1080x1920, 1920x1080]'))
+    fs.writeFileSync(path.join(ws.episodeDir, 'e_1080x1920.mp4'), 'test media')
+    fs.mkdirSync(path.join(ws.episodeDir, 'hyperframes', '1080x1920'), { recursive: true })
+    const manifest = path.join(ws.episodeDir, 'hyperframes', '1080x1920', 'manifest.json')
     fs.writeFileSync(manifest, JSON.stringify({ fps: 30, tracks: { scenes: [
       { id: 'scene_one', fromFrame: 60, durationInFrames: 90 },
     ] } }))
-    let scene = (await collect({ rootDir: ws.root })).tree.series[0].episodes[0].scenes[0]
-    assert.equal(scene.video, 'series/s/episodes/e/master.mp4#t=2.000,5.000')
-    assert.equal(scene.videoLabel, 'Last rendered scene')
+    let episode = (await collect({ rootDir: ws.root })).tree.series[0].episodes[0]
+    assert.equal(episode.scenes[0].video, 'series/s/episodes/e/e_1080x1920.mp4#t=2.000,5.000')
+    assert.equal(episode.scenes[0].videoLabel, 'Last rendered scene')
+    assert.deepEqual(
+      episode.outputs.map((o) => [o.format, o.file, o.path]),
+      [
+        ['1080x1920', 'e_1080x1920.mp4', 'series/s/episodes/e/e_1080x1920.mp4'],
+        ['1920x1080', 'e_1920x1080.mp4', null],
+      ],
+      'the console lists every configured output, primary first',
+    )
     fs.writeFileSync(manifest, JSON.stringify({ fps: 0, tracks: { scenes: [] } }))
-    scene = (await collect({ rootDir: ws.root })).tree.series[0].episodes[0].scenes[0]
-    assert.equal(scene.video, null)
+    episode = (await collect({ rootDir: ws.root })).tree.series[0].episodes[0]
+    assert.equal(episode.scenes[0].video, null)
+  } finally {
+    ws.cleanup()
+  }
+})
+
+test('each console output carries its own QA verdict from qa.json', async () => {
+  const ws = workspace()
+  try {
+    const script = path.join(ws.episodeDir, 'e_coNNtent_NN.md')
+    fs.writeFileSync(script, EPISODE.replace('output_formats:: [1920x1920]', 'output_formats:: [1920x1080, 1080x1920, 1080x1080]'))
+    fs.writeFileSync(path.join(ws.episodeDir, 'qa.json'), JSON.stringify({ ok: false, checks: [
+      { id: 'duration', checkpoint: 'output', status: 'pass', format: '1920x1080' },
+      { id: 'size-mismatch', checkpoint: 'output', status: 'fail', format: '1080x1920' },
+    ] }))
+    const episode = (await collect({ rootDir: ws.root })).tree.series[0].episodes[0]
+    assert.deepEqual(episode.outputs.map((o) => [o.format, o.qa]), [
+      ['1920x1080', 'passed'],
+      ['1080x1920', 'failed'],
+      ['1080x1080', null],
+    ])
   } finally {
     ws.cleanup()
   }

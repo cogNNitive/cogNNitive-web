@@ -1,5 +1,6 @@
 - [Home](README.md)
 - [Agent skills overview](content/skills/README.md)
+- [Master document: every page in one file](master.md)
 
 - **🚀 Tutorials**
   - [Create your first domaiNN](content/tutorials/first-domain.md)

@@ -128,7 +128,7 @@ registerView({
       if (/^avatar|^image|^character$|^pose$|^background$|^frame$|^fit$/.test(name)) return 'Visuals'
       if (/^background_audio|^transition$|^sounds$|^components$|^position$|^placement$|^timing$|animation$|^z_index$/.test(name)) return 'Audio & composition'
       if (/^thumbnail|^output_formats$|^captions$|^caption_model$|^intro$/.test(name)) return 'Publishing'
-      if (/^review|^budget$|^status$|^master$|^delivered_version$/.test(name)) return 'Workflow & outputs'
+      if (/^review|^budget$|^status$|^delivered_version$/.test(name)) return 'Workflow & outputs'
       return 'Content'
     }
 
@@ -180,7 +180,7 @@ registerView({
         var local = Object.prototype.hasOwnProperty.call(records, name)
         var value = definition.cascade && name !== 'presets' && effective ? effective.value : records[name]
         var source = definition.cascade && name !== 'presets' && effective ? effective.source : local ? concept.toLowerCase() : null
-        var engineManaged = name === 'review' || name === 'master' || name === 'delivered_version'
+        var engineManaged = name === 'review' || name === 'delivered_version'
         var options = definition.options || []
         if (name === 'kind') options = episode.sceneKinds || options
         if (name === 'presets') options = episode.availablePresets || options
@@ -807,6 +807,21 @@ registerView({
 
         var deliveries = labelled('Deliveries')
         deliveries.setAttribute('data-nn-subsection', 'deliveries')
+        // One native output per `output_formats` entry (spec S8), primary first, each with
+        // the verdict of its own QA from the last run.
+        if (episode.outputs && episode.outputs.length > 0) {
+          var outputList = el('div', 'nn-delivery-list nn-output-list')
+          episode.outputs.forEach(function (output, index) {
+            var row = el('div', 'nn-delivery-row nn-output-row')
+            row.setAttribute('data-nn-output', output.format)
+            row.appendChild(el('span', 'nn-cascade-chip', output.format))
+            if (index === 0) row.appendChild(badge('primary', 'nn-delivery-pill'))
+            row.appendChild(badge(output.qa === 'passed' ? 'QA passed' : output.qa === 'failed' ? 'QA failed' : 'QA pending', 'nn-output-qa'))
+            row.appendChild(el('code', 'nn-delivery-path', output.path || output.file + ' (not rendered)'))
+            outputList.appendChild(row)
+          })
+          deliveries.appendChild(outputList)
+        }
         if (!episode.deliveries || episode.deliveries.length === 0) {
           deliveries.appendChild(
             el('p', 'empty-state', 'Not delivered yet. Delivery is automatic: QA passing lands a deliveries/v<N>/ folder.'),

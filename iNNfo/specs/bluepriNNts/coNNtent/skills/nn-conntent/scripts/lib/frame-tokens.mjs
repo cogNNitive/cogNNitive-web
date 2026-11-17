@@ -150,11 +150,12 @@ export function loadFrameFolder({ frameDir }) {
  * Emits a resolved frame into the HyperFrames project: copies `FRAME.md` unchanged to
  * `hyperframes/frame.md`, the optional `caption-skin.html` to `hyperframes/caption-skin.html`,
  * and the `fonts/` files to `hyperframes/fonts/`. (capability conntent-frame "Frame Is
- * Emitted As frame.md In The HyperFrames Project".)
- * @param {{ frameDir: string, projectDir: string }} input
+ * Emitted As frame.md In The HyperFrames Project".) A per-format project
+ * (`hyperframes/<W>x<H>/`) passes its own folder as `outDir`, which is used as is.
+ * @param {{ frameDir: string, projectDir: string, outDir?: string }} input
  */
-export function emitHyperframesFrame({ frameDir, projectDir }) {
-  const out = path.basename(projectDir) === 'hyperframes' ? projectDir : path.join(projectDir, 'hyperframes');
+export function emitHyperframesFrame({ frameDir, projectDir, outDir }) {
+  const out = outDir || (path.basename(projectDir) === 'hyperframes' ? projectDir : path.join(projectDir, 'hyperframes'));
   fs.mkdirSync(out, { recursive: true });
   const src = path.join(frameDir, 'FRAME.md');
   if (fs.existsSync(src)) fs.copyFileSync(src, path.join(out, 'frame.md'));

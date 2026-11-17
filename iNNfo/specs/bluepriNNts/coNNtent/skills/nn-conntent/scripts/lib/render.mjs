@@ -3,10 +3,11 @@
 /**
  * nn-conntent/scripts/lib/render.mjs
  *
- * The render primitive: compiles (or takes a manifest) and renders the master
- * `<slug>_<W>x<H>.mp4` in the episode folder. Rendering is in place: the renderer
- * writes `hyperframes/render.tmp.mp4` and the file is renamed into place, so a
- * failed render never damages a previous master.
+ * The render primitive: compiles (or takes a manifest) and renders one MP4 per output
+ * format, `<slug>_<W>x<H>.mp4`, in the episode folder (spec S1/S8). The first format is
+ * the primary output. Each format renders from its own project `hyperframes/<W>x<H>/`.
+ * Rendering is in place: the renderer writes `hyperframes/<W>x<H>/render.tmp.mp4` and the
+ * file is renamed into place, so a failed render never damages a previous output.
  *
  * Usage:
  *   node lib/render.mjs render <script.md> [--fps n] [--concurrency n] [--cache-dir dir]
@@ -25,15 +26,26 @@ import { VideoRenderError, compileVideo, recordStage, cliReporter } from './comp
 export { VideoRenderError }
 
 /**
- * Renders a video from a script or manifest to an MP4 output.
+ * @typedef {Object} RenderedOutput
+ * @property {string} format `<W>x<H>`
+ * @property {number} width
+ * @property {number} height
+ * @property {string} path the MP4 at the episode root
+ * @property {string} [manifestPath]
+ * @property {string} projectDir the format's HyperFrames project
+ * @property {boolean} mocked
+ */
+
+/**
+ * Renders a video from a script or manifest: one MP4 per output format.
  * @param {VideoRenderOptions} options
- * @returns {Promise<RenderSummary>}
+ * @returns {Promise<RenderSummary & { outputs: RenderedOutput[], manifests: object[] }>}
  */
 
 export async function renderVideo(options) {
   const startTime = Date.now()
   const onProgress = options.onProgress || (() => {})
-  let manifest
+  let manifests
   let cachedAssetsUsed = 0
   let newAssetsSynthesized = 0
   let spentUsd = 0
@@ -41,7 +53,7 @@ export async function renderVideo(options) {
   let avatarVideos
 
   if (options.manifestPath && fs.existsSync(path.resolve(options.manifestPath))) {
-    manifest = JSON.parse(fs.readFileSync(path.resolve(options.manifestPath), 'utf8'))
+    manifests = [JSON.parse(fs.readFileSync(path.resolve(options.manifestPath), 'utf8'))]
   } else if (options.scriptPath) {
     const compileStart = Date.now()
     const compRes = await compileVideo({
@@ -49,6 +61,9 @@ export async function renderVideo(options) {
       fps: options.fps,
       width: options.width,
       height: options.height,
+      // The animatic is one project of its own, never one of the format projects (spec S7).
+      ...(options.kind === 'animatic' ? { projectName: 'animatic' } : {}),
+      ...(options.bags ? { bags: options.bags } : {}),
       cacheDir: options.cacheDir,
       synthesizeAssets: options.synthesizeAssets,
       recordSynthesisStages: options.recordSynthesisStages,
@@ -66,7 +81,7 @@ export async function renderVideo(options) {
       end: Date.now(),
       cache: { hits: compRes.cachedAssetsUsed || 0, misses: compRes.newAssetsSynthesized || 0 },
     })
-    manifest = compRes.manifest
+    manifests = compRes.manifests || [compRes.manifest]
     cachedAssetsUsed = compRes.cachedAssetsUsed
     newAssetsSynthesized = compRes.newAssetsSynthesized
     spentUsd = compRes.spentUsd || 0
@@ -87,9 +102,39 @@ export async function renderVideo(options) {
     throw new Error('Either scriptPath or manifestPath must be provided for rendering')
   }
 
-  // The master is written in place: render to hyperframes/render.tmp.mp4, then rename it
+  // One pass per format, in the declared order: every pass reads its own project and the
+  // assets compile already resolved, so no pass synthesizes anything.
+  const outputs = []
+  for (const manifest of manifests) {
+    outputs.push(await renderOneFormat(manifest, options, onProgress))
+  }
+  const primary = manifests[0]
+  const renderTimeMs = Date.now() - startTime
+
+  return {
+    outputVideoPath: outputs[0].path,
+    outputs,
+    manifests,
+    totalDurationSeconds: primary.totalDurationInSeconds,
+    totalFrames: primary.totalDurationInFrames,
+    renderTimeMs,
+    linkMode: manifests.some((m) => m.metadata?.linkMode === 'copy') ? 'copy' : primary.metadata?.linkMode || 'link',
+    cachedAssetsUsed,
+    newAssetsSynthesized,
+    spentUsd,
+    plannedTotalUsd,
+    mocked: outputs.some((o) => o.mocked),
+  }
+}
+
+/**
+ * Renders one format's project and moves its MP4 into place at the episode root.
+ * @returns {Promise<RenderedOutput>}
+ */
+async function renderOneFormat(manifest, options, onProgress) {
+  // The output is written in place: render to <project>/render.tmp.mp4, then rename it
   // over E/<slug>_<W>x<H>.mp4 (same volume), so a failed render never touches a
-  // previous master and no partial file is ever visible under the master name.
+  // previous output and no partial file is ever visible under the output name.
   const hyperframesDir = manifest.metadata?.hyperframesDir
   if (!hyperframesDir)
     throw new Error(
@@ -98,17 +143,21 @@ export async function renderVideo(options) {
   const slug = manifest.metadata?.videoSlug
   if (!slug)
     throw new Error('The manifest has no metadata.videoSlug (the Video slug); recompile the script')
+  const width = Number(manifest.width)
+  const height = Number(manifest.height)
+  if (!width || !height) throw new Error('The manifest has no width/height; recompile the script')
+  // The episode folder is stamped by compile; a manifest written before per-format
+  // projects sat directly in `<episode>/hyperframes/`.
+  const episodeDir = manifest.metadata?.episodeDir || path.dirname(hyperframesDir)
   const tmpPath = path.join(
     hyperframesDir,
     options.kind === 'animatic' ? 'render.animatic.tmp.mp4' : 'render.tmp.mp4',
   )
-  const masterWidth = manifest.width || 1920
-  const masterHeight = manifest.height || 1920
   const outputName =
     options.kind === 'animatic'
-      ? `${slug}_animatic_${masterWidth}x${masterHeight}.mp4`
-      : `${slug}_${masterWidth}x${masterHeight}.mp4`
-  const outputPath = path.join(path.dirname(hyperframesDir), outputName)
+      ? `${slug}_animatic_${width}x${height}.mp4`
+      : `${slug}_${width}x${height}.mp4`
+  const outputPath = path.join(episodeDir, outputName)
   fs.mkdirSync(hyperframesDir, { recursive: true })
   fs.rmSync(tmpPath, { force: true })
 
@@ -135,8 +184,8 @@ export async function renderVideo(options) {
     render: {
       frames: manifest.totalDurationInFrames,
       fps_effective: manifest.fps,
-      width: manifest.width || 1920,
-      height: manifest.height || 1920,
+      width,
+      height,
     },
     outcome: hfResult.rendered ? 'ok' : 'failed',
   })
@@ -146,7 +195,7 @@ export async function renderVideo(options) {
     fs.rmSync(tmpPath, { force: true })
     if (!options.allowMock) {
       throw new VideoRenderError(
-        `HyperFrames render failed (${hfResult.reason})${hfResult.detail ? `:\n${hfResult.detail}\n\n` : '. '}Install the CLI via ensure-hyperframes.mjs, ` +
+        `HyperFrames render failed for ${width}x${height} (${hfResult.reason})${hfResult.detail ? `:\n${hfResult.detail}\n\n` : '. '}Install the CLI via ensure-hyperframes.mjs, ` +
           `or pass --allow-mock for a CI placeholder MP4.`,
       )
     }
@@ -164,31 +213,27 @@ export async function renderVideo(options) {
     const open = err?.code === 'EBUSY' || err?.code === 'EPERM' || err?.code === 'EACCES'
     throw new VideoRenderError(
       open
-        ? `Cannot replace ${outputPath}: the file is open in another program (a player or editor). Close it and render again; the previous master was left untouched.`
+        ? `Cannot replace ${outputPath}: the file is open in another program (a player or editor). Close it and render again; the previous output was left untouched.`
         : `Cannot move the render into place at ${outputPath}: ${err?.message || err}`,
       { cause: err },
     )
   }
 
-  // Copy mode leaves real files behind; a successful render is the last reader, so the staged
-  // copies are deleted (they duplicate cache entries). Link mode keeps the links: deleting them
-  // would delete nothing of the cache, but the project stays regenerable either way.
+  // Copy mode leaves real files behind; this format's render is the last reader of its own
+  // staged copies (every format stages into its own project), so they are deleted here and a
+  // later format still has its own. Link mode keeps the links: deleting them would delete
+  // nothing of the cache, but the project stays regenerable either way.
   if (manifest.metadata?.linkMode === 'copy') {
     fs.rmSync(path.join(hyperframesDir, 'assets'), { recursive: true, force: true })
   }
 
-  const renderTimeMs = Date.now() - startTime
-
   return {
-    outputVideoPath: outputPath,
-    totalDurationSeconds: manifest.totalDurationInSeconds,
-    totalFrames: manifest.totalDurationInFrames,
-    renderTimeMs,
-    linkMode: manifest.metadata?.linkMode || 'link',
-    cachedAssetsUsed,
-    newAssetsSynthesized,
-    spentUsd,
-    plannedTotalUsd,
+    format: `${width}x${height}`,
+    width,
+    height,
+    path: outputPath,
+    manifestPath: manifest.metadata?.manifestPath,
+    projectDir: hyperframesDir,
     mocked,
   }
 }
@@ -260,8 +305,8 @@ export function splitPassthrough(argv) {
     : { argv: argv.slice(0, i), passthrough: argv.slice(i + 1) }
 }
 
-/** Strips a trailing `_<W>x<H>` dimension suffix from a master/animatic filename to the slug. */
-export function slugFromMaster(name) {
+/** Strips a trailing `_<W>x<H>` dimension suffix from an output/animatic filename to the slug. */
+export function slugFromOutput(name) {
   const base = path.basename(String(name))
   return base
     .replace(/_animatic_\d+x\d+\.\w+$/, '')
@@ -272,14 +317,15 @@ export function slugFromMaster(name) {
 
 /**
  * One name per deliverable (design D-S2; conntent-folder-contract "Naming Scheme By
- * File Class"). Working files carry no slug or version.
+ * File Class"). Working files carry no slug or version. `output` is the MP4 of one
+ * output format; the primary output is the one named after `output_formats[0]`.
  * @param {{ slug: string, width: number, height: number }} input
- * @returns {{ master: string, apng: string, description: string, animatic: string, plan: string, qa: string }}
+ * @returns {{ output: string, apng: string, description: string, animatic: string, plan: string, qa: string }}
  */
 export function deliverableNamesFor({ slug, width, height }) {
   const dims = `${width}x${height}`
   return {
-    master: `${slug}_${dims}.mp4`,
+    output: `${slug}_${dims}.mp4`,
     apng: `${slug}_thumbnail_${dims}.png`,
     description: `${slug}_description.md`,
     animatic: `${slug}_animatic_${dims}.mp4`,
@@ -344,7 +390,7 @@ async function main() {
       hyperframesArgs: passthrough,
       onProgress: cliReporter,
     })
-    console.log(`✅ [render] Rendered ${result.outputVideoPath}`)
+    for (const output of result.outputs) console.log(`✅ [render] Rendered ${output.path} (${output.format})`)
     console.log(
       `   Duration: ${result.totalDurationSeconds}s (${result.totalFrames} frames) in ${result.renderTimeMs}ms, Spent: $${result.spentUsd.toFixed(4)}`,
     )

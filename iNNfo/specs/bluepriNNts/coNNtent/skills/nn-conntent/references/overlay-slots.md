@@ -31,6 +31,18 @@ A component binds text and media without script (`data-var-text="text"`, `data-v
 reads `font`, `accent` and `fit` in CSS (`var(--font, Inter)`, `var(--accent, #7c3aed)`,
 `var(--fit, cover)`).
 
+## Layout: the safe area of each canvas
+
+Every output format is its own project (`hyperframes/<W>x<H>/`), and its root declares the
+canvas safe area as `--safe-top`, `--safe-right`, `--safe-bottom` and `--safe-left` in pixels
+(`scripts/lib/safe-area.mjs`): the title-safe 10% of each side, and on a vertical canvas also
+14% at the top and 35% at the bottom, clear of the platform interface bands. A component lays
+its `#root` out on those variables (`top: var(--safe-top, 10%)` and so on) and keeps its own
+percentages relative to that rectangle, so one component serves every format; it declares no
+fixed `data-width`/`data-height`, and the render driver stamps the root with the canvas of the
+project it is staged into. QA measures each overlay inside the same rectangle. Authored
+animations read the same variables.
+
 ## Where a component lives
 
 A component is a **folder**: `library/components/<name>/index.html`. The folder is named by the

@@ -1,9 +1,15 @@
 <template>
   <style>
-        /* Open Gate safe square: only the central 1080x1080 of the 1920x1920 master
-       survives every crop, so the component lays out inside that square and its
-       percentages are relative to it. */
-    #root { position: absolute; inset: 21.875%; overflow: visible; }
+    /* Safe area of the canvas this component is rendered on (spec S6): every format
+       project root declares --safe-top/right/bottom/left in pixels for its own canvas,
+       so the component lays out inside that rectangle and its percentages are relative
+       to it. The fallbacks are the title-safe 10%. The render driver stamps the root's
+       data-width/data-height with the canvas of the project it is staged into. */
+    #root {
+      position: absolute; overflow: visible;
+      top: var(--safe-top, 10%); right: var(--safe-right, 10%);
+      bottom: var(--safe-bottom, 10%); left: var(--safe-left, 10%);
+    }
     .nn-quote {
       position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
       max-width: 80%; text-align: center;
@@ -23,8 +29,6 @@
   <div
     id="root"
     data-composition-id="quote"
-    data-width="1080"
-    data-height="1080"
     data-composition-variables='[
       {"id":"text","type":"string","label":"Text","default":""},
       {"id":"src","type":"string","label":"Source","default":""},

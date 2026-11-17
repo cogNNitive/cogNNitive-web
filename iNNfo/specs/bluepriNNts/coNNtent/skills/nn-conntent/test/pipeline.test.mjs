@@ -101,7 +101,7 @@ function fakeRender({ indexHtml } = {}) {
     const dir = path.dirname(opts.scriptPath);
     const master = path.join(dir, 'probe_1920x1920.mp4');
     fs.writeFileSync(master, 'master-bytes');
-    const hyperframesDir = path.join(dir, 'hyperframes');
+    const hyperframesDir = path.join(dir, 'hyperframes', '1920x1920');
     fs.mkdirSync(hyperframesDir, { recursive: true });
     const manifest = {
       fps: 30,
@@ -126,7 +126,8 @@ const thumbStubs = () => ({
   thumbnailBase: 'first-frame.png',
   renderThumbnails: async ({ episodeDir, slug }) => [{ path: path.join(episodeDir, slug + '_thumbnail_stub.png') }],
   qa: {
-    qaMaster: async () => ({ ok: true, checks: [] }),
+    hyperframesCheck: async () => ({ ok: true }),
+    qaOutput: async () => ({ ok: true, checks: [] }),
     qaOutputSet: async () => ({ ok: true, checks: [] }),
   },
 });
@@ -204,7 +205,8 @@ test('a failed QA regenerates and opens (exit 12)', async () => {
           ...thumbStubs(),
           render: fakeRender(),
           qa: {
-            qaMaster: async () => ({ ok: false, checks: [{ id: 'mock-fail', status: 'fail' }] }),
+            hyperframesCheck: async () => ({ ok: true }),
+            qaOutput: async () => ({ ok: false, checks: [{ id: 'mock-fail', status: 'fail' }] }),
             qaOutputSet: async () => ({ ok: true, checks: [] }),
           },
           log: () => {},

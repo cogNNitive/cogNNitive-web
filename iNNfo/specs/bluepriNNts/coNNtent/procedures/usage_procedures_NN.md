@@ -457,7 +457,7 @@ step_type:: task
 tool:: agent
 produces:: the scene draft: Scene Kinds, narration, layers and the Presets that apply
 scope:: internal
-Creative work only. The draft carries no `status`, `master`, `review::` or verdict; its content and the agent boundary are owned by `conntent-skill` "Draft Procedure Emits A Proposed Changeset".
+Creative work only. The draft carries no `status`, `review::` or verdict; its content and the agent boundary are owned by `conntent-skill` "Draft Procedure Emits A Proposed Changeset".
 
 ## NN Work: Deliver the sealed scene draft
 slug:: deliver-the-sealed-scene-draft
@@ -545,7 +545,7 @@ step_type:: task
 tool:: engine
 command:: ~/.agents/skills/nn-conntent/scripts/produce.mjs <episode>
 scope:: internal
-`produce` synthesizes the avatars, compiles, links assets, renders, runs QA on the master and on the output set, derives the formats and thumbnails, writes the description, delivers under `deliveries/v<N>/`, and sets `status:: delivered`. Delivery is automatic once QA passes and is the final outcome of this run, not a step of its own.
+`produce` synthesizes the avatars, compiles once, links assets, renders every output format natively, runs `hyperframes check` and QA on each format and a cross-format timeline check, writes the thumbnails and the description, delivers under `deliveries/v<N>/`, and sets `status:: delivered`. Delivery is automatic once QA passes and is the final outcome of this run, not a step of its own.
 
 ## NN Work: Read the result
 slug:: read-the-result

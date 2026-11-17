@@ -3,9 +3,10 @@
 /**
  * nn-conntent/test/render-in-place.test.mjs
  *
- * Render contract (cognnitive-video-engine): render takes no output option, renders to
- * E/hyperframes/render.tmp.mp4 and renames it over E/<slug>_<W>x<H>.mp4 only on success;
- * compile has no --output/--out. Offline: the HyperFrames runner is injected.
+ * Render contract (cognnitive-video-engine): render takes no output option, renders each
+ * format to E/hyperframes/<W>x<H>/render.tmp.mp4 and renames it over E/<slug>_<W>x<H>.mp4
+ * only on success; compile has no --output/--out. Offline: the HyperFrames runner is
+ * injected. The fixture declares one output format, so one output is rendered.
  */
 
 import assert from 'node:assert';
@@ -44,6 +45,7 @@ title: "Neural Network Demo!"
 ## NN Video: Neural Network Demo!
 slug:: nn-demo
 title:: Neural Network Demo!
+output_formats:: [1920x1080]
 
 # NN Scene
 
@@ -58,7 +60,7 @@ function makeEpisode() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'render-in-place-'));
   const scriptPath = path.join(dir, 'script.md');
   fs.writeFileSync(scriptPath, script, 'utf8');
-  return { dir, scriptPath, master: path.join(dir, 'nn-demo_1920x1920.mp4'), tmp: path.join(dir, 'hyperframes', 'render.tmp.mp4') };
+  return { dir, scriptPath, output: path.join(dir, 'nn-demo_1920x1080.mp4'), tmp: path.join(dir, 'hyperframes', '1920x1080', 'render.tmp.mp4') };
 }
 
 /** A stand-in for the pinned GSAP build: emission vendors it into `vendor/`. */
@@ -72,48 +74,48 @@ const cli = (args, env = {}) =>
     env: { ...process.env, NN_HYPERFRAMES_DISABLE: '1', ...env },
   });
 
-// (a) render without --output is accepted and writes the master in place.
+// (a) render without --output is accepted and writes the output in place.
 {
   const ep = makeEpisode();
   const res = cli(['render', ep.scriptPath, '--allow-mock', '--cache-dir', path.join(ep.dir, 'cache')]);
   assert.strictEqual(res.status, 0, `render without --output must be accepted: ${res.stderr}`);
-  assert.ok(fs.existsSync(ep.master), 'the master is written in the episode folder');
+  assert.ok(fs.existsSync(ep.output), 'the output is written in the episode folder');
   assert.ok(!fs.existsSync(ep.tmp), 'no render.tmp.mp4 is left behind');
   assert.deepStrictEqual(
     fs.readdirSync(ep.dir).filter((f) => f.endsWith('.mp4')),
-    ['nn-demo_1920x1920.mp4'],
-    'the master is named from the Video slug, not the title',
+    ['nn-demo_1920x1080.mp4'],
+    'the output is named from the Video slug and its format, not the title',
   );
-  console.log('✔ render accepts no --output and writes <slug>_1920x1920.mp4 in place');
+  console.log('✔ render accepts no --output and writes <slug>_1920x1080.mp4 in place');
 }
 
-// (b) success: the renderer targets hyperframes/render.tmp.mp4, then it is renamed over the master.
+// (b) success: the renderer targets hyperframes/<W>x<H>/render.tmp.mp4, then it is renamed over the output.
 {
   const ep = makeEpisode();
-  fs.writeFileSync(ep.master, 'previous-master');
+  fs.writeFileSync(ep.output, 'previous-output');
   let target = null;
-  let masterDuringRender = null;
+  let outputDuringRender = null;
   const result = await renderVideo({
     ...base(ep),
     hyperframesRun: async (_cmd, args) => {
       target = args[args.indexOf('--output') + 1];
-      masterDuringRender = fs.readFileSync(ep.master, 'utf8');
-      fs.writeFileSync(target, 'new-master');
+      outputDuringRender = fs.readFileSync(ep.output, 'utf8');
+      fs.writeFileSync(target, 'new-output');
       return { status: 0 };
     },
   });
-  assert.strictEqual(path.resolve(target), ep.tmp, 'the renderer writes hyperframes/render.tmp.mp4');
-  assert.strictEqual(masterDuringRender, 'previous-master', 'the previous master is intact while rendering');
-  assert.strictEqual(fs.readFileSync(ep.master, 'utf8'), 'new-master');
+  assert.strictEqual(path.resolve(target), ep.tmp, 'the renderer writes hyperframes/<W>x<H>/render.tmp.mp4');
+  assert.strictEqual(outputDuringRender, 'previous-output', 'the previous output is intact while rendering');
+  assert.strictEqual(fs.readFileSync(ep.output, 'utf8'), 'new-output');
   assert.ok(!fs.existsSync(ep.tmp), 'render.tmp.mp4 was renamed away');
-  assert.strictEqual(result.outputVideoPath, ep.master);
-  console.log('✔ a successful render goes through render.tmp.mp4 and renames over the master');
+  assert.strictEqual(result.outputVideoPath, ep.output);
+  console.log('✔ a successful render goes through render.tmp.mp4 and renames over the output');
 }
 
-// (c) failure: a previous master stays byte-identical; with none, no master appears.
-for (const previous of ['previous-master', null]) {
+// (c) failure: a previous output stays byte-identical; with none, no output appears.
+for (const previous of ['previous-output', null]) {
   const ep = makeEpisode();
-  if (previous) fs.writeFileSync(ep.master, previous);
+  if (previous) fs.writeFileSync(ep.output, previous);
   await assert.rejects(
     renderVideo({
       ...base(ep),
@@ -124,11 +126,11 @@ for (const previous of ['previous-master', null]) {
     }),
     (err) => err instanceof VideoRenderError,
   );
-  if (previous) assert.strictEqual(fs.readFileSync(ep.master, 'utf8'), previous, 'the previous master is untouched');
-  else assert.ok(!fs.existsSync(ep.master), 'no half-written master');
+  if (previous) assert.strictEqual(fs.readFileSync(ep.output, 'utf8'), previous, 'the previous output is untouched');
+  else assert.ok(!fs.existsSync(ep.output), 'no half-written output');
   assert.ok(!fs.existsSync(ep.tmp), 'the partial temp file is removed');
 }
-console.log('✔ a failed render leaves the previous master untouched and no partial file');
+console.log('✔ a failed render leaves the previous output untouched and no partial file');
 
 // A manifest without the Video slug is refused: no silent fallback to compositionId.
 {

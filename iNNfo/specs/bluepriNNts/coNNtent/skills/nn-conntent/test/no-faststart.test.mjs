@@ -4,8 +4,8 @@
  * Provider clips are cached exactly as delivered (S3 spike PASS): a raw
  * `moov`-at-end clip renders fine through the pinned CLI, so the `+faststart`
  * remux, its module and its `.needs-faststart` marker are gone from the engine.
- * `render-formats.mjs` still applies `+faststart` to final deliverables (design
- * D8) and is the only allowed match.
+ * The derivation step that remuxed derived formats (`render-formats.mjs`) is retired
+ * with the square master (V_0-26-0): every output is a native render.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,7 +14,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SKILL_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const ALLOWED = new Set(['scripts/render-formats.mjs', 'test/no-faststart.test.mjs', 'test/render-formats.test.mjs']);
+const ALLOWED = new Set(['test/no-faststart.test.mjs']);
 
 function walk(dir, out) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

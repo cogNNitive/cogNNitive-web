@@ -89,7 +89,7 @@ export function buildHyperframesProject(manifest, projectDir, opts = {}) {
   stageComponents(manifest, projectDir);
   stageAuthoredProjects(manifest, projectDir);
   if (manifest?.metadata?.frame?.path) {
-    emitHyperframesFrame({ frameDir: path.dirname(manifest.metadata.frame.path), projectDir });
+    emitHyperframesFrame({ frameDir: path.dirname(manifest.metadata.frame.path), projectDir, outDir: projectDir });
   }
   return built;
 }
@@ -185,8 +185,26 @@ function stageComponents(manifest, projectDir) {
     // components); the fallback is the packaged slot contract.
     const src = entry?.path || path.join(skillDir, 'slots', `${name}.html`);
     if (!fs.existsSync(src)) continue;
-    fs.copyFileSync(src, path.join(componentsDir, `${name}.html`));
+    const html = fs.readFileSync(src, 'utf8');
+    fs.writeFileSync(path.join(componentsDir, `${name}.html`), stampCanvas(html, manifest.width, manifest.height), 'utf8');
   }
+}
+
+/**
+ * Stamps a slot component's root (`id="root"`) with the canvas of the format project it is
+ * staged into (spec S6): the source declares no fixed size, so one component serves every
+ * format. A manifest without a size leaves the file as it is.
+ * @param {string} html
+ * @param {number} width
+ * @param {number} height
+ */
+export function stampCanvas(html, width, height) {
+  if (!(Number(width) > 0) || !(Number(height) > 0)) return html;
+  return String(html).replace(/<div\b[^>]*\bid="root"[^>]*>/, (tag) =>
+    tag
+      .replace(/\s+data-(?:width|height)="[^"]*"/g, '')
+      .replace(/\bid="root"/, `id="root" data-width="${Number(width)}" data-height="${Number(height)}"`),
+  );
 }
 
 /**
@@ -267,4 +285,34 @@ export async function tryHyperframesRender(input, deps = {}) {
 
   if (!fs.existsSync(outputPath)) return { rendered: false, reason: 'no-output' };
   return { rendered: true };
+}
+
+/**
+ * Runs `hyperframes check --json <projectDir>` with the pinned CLI from this skill's
+ * `node_modules/.bin` (never `npx`) on one emitted format project (spec S9). The project
+ * must already be emitted (the render emits it). A missing CLI is a failed check, never a
+ * skipped one.
+ * @param {{ projectDir: string }} input
+ * @param {{ run?: Function, cliPath?: string, skillDir?: string }} [deps]
+ * @returns {Promise<{ ok: boolean, reason?: string, detail?: string }>}
+ */
+export async function runHyperframesCheck({ projectDir }, deps = {}) {
+  const skillDir = deps.skillDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const cliPath = deps.cliPath || resolveHyperframesCli({ skillDir });
+  const run = deps.run || defaultRun;
+  if (!deps.run && !fs.existsSync(cliPath)) return { ok: false, reason: 'hyperframes-missing' };
+  if (!projectDir || !fs.existsSync(path.join(projectDir, 'index.html'))) {
+    return { ok: false, reason: 'project-missing', detail: `no index.html in ${projectDir}` };
+  }
+  try {
+    const res = await run(cliPath, ['check', '--json', path.resolve(projectDir)], { cwd: projectDir });
+    const detail = res ? outputTail(res.stdout) || outputTail(res.stderr) : '';
+    if (res?.error) return { ok: false, reason: `error: ${res.error.message || String(res.error)}`, ...(detail && { detail }) };
+    if (res && typeof res.status === 'number' && res.status !== 0) {
+      return { ok: false, reason: `hyperframes-check-exit-${res.status}`, ...(detail && { detail }) };
+    }
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, reason: `error: ${err?.message || String(err)}` };
+  }
 }

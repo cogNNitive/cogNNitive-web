@@ -69,7 +69,7 @@ export function computePlanHash(scriptContent, models = {}, prices = {}) {
     .split('\n')
     .filter(
       (line) =>
-        !/^\s*(status|delivered_version|master|review)::/i.test(line) &&
+        !/^\s*(status|delivered_version|review)::/i.test(line) &&
         !/^\s*knowledge_version:\s*/i.test(line),
     )
     .map((l) => l.replace(/\s+$/, ''))

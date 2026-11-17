@@ -29,7 +29,7 @@ import { resolve, resolveKeyed } from './cascade.mjs';
 import { resolveLibrary } from './library.mjs';
 import { applyCachedAvatars } from './avatar-jobs.mjs';
 import { buildTtsVoiceOptions } from './tts-options.mjs';
-import { buildImageOptions } from './image-options.mjs';
+import { buildImageOptions, imageModelsFor } from './image-options.mjs';
 import { appendTimingRow, timingRow } from './facts.mjs';
 import { assertImageSize, loadMergedCatalog } from './catalog.mjs';
 import { warnUnpricedAllowedModels } from '../asset-cost-estimator.mjs';
@@ -585,11 +585,11 @@ async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = 
     for (const layer of Array.isArray(sc.layers) ? sc.layers : []) {
       const prompt = layer.properties?.layer_prompt || layer.properties?.prompt;
       if (!prompt) continue;
-      const imageModel = normalizeModelId(resolve('image_model', bags).value);
-      const imageSize = resolve('image_size', bags).value;
-      // The size is validated against the merged catalog's `sizes` for the resolved model,
-      // overlay included, before any provider call.
-      if (imageSize) assertImageSize(catalog || loadMergedCatalog({ overlay: null }), imageModel, imageSize);
+      const { image: imageModel, imageSize } = imageModelsFor({
+        bags,
+        parsed,
+        catalog: catalog || loadMergedCatalog({ overlay: null }),
+      });
       const mediaOptions = buildImageOptions(sc, layer, { ...models, image: imageModel, imageSize });
       const ref = `${sc.id}/${layer.name}`;
       onProgress({ phase: 'media-start', done: mediaDone, total: mediaTotal, scene: sc.id, model: imageModel });
@@ -926,12 +926,96 @@ export async function compileVideo(options) {
     cache: { hits: avatarVideos?.applied || 0, misses: avatarVideos?.missing || 0 },
   });
 
+  // Generate once, render N times (spec S7): everything above ran once, so the resolved
+  // tree (`parsed` with its avatar pickups) and `audioAssets` are the one immutable asset
+  // map. Each output format is projected from its own clone into `hyperframes/<W>x<H>/`,
+  // so no pass sees another's staged names and no pass calls a provider.
+  const formats = compileFormats(parsed, options);
+  const manifests = [];
+  const linkModes = new Set();
+  for (const format of formats) {
+    const projected = await projectFormat({
+      parsed: structuredClone(parsed),
+      audioAssets: structuredClone(audioAssets),
+      format,
+      compiler,
+      animations,
+      options,
+      scriptPath,
+      scriptDir,
+      cacheDir,
+      frameInfo,
+      captionPlans,
+      components,
+      fitComponents,
+      soundFiles,
+    });
+    manifests.push(projected.manifest);
+    linkModes.add(projected.linkMode);
+  }
+  const linkMode = linkModes.has('copy') ? 'copy' : 'link';
+
+  // The staging mode is known now: every queued stage row carries it.
+  if (options.facts) options.facts.linkMode = linkMode;
+  for (const row of stageRows) recordStage(options.facts, row);
+
+  return {
+    manifest: manifests[0],
+    manifests,
+    cachedAssetsUsed,
+    newAssetsSynthesized,
+    avatarVideos,
+    spentUsd,
+    plannedTotalUsd,
+    linkMode,
+  };
+}
+
+/**
+ * The canvases one compile projects: an explicit width/height (the animatic) is one
+ * canvas; otherwise every resolved `output_formats` entry, in order (spec S3).
+ * @returns {{ size: string, width: number | undefined, height: number | undefined, project: string }[]}
+ */
+function compileFormats(parsed, options) {
+  if (options.width && options.height) {
+    const size = `${options.width}x${options.height}`;
+    return [{ size, width: options.width, height: options.height, project: options.projectName || size }];
+  }
+  const declared =
+    Array.isArray(parsed.outputFormats) && parsed.outputFormats.length > 0
+      ? parsed.outputFormats
+      : [{ size: `${parsed.width}x${parsed.height}`, width: parsed.width, height: parsed.height }];
+  return declared.map((f) => ({ ...f, project: options.projectName || f.size }));
+}
+
+/**
+ * Projects the resolved episode onto one canvas: compiles its manifest, stages its media
+ * into `hyperframes/<project>/assets/`, adds captions and sounds, probes `fit` sizes and
+ * writes `hyperframes/<project>/manifest.json`. `parsed` and `audioAssets` are this pass's
+ * own clones. Cache reads only: no provider call happens here.
+ */
+async function projectFormat({
+  parsed,
+  audioAssets,
+  format,
+  compiler,
+  animations,
+  options,
+  scriptPath,
+  scriptDir,
+  cacheDir,
+  frameInfo,
+  captionPlans,
+  components,
+  fitComponents,
+  soundFiles,
+}) {
   const manifest = compiler.compile(parsed, {
     audioAssets,
     animations,
     fps: options.fps,
-    width: options.width,
-    height: options.height,
+    width: format.width,
+    height: format.height,
     scriptSource: scriptPath,
   });
 
@@ -941,11 +1025,13 @@ export async function compileVideo(options) {
   // paths both work. A missing asset is a loud failure — never a silently dropped
   // layer. The staged entries are HARDLINKS to the sources (capability "Assets Are
   // Linked, Not Copied"), so the episode folder holds no copy of a cache entry.
-  const hyperframesDir = path.join(scriptDir, 'hyperframes');
+  const hyperframesDir = path.join(scriptDir, 'hyperframes', format.project);
   const assetsDir = path.join(hyperframesDir, 'assets');
   fs.mkdirSync(assetsDir, { recursive: true });
   manifest.metadata.hyperframesDir = hyperframesDir;
   manifest.metadata.assetsDir = assetsDir;
+  manifest.metadata.episodeDir = scriptDir;
+  manifest.metadata.format = `${manifest.width}x${manifest.height}`;
   const scopeRoot = resolveWorkspace(scriptDir).root;
   const staging = resolveMediaLayers(manifest, {
     scriptDir,
@@ -963,7 +1049,7 @@ export async function compileVideo(options) {
   // defaults.
   if (frameInfo) {
     manifest.metadata.frame = { path: frameInfo.path, tokens: frameInfo.tokens };
-    emitHyperframesFrame({ frameDir: path.dirname(frameInfo.path), projectDir: scriptDir });
+    emitHyperframesFrame({ frameDir: path.dirname(frameInfo.path), projectDir: hyperframesDir, outDir: hyperframesDir });
   }
 
   // Aligned captions, read from the cache the captions stage wrote. Writer and reader
@@ -1066,26 +1152,14 @@ export async function compileVideo(options) {
   await probeMediaLayerSizes(manifest, { publicDir: assetsDir, probe: options.assetSizeProbe });
   if (Object.keys(fitComponents).length > 0) manifest.metadata.fitComponents = fitComponents;
 
-  // The manifest always lands at hyperframes/manifest.json: it is engine output, not
-  // a user-chosen file, and the HyperFrames project folder is regenerable.
+  // Each format's manifest lands at hyperframes/<project>/manifest.json: it is engine
+  // output, not a user-chosen file, and the HyperFrames project folder is regenerable.
   const manifestPath = path.join(hyperframesDir, 'manifest.json');
   fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf8');
   manifest.metadata.manifestPath = manifestPath;
 
-  // The staging mode is known now: every queued stage row carries it.
-  if (options.facts) options.facts.linkMode = staging.linkMode;
-  for (const row of stageRows) recordStage(options.facts, row);
-
-  return {
-    manifest,
-    cachedAssetsUsed,
-    newAssetsSynthesized,
-    avatarVideos,
-    spentUsd,
-    plannedTotalUsd,
-    linkMode: staging.linkMode,
-  };
+  return { manifest, linkMode: staging.linkMode };
 }
 
 /**
@@ -1229,7 +1303,7 @@ async function main() {
       printDryRun(result);
       return;
     }
-    console.log(`✅ [compile] Compiled manifest (${result.manifest.totalDurationInFrames} frames, ${result.manifest.totalDurationInSeconds.toFixed(2)}s)`);
+    console.log(`✅ [compile] Compiled manifest (${result.manifest.totalDurationInFrames} frames, ${result.manifest.totalDurationInSeconds.toFixed(2)}s) for ${result.manifests.length} format(s): ${result.manifests.map((m) => `${m.width}x${m.height}`).join(', ')}`);
     console.log(`   Cached assets: ${result.cachedAssetsUsed}, New assets: ${result.newAssetsSynthesized}, Spent: $${result.spentUsd.toFixed(4)} of $${result.plannedTotalUsd.toFixed(4)} estimated`);
     if (result.avatarVideos.applied + result.avatarVideos.missing > 0) {
       console.log(`   Avatar clips: ${result.avatarVideos.applied} picked up from cache, ${result.avatarVideos.missing} still missing (run synthesize-avatar.mjs; never ad-hoc API calls). If clips exist but were not found, check that the episode and its Series declare the same avatar_model and voice_model that the synthesize-avatar run resolved.`);

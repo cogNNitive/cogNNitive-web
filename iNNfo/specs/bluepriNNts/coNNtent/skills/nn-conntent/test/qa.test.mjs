@@ -4,7 +4,7 @@ import { BLUEPRINT_VERSION } from './helpers/blueprint-version.mjs'
  *
  * Full QA test suite (capability conntent-qa; design D-P5; tasks 3b-4.1..3b-4.6).
  * Replaces minimal overlay check with master and output-set checkpoints:
- * - qaMaster: structural, visible text edge density, duration, size, audio stream
+ * - qaOutput: structural, visible text edge density, duration, size, audio stream
  * - qaOutputSet: formats, thumbnails, description existence, non-empty, dimensions
  * - deterministic qa.json report
  * - failed_qa on failure, exit 12, no delivery, master kept
@@ -20,8 +20,11 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import {
+  qaCrossFormat,
+  qaHyperframesCheck,
+  overlayCropRegion,
   QA_TEXT_EDGE_MIN,
-  qaMaster,
+  qaOutput,
   qaOutputSet,
   writeQaReport,
 } from '../scripts/lib/qa.mjs';
@@ -128,14 +131,15 @@ function createManifest({
 // ---------------------------------------------------------------------------
 // 1. Tool unavailable / unreadable master
 // ---------------------------------------------------------------------------
-test('qaMaster: ffprobe or ffmpeg missing or unreadable master fails with qa-unavailable', async () => {
+test('qaOutput: ffprobe or ffmpeg missing or unreadable master fails with qa-unavailable', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-unavail-'));
   try {
     const manifest = createManifest();
-    const res = await qaMaster({
+    const res = await qaOutput({
       episodeDir: dir,
+      projectDir: path.join(dir, 'hyperframes'),
       manifest,
-      masterPath: path.join(dir, 'non-existent.mp4'),
+      outputPath: path.join(dir, 'non-existent.mp4'),
       declaredSize: '1920x1920',
       deps: {
         checkTools: () => ({ ok: false, error: 'ffprobe not found' }),
@@ -153,24 +157,25 @@ test('qaMaster: ffprobe or ffmpeg missing or unreadable master fails with qa-una
 // ---------------------------------------------------------------------------
 // 2. Master duration mismatch
 // ---------------------------------------------------------------------------
-test('qaMaster: duration mismatch > 1 frame reports duration-mismatch', async () => {
+test('qaOutput: duration mismatch > 1 frame reports duration-mismatch', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-dur-'));
   try {
     const manifest = createManifest({ totalDurationInFrames: 90 }); // 3.0s at 30fps
-    const masterPath = path.join(dir, 'master.mp4');
-    fs.writeFileSync(masterPath, 'video');
+    const outputPath = path.join(dir, 'master.mp4');
+    fs.writeFileSync(outputPath, 'video');
     fs.mkdirSync(path.join(dir, 'hyperframes'), { recursive: true });
     fs.writeFileSync(path.join(dir, 'hyperframes', 'index.html'), '<div id="root"></div>');
 
     // Master is 2.0s (1 second shorter, clearly > 1 frame off)
-    const res = await qaMaster({
+    const res = await qaOutput({
       episodeDir: dir,
+      projectDir: path.join(dir, 'hyperframes'),
       manifest,
-      masterPath,
+      outputPath,
       declaredSize: '1920x1920',
       deps: {
         checkTools: () => ({ ok: true }),
-        probeMaster: () => ({
+        probeVideo: () => ({
           width: 1920,
           height: 1920,
           duration: 2.0,
@@ -189,24 +194,25 @@ test('qaMaster: duration mismatch > 1 frame reports duration-mismatch', async ()
   }
 });
 
-test('qaMaster: duration within 1 frame passes duration check', async () => {
+test('qaOutput: duration within 1 frame passes duration check', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-dur-pass-'));
   try {
     const manifest = createManifest({ totalDurationInFrames: 90 }); // 3.0s at 30fps (frame = 0.0333s)
-    const masterPath = path.join(dir, 'master.mp4');
-    fs.writeFileSync(masterPath, 'video');
+    const outputPath = path.join(dir, 'master.mp4');
+    fs.writeFileSync(outputPath, 'video');
     fs.mkdirSync(path.join(dir, 'hyperframes'), { recursive: true });
     fs.writeFileSync(path.join(dir, 'hyperframes', 'index.html'), '<div id="root"></div>');
 
     // 3.02s is within 1 frame (30fps -> 0.0333s)
-    const res = await qaMaster({
+    const res = await qaOutput({
       episodeDir: dir,
+      projectDir: path.join(dir, 'hyperframes'),
       manifest,
-      masterPath,
+      outputPath,
       declaredSize: '1920x1920',
       deps: {
         checkTools: () => ({ ok: true }),
-        probeMaster: () => ({
+        probeVideo: () => ({
           width: 1920,
           height: 1920,
           duration: 3.02,
@@ -226,23 +232,24 @@ test('qaMaster: duration within 1 frame passes duration check', async () => {
 // ---------------------------------------------------------------------------
 // 3. Master size mismatch
 // ---------------------------------------------------------------------------
-test('qaMaster: size mismatch reports size-mismatch', async () => {
+test('qaOutput: size mismatch reports size-mismatch', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-size-'));
   try {
     const manifest = createManifest();
-    const masterPath = path.join(dir, 'master.mp4');
-    fs.writeFileSync(masterPath, 'video');
+    const outputPath = path.join(dir, 'master.mp4');
+    fs.writeFileSync(outputPath, 'video');
     fs.mkdirSync(path.join(dir, 'hyperframes'), { recursive: true });
     fs.writeFileSync(path.join(dir, 'hyperframes', 'index.html'), '<div id="root"></div>');
 
-    const res = await qaMaster({
+    const res = await qaOutput({
       episodeDir: dir,
+      projectDir: path.join(dir, 'hyperframes'),
       manifest,
-      masterPath,
+      outputPath,
       declaredSize: '1920x1920',
       deps: {
         checkTools: () => ({ ok: true }),
-        probeMaster: () => ({
+        probeVideo: () => ({
           width: 1920,
           height: 1080, // Wrong: 1080 instead of 1920
           duration: 3.0,
@@ -264,23 +271,24 @@ test('qaMaster: size mismatch reports size-mismatch', async () => {
 // ---------------------------------------------------------------------------
 // 4. Missing audio stream when narration exists
 // ---------------------------------------------------------------------------
-test('qaMaster: missing audio stream when scenes have narration reports audio-missing', async () => {
+test('qaOutput: missing audio stream when scenes have narration reports audio-missing', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-audio-'));
   try {
     const manifest = createManifest();
-    const masterPath = path.join(dir, 'master.mp4');
-    fs.writeFileSync(masterPath, 'video');
+    const outputPath = path.join(dir, 'master.mp4');
+    fs.writeFileSync(outputPath, 'video');
     fs.mkdirSync(path.join(dir, 'hyperframes'), { recursive: true });
     fs.writeFileSync(path.join(dir, 'hyperframes', 'index.html'), '<div id="root"></div>');
 
-    const res = await qaMaster({
+    const res = await qaOutput({
       episodeDir: dir,
+      projectDir: path.join(dir, 'hyperframes'),
       manifest,
-      masterPath,
+      outputPath,
       declaredSize: '1920x1920',
       deps: {
         checkTools: () => ({ ok: true }),
-        probeMaster: () => ({
+        probeVideo: () => ({
           width: 1920,
           height: 1920,
           duration: 3.0,
@@ -300,27 +308,28 @@ test('qaMaster: missing audio stream when scenes have narration reports audio-mi
 // ---------------------------------------------------------------------------
 // 5. Structural overlay check
 // ---------------------------------------------------------------------------
-test('qaMaster: overlay in manifest but missing in index.html reports overlay-missing', async () => {
+test('qaOutput: overlay in manifest but missing in index.html reports overlay-missing', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-ov-struct-'));
   try {
     const overlays = [
       { id: 'overlay_title_1', type: 'kineticTitle', sceneId: 'scene_one', fromFrame: 0, durationInFrames: 60, config: { title: 'Main Title' } },
     ];
     const manifest = createManifest({ overlays });
-    const masterPath = path.join(dir, 'master.mp4');
-    fs.writeFileSync(masterPath, 'video');
+    const outputPath = path.join(dir, 'master.mp4');
+    fs.writeFileSync(outputPath, 'video');
     fs.mkdirSync(path.join(dir, 'hyperframes'), { recursive: true });
     // index.html has NO host for overlay_title_1
     fs.writeFileSync(path.join(dir, 'hyperframes', 'index.html'), '<div id="root"></div>');
 
-    const res = await qaMaster({
+    const res = await qaOutput({
       episodeDir: dir,
+      projectDir: path.join(dir, 'hyperframes'),
       manifest,
-      masterPath,
+      outputPath,
       declaredSize: '1920x1920',
       deps: {
         checkTools: () => ({ ok: true }),
-        probeMaster: () => ({ width: 1920, height: 1920, duration: 3.0, hasAudio: true }),
+        probeVideo: () => ({ width: 1920, height: 1920, duration: 3.0, hasAudio: true }),
       },
     });
 
@@ -334,15 +343,15 @@ test('qaMaster: overlay in manifest but missing in index.html reports overlay-mi
   }
 });
 
-test('qaMaster: overlay host with mismatched start/duration reports overlay-missing', async () => {
+test('qaOutput: overlay host with mismatched start/duration reports overlay-missing', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-ov-timing-'));
   try {
     const overlays = [
       { id: 'overlay_title_1', type: 'kineticTitle', sceneId: 'scene_one', fromFrame: 30, durationInFrames: 60, config: { title: 'Main Title' } },
     ];
     const manifest = createManifest({ overlays }); // 30fps -> start 1.0s, duration 2.0s
-    const masterPath = path.join(dir, 'master.mp4');
-    fs.writeFileSync(masterPath, 'video');
+    const outputPath = path.join(dir, 'master.mp4');
+    fs.writeFileSync(outputPath, 'video');
     fs.mkdirSync(path.join(dir, 'hyperframes'), { recursive: true });
     // data-start is 5.0 instead of 1.0
     fs.writeFileSync(
@@ -350,14 +359,15 @@ test('qaMaster: overlay host with mismatched start/duration reports overlay-miss
       '<div id="root"><div id="overlay_title_1" class="clip nn-overlay" data-start="5.0" data-duration="2.0"></div></div>',
     );
 
-    const res = await qaMaster({
+    const res = await qaOutput({
       episodeDir: dir,
+      projectDir: path.join(dir, 'hyperframes'),
       manifest,
-      masterPath,
+      outputPath,
       declaredSize: '1920x1920',
       deps: {
         checkTools: () => ({ ok: true }),
-        probeMaster: () => ({ width: 1920, height: 1920, duration: 3.0, hasAudio: true }),
+        probeVideo: () => ({ width: 1920, height: 1920, duration: 3.0, hasAudio: true }),
       },
     });
 
@@ -372,15 +382,15 @@ test('qaMaster: overlay host with mismatched start/duration reports overlay-miss
 // ---------------------------------------------------------------------------
 // 6. Visible overlay check (edge density comparison)
 // ---------------------------------------------------------------------------
-test('qaMaster: overlay emitted in HTML but invisible in video frames reports overlay-missing (F1 regression)', async () => {
+test('qaOutput: overlay emitted in HTML but invisible in video frames reports overlay-missing (F1 regression)', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-ov-invis-'));
   try {
     const overlays = [
       { id: 'overlay_watermark_1', type: 'watermark', sceneId: 'scene_one', fromFrame: 0, durationInFrames: 90, config: { text: 'Watermark' } },
     ];
     const manifest = createManifest({ overlays });
-    const masterPath = path.join(dir, 'master.mp4');
-    fs.writeFileSync(masterPath, 'video');
+    const outputPath = path.join(dir, 'master.mp4');
+    fs.writeFileSync(outputPath, 'video');
     fs.mkdirSync(path.join(dir, 'hyperframes'), { recursive: true });
     // Host exists structurally
     fs.writeFileSync(
@@ -389,14 +399,15 @@ test('qaMaster: overlay emitted in HTML but invisible in video frames reports ov
     );
 
     // Edge density diff is 0 (transparent / invisible)
-    const res = await qaMaster({
+    const res = await qaOutput({
       episodeDir: dir,
+      projectDir: path.join(dir, 'hyperframes'),
       manifest,
-      masterPath,
+      outputPath,
       declaredSize: '1920x1920',
       deps: {
         checkTools: () => ({ ok: true }),
-        probeMaster: () => ({ width: 1920, height: 1920, duration: 3.0, hasAudio: true }),
+        probeVideo: () => ({ width: 1920, height: 1920, duration: 3.0, hasAudio: true }),
         sampleEdgeDensity: () => 0.0001, // Below QA_TEXT_EDGE_MIN
       },
     });
@@ -410,29 +421,30 @@ test('qaMaster: overlay emitted in HTML but invisible in video frames reports ov
   }
 });
 
-test('qaMaster: visible overlay with edge density >= QA_TEXT_EDGE_MIN passes', async () => {
+test('qaOutput: visible overlay with edge density >= QA_TEXT_EDGE_MIN passes', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-ov-vis-'));
   try {
     const overlays = [
       { id: 'overlay_watermark_1', type: 'watermark', sceneId: 'scene_one', fromFrame: 0, durationInFrames: 90, config: { text: 'Watermark' } },
     ];
     const manifest = createManifest({ overlays });
-    const masterPath = path.join(dir, 'master.mp4');
-    fs.writeFileSync(masterPath, 'video');
+    const outputPath = path.join(dir, 'master.mp4');
+    fs.writeFileSync(outputPath, 'video');
     fs.mkdirSync(path.join(dir, 'hyperframes'), { recursive: true });
     fs.writeFileSync(
       path.join(dir, 'hyperframes', 'index.html'),
       '<div id="root"><div id="overlay_watermark_1" class="clip nn-overlay" data-start="0" data-duration="3"></div></div>',
     );
 
-    const res = await qaMaster({
+    const res = await qaOutput({
       episodeDir: dir,
+      projectDir: path.join(dir, 'hyperframes'),
       manifest,
-      masterPath,
+      outputPath,
       declaredSize: '1920x1920',
       deps: {
         checkTools: () => ({ ok: true }),
-        probeMaster: () => ({ width: 1920, height: 1920, duration: 3.0, hasAudio: true }),
+        probeVideo: () => ({ width: 1920, height: 1920, duration: 3.0, hasAudio: true }),
         sampleEdgeDensity: () => QA_TEXT_EDGE_MIN + 0.02, // Well above threshold
       },
     });
@@ -451,14 +463,17 @@ test('qaOutputSet: missing format or thumbnail reports output-missing', async ()
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-out-missing-'));
   try {
     const slug = 'test-ep';
-    // Only master exists, thumbnail and format are missing
-    fs.writeFileSync(path.join(dir, `${slug}_1920x1920.mp4`), 'master');
+    // Only the primary output exists; the second output and the thumbnail are missing
+    fs.writeFileSync(path.join(dir, `${slug}_1920x1920.mp4`), 'video');
     fs.writeFileSync(path.join(dir, `${slug}_description.md`), '# Description');
 
     const res = await qaOutputSet({
       episodeDir: dir,
       slug,
-      outputFormats: ['1920x1920', '1080x1920'],
+      outputs: [
+        { format: '1920x1920', path: path.join(dir, `${slug}_1920x1920.mp4`) },
+        { format: '1080x1920', path: path.join(dir, `${slug}_1080x1920.mp4`) },
+      ],
       thumbnailFormats: ['1080x1920'],
       deps: {
         probeSize: () => ({ width: 1920, height: 1920 }),
@@ -479,14 +494,14 @@ test('qaOutputSet: 0-byte file reports output-empty', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-out-empty-'));
   try {
     const slug = 'test-ep';
-    fs.writeFileSync(path.join(dir, `${slug}_1920x1920.mp4`), 'master');
+    fs.writeFileSync(path.join(dir, `${slug}_1920x1920.mp4`), 'video');
     fs.writeFileSync(path.join(dir, `${slug}_thumbnail_1080x1920.png`), ''); // 0 bytes
     fs.writeFileSync(path.join(dir, `${slug}_description.md`), '# Description');
 
     const res = await qaOutputSet({
       episodeDir: dir,
       slug,
-      outputFormats: ['1920x1920'],
+      outputs: [{ format: '1920x1920', path: path.join(dir, `${slug}_1920x1920.mp4`) }],
       thumbnailFormats: ['1080x1920'],
       deps: {
         probeSize: () => ({ width: 1920, height: 1920 }),
@@ -506,15 +521,14 @@ test('qaOutputSet: dimension mismatch reports output-size-mismatch', async () =>
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-out-size-'));
   try {
     const slug = 'test-ep';
-    fs.mkdirSync(path.join(dir, 'formats'), { recursive: true });
-    const fmtPath = path.join(dir, 'formats', `${slug}_1080x1920.mp4`);
+    const fmtPath = path.join(dir, `${slug}_1080x1920.mp4`);
     fs.writeFileSync(fmtPath, 'video-bytes');
     fs.writeFileSync(path.join(dir, `${slug}_description.md`), '# Description');
 
     const res = await qaOutputSet({
       episodeDir: dir,
       slug,
-      outputFormats: ['1080x1920'],
+      outputs: [{ format: '1080x1920', path: fmtPath }],
       thumbnailFormats: [],
       deps: {
         probeSize: () => ({ width: 1080, height: 1080 }), // Wrong: 1080x1080 instead of 1080x1920
@@ -535,16 +549,18 @@ test('qaOutputSet: all outputs present and valid passes', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-out-pass-'));
   try {
     const slug = 'test-ep';
-    fs.mkdirSync(path.join(dir, 'formats'), { recursive: true });
-    fs.writeFileSync(path.join(dir, `${slug}_1920x1920.mp4`), 'master');
-    fs.writeFileSync(path.join(dir, 'formats', `${slug}_1080x1920.mp4`), 'video-bytes');
+    fs.writeFileSync(path.join(dir, `${slug}_1920x1920.mp4`), 'video');
+    fs.writeFileSync(path.join(dir, `${slug}_1080x1920.mp4`), 'video-bytes');
     fs.writeFileSync(path.join(dir, `${slug}_thumbnail_1080x1920.png`), 'png-bytes');
     fs.writeFileSync(path.join(dir, `${slug}_description.md`), '# Description');
 
     const res = await qaOutputSet({
       episodeDir: dir,
       slug,
-      outputFormats: ['1920x1920', '1080x1920'],
+      outputs: [
+        { format: '1920x1920', path: path.join(dir, `${slug}_1920x1920.mp4`) },
+        { format: '1080x1920', path: path.join(dir, `${slug}_1080x1920.mp4`) },
+      ],
       thumbnailFormats: ['1080x1920'],
       deps: {
         probeSize: (filePath) => {
@@ -561,6 +577,99 @@ test('qaOutputSet: all outputs present and valid passes', async () => {
   }
 });
 
+test('qaOutputSet: an output whose size cannot be read fails closed', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-out-null-'));
+  try {
+    const slug = 'test-ep';
+    fs.writeFileSync(path.join(dir, `${slug}_1920x1080.mp4`), 'video-bytes');
+    fs.writeFileSync(path.join(dir, `${slug}_thumbnail_1080x1920.png`), 'png-bytes');
+    fs.writeFileSync(path.join(dir, `${slug}_description.md`), '# Description');
+    const res = await qaOutputSet({
+      episodeDir: dir,
+      slug,
+      outputs: [{ format: '1920x1080', path: path.join(dir, `${slug}_1920x1080.mp4`) }],
+      thumbnailFormats: ['1080x1920'],
+      deps: { probeSize: () => null },
+    });
+    assert.equal(res.ok, false);
+    const unreadable = res.checks.filter((c) => c.id === 'output-unreadable');
+    assert.deepEqual(unreadable.map((c) => c.file).sort(), [`${slug}_1920x1080.mp4`, `${slug}_thumbnail_1080x1920.png`]);
+    assert.equal(unreadable.find((c) => c.file.endsWith('.mp4')).format, '1920x1080');
+  } finally {
+    cleanup(dir);
+  }
+});
+
+test('qaOutputSet: only this run\'s outputs are judged, never a stale formats/ file', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-out-stale-'));
+  try {
+    const slug = 'test-ep';
+    // A derived file from an earlier (V_0-24-0) run sits under formats/; this run did
+    // not produce the 1080x1920 output, so QA must report it missing.
+    fs.mkdirSync(path.join(dir, 'formats'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'formats', `${slug}_1080x1920.mp4`), 'stale');
+    fs.writeFileSync(path.join(dir, `${slug}_description.md`), '# Description');
+    const res = await qaOutputSet({
+      episodeDir: dir,
+      slug,
+      outputs: [{ format: '1080x1920', path: path.join(dir, `${slug}_1080x1920.mp4`) }],
+      thumbnailFormats: [],
+      deps: { probeSize: () => ({ width: 1080, height: 1920 }) },
+    });
+    assert.equal(res.ok, false);
+    const missing = res.checks.find((c) => c.id === 'output-missing');
+    assert.equal(missing.file, `${slug}_1080x1920.mp4`);
+    assert.equal(missing.sampled, path.join(dir, `${slug}_1080x1920.mp4`));
+  } finally {
+    cleanup(dir);
+  }
+});
+
+test('qaCrossFormat: equal timelines pass; a format with a different duration fails', () => {
+  const base = createManifest();
+  const as = (w, h, patch = {}) => ({ ...structuredClone(base), width: w, height: h, ...patch });
+  const pass = qaCrossFormat([as(1920, 1080), as(1080, 1920), as(1080, 1080)]);
+  assert.equal(pass.ok, true);
+  assert.deepEqual(pass.checks.map((c) => [c.id, c.format]), [
+    ['cross-format-timeline', '1080x1920'],
+    ['cross-format-timeline', '1080x1080'],
+  ]);
+  const fail = qaCrossFormat([as(1920, 1080), as(1080, 1920, { totalDurationInFrames: base.totalDurationInFrames + 1 })]);
+  assert.equal(fail.ok, false);
+  assert.equal(fail.checks[0].id, 'cross-format-mismatch');
+  assert.equal(fail.checks[0].format, '1080x1920');
+  assert.match(fail.checks[0].found, /totalDurationInFrames/);
+});
+
+test('qaHyperframesCheck: every format project must pass; an unavailable checker fails', () => {
+  const ok = qaHyperframesCheck([{ format: '1920x1080', projectDir: 'p1', ok: true }]);
+  assert.equal(ok.ok, true);
+  const res = qaHyperframesCheck([
+    { format: '1920x1080', projectDir: 'p1', ok: true },
+    { format: '1080x1920', projectDir: 'p2', ok: false, reason: 'hyperframes-missing' },
+  ]);
+  assert.equal(res.ok, false);
+  const failed = res.checks.find((c) => c.status === 'fail');
+  assert.equal(failed.id, 'hyperframes-check-failed');
+  assert.equal(failed.format, '1080x1920');
+  assert.match(failed.found, /hyperframes-missing/);
+});
+
+test('overlayCropRegion measures inside the safe area of each canvas', () => {
+  const caption = { type: 'captions', config: { position: 'bottom' } };
+  // Horizontal 1920x1080: title-safe 10% on every side -> safe box x 192..1728, y 108..972.
+  const h = overlayCropRegion({ overlay: caption, canvasWidth: 1920, canvasHeight: 1080 });
+  assert.deepEqual(h, { width: 1536, height: 242, x: 192, y: 730 });
+  // Vertical 1080x1920: 14% top and 35% bottom bands -> safe box y 269..1248.
+  const v = overlayCropRegion({ overlay: caption, canvasWidth: 1080, canvasHeight: 1920 });
+  assert.equal(v.x, 108);
+  assert.equal(v.width, 864);
+  assert.ok(v.y + v.height <= 1248, `the band stays above the vertical interface band: ${JSON.stringify(v)}`);
+  // Square 1080x1080: the old central-square constant (21.875%) is gone.
+  const sq = overlayCropRegion({ overlay: { type: 'title', config: { position: 'top' } }, canvasWidth: 1080, canvasHeight: 1080 });
+  assert.deepEqual([sq.x, sq.y, sq.width], [108, 108, 864]);
+});
+
 // ---------------------------------------------------------------------------
 // 8. Deterministic report: writeQaReport
 // ---------------------------------------------------------------------------
@@ -569,9 +678,9 @@ test('qa report: deterministic and byte-identical across repeat runs', async () 
   const dir2 = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-det-2-'));
   try {
     const sampleChecks = [
-      { id: 'size', checkpoint: 'master', status: 'pass', expected: '1920x1920', found: '1920x1920', sampled: 'master.mp4' },
-      { id: 'duration', checkpoint: 'master', status: 'pass', expected: 3.0, found: 3.0, sampled: 'master.mp4' },
-      { id: 'overlay-present', checkpoint: 'master', status: 'pass', scene: 'scene_one', overlayKind: 'title', sampled: 'tMid=1.5s' },
+      { id: 'size', checkpoint: 'output', status: 'pass', expected: '1920x1920', found: '1920x1920', sampled: 'master.mp4' },
+      { id: 'duration', checkpoint: 'output', status: 'pass', expected: 3.0, found: 3.0, sampled: 'master.mp4' },
+      { id: 'overlay-present', checkpoint: 'output', status: 'pass', scene: 'scene_one', overlayKind: 'title', sampled: 'tMid=1.5s' },
     ];
 
     writeQaReport(dir1, { ok: true, checks: sampleChecks });
@@ -587,11 +696,11 @@ test('qa report: deterministic and byte-identical across repeat runs', async () 
 });
 
 // ---------------------------------------------------------------------------
-// 9. Pipeline integration: failed_qa blocks delivery and leaves master
+// 9. Pipeline integration: failed_qa blocks delivery and leaves the outputs
 // ---------------------------------------------------------------------------
-test('pipeline: failed QA sets status failed_qa, exits 12, writes qa.json, leaves master, no delivery', async () => {
+test('pipeline: failed QA sets status failed_qa, exits 12, writes qa.json, leaves the outputs, no delivery', async () => {
   const ws = dummyWorkspace();
-  const masterPath = path.join(ws.episodeDir, 'e_1920x1920.mp4');
+  const outputPath = path.join(ws.episodeDir, 'e_1920x1920.mp4');
   try {
     await assert.rejects(
       produce({
@@ -600,16 +709,17 @@ test('pipeline: failed QA sets status failed_qa, exits 12, writes qa.json, leave
           writeConsole: async () => ({ status: 'unchanged' }),
           synthesizeEpisodeAssets: async () => ({}),
           render: async () => {
-            fs.writeFileSync(masterPath, 'master-video-bytes');
-            fs.mkdirSync(path.join(ws.episodeDir, 'hyperframes'), { recursive: true });
-            fs.writeFileSync(path.join(ws.episodeDir, 'hyperframes', 'manifest.json'), JSON.stringify(createManifest()));
-            fs.writeFileSync(path.join(ws.episodeDir, 'hyperframes', 'index.html'), '<div id="root"></div>');
-            return { outputVideoPath: masterPath, renderTimeMs: 10, linkMode: 'link' };
+            fs.writeFileSync(outputPath, 'master-video-bytes');
+            fs.mkdirSync(path.join(ws.episodeDir, 'hyperframes', '1920x1920'), { recursive: true });
+            fs.writeFileSync(path.join(ws.episodeDir, 'hyperframes', '1920x1920', 'manifest.json'), JSON.stringify(createManifest()));
+            fs.writeFileSync(path.join(ws.episodeDir, 'hyperframes', '1920x1920', 'index.html'), '<div id="root"></div>');
+            return { outputVideoPath: outputPath, renderTimeMs: 10, linkMode: 'link' };
           },
           qa: {
-            qaMaster: async () => ({
+            hyperframesCheck: async () => ({ ok: true }),
+            qaOutput: async () => ({
               ok: false,
-              checks: [{ id: 'overlay-missing', checkpoint: 'master', status: 'fail', scene: 'one', overlayKind: 'title' }],
+              checks: [{ id: 'overlay-missing', checkpoint: 'output', status: 'fail', scene: 'one', overlayKind: 'title' }],
             }),
             qaOutputSet: async () => ({ ok: true, checks: [] }),
           },
@@ -634,8 +744,8 @@ test('pipeline: failed QA sets status failed_qa, exits 12, writes qa.json, leave
     const qaData = JSON.parse(fs.readFileSync(qaReportPath, 'utf8'));
     assert.equal(qaData.ok, false);
 
-    // Master file kept on disk
-    assert.ok(fs.existsSync(masterPath), 'master file is kept on disk');
+    // The rendered output is kept on disk
+    assert.ok(fs.existsSync(outputPath), 'the output file is kept on disk');
 
     // Deliveries NOT touched
     const delivDir = path.join(ws.episodeDir, 'deliveries');
@@ -650,7 +760,7 @@ test('pipeline: failed QA sets status failed_qa, exits 12, writes qa.json, leave
 // ---------------------------------------------------------------------------
 test('pipeline: rerun from failed_qa proceeds when QA passes', async () => {
   const ws = dummyWorkspace(defaultEpisodeDoc({ status: 'failed_qa' }));
-  const masterPath = path.join(ws.episodeDir, 'e_1920x1920.mp4');
+  const outputPath = path.join(ws.episodeDir, 'e_1920x1920.mp4');
   try {
     const result = await produce({
       episodePath: ws.scriptPath,
@@ -659,16 +769,17 @@ test('pipeline: rerun from failed_qa proceeds when QA passes', async () => {
         synthesizeEpisodeAssets: async () => ({}),
         thumbnailBase: 'stub.png',
         render: async () => {
-          fs.writeFileSync(masterPath, 'master-video-bytes');
-          fs.mkdirSync(path.join(ws.episodeDir, 'hyperframes'), { recursive: true });
-          fs.writeFileSync(path.join(ws.episodeDir, 'hyperframes', 'manifest.json'), JSON.stringify(createManifest()));
-          fs.writeFileSync(path.join(ws.episodeDir, 'hyperframes', 'index.html'), '<div id="root"></div>');
-          return { outputVideoPath: masterPath, renderTimeMs: 10, linkMode: 'link' };
+          fs.writeFileSync(outputPath, 'master-video-bytes');
+          fs.mkdirSync(path.join(ws.episodeDir, 'hyperframes', '1920x1920'), { recursive: true });
+          fs.writeFileSync(path.join(ws.episodeDir, 'hyperframes', '1920x1920', 'manifest.json'), JSON.stringify(createManifest()));
+          fs.writeFileSync(path.join(ws.episodeDir, 'hyperframes', '1920x1920', 'index.html'), '<div id="root"></div>');
+          return { outputVideoPath: outputPath, renderTimeMs: 10, linkMode: 'link' };
         },
         qa: {
-          qaMaster: async () => ({
+          hyperframesCheck: async () => ({ ok: true }),
+          qaOutput: async () => ({
             ok: true,
-            checks: [{ id: 'all-passed', checkpoint: 'master', status: 'pass' }],
+            checks: [{ id: 'all-passed', checkpoint: 'output', status: 'pass' }],
           }),
           qaOutputSet: async () => ({
             ok: true,

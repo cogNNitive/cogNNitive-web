@@ -152,8 +152,9 @@ ${thumbsHtml}
 /**
  * Deliver the current outputs. Returns `{ version, created, outputsHash, inputFingerprint }`.
  *
- * A new version is created only when BOTH the outputs hash and the input fingerprint
- * differ from the latest delivery; if either matches, the run is a no-op. The folder is
+ * A new version is created whenever the outputs hash differs from the latest delivery;
+ * a rerun with byte-identical outputs is a no-op. The input fingerprint (every format
+ * manifest without volatile fields) is recorded in delivery.json. The folder is
  * assembled in a temporary sibling and renamed into place, so a failure never exposes a
  * partial delivery.
  *
@@ -181,10 +182,10 @@ export async function deliver(input) {
   } = input
   const hash = outputsHash(outputs)
   const latest = latestDelivery(episodeDir)
-  if (
-    latest &&
-    (latest.meta.outputs_hash === hash || latest.meta.input_fingerprint === inputFingerprint)
-  ) {
+  // A version is kept only when the delivered bytes are the same (spec S8): a rerun whose
+  // outputs changed is a new version even when its input fingerprint did not, so a renderer
+  // or asset change can never hide behind an old delivery.
+  if (latest && latest.meta.outputs_hash === hash) {
     return { version: latest.version, created: false, outputsHash: hash, inputFingerprint }
   }
 

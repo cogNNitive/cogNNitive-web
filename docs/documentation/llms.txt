@@ -4,6 +4,7 @@
 ## Documentation Index
 
 - [Home](README.md)
+- [Master document: every page in one file](master.md)
 - [Create your first domaiNN](content/tutorials/first-domain.md)
 - [Model a domain from scratch](content/tutorials/domain-from-scratch.md)
 - [Install and connect an AI agent](content/how-to/install-agent.md)

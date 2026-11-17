@@ -15,7 +15,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-import { QA_TEXT_EDGE_MIN, qaMaster, defaultMeasureFrameEdgeDensity, defaultSampleEdgeDensity, overlayCropRegion, overlayControlCropRegion } from '../scripts/lib/qa.mjs';
+import { QA_TEXT_EDGE_MIN, qaOutput, defaultMeasureFrameEdgeDensity, defaultSampleEdgeDensity, overlayCropRegion, overlayControlCropRegion } from '../scripts/lib/qa.mjs';
 
 const FPS = 30;
 
@@ -33,7 +33,7 @@ function manifestWith(overlays, { frames = 90, scenes } = {}) {
   };
 }
 
-/** Runs qaMaster with a host div per overlay and a stubbed density; returns { res, sampled }. */
+/** Runs qaOutput with a host div per overlay and a stubbed density; returns { res, sampled }. */
 async function runQa(overlays, density, opts = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-qa-presence-'));
   try {
@@ -42,17 +42,19 @@ async function runQa(overlays, density, opts = {}) {
       .map((o) => `<div id="${o.id}" class="clip nn-overlay" data-start="${o.fromFrame / FPS}" data-duration="${o.durationInFrames / FPS}"></div>`)
       .join('');
     fs.writeFileSync(path.join(dir, 'hyperframes', 'index.html'), `<div id="root">${hosts}</div>`);
-    const masterPath = path.join(dir, 'master.mp4');
-    fs.writeFileSync(masterPath, 'video');
+    const outputPath = path.join(dir, 'master.mp4');
+    fs.writeFileSync(outputPath, 'video');
     const sampled = [];
     const frames = opts.frames || 90;
-    const res = await qaMaster({
+    const res = await qaOutput({
       episodeDir: dir,
+      projectDir: path.join(dir, 'hyperframes'),
+      declaredSize: '1920x1920',
       manifest: manifestWith(overlays, opts),
-      masterPath,
+      outputPath,
       deps: {
         checkTools: () => ({ ok: true }),
-        probeMaster: () => ({ width: 1920, height: 1920, duration: frames / FPS, hasAudio: true }),
+        probeVideo: () => ({ width: 1920, height: 1920, duration: frames / FPS, hasAudio: true }),
         sampleEdgeDensity: (args) => (sampled.push(args), density),
       },
     });
@@ -77,13 +79,15 @@ test('an overlay with empty text still fails when its host is missing (structura
   try {
     fs.mkdirSync(path.join(dir, 'hyperframes'), { recursive: true });
     fs.writeFileSync(path.join(dir, 'hyperframes', 'index.html'), '<div id="root"></div>');
-    const res = await qaMaster({
+    const res = await qaOutput({
       episodeDir: dir,
+      projectDir: path.join(dir, 'hyperframes'),
+      declaredSize: '1920x1920',
       manifest: manifestWith([{ id: 'ov_title', type: 'kineticTitle', sceneId: 'scene_one', fromFrame: 0, durationInFrames: 90, config: { heading: '' } }]),
-      masterPath: path.join(dir, 'master.mp4'),
+      outputPath: path.join(dir, 'master.mp4'),
       deps: {
         checkTools: () => ({ ok: true }),
-        probeMaster: () => ({ width: 1920, height: 1920, duration: 3, hasAudio: true }),
+        probeVideo: () => ({ width: 1920, height: 1920, duration: 3, hasAudio: true }),
         sampleEdgeDensity: () => 1,
       },
     });
@@ -151,13 +155,15 @@ test('a caption host missing from index.html still fails structurally', async ()
   try {
     fs.mkdirSync(path.join(dir, 'hyperframes'), { recursive: true });
     fs.writeFileSync(path.join(dir, 'hyperframes', 'index.html'), '<div id="root"></div>');
-    const res = await qaMaster({
+    const res = await qaOutput({
       episodeDir: dir,
+      projectDir: path.join(dir, 'hyperframes'),
+      declaredSize: '1920x1920',
       manifest: manifestWith([{ id: 'cap_0', type: 'caption', sceneId: 'scene_one', fromFrame: 0, durationInFrames: 30, config: { text: 'x' } }]),
-      masterPath: path.join(dir, 'master.mp4'),
+      outputPath: path.join(dir, 'master.mp4'),
       deps: {
         checkTools: () => ({ ok: true }),
-        probeMaster: () => ({ width: 1920, height: 1920, duration: 3, hasAudio: true }),
+        probeVideo: () => ({ width: 1920, height: 1920, duration: 3, hasAudio: true }),
         sampleEdgeDensity: () => 1,
       },
     });
@@ -177,7 +183,7 @@ test('edge density reads the decoded frame from a file, never from ffmpeg stdout
     if (out !== '-' && out !== 'pipe:' && out !== 'pipe:1') fs.writeFileSync(out, Buffer.from([0, 255, 0, 255]));
     return { status: 0, stdout: Buffer.alloc(0), stderr: '' };
   };
-  const density = defaultMeasureFrameEdgeDensity({ masterPath: 'm.mp4', timeSeconds: 1, crop: { width: 2, height: 2, x: 0, y: 0 }, run });
+  const density = defaultMeasureFrameEdgeDensity({ videoPath: 'm.mp4', timeSeconds: 1, crop: { width: 2, height: 2, x: 0, y: 0 }, run });
   assert.equal(calls[0]?.cmd, 'ffmpeg');
   assert.ok(!['-', 'pipe:', 'pipe:1'].includes(calls[0].args.at(-1)), 'ffmpeg writes to a file');
   assert.equal(density, 0.5);
@@ -194,8 +200,8 @@ test('edge density on a real master: textured frame > 0, flat frame = 0 (needs f
     assert.equal(spawnSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'testsrc=size=320x320:rate=10', '-t', '1', '-pix_fmt', 'yuv420p', textured]).status, 0);
     assert.equal(spawnSync('ffmpeg', ['-v', 'error', '-f', 'lavfi', '-i', 'color=c=gray:size=320x320:rate=10', '-t', '1', '-pix_fmt', 'yuv420p', flat]).status, 0);
     const crop = { width: 160, height: 160, x: 0, y: 0 };
-    assert.ok(defaultMeasureFrameEdgeDensity({ masterPath: textured, timeSeconds: 0.5, crop }) > 0.001);
-    assert.equal(defaultMeasureFrameEdgeDensity({ masterPath: flat, timeSeconds: 0.5, crop }), 0);
+    assert.ok(defaultMeasureFrameEdgeDensity({ videoPath: textured, timeSeconds: 0.5, crop }) > 0.001);
+    assert.equal(defaultMeasureFrameEdgeDensity({ videoPath: flat, timeSeconds: 0.5, crop }), 0);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -203,7 +209,7 @@ test('edge density on a real master: textured frame > 0, flat frame = 0 (needs f
 
 test('overlayControlCropRegion yields valid non-overlapping control area within master', () => {
   const cropBottom = { width: 756, height: 250, x: 474, y: 1200 };
-  const ctrlBottom = overlayControlCropRegion({ crop: cropBottom, masterWidth: 1920, masterHeight: 1920 });
+  const ctrlBottom = overlayControlCropRegion({ crop: cropBottom, canvasWidth: 1920, canvasHeight: 1920 });
   assert.equal(ctrlBottom.width, 756);
   assert.equal(ctrlBottom.height, 250);
   assert.equal(ctrlBottom.x, 474);
@@ -211,7 +217,7 @@ test('overlayControlCropRegion yields valid non-overlapping control area within 
   assert.ok(ctrlBottom.y + ctrlBottom.height <= cropBottom.y);
 
   const cropTop = { width: 450, height: 200, x: 420, y: 100 };
-  const ctrlTop = overlayControlCropRegion({ crop: cropTop, masterWidth: 1920, masterHeight: 1920 });
+  const ctrlTop = overlayControlCropRegion({ crop: cropTop, canvasWidth: 1920, canvasHeight: 1920 });
   assert.equal(ctrlTop.y, 300); // shifted below
   assert.ok(ctrlTop.y >= cropTop.y + cropTop.height);
 });
@@ -221,7 +227,7 @@ test('defaultSampleEdgeDensity uses controlCrop when provided', () => {
   const controlCrop = { width: 100, height: 100, x: 0, y: 100 };
   const mockMeasure = ({ crop: c }) => (c.y === 200 ? 0.025 : 0.010);
   const diff = defaultSampleEdgeDensity({
-    masterPath: 'fake.mp4',
+    outputPath: 'fake.mp4',
     time: 10,
     crop,
     controlCrop,
@@ -230,7 +236,7 @@ test('defaultSampleEdgeDensity uses controlCrop when provided', () => {
   assert.ok(Math.abs(diff - 0.015) < 1e-6);
 });
 
-test('qaMaster passes contiguous overlays when patch density exceeds control crop density', async () => {
+test('qaOutput passes contiguous overlays when patch density exceeds control crop density', async () => {
   const overlays = [
     { id: 'ov_1', type: 'lowerThird', sceneId: 'scene_01', fromFrame: 0, durationInFrames: 900, config: { title: 'First' } },
     { id: 'ov_2', type: 'lowerThird', sceneId: 'scene_02', fromFrame: 900, durationInFrames: 900, config: { title: 'Second' } },
@@ -242,7 +248,7 @@ test('qaMaster passes contiguous overlays when patch density exceeds control cro
   assert.ok(sampled[1].controlCrop);
 });
 
-test('qaMaster fails when overlay is absent in same-frame control comparison', async () => {
+test('qaOutput fails when overlay is absent in same-frame control comparison', async () => {
   const overlay = { id: 'ov_absent', type: 'lowerThird', sceneId: 'scene_01', fromFrame: 0, durationInFrames: 90, config: { title: 'Ghost' } };
   const { res } = await runQa([overlay], 0.0002); // below QA_TEXT_EDGE_MIN (0.0015)
   assert.equal(res.ok, false);

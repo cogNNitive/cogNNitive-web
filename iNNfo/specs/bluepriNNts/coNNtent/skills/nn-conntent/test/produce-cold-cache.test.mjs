@@ -251,7 +251,7 @@ function fakeRender() {
     const dir = path.dirname(opts.scriptPath)
     const master = path.join(dir, 'probe_1920x1920.mp4')
     fs.writeFileSync(master, MP4_BYTES)
-    const hyperframesDir = path.join(dir, 'hyperframes')
+    const hyperframesDir = path.join(dir, 'hyperframes', '1920x1920')
     fs.mkdirSync(hyperframesDir, { recursive: true })
     const manifest = {
       fps: 30,
@@ -367,19 +367,14 @@ test('3b-2.8 cold-cache E2E: script gate -> preview gate (0 avatars) -> delivery
       measureDuration: async () => 1.5,
     },
     qa: {
-      qaMaster: async () => ({ ok: true, checks: [] }),
+      hyperframesCheck: async () => ({ ok: true }),
+      qaOutput: async () => ({ ok: true, checks: [] }),
       qaOutputSet: async () => ({ ok: true, checks: [] }),
     },
     renderThumbnails: async ({ episodeDir, slug }) => [
       { path: path.join(episodeDir, `${slug}_thumbnail_2560x1440.png`) },
       { path: path.join(episodeDir, `${slug}_thumbnail_1080x1920.png`) },
     ],
-    formats: async ({ outDir, formats }) => ({
-      variants: (formats || []).map((f) => ({
-        path: path.join(outDir, `probe_${f.name}.mp4`),
-        outputPath: path.join(outDir, `probe_${f.name}.mp4`),
-      })),
-    }),
     writeConsole: async ({ rootDir }) => ({
       status: 'unchanged',
       path: path.join(rootDir, 'domaiNN_console.html'),

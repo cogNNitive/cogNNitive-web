@@ -41,7 +41,7 @@ export function thumbnailOutputs({ episodeDir, slug, formats }) {
   }));
 }
 
-/** Extract the first frame of a master/animatic as the thumbnail base (ffmpeg). */
+/** Extract the first frame of the primary output (or the animatic) as the thumbnail base (ffmpeg). */
 export function firstFrameFrom(videoPath, outputPath) {
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', videoPath, '-frames:v', '1', outputPath], {
     stdio: 'ignore',

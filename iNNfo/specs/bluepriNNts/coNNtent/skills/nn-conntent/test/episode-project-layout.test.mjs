@@ -4,10 +4,11 @@
  * nn-conntent/test/episode-project-layout.test.mjs
  *
  * Slice 5 layout contract (capability cognnitive-video-engine):
- *   - the engine project lives in `<episode>/hyperframes/` (manifest, index.html,
- *     compositions/, assets/, vendor/) and there is no `build/`, `public/` or `audio/`;
+ *   - each output format's engine project lives in `<episode>/hyperframes/<W>x<H>/`
+ *     (manifest, index.html, compositions/, assets/, vendor/) and there is no `build/`,
+ *     `public/` or `audio/`;
  *   - assets are hardlinks to the provider cache, never content-addressed copies;
- *   - a copy-mode run deletes `hyperframes/assets/` after a successful render;
+ *   - a copy-mode run deletes `hyperframes/<W>x<H>/assets/` after a successful render;
  *   - the project loads GSAP from `vendor/gsap.min.js`, never from a network URL.
  */
 
@@ -46,6 +47,7 @@ asset:: media/bg.png
 `;
 
 const bags = { blueprint: { output_formats: ['1920x1920'], fit: 'cover', transition: 'none' } };
+const PROJECT = path.join('hyperframes', '1920x1920');
 
 function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-project-layout-'));
@@ -70,21 +72,21 @@ function fixture() {
 
 const done = (dir) => fs.rmSync(dir, { recursive: true, force: true });
 
-test('compile writes the whole project under <episode>/hyperframes/ and no build/', async () => {
+test('compile writes the whole project under <episode>/hyperframes/<W>x<H>/ and no build/', async () => {
   const ep = fixture();
   try {
     await compileVideo({ scriptPath: ep.scriptPath, bags, synthesizeAssets: false, cacheDir: ep.cacheDir });
 
-    assert.ok(fs.existsSync(path.join(ep.episode, 'hyperframes', 'manifest.json')), 'the manifest lives under hyperframes/');
-    assert.ok(fs.existsSync(path.join(ep.episode, 'hyperframes', 'assets')), 'staging is the asset dir');
+    assert.ok(fs.existsSync(path.join(ep.episode, PROJECT, 'manifest.json')), 'the manifest lives under hyperframes/<W>x<H>/');
+    assert.ok(fs.existsSync(path.join(ep.episode, PROJECT, 'assets')), 'staging is the asset dir');
     assert.equal(fs.existsSync(path.join(ep.episode, 'build')), false, 'no build/ directory');
     assert.equal(fs.existsSync(path.join(ep.episode, 'public')), false, 'no public/ directory');
     assert.equal(fs.existsSync(path.join(ep.episode, 'audio')), false, 'no audio/ handoff');
     assert.equal(fs.existsSync(path.join(ep.episode, 'manifest.json')), false, 'no manifest at the episode root');
 
-    const manifest = JSON.parse(fs.readFileSync(path.join(ep.episode, 'hyperframes', 'manifest.json'), 'utf8'));
-    assert.equal(path.resolve(manifest.metadata.hyperframesDir), path.resolve(ep.episode, 'hyperframes'));
-    assert.equal(path.resolve(manifest.metadata.assetsDir), path.resolve(ep.episode, 'hyperframes', 'assets'));
+    const manifest = JSON.parse(fs.readFileSync(path.join(ep.episode, PROJECT, 'manifest.json'), 'utf8'));
+    assert.equal(path.resolve(manifest.metadata.hyperframesDir), path.resolve(ep.episode, PROJECT));
+    assert.equal(path.resolve(manifest.metadata.assetsDir), path.resolve(ep.episode, PROJECT, 'assets'));
     assert.equal(manifest.metadata.linkMode, 'link');
   } finally {
     done(ep.root);
@@ -95,11 +97,11 @@ test('a staged media asset is a hardlink to the source, not a copy', async () =>
   const ep = fixture();
   try {
     await compileVideo({ scriptPath: ep.scriptPath, bags, synthesizeAssets: false, cacheDir: ep.cacheDir });
-    const assets = fs.readdirSync(path.join(ep.episode, 'hyperframes', 'assets'));
+    const assets = fs.readdirSync(path.join(ep.episode, PROJECT, 'assets'));
     const staged = assets.find((name) => name.endsWith('.png'));
     assert.ok(staged, `the png was staged: ${assets.join(', ')}`);
     const source = path.join(ep.episode, 'media', 'bg.png');
-    const dest = path.join(ep.episode, 'hyperframes', 'assets', staged);
+    const dest = path.join(ep.episode, PROJECT, 'assets', staged);
     assert.ok(sameFile(source, dest), 'the staged asset IS the source file');
     assert.ok(fs.statSync(dest).nlink >= 2);
     assert.match(staged, /^bg_[0-9a-f]{12}\.png$/, 'no bare basename: the name keeps the content hash');
@@ -116,13 +118,13 @@ test('an authored folder colliding by case fails naming the collision and writes
       compileVideo({ scriptPath: ep.scriptPath, bags, synthesizeAssets: false, cacheDir: ep.cacheDir }),
       /Hyperframes/,
     );
-    assert.equal(fs.existsSync(path.join(ep.episode, 'hyperframes', 'manifest.json')), false, 'nothing was written');
+    assert.equal(fs.existsSync(path.join(ep.episode, PROJECT, 'manifest.json')), false, 'nothing was written');
   } finally {
     done(ep.root);
   }
 });
 
-test('a copy-mode render deletes hyperframes/assets/ after a successful render', async () => {
+test('a copy-mode render deletes hyperframes/<W>x<H>/assets/ after a successful render', async () => {
   const ep = fixture();
   try {
     resetCopyModeWarning();
@@ -143,8 +145,8 @@ test('a copy-mode render deletes hyperframes/assets/ after a successful render',
         return { status: 0 };
       },
     });
-    assert.equal(fs.existsSync(path.join(ep.episode, 'hyperframes', 'assets')), false, 'copy mode cleans up');
-    assert.ok(fs.existsSync(path.join(ep.episode, 'project-layout_1920x1920.mp4')), 'the master is in the episode folder');
+    assert.equal(fs.existsSync(path.join(ep.episode, PROJECT, 'assets')), false, 'copy mode cleans up');
+    assert.ok(fs.existsSync(path.join(ep.episode, 'project-layout_1920x1920.mp4')), 'the output is in the episode folder');
   } finally {
     resetCopyModeWarning();
     done(ep.root);
@@ -165,7 +167,7 @@ test('a link-mode render keeps the assets and the emitted project loads GSAP fro
         return { status: 0 };
       },
     });
-    const projectDir = path.join(ep.episode, 'hyperframes');
+    const projectDir = path.join(ep.episode, PROJECT);
     assert.ok(fs.existsSync(path.join(projectDir, 'assets')), 'link mode keeps the links');
     assert.ok(fs.existsSync(path.join(projectDir, 'vendor', 'gsap.min.js')), 'GSAP is vendored');
     for (const file of ['index.html', path.join('compositions', 'one.html')]) {

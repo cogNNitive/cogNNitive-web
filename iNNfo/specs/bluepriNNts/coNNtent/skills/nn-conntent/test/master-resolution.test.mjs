@@ -1,10 +1,10 @@
 /**
  * nn-conntent/test/master-resolution.test.mjs
  *
- * One declared master size (design D3/D5, capability cognnitive-video-engine):
- * `master_resolution` drives the manifest, nothing in engine code defaults to
- * 1920x1080, the retired CLI flags are refused, and the overlay components lay
- * out inside the central 1080x1080 safe square so a crop cannot cut them.
+ * Declared output sizes (design D3/D5, spec S3): `output_formats` drives every manifest,
+ * its first entry sizes the lowered model, the legacy `master_resolution` is still read as
+ * a one-format list, nothing in engine code defaults to 1920x1080, the retired CLI flags
+ * are refused, and the crop derivation of a square master is gone (V_0-26-0).
  */
 
 import test from 'node:test';
@@ -14,7 +14,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { SceneCompiler } from '../scripts/scene-compiler.mjs';
-import { DELIVERY_FORMATS } from '../scripts/render-formats.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SKILL = path.resolve(__dirname, '..');
@@ -74,29 +73,28 @@ test('the projector carries no 1920x1080 default and no orientation branch', () 
   assert.doesNotMatch(project, /objectPos = 'center 12%'/);
 });
 
-test('every delivery format is the declared crop or scale of the master', () => {
-  assert.equal(DELIVERY_FORMATS.vertical.width, 1080);
-  assert.equal(DELIVERY_FORMATS.vertical.height, 1920);
-  assert.equal(DELIVERY_FORMATS.horizontal.width, 1920);
-  assert.equal(DELIVERY_FORMATS.horizontal.height, 1080);
-  assert.equal(DELIVERY_FORMATS.square.width, 1080);
-  assert.equal(DELIVERY_FORMATS.square.height, 1080);
+test('there is no derivation step: render-formats and its formats/ folder are retired', () => {
+  assert.equal(fs.existsSync(path.join(SKILL, 'scripts', 'render-formats.mjs')), false);
+  assert.doesNotMatch(read('scripts/lib/pipeline.mjs'), /render-formats|'formats'|DELIVERY_FORMATS/);
 });
 
-test('the six overlay components lay out inside the central safe square', () => {
-  // Components live as `library/components/<name>/index.html` in the package.
+test('the compiler lists every declared output format, the first one sizing the model', () => {
+  const compiler = new SceneCompiler();
+  const lowered = compiler.lowerKnowledgeModel(model(), {
+    bags: { blueprint: { output_formats: ['1920x1080', '1080x1920', '1080x1080'] } },
+  });
+  assert.equal(lowered.width, 1920);
+  assert.equal(lowered.height, 1080);
+  assert.deepEqual(lowered.outputFormats.map((f) => f.size), ['1920x1080', '1080x1920', '1080x1080']);
+});
+
+test('the overlay components carry no central-square inset (the safe area is per canvas)', () => {
+  // Components live as `library/components/<name>/index.html` in the package; their
+  // per-canvas layout is pinned by safe-area.test.mjs and safe-zone.test.mjs.
   const BPS = path.resolve(__dirname, '..', '..', '..'); // test -> nn-conntent -> skills -> coNNtent
   for (const name of ['lower-third', 'caption', 'title', 'quote', 'watermark', 'b-roll']) {
-    const html = fs
-      .readFileSync(path.join(BPS, 'library', 'components', name, 'index.html'), 'utf8')
-      .replace(/\r\n/g, '\n');
-    assert.match(html, /#root \{ position: absolute; inset: 21\.875%; overflow: visible; \}/, `${name} carries the inset`);
-    assert.doesNotMatch(html, /#root \{ position: absolute; inset: 0;/, `${name} no longer fills the whole master`);
+    const html = fs.readFileSync(path.join(BPS, 'library', 'components', name, 'index.html'), 'utf8');
+    assert.doesNotMatch(html, /inset: 21\.875%/, `${name} has no central-square inset`);
+    assert.match(html, /var\(--safe-top/, `${name} reads the canvas safe area`);
   }
-});
-
-test('the safe square is the intersection of the three crops', () => {
-  // 1920 - 2*420 = 1080 in both axes; 420/1920 = 21.875%.
-  assert.equal(1920 - 2 * 420, 1080);
-  assert.equal(Math.round((420 / 1920) * 100000) / 1000, 21.875);
 });

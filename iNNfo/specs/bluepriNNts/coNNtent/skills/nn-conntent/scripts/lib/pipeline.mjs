@@ -60,16 +60,19 @@ import { estimateScriptCost } from '../asset-cost-estimator.mjs'
 import { randomUUID } from 'node:crypto'
 import { readTimingRows, sumLedgerSpend } from './facts.mjs'
 import { chapterLines, readManifestForFinalize, writeDescriptionFile } from './description.mjs'
-import { DELIVERY_FORMATS, renderFormats } from '../render-formats.mjs'
 import { renderVideo } from './render.mjs'
 import { synthesizeAvatars } from '../synthesize-avatar.mjs'
 import { isAvatarLayer } from './avatar-jobs.mjs'
 import { resolveWorkspace } from './video-guard.mjs'
 import {
-  qaMaster as defaultQaMaster,
+  qaCrossFormat,
+  qaHyperframesCheck,
+  qaOutput as defaultQaOutput,
   qaOutputSet as defaultQaOutputSet,
   writeQaReport,
 } from './qa.mjs'
+import { runHyperframesCheck } from '../hyperframes-render.mjs'
+import { parseOutputFormats } from '../scene-compiler.mjs'
 import { recordStage, synthesizeEpisodeAssets } from './compile.mjs'
 import { alignEpisodeCaptions } from './captions-stage.mjs'
 import { NO_OPEN_ENV, resolveConsoleModulePath } from './nn-core.generated.cjs'
@@ -85,15 +88,6 @@ const EPISODE_DOC_RE = /_coNNtent_NN\.md$/i
 
 /** The exits that need a human in the console: a gate, a spend stop or failed QA. */
 const HUMAN_EXITS = new Set([EXIT_REVIEW, EXIT_BUDGET, EXIT_QA])
-
-/** The derivation preset whose dimensions are exactly `size`, or null. */
-function presetForSize(size) {
-  return (
-    Object.keys(DELIVERY_FORMATS).find(
-      (name) => `${DELIVERY_FORMATS[name].width}x${DELIVERY_FORMATS[name].height}` === size,
-    ) || null
-  )
-}
 
 export class ProduceStop extends Error {
   constructor(code, message, extra = {}) {
@@ -344,6 +338,9 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
   }
 
   // 2. Script gate: derived from applied human verdicts and the current scene hashes.
+  // The configured output formats, primary first (spec S3): a malformed or empty list
+  // stops here, before any gate or spend.
+  const outputFormats = episodeOutputFormats(episode.model, scriptPath)
   const gates = resolveForEpisode(episode.model, scriptPath, 'review_gates').value
   const gateList = Array.isArray(gates)
     ? gates.map(String)
@@ -500,17 +497,12 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
   // any avatar call. The hash covers what the reviewer heard and saw.
   if (gateList.includes('preview')) {
     // The animatic shows the reviewer the episode with real audio and the pose still.
-    const declaredSizes = resolveForEpisode(episode.model, scriptPath, 'output_formats').value
-    const masterSize =
-      Array.isArray(declaredSizes) && declaredSizes.length > 0
-        ? String(declaredSizes[0])
-        : '1920x1920'
-    const [masterWidth, masterHeight] = masterSize.split('x').map((value) => Number(value))
+    // One animatic, in the primary format's aspect (spec S7).
     const renderAnimatic = deps.renderAnimatic || defaultRenderAnimatic
     const animatic = await renderAnimatic({
       scriptPath,
-      masterWidth: Number.isFinite(masterWidth) ? masterWidth : 1920,
-      masterHeight: Number.isFinite(masterHeight) ? masterHeight : 1920,
+      primaryWidth: outputFormats[0].width,
+      primaryHeight: outputFormats[0].height,
       facts,
       stageDeps: deps.stageDeps,
       ...(deps.render ? { render: deps.render } : {}),
@@ -585,7 +577,8 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
     log(`avatars: ${avatarLayers.length} layer(s) synthesized or picked up from cache`)
   }
 
-  // 5. Compile + render the master.
+  // 5. Compile once, render every output format (spec S1/S7): one native MP4 per
+  // `output_formats` entry, `<slug>_<W>x<H>.mp4` at the episode root.
   const render = deps.render || renderVideo
   const rendered = await render({
     scriptPath,
@@ -596,87 +589,68 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
     ...(synthOptions ? { synthesizerOptions: synthOptions } : {}),
     ...(cacheDir ? { cacheDir } : {}),
   })
-  const masterPath = rendered.outputVideoPath
-  log(
-    `render: ${masterPath} (${rendered.renderTimeMs} ms, link_mode=${rendered.linkMode || 'link'})`,
-  )
+  const outputs = renderedOutputs(rendered, outputFormats)
+  const primaryPath = outputs[0].path
+  for (const output of outputs) {
+    log(`render: ${output.path} (${output.format})`)
+  }
+  log(`render: ${outputs.length} format(s) in ${rendered.renderTimeMs} ms, link_mode=${rendered.linkMode || 'link'}`)
 
-  // 5b. Master QA gate: duration, size, audio stream and overlay emission (structural and visible)
-  const qaMasterFn = deps.qa?.qaMaster || deps.qaMaster || defaultQaMaster
+  // 5b. QA per output, before anything else is produced (spec S9): every format project
+  // passes `hyperframes check`, every output passes its own QA against its own manifest,
+  // and every format shares the primary's timeline.
+  const qaOutputFn = deps.qa?.qaOutput || deps.qaOutput || defaultQaOutput
+  const checkFn = deps.qa?.hyperframesCheck || deps.hyperframesCheck || runHyperframesCheck
   const qaStart = Date.now()
-  const { manifest } = readManifestForFinalize({ episodeDir, scriptPath })
-  const declaredSizes = resolveForEpisode(episode.model, scriptPath, 'output_formats').value
-  const declaredSize =
-    Array.isArray(declaredSizes) && declaredSizes.length > 0
-      ? String(declaredSizes[0])
-      : '1920x1920'
-
-  const masterQa = await qaMasterFn({
-    episodeDir,
-    manifest,
-    masterPath,
-    declaredSize,
-    deps: deps.qaDeps || deps,
-  })
+  const manifests = []
+  const formatChecks = []
+  let formatsOk = true
+  for (const output of outputs) {
+    const { manifest } = readManifestForFinalize({
+      episodeDir,
+      scriptPath,
+      manifestPath: output.manifestPath,
+      format: output.format,
+    })
+    manifests.push(manifest)
+    const projectDir = output.projectDir || manifest?.metadata?.hyperframesDir
+    const checked = await checkFn({ projectDir, format: output.format })
+    const hfQa = qaHyperframesCheck([{ format: output.format, projectDir, ...checked }])
+    const outQa = await qaOutputFn({
+      episodeDir,
+      manifest,
+      outputPath: output.path,
+      declaredSize: output.format,
+      projectDir,
+      deps: deps.qaDeps || deps,
+    })
+    formatChecks.push(...hfQa.checks, ...(outQa.checks || []))
+    formatsOk = formatsOk && hfQa.ok && outQa.ok
+  }
+  const crossQa = qaCrossFormat(manifests)
+  formatChecks.push(...crossQa.checks)
+  formatsOk = formatsOk && crossQa.ok
   recordStage(facts, { stage: 'qa', start: qaStart, end: Date.now() })
 
-  if (!masterQa.ok) {
-    writeQaReport(episodeDir, masterQa)
-    log(`qa: master checkpoint failed; report written to ${path.join(episodeDir, 'qa.json')}`)
+  if (!formatsOk) {
+    writeQaReport(episodeDir, { ok: false, checks: formatChecks })
+    log(`qa: output checkpoint failed; report written to ${path.join(episodeDir, 'qa.json')}`)
     await (deps.apply || applyChanges)(
       rootDir,
       [fieldChange(modelId, episode.slug, 'status', 'failed_qa')],
       { title: 'engine: failed_qa' },
     )
+    const failed = formatChecks.filter((c) => c.status === 'fail')
     throw new ProduceStop(
       'qa-failed',
-      `QA failed at master checkpoint: ${(masterQa.checks || [])
-        .filter((c) => c.status === 'fail')
-        .map((c) => c.id)
-        .join(', ')}`,
-      { exitCode: EXIT_QA, details: { checkpoint: 'master', checks: masterQa.checks } },
+      `QA failed at output checkpoint: ${failed.map((c) => (c.format ? `${c.id} (${c.format})` : c.id)).join(', ')}`,
+      { exitCode: EXIT_QA, details: { checkpoint: 'output', checks: formatChecks } },
     )
   }
-
-  // 6. Formats: every declared output after the first must exist.
-  const declared = resolveForEpisode(episode.model, scriptPath, 'output_formats').value
-  const sizes = Array.isArray(declared) ? declared.map(String) : []
-  const derived = sizes.slice(1)
-  const presets = []
-  for (const size of derived) {
-    const preset = presetForSize(size)
-    if (!preset) {
-      throw new ProduceStop(
-        'unsupported-format',
-        `output_formats declares ${size}, which the derivation has no preset for (known: ${Object.keys(DELIVERY_FORMATS).join(', ')}).`,
-      )
-    }
-    presets.push(preset)
-  }
-  let formats = []
-  if (presets.length > 0) {
-    // `fill::` is a delivery concern resolved through the cascade; a document that
-    // declares nothing resolves to `crop`, so its output is byte-identical to before.
-    const fillValue = resolveForEpisode(episode.model, scriptPath, 'fill').value
-    const fill = fillValue === null || fillValue === undefined || fillValue === '' ? undefined : String(fillValue)
-    const padColorValue = resolveForEpisode(episode.model, scriptPath, 'fill_pad_color').value
-    const padColor = padColorValue === null || padColorValue === undefined || padColorValue === '' ? undefined : String(padColorValue)
-    const made = await (deps.formats || renderFormats)({
-      master: masterPath,
-      outDir: path.join(episodeDir, 'formats'),
-      formats: presets,
-      ...(fill ? { fill } : {}),
-      ...(padColor ? { padColor } : {}),
-      force: true,
-    })
-    formats = made.variants || []
-    log(
-      `formats: ${formats.filter((v) => !v.skipped).length} derived under ${path.join(episodeDir, 'formats')}`,
-    )
-  }
+  const manifest = manifests[0]
 
   // 6a. Thumbnails: every declared size. Title, base and badge come from the cascade
-  // fields (defaults: the Video title, the first scene still, no badge).
+  // fields (defaults: the Video title, the primary output's first frame, no badge).
   const thumbnailFormats = resolveForEpisode(episode.model, scriptPath, 'thumbnail_formats').value
   const thumbnailTitle = String(
     resolveForEpisode(episode.model, scriptPath, 'thumbnail_title').value ||
@@ -696,8 +670,8 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
     }).path
   }
   if (!thumbnailBase) {
-    thumbnailBase = firstFrameFrom(
-      masterPath,
+    thumbnailBase = (deps.firstFrameFrom || firstFrameFrom)(
+      primaryPath,
       path.join(episodeDir, `${episode.slug}_thumbnail_base.png`),
     )
   }
@@ -712,28 +686,29 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
   })
   log(`thumbnails: ${thumbnails.length} size(s)`)
 
-  // 6b. Chapters: the printable block comes from the manifest the render just wrote.
-  // Authored prose is preserved, and chapters are written atomically inside markers.
+  // 6b. Chapters: the printable block comes from the primary manifest the render just
+  // wrote (every format shares its timeline). Authored prose is preserved, and chapters
+  // are written atomically inside markers.
   const chapters = chapterLines(manifest)
   const descriptionPath = path.join(episodeDir, `${episode.slug}_description.md`)
   writeDescriptionFile(descriptionPath, manifest)
   log(`description: chapters written to ${descriptionPath}\n${chapters.join('\n')}`)
 
-  // 6c. Output-set QA checkpoint
+  // 6c. Output-set QA checkpoint: this run's outputs only, never a stale file.
   const qaOutputSetFn = deps.qa?.qaOutputSet || deps.qaOutputSet || defaultQaOutputSet
   const qaOutStart = Date.now()
   const outputQa = await qaOutputSetFn({
     episodeDir,
     slug: episode.slug,
-    outputFormats: sizes,
+    outputs: outputs.map((o) => ({ format: o.format, path: o.path })),
     thumbnailFormats,
     deps: deps.qaDeps || deps,
   })
   recordStage(facts, { stage: 'qa', start: qaOutStart, end: Date.now() })
 
   const combinedReport = {
-    ok: masterQa.ok && outputQa.ok,
-    checks: [...(masterQa.checks || []), ...(outputQa.checks || [])],
+    ok: formatsOk && outputQa.ok,
+    checks: [...formatChecks, ...(outputQa.checks || [])],
   }
   writeQaReport(episodeDir, combinedReport)
 
@@ -754,15 +729,16 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
     )
   }
 
-  // 7. Delivery: the last step after QA. A passing run lands `deliveries/v<N>/`; an
-  // identical rerun is a no-op and earlier versions stay immutable.
+  // 7. Delivery: the last step after QA, only when the whole configured set passed. A
+  // passing run lands `deliveries/v<N>/`; a rerun whose bytes are identical is a no-op and
+  // earlier versions stay immutable. The fingerprint covers every format manifest, minus
+  // the fields that change on every compile.
   const deliveryOutputs = [
-    masterPath,
-    ...formats.map((variant) => variant.outputPath || variant.path).filter(Boolean),
+    ...outputs.map((o) => o.path),
     ...thumbnails.map((thumbnail) => thumbnail.path),
     descriptionPath,
   ].filter((file) => typeof file === 'string' && fs.existsSync(file))
-  const inputFingerprint = sha256Hex(canonicalJson({ manifest, planHash }))
+  const inputFingerprint = deliveryFingerprint({ manifests, planHash })
   const delivered = await (deps.deliver || defaultDeliver)({
     episodeDir,
     outputs: deliveryOutputs,
@@ -779,7 +755,6 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
     await (deps.apply || applyChanges)(
       rootDir,
       [
-        fieldChange(modelId, episode.slug, 'master', path.basename(masterPath)),
         fieldChange(modelId, episode.slug, 'status', 'delivered'),
         fieldChange(modelId, episode.slug, 'delivered_version', delivered.version),
       ],
@@ -795,8 +770,8 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
     budgetUsd,
     realUsd: rendered.spentUsd || 0,
     linkMode: rendered.linkMode || 'link',
-    master: masterPath,
-    formats,
+    primary: primaryPath,
+    outputs: outputs.map((o) => ({ format: o.format, path: o.path })),
     delivery: delivered,
     stages: timings.map((row) => ({
       stage: row.stage,
@@ -806,6 +781,63 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
     })),
   }
   return { code: EXIT_DONE, summary }
+}
+
+/**
+ * The resolved `output_formats` of an episode as `[{ size, width, height }]`, primary first
+ * (spec S3). An empty list is an error: there is nothing to render.
+ */
+export function episodeOutputFormats(model, scriptPath) {
+  let formats
+  try {
+    formats = parseOutputFormats(resolveForEpisode(model, scriptPath, 'output_formats').value)
+  } catch (err) {
+    throw new ProduceStop('unsupported-output-format', err.message)
+  }
+  if (formats.length === 0) {
+    throw new ProduceStop(
+      'no-output-formats',
+      'output_formats resolves to no format; declare at least one <W>x<H> (domain, series or video).',
+    )
+  }
+  return formats
+}
+
+/**
+ * The outputs a render reported, one per declared format, in the declared order. A render
+ * that did not produce every declared format stops the run before QA.
+ */
+function renderedOutputs(rendered, outputFormats) {
+  const reported = Array.isArray(rendered?.outputs) && rendered.outputs.length > 0
+    ? rendered.outputs
+    : rendered?.outputVideoPath
+      ? [{ format: outputFormats[0].size, path: rendered.outputVideoPath }]
+      : []
+  const byFormat = new Map(reported.map((o) => [String(o.format), o]))
+  const missing = outputFormats.filter((f) => !byFormat.has(f.size)).map((f) => f.size)
+  if (missing.length > 0) {
+    throw new ProduceStop(
+      'render-incomplete',
+      `The render produced no output for ${missing.join(', ')} of output_formats [${outputFormats.map((f) => f.size).join(', ')}].`,
+    )
+  }
+  return outputFormats.map((f) => ({ ...byFormat.get(f.size), format: f.size }))
+}
+
+/** Manifest fields that change on every compile and never change the rendered bytes. */
+const VOLATILE_MANIFEST_FIELDS = ['generatedAt']
+
+/**
+ * The delivery input fingerprint (spec S8): every format manifest, in order, without its
+ * volatile fields, plus the plan hash. An unchanged rerun therefore fingerprints the same.
+ */
+export function deliveryFingerprint({ manifests, planHash }) {
+  const stable = (manifests || []).map((m) => {
+    const metadata = { ...(m?.metadata || {}) }
+    for (const field of VOLATILE_MANIFEST_FIELDS) delete metadata[field]
+    return { ...m, metadata }
+  })
+  return sha256Hex(canonicalJson({ manifests: stable, planHash }))
 }
 
 export { ChangesetError, EpisodeError }

@@ -59,7 +59,7 @@ Series, cascade and character authoring follow `procedures/create_series_procedu
   images through `media-use`; an episode with no music bed is a decision, not a default.
 - **Verify with snapshots; render once.** After each visual change run `hyperframes check`
   on the project, then `hyperframes snapshot` and inspect the frames it writes. Fix and
-  repeat on snapshots. Render the master once, at the end, through `produce`: a full render
+  repeat on snapshots. Render the outputs once, at the end, through `produce`: a full render
   takes minutes and is never the way to check a fix.
 - **Scene Kinds come only from the series.** Every `kind::` names a `Scene Kind` the Series
   document declares. Never invent a kind, or write a field where the blueprint does not
@@ -155,22 +155,21 @@ regenerates the domaiNN console, and opens it only when the exit needs a human (
    *Needs the narration audio the first `compile` cached (it reads `<domain>/.cognnitive/cache/video/tts` directly: there is no `audio/` copy) and `WAVESPEED_API_KEY`. The price is per second of that audio (measured first; unmeasurable audio is refused), the default and only allowed model is `wavespeed-ai/infinitetalk-fast`, and the whole batch is refused before the first charge. A job takes minutes: the task id is journaled in `.cognnitive/pending-predictions.jsonl` before polling, and a re-run is REFUSED while the journal shows an outstanding job for the same scene (use the printed `--resume` command; `--force-resubmit` costs money). On a timeout or recoverable failure the script exits 3 with one complete resume command per task (resume never re-submits). Avatar images must be real files (prompt-only avatar layers need the image generated first by compile); a scene whose narration, voice or model changed has no cache entry and is refused (re-run compile first). Billing is ceil(seconds), capped by `maxAvatarSeconds`. The second `compile` rewrites each cached avatar layer to a muted `video` layer.*
    *`avatar_resolution::` is sent to the provider and is ADVISORY, not enforced: measured on `wavespeed-ai/infinitetalk-fast` with 720p declared, a 1920x1920 still returned 480x480 and a 2848x1600 still returned 640x352. The provider keeps the input aspect ratio and holds the pixel budget near 0.23 Mpx. The stage therefore ffprobes the clip it cached and warns when the short side is under the declared label (the size is recorded on the job and in the ledger line); it never re-requests it. A non-square avatar still also warns: a square master draws the layer with `cover`, so a 16:9 still keeps only about 56% of its frame. Compose the still square; the stage never changes the composition for you.*
 
-6. **Render the Master (one file at the master resolution)**:
+6. **Render the outputs (one native file per output format)**:
    ```bash
    node scripts/lib/render.mjs render <script_NN.md>
    ```
-   *`render` takes the SCRIPT (a manifest argument is a usage error) and compiles first, so a stale manifest can never be rendered. It has no output option: the master is always `<episode-dir>/<slug>_<W>x<H>.mp4`, and `compile` has no `--output`/`--out` either (the manifest is always `hyperframes/manifest.json`). The master size comes from the first entry of `output_formats`; there is no `--format`, `--width` or `--height` and no 9:16 recompile. The master is written in place through a temp file in `hyperframes/`, so the path holds either the previous complete master or the new one. The project loads `vendor/gsap.min.js` (never a network URL): a missing pinned GSAP is a loud failure. A HyperFrames failure is a loud, non-zero error that includes the tail of the CLI's stderr - there is no FFmpeg fallback. Everything after a literal `--` is forwarded verbatim to `hyperframes render`; `--allow-mock` is only for CI placeholders. An avatar Layer with no cached lip-sync clip stops the render before it starts.*
+   *`render` takes the SCRIPT (a manifest argument is a usage error) and compiles first, so a stale manifest can never be rendered. Compile synthesizes narration, alignment and images once, then projects the episode onto every `output_formats` entry: each format gets its own project `hyperframes/<W>x<H>/` (its own `manifest.json`, same timeline, its own canvas) and its own output `<episode-dir>/<slug>_<W>x<H>.mp4`. The first entry is the primary output. There is no master, no crop derivation, no `--format`, `--width` or `--height` and no output option; `compile` has no `--output`/`--out` either. Each output is written in place through a temp file in its own project, so the path holds either the previous complete output or the new one. The project loads `vendor/gsap.min.js` (never a network URL): a missing pinned GSAP is a loud failure. A HyperFrames failure is a loud, non-zero error that includes the tail of the CLI's stderr - there is no FFmpeg fallback. Everything after a literal `--` is forwarded verbatim to `hyperframes render`; `--allow-mock` is only for CI placeholders. An avatar Layer with no cached lip-sync clip stops the render before it starts.*
 7. **Compose Video Thumbnail**:
    ```bash
    node scripts/render-thumbnail.mjs --base <path> --title <title> --out <out> [--series <series-dir>]
    ```
    *`render-thumbnail.mjs` is the only Phase B thumbnail tool. When `--series <dir>` is passed (or a series is found by walking from `--out`), the subtitle and badge default to the Series `title`; explicit `--subtitle`/`--badge` win.*
-8. **Produce (formats + status)**:
+8. **Produce (every format + status)**:
    ```bash
    node scripts/produce.mjs <episode-dir> [--dry-run] [--no-open]
    ```
-   *`produce` derives the delivery files from the master — `<slug>_1080x1920.mp4`, `<slug>_1920x1080.mp4` and `<slug>_1080x1080.mp4` according to `output_formats` — writes the chapters into `description.md`, sets `master::` and `thumbnail::` on the Video element, and moves the Episode to `status:: produced`. A format with no preset is `unsupported-format`, never a guess. It never writes a manifest by hand: `compile` owns `hyperframes/manifest.json`.*
-   *How a derived file reframes the square is `fill::` (`crop | blur | pad`, Video/Series/Video Defaults). `crop` is the default and the right choice for the destinations this pipeline serves, which re-frame a padded file themselves (YouTube pads non-native video in its own player and asks creators not to pad; TikTok letterboxes; Instagram letterboxes on a blurred background or Smart Zooms). `blur` and `pad` write a suffixed file (`_blur`, `_pad`) with the whole square fitted and centred, and are for a destination that honours the file as delivered: a brand-owned player, an embed, OTT, or a broadcast slot that permits it. Unset means `crop`, so an existing episode renders exactly as before; an unknown value is refused by name.*
+   *`produce` renders every `output_formats` entry natively (default `[1920x1080, 1080x1920, 1080x1080]`, horizontal primary), runs `hyperframes check` on each format project with the pinned CLI, runs QA on each output against its own manifest and safe area, checks that every format shares the primary's duration and timeline, then writes the thumbnails (first-frame fallback from the primary output), the chapters into `description.md`, and delivers the whole set under `deliveries/v<N>/` with `status:: delivered`. One failing format stops the run at `failed_qa` and nothing is delivered. A format that is not `<W>x<H>` stops before any spend (`unsupported-output-format`). It never writes a manifest by hand: `compile` owns `hyperframes/<W>x<H>/manifest.json`.*
 9. **Housekeeping (optional)**:
    ```bash
    node scripts/prune-duplicates.mjs <episode-or-series-dir> [--apply] [--json]
@@ -204,11 +203,11 @@ regenerates the domaiNN console, and opens it only when the exit needs a human (
 | `scripts/lib/avatar-jobs.mjs` | Avatar job definition shared by synthesize-avatar and compile: layer predicate, audio source, content-addressed cache key, cached-clip pickup. |
 | `scripts/voice-clone.mjs` | Clone a voice once (pending reservation under a lock, atomic registry write, ledgered); refuses re-cloning without `--force`. |
 | `scripts/asset-cost-estimator.mjs` | Pre-generation provider options catalog, per-scene character/layer calculator, and production cost estimator. |
-| `scripts/lib/compile.mjs` | The compile primitive: validates, resolves the cascade, synthesizes missing assets, stages them and writes `hyperframes/manifest.json`. `--dry-run` previews spend. |
-| `scripts/lib/render.mjs` | The render primitive: takes the script, compiles, and writes the master in place. The size comes from `output_formats`. |
+| `scripts/lib/compile.mjs` | The compile primitive: validates, resolves the cascade, synthesizes missing assets once, then stages and writes one project and `manifest.json` per output format under `hyperframes/<W>x<H>/`. `--dry-run` previews spend. |
+| `scripts/lib/render.mjs` | The render primitive: takes the script, compiles, and writes one output per `output_formats` entry in place, `<slug>_<W>x<H>.mp4`; the first is the primary output. |
+| `scripts/lib/safe-area.mjs` | The per-canvas safe area that captions, overlays, `placement:: inset` media and QA share. |
 | `scripts/lib/series-doc.mjs` | Reads a Series' `<series>_coNNtent_NN.md` document (title, slug, fields). |
 | `scripts/prune-duplicates.mjs` | Reports (or, with `--apply`, deletes) episode files whose exact bytes and extension already exist in the provider cache. The cache entry is never touched. |
-| `scripts/render-formats.mjs` | The one derivation from the master: `_1080x1920` and `_1920x1080` are the central 1080 crops, `_1080x1080` is a lanczos scale, and `--fill blur` is an opt-in with a `_blur` suffix. |
 | `scripts/render-thumbnail.mjs` | Programmatic thumbnail compositor: renders a one-frame HyperFrames composition (base image + typography + brand pill) through the pinned CLI. `--series <dir>` (or the cascade from `--out`) fills subtitle/badge from the Series `title`; font/accent come from the resolved `frame` tokens. |
 
 Run any script with no arguments (or a bad one) to see its usage banner.

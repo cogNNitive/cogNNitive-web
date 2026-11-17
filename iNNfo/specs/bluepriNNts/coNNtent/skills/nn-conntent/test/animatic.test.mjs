@@ -15,17 +15,17 @@ import {
   renderAnimatic,
 } from '../scripts/lib/animatic.mjs';
 
-test('the animatic is 640 px wide, 15 fps, at the master aspect', () => {
+test('the animatic is 640 px wide, 15 fps, at the primary format aspect', () => {
   assert.equal(ANIMATIC_WIDTH, 640);
   assert.equal(ANIMATIC_FPS, 15);
-  assert.deepEqual(animaticProfile({ masterWidth: 1920, masterHeight: 1080 }), {
+  assert.deepEqual(animaticProfile({ primaryWidth: 1920, primaryHeight: 1080 }), {
     width: 640,
     height: 360,
     fps: 15,
   });
-  assert.deepEqual(animaticProfile({ masterWidth: 1920, masterHeight: 1920 }), {
+  assert.deepEqual(animaticProfile({ primaryWidth: 1080, primaryHeight: 1920 }), {
     width: 640,
-    height: 640,
+    height: 1138,
     fps: 15,
   });
 });
@@ -38,8 +38,8 @@ test('renderAnimatic renders the low-res profile as an animatic', async () => {
   const captured = [];
   await renderAnimatic({
     scriptPath: 'series/s/episodes/e/e_coNNtent_NN.md',
-    masterWidth: 1920,
-    masterHeight: 1080,
+    primaryWidth: 1920,
+    primaryHeight: 1080,
     render: async (options) => {
       captured.push(options);
       return { outputVideoPath: 'x' };

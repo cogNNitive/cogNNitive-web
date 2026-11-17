@@ -6,7 +6,7 @@ import registry from '../scripts/lib/field-registry.generated.json' with { type:
 
 const source = readFileSync(new URL('../../../assets/console-view-conntent.js', import.meta.url), 'utf8')
 
-function fixture({ emptyEpisode = false } = {}) {
+function fixture({ emptyEpisode = false, outputs = null } = {}) {
   const dom = new JSDOM('<div id="view"></div>', { runScripts: 'outside-only' })
   const { window } = dom
   window.HTMLMediaElement.prototype.pause = function () {}
@@ -35,6 +35,7 @@ function fixture({ emptyEpisode = false } = {}) {
   })
   const episodes = [episode('one'), episode('two')]
   if (emptyEpisode) episodes[0].scenes = []
+  if (outputs) episodes[0].outputs = outputs
   const container = window.document.getElementById('view')
   const mounted = views[0].mount({ container, ui: window.nnUI, payload: { model: { meta: {} } },
     viewData: { tree: { series: [{ slug: 'series', title: 'Test series', episodes }] },
@@ -222,4 +223,18 @@ test('hierarchy nests the same editable episode cards under series and preserves
   assert.equal(cards[0].querySelector('[data-nn-subsection="config"]').hidden, false)
   assert.equal(container.querySelectorAll('[data-nn-episode-config]').length, cards.length)
   dom.window.close()
+})
+
+test('the episode lists every output format, primary first, with its own QA verdict', () => {
+  const { container } = fixture({ outputs: [
+    { format: '1920x1080', file: 'one_1920x1080.mp4', path: 'series/s/episodes/one/one_1920x1080.mp4', qa: 'passed' },
+    { format: '1080x1920', file: 'one_1080x1920.mp4', path: null, qa: 'failed' },
+    { format: '1080x1080', file: 'one_1080x1080.mp4', path: null, qa: null },
+  ] })
+  const rows = [...container.querySelectorAll('[data-nn-output]')]
+  assert.deepEqual(rows.map((r) => r.getAttribute('data-nn-output')), ['1920x1080', '1080x1920', '1080x1080'])
+  assert.match(rows[0].textContent, /primary/)
+  assert.doesNotMatch(rows[1].textContent, /primary/)
+  assert.deepEqual(rows.map((r) => r.querySelector('.nn-output-qa').textContent), ['QA passed', 'QA failed', 'QA pending'])
+  assert.match(rows[2].textContent, /one_1080x1080\.mp4 \(not rendered\)/)
 })

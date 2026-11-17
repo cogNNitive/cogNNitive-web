@@ -81,25 +81,25 @@ test('a changed run creates v2 and v1 bytes stay untouched', async () => {
   }
 });
 
-test('a version increments only when both the outputs and the input fingerprint change', async () => {
+test('a version increments whenever the delivered bytes change, never on the fingerprint alone', async () => {
   const ws = workspace();
   try {
     await deliver({ episodeDir: ws.episode, outputs: ws.outputs, inputFingerprint: 'fp-1' });
 
-    // Same inputs, different bytes: absorbed (non-reproducible re-encode).
+    // Same inputs, different bytes: a new version (spec S8, M10). A renderer or asset
+    // change must never hide behind the old delivery.
     const staged = `${ws.outputs[0]}.new`;
     fs.writeFileSync(staged, 'master-reencoded');
     fs.renameSync(staged, ws.outputs[0]);
     const sameInputs = await deliver({ episodeDir: ws.episode, outputs: ws.outputs, inputFingerprint: 'fp-1' });
-    assert.equal(sameInputs.created, false, 'only outputs changed');
-    assert.deepEqual(fs.readdirSync(path.join(ws.episode, 'deliveries')), ['v1']);
+    assert.equal(sameInputs.created, true, 'changed bytes are a new version');
+    assert.equal(sameInputs.version, 'v2');
+    assert.deepEqual(fs.readdirSync(path.join(ws.episode, 'deliveries')).sort(), ['v1', 'v2']);
 
-    // Same outputs as the delivered version, different inputs: also no-op.
-    const back = `${ws.outputs[0]}.new`;
-    fs.writeFileSync(back, 'master-bytes');
-    fs.renameSync(back, ws.outputs[0]);
+    // Same bytes as the latest version, different inputs: a no-op.
     const sameOutputs = await deliver({ episodeDir: ws.episode, outputs: ws.outputs, inputFingerprint: 'fp-2' });
     assert.equal(sameOutputs.created, false, 'only inputs changed');
+    assert.equal(sameOutputs.version, 'v2');
   } finally {
     ws.cleanup();
   }

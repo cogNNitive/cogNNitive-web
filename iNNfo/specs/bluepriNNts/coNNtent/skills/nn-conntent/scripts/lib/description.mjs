@@ -114,8 +114,12 @@ export function writeDescriptionFile(descriptionPath, manifest) {
  * @param {{ episodeDir: string, scriptPath: string, manifestPath?: string }} options
  * @returns {{ manifest: any, manifestPath: string }}
  */
-export function readManifestForFinalize({ episodeDir, scriptPath, manifestPath } = {}) {
-  const file = manifestPath || path.join(episodeDir, 'hyperframes', 'manifest.json')
+export function readManifestForFinalize({ episodeDir, scriptPath, manifestPath, format } = {}) {
+  // Each output format has its own project, `hyperframes/<W>x<H>/` (spec S7).
+  if (!manifestPath && !format) {
+    throw new Error('readManifestForFinalize needs the manifest path or the output format (<W>x<H>)')
+  }
+  const file = manifestPath || path.join(episodeDir, 'hyperframes', format, 'manifest.json')
   if (!fs.existsSync(file)) {
     throw new Error(`Missing build manifest at ${file}; run compile (or render) first`)
   }

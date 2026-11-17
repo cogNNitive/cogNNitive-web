@@ -605,27 +605,28 @@ export class SceneCompiler {
       }
     }
 
-    // The master size is the first entry of the declared `output_formats`. The retired
-    // `master_resolution` stays readable for documents written before V_0-15-0 until the
-    // staging slice deletes it. Delivery formats are derived from the master, never rendered
-    // on their own (design D3).
+    // Every entry of the declared `output_formats` is a native output canvas (spec S1/S3);
+    // the first is the primary format and sizes the lowered model. The retired
+    // `master_resolution` stays readable for documents written before V_0-15-0 as a
+    // one-format list.
     const formats = resolve('output_formats', { ...bags, video: videoEl.fields || {} }).value;
-    const firstFormat = Array.isArray(formats) ? formats[0] : String(formats ?? '').replace(/^\[|\]$/g, '').split(',')[0];
     const legacyMaster = resolve('master_resolution', { ...bags, video: videoEl.fields || {} }).value;
-    const declared = String(firstFormat ?? '').trim() || (legacyMaster == null ? null : String(legacyMaster).trim()) || null;
-    let width = options.width ?? this.width;
-    let height = options.height ?? this.height;
-    if (declared !== null && declared !== undefined && String(declared).trim() !== '') {
-      const m = /^(\d+)x(\d+)$/.exec(String(declared).trim());
+    const outputFormats = parseOutputFormats(formats);
+    if (outputFormats.length === 0 && legacyMaster != null && String(legacyMaster).trim() !== '') {
+      const m = /^(\d+)x(\d+)$/.exec(String(legacyMaster).trim());
       if (!m) {
         throw new Error(
-          `unsupported-master-resolution: "${declared}" — expected <width>x<height>, for example 1920x1920`,
+          `unsupported-master-resolution: "${legacyMaster}" — expected <width>x<height>, for example 1920x1080`,
         );
       }
-      if (width === undefined || height === undefined) {
-        width = Number(m[1]);
-        height = Number(m[2]);
-      }
+      outputFormats.push({ size: m[0], width: Number(m[1]), height: Number(m[2]) });
+    }
+    const declared = outputFormats[0]?.size ?? null;
+    let width = options.width ?? this.width;
+    let height = options.height ?? this.height;
+    if (outputFormats.length > 0 && (width === undefined || height === undefined)) {
+      width = outputFormats[0].width;
+      height = outputFormats[0].height;
     }
 
     return {
@@ -634,7 +635,8 @@ export class SceneCompiler {
       fps: options.fps || this.fps,
       width,
       height,
-      masterResolution: declared ?? null,
+      masterResolution: declared,
+      outputFormats,
       videoProps: {},
       frame: resolve('frame', { ...bags, video: videoEl.fields || {} }),
       scenes,
@@ -666,6 +668,9 @@ export class SceneCompiler {
       layer_avatar_model: avatarModel ?? undefined,
       layer_avatar_resolution: fields.avatar_resolution,
       layer_fit: fit,
+      // Only `inset` changes the projection (spec S6); `full` is the default and stays out
+      // of the lowered model, so it never moves the script-gate hash.
+      layer_placement: fields.placement === 'inset' ? 'inset' : undefined,
     };
     for (const key of Object.keys(properties)) {
       if (properties[key] === undefined) delete properties[key];
@@ -985,11 +990,37 @@ export class SceneCompiler {
         generator: 'cogNNitive Video Engine',
         generatedAt: new Date().toISOString(),
         scriptSource,
-        // The Video element's reserved slug: the render names the master after it.
+        // The Video element's reserved slug: the render names every output after it.
         ...(parsed.slug ? { videoSlug: parsed.slug } : {}),
       },
     };
   }
+}
+
+/**
+ * Parses a resolved `output_formats` value into `[{ size, width, height }]`, in order and
+ * without duplicates. A list or a bracketed string is accepted; an entry that is not
+ * `<W>x<H>` throws `unsupported-output-format` (before anything is synthesized or written).
+ * @param {unknown} value
+ * @returns {{ size: string, width: number, height: number }[]}
+ */
+export function parseOutputFormats(value) {
+  if (value === null || value === undefined) return [];
+  const entries = Array.isArray(value)
+    ? value
+    : String(value).replace(/^\[|\]$/g, '').split(',');
+  const out = [];
+  for (const raw of entries) {
+    const size = String(raw ?? '').trim();
+    if (size === '') continue;
+    const m = /^(\d+)x(\d+)$/.exec(size);
+    if (!m || Number(m[1]) <= 0 || Number(m[2]) <= 0) {
+      throw new Error(`unsupported-output-format: "${size}" — expected <width>x<height>, for example 1920x1080`);
+    }
+    if (out.some((f) => f.size === size)) continue;
+    out.push({ size, width: Number(m[1]), height: Number(m[2]) });
+  }
+  return out;
 }
 
 // CLI runner: accept a structured model JSON or an L3 iNNfo document.

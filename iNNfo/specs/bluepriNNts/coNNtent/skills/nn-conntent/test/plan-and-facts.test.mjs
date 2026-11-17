@@ -157,9 +157,11 @@ test('a render records one timing row per stage in the fixed order', async () =>
       },
     });
     const rows = readTimingRows(root);
+    // One render row per output format (the blueprint default renders three), after the
+    // single synthesis and compile rows: assets are made once, rendered N times (spec S7).
     assert.deepEqual(
       rows.map((r) => r.stage),
-      ['tts', 'image', 'avatar', 'compile', 'render'],
+      ['tts', 'image', 'avatar', 'compile', 'render', 'render', 'render'],
       `stages: ${rows.map((r) => r.stage).join(',')}`,
     );
     const byStage = Object.fromEntries(rows.map((r) => [r.stage, r]));
