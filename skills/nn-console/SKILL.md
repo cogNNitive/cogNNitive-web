@@ -136,6 +136,8 @@ ctx.store.propose({
 
 Drafts appear immediately in the **Changes** tab of the console and are exported in the unified changeset.
 
+**Save Snapshot** writes the drafts and the UI state into the file itself, in the plain JSON slot `<script type="application/json" id="nn-drafts">` (`{ "drafts": [...], "uiState": {...} }`, `{}` in a fresh export), so an agent that receives the saved HTML reads them directly. The model payload stays in `<script id="nn-model">`, compressed with deflate-raw and base64-encoded; decode it in Node with `zlib.inflateRawSync(Buffer.from(slotText.trim(), 'base64'))`.
+
 ---
 
 ## 7. Compilation & Regeneration Protocol

@@ -764,6 +764,9 @@ Upon completing the creation or modification of a model, the agent MUST print th
 
 The console is a static file the MCP regenerates. Relay `next_steps.notice` (it carries the console path) and let the user open the file. To change the model the user prompts the agent, or drafts changes in the console and exports a changeset.
 
+When the user hands you a saved console HTML instead of a changeset, read the drafts from its plain JSON slot `<script type="application/json" id="nn-drafts">`: `drafts` holds the proposed changes and `uiState` the saved search, tab and reviewer. The model payload in `<script id="nn-model">` is deflate-raw compressed and base64-encoded; decode it only when you need the model itself:
+`node -e "const h=require('fs').readFileSync(process.argv[1],'utf8');const b=/id=.nn-model.>([^<]*)</.exec(h)[1];console.log(require('zlib').inflateRawSync(Buffer.from(b.trim(),'base64')).toString())" domaiNN_console.html`
+
 Example of dynamic checklist to generate:
 ```markdown
 📋 Visual Expectation Checklist in the domaiNN console (open `<console path>` in a browser):

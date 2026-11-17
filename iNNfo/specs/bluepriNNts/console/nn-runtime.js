@@ -223,6 +223,129 @@
     return { schema: schema, model: model }
   }
 
+  // The nn-model slot (`<script type="application/x-nn-deflate-base64">`) holds the
+  // payload JSON compressed with deflate-raw and encoded as base64: one format, no plain
+  // JSON reader. The browser decodes it once, asynchronously, before the synchronous
+  // `boot`; the decoded text is kept per document so a snapshot save starts from it.
+  // Drafts and UI state live in the plain JSON nn-drafts slot instead.
+  var MODEL_SLOT_TYPE = 'application/x-nn-deflate-base64'
+  var decodedModels = typeof WeakMap === 'function' ? new WeakMap() : null
+
+  function base64ToBytes(text) {
+    var binary = atob(String(text).replace(/\s+/g, ''))
+    var bytes = new Uint8Array(binary.length)
+    for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+    return bytes
+  }
+
+  function bytesToBase64(bytes) {
+    var parts = []
+    for (var i = 0; i < bytes.length; i += 0x8000) {
+      parts.push(String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)))
+    }
+    return btoa(parts.join(''))
+  }
+
+  function compressionUnsupported(api) {
+    var err = new Error(
+      'This console cannot open in this browser: it needs ' + api + ' to read its embedded data. ' +
+        'Open the file in a current version of Chrome, Edge, Firefox or Safari.',
+    )
+    err.code = 'NN_COMPRESSION_UNSUPPORTED'
+    return err
+  }
+
+  /** Decodes the text of an nn-model slot to the payload JSON text ('' for an empty slot). */
+  function decodeModelText(encoded) {
+    var text = String(encoded == null ? '' : encoded).trim()
+    if (text === '') return Promise.resolve('')
+    if (typeof DecompressionStream !== 'function' || typeof Response !== 'function') {
+      return Promise.reject(compressionUnsupported('DecompressionStream'))
+    }
+    var corrupt = function () {
+      return new Error('nn-console: nn-model slot holds corrupt compressed data')
+    }
+    var bytes
+    try {
+      bytes = base64ToBytes(text)
+    } catch {
+      return Promise.reject(corrupt())
+    }
+    return Promise.resolve()
+      .then(function () {
+        var stream = new Response(bytes).body.pipeThrough(new DecompressionStream('deflate-raw'))
+        return new Response(stream).text()
+      })
+      .catch(function () {
+        throw corrupt()
+      })
+  }
+
+  /** Encodes payload JSON text the way the exporter writes the nn-model slot. */
+  function encodeModelText(json) {
+    if (typeof CompressionStream !== 'function' || typeof Response !== 'function') {
+      return Promise.reject(compressionUnsupported('CompressionStream'))
+    }
+    return Promise.resolve().then(function () {
+      var stream = new Response(String(json)).body.pipeThrough(new CompressionStream('deflate-raw'))
+      return new Response(stream).arrayBuffer().then(function (buffer) {
+        return bytesToBase64(new Uint8Array(buffer))
+      })
+    })
+  }
+
+  /** Decodes the document's nn-model slot and remembers the result for `boot`. */
+  function decodeModelSlot(doc) {
+    var active = doc || (typeof document !== 'undefined' ? document : null)
+    if (!active) return Promise.reject(new Error('nn-console: no document to decode'))
+    return decodeModelText(slotText(active, 'nn-model')).then(function (text) {
+      if (decodedModels) decodedModels.set(active, text)
+      return text
+    })
+  }
+
+  /** The decoded payload JSON text of the document's nn-model slot ('' when the slot is empty). */
+  function modelSlotText(doc) {
+    if (decodedModels && decodedModels.has(doc)) return decodedModels.get(doc)
+    if (slotText(doc, 'nn-model') === '') return ''
+    throw new Error('nn-console: the nn-model slot is compressed; await decodeModelSlot(document) before boot()')
+  }
+
+  /** The nn-drafts slot: `{ drafts, uiState }` in plain JSON, `{}` when the console is fresh. */
+  function parseDraftsSlot(raw) {
+    var text = String(raw == null ? '' : raw).trim()
+    if (text === '') return {}
+    var parsed
+    try {
+      parsed = JSON.parse(text)
+    } catch {
+      throw new Error('nn-console: nn-drafts slot holds corrupt JSON')
+    }
+    if (!isObject(parsed)) {
+      throw new Error('nn-console: the nn-drafts slot must decode to a JSON object')
+    }
+    return parsed
+  }
+
+  /** A visible message in place of a blank page when the console cannot start. */
+  function showBootError(doc, err) {
+    if (!doc || !doc.body || typeof doc.createElement !== 'function') return null
+    var box = doc.getElementById('nn-boot-error') || doc.createElement('div')
+    box.id = 'nn-boot-error'
+    box.className = 'nn-boot-error'
+    box.setAttribute('role', 'alert')
+    if (box.style) {
+      box.style.cssText =
+        'margin:24px;padding:16px 20px;border:1px solid #b91c1c;border-radius:8px;' +
+        'background:#fef2f2;color:#7f1d1d;font:15px/1.5 system-ui,sans-serif'
+    }
+    var message = (err && err.message) || String(err)
+    box.textContent =
+      err && err.code === 'NN_COMPRESSION_UNSUPPORTED' ? message : 'The console could not start: ' + message
+    if (!box.parentNode) doc.body.insertBefore(box, doc.body.firstChild)
+    return box
+  }
+
   function resolveElementId(concept, name) {
     return slugify(String(concept || '') + ' ' + String(name || ''))
   }
@@ -7047,40 +7170,73 @@
     if (!active) return Promise.resolve({ ok: false, error: 'Document unavailable' })
     state = state || (active && active.__nnConsoleState) || activeState || {}
 
-    // 1. Synchronize State to DOM into <script id="nn-model">
+    // 1. Synchronize state into the slots: the model (compressed) into nn-model, the
+    // drafts and UI state (plain JSON an agent reads directly) into nn-drafts. The model
+    // always starts from the decoded payload, never from the compressed slot text.
     var modelSlot = active.getElementById('nn-model')
     if (!modelSlot) {
       return Promise.resolve({ ok: false, error: 'Element #nn-model not found' })
     }
 
-    var currentModel = {}
+    var currentModel
+    var savedDrafts
     try {
-      currentModel = JSON.parse(modelSlot.textContent || '{}')
-    } catch {
-      currentModel = {}
+      currentModel = JSON.parse(modelSlotText(active) || '{}')
+      savedDrafts = parseDraftsSlot(slotText(active, 'nn-drafts'))
+    } catch (err) {
+      return Promise.resolve({ ok: false, error: (err && err.message) || String(err) })
     }
+    if (!isObject(currentModel)) {
+      return Promise.resolve({ ok: false, error: 'nn-console: the nn-model slot must decode to a JSON object' })
+    }
+    var savedUiState = isObject(savedDrafts.uiState) ? savedDrafts.uiState : {}
 
-    var drafts = state && state.store ? state.store.drafts() : (currentModel.drafts || [])
+    var drafts = state && state.store
+      ? state.store.drafts()
+      : (Array.isArray(savedDrafts.drafts) ? savedDrafts.drafts : [])
     currentModel.meta = Object.assign({}, currentModel.meta || {}, (state && state.meta) || {})
     if (state && Array.isArray(state.elements)) currentModel.elements = state.elements
     if (state && Array.isArray(state.matrices)) currentModel.matrices = state.matrices
     if (state && Array.isArray(state.changes)) currentModel.changes = state.changes
-    currentModel.drafts = drafts
 
     var searchEl = active.getElementById('nn-search')
     var currentQuery = searchEl ? searchEl.value : (state && state.activeSearchQuery) || ''
-    currentModel.uiState = {
+    var uiState = {
       activeTab: (state && state.tabs && typeof state.tabs.current === 'function')
         ? state.tabs.current()
-        : (currentModel.uiState && currentModel.uiState.activeTab) || 'explorer',
+        : savedUiState.activeTab || 'explorer',
       searchQuery: currentQuery,
       reviewer: getReviewerName(),
       selectedElementId: (state && state.focusedElementId) || null,
       savedAt: new Date().toISOString(),
     }
 
-    modelSlot.textContent = '\n' + JSON.stringify(currentModel, null, 2) + '\n    '
+    var modelJson = JSON.stringify(currentModel)
+    var draftsJson = JSON.stringify({ drafts: drafts, uiState: uiState }).replace(/</g, '\\u003c')
 
+    return encodeModelText(modelJson).then(
+      function (encoded) {
+        modelSlot.textContent = '\n' + encoded + '\n'
+        if (decodedModels) decodedModels.set(active, modelJson)
+        var draftsSlot = active.getElementById('nn-drafts')
+        if (!draftsSlot) {
+          draftsSlot = active.createElement('script')
+          draftsSlot.setAttribute('type', 'application/json')
+          draftsSlot.id = 'nn-drafts'
+          modelSlot.parentNode.insertBefore(draftsSlot, modelSlot.nextSibling)
+        }
+        draftsSlot.textContent = '\n' + draftsJson + '\n'
+        return writeSnapshot(active, state, opts, drafts)
+      },
+      function (err) {
+        return { ok: false, error: (err && err.message) || String(err) }
+      },
+    )
+  }
+
+  // Serializes the whole (already synchronized) document and writes it in place through
+  // the File System Access API, or downloads it when that API is unavailable.
+  function writeSnapshot(active, state, opts, drafts) {
     // 2. Serializes Complete Document
     var rootEl = active.documentElement
     var hadBooted = rootEl ? rootEl.getAttribute('data-nn-console-booted') : null
@@ -7473,8 +7629,14 @@
       if (activeWindow && activeWindow.addEventListener) listen(activeWindow, 'visibilitychange', applyPaused)
     }
     var config = parseConfig(slotText(active, 'nn-config'))
-    var slots = parseSlots(slotText(active, 'nn-schema'), slotText(active, 'nn-model'))
+    // The nn-model slot is compressed: autoBoot decodes it before this synchronous boot,
+    // and a caller that decoded it itself passes the JSON text as `opts.modelText`.
+    if (opts && typeof opts.modelText === 'string' && decodedModels) decodedModels.set(active, opts.modelText)
+    var modelText = opts && typeof opts.modelText === 'string' ? opts.modelText : modelSlotText(active)
+    var slots = parseSlots(slotText(active, 'nn-schema'), modelText)
     var viewData = parseViewData(slotText(active, 'nn-view-data'))
+    var savedDrafts = parseDraftsSlot(slotText(active, 'nn-drafts'))
+    var uiState = isObject(savedDrafts.uiState) ? savedDrafts.uiState : null
     var schema = slots.schema
     var model = slots.model
     var meta = isObject(model.meta) ? model.meta : {}
@@ -7585,7 +7747,7 @@
         // A domain console keys its drafts by the stable domain id, never by content.
         String(meta.domainId || baseId) + (scopedView ? '::view:' + scopedView : '') + (consoleScope.models.length > 0 ? '::models:' + consoleScope.models.join(',') : ''),
         {
-          initialDrafts: Array.isArray(model.drafts) ? model.drafts : [],
+          initialDrafts: Array.isArray(savedDrafts.drafts) ? savedDrafts.drafts : [],
           onError: function (err) {
             notifyStoreError(active, err)
           },
@@ -7617,15 +7779,15 @@
     // Deep-link focus: the element id a `#el-<id>` hash asked to open, consumed
     // once by the next card render and then cleared.
     var focusId = null
-    if (model.uiState) {
-      if (model.uiState.reviewer) {
-        setReviewerName(model.uiState.reviewer)
+    if (uiState) {
+      if (uiState.reviewer) {
+        setReviewerName(uiState.reviewer)
       }
-      if (model.uiState.searchQuery) {
-        activeSearchQuery = String(model.uiState.searchQuery)
+      if (uiState.searchQuery) {
+        activeSearchQuery = String(uiState.searchQuery)
       }
-      if (model.uiState.selectedElementId) {
-        focusId = String(model.uiState.selectedElementId)
+      if (uiState.selectedElementId) {
+        focusId = String(uiState.selectedElementId)
       }
     }
     // Model Explorer view mode ('cards' | 'table') and the table sort state.
@@ -7929,8 +8091,8 @@
     if (!scopedView && typeof active.location !== 'undefined' && active.location && active.location.hash) {
       initialQuery = parseViewHash(active.location.hash).q
     }
-    if (!initialQuery && model.uiState && model.uiState.searchQuery) {
-      initialQuery = String(model.uiState.searchQuery)
+    if (!initialQuery && uiState && uiState.searchQuery) {
+      initialQuery = String(uiState.searchQuery)
     }
 
     var searchBox = active.getElementById('nn-search')
@@ -7974,10 +8136,10 @@
     activeState = state
     refresh(initialQuery, !!(tabs && tabs.hashTab()))
 
-    if (model.uiState && model.uiState.activeTab && tabs) {
+    if (uiState && uiState.activeTab && tabs) {
       var hasHashTab = (typeof active.location !== 'undefined' && active.location && active.location.hash) ? parseViewHash(active.location.hash).tab : ''
       if (!hasHashTab && typeof tabs.select === 'function') {
-        tabs.select(model.uiState.activeTab)
+        tabs.select(uiState.activeTab)
       }
     }
 
@@ -8243,6 +8405,27 @@
     return { ok: true, needs: config.needs, elements: elements.length, controller: state.controller, registry: registry, state: state, scope: consoleScope }
   }
 
+  // Decodes the compressed nn-model slot, then runs the synchronous boot. A browser
+  // without DecompressionStream (or a corrupt slot) gets a visible message, never a
+  // blank page.
+  function decodeAndBoot(doc) {
+    return decodeModelSlot(doc)
+      .then(function (modelText) {
+        return boot(doc, { modelText: modelText })
+      })
+      .catch(function (err) {
+        showBootError(doc, err)
+        if (typeof console !== 'undefined' && console.warn) console.warn('nn-console boot failed', err)
+        return { ok: false, reason: 'boot-failed', error: err }
+      })
+  }
+
+  // The self-boot of this page, once autoBoot started it: resolves to the boot result.
+  var autoBooted = null
+  function whenBooted() {
+    return autoBooted || Promise.resolve(null)
+  }
+
   function autoBoot() {
     try {
       if (typeof globalThis !== 'undefined' && globalThis.__innfoNoAutoBoot) return
@@ -8253,11 +8436,13 @@
         document.documentElement.setAttribute('data-nn-console-booted', 'true')
       }
       if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function () {
-          boot(document)
+        autoBooted = new Promise(function (resolve) {
+          document.addEventListener('DOMContentLoaded', function () {
+            resolve(decodeAndBoot(document))
+          })
         })
       } else {
-        boot(document)
+        autoBooted = decodeAndBoot(document)
       }
     } catch (err) {
       if (typeof console !== 'undefined' && console.warn)
@@ -8282,6 +8467,13 @@
     parseConfig: parseConfig,
     hasNeed: hasNeed,
     parseSlots: parseSlots,
+    MODEL_SLOT_TYPE: MODEL_SLOT_TYPE,
+    decodeModelText: decodeModelText,
+    encodeModelText: encodeModelText,
+    decodeModelSlot: decodeModelSlot,
+    decodeAndBoot: decodeAndBoot,
+    whenBooted: whenBooted,
+    showBootError: showBootError,
     resolveElementId: resolveElementId,
     filterElements: filterElements,
     buildRefsByName: buildRefsByName,

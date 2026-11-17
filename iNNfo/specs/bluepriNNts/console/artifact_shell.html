@@ -20,7 +20,9 @@
     Generating agents MUST only:
       1. Declare capabilities in the nn-config needs[] list below.
       2. Paste the Schema JSON Contract into #nn-schema.
-      3. Paste the Model JSON Contract into #nn-model.
+      3. Write the Model JSON Contract into #nn-model, compressed with deflate-raw
+         and base64-encoded (the exporter does this; an empty slot is an empty model).
+    Drafts and UI state live in #nn-drafts as plain JSON ({} in a fresh export).
     The shared runtime (nn-runtime.js, window.nnConsole) renders the rail
     cards, search, facets, cards, matrices, drafts and export modal.
     Do NOT inline runtime code here.
@@ -422,7 +424,8 @@
     <script type="application/json" id="nn-schema">
       {}
     </script>
-    <script type="application/json" id="nn-model">
+    <script type="application/x-nn-deflate-base64" id="nn-model"></script>
+    <script type="application/json" id="nn-drafts">
       {}
     </script>
     <script type="application/json" id="nn-view-data">
@@ -431,7 +434,7 @@
 
     <script src="./nn-console.bundle.js"></script>
 <!-- nn:console-shell:start -->
-<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@nn-console-v0.37.5/iNNfo/specs/bluepriNNts/console/nn-console.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/cogNNitive/cogNNitive@nn-console-v0.38.0/iNNfo/specs/bluepriNNts/console/nn-console.bundle.js"></script>
     <script src="https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/nn-console.bundle.js"></script>
 <!-- nn:console-shell:end -->
   </body>

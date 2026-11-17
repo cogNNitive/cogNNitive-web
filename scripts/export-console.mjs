@@ -42,6 +42,7 @@ import { join, relative, basename, resolve, dirname, isAbsolute } from 'node:pat
 import { fileURLToPath } from 'node:url'
 import { createHash } from 'node:crypto'
 import { StringDecoder } from 'node:string_decoder'
+import { deflateRawSync, inflateRawSync } from 'node:zlib'
 import { homedir } from 'node:os'
 import { createRequire } from 'node:module'
 import { spawn } from 'node:child_process'
@@ -513,19 +514,45 @@ function isLevel3(content) {
   return lvl === undefined || Number(lvl) === 3
 }
 
-function extractModelMetaFromHtml(htmlContent) {
-  // Dual read: a console exported before the `nn-` prefix migration carries
-  // `id="innfo-model"`.
-  const match = htmlContent.match(
-    /<script type="application\/json" id="(?:innfo|nn)-model">([\s\S]*?)<\/script>/,
-  )
+/**
+ * The nn-model slot holds the payload JSON compressed with deflate-raw (level 9) and
+ * encoded as base64, in a non-executable script of this type. deflate-raw, not gzip: a
+ * gzip header carries an OS byte, so the same input would not give the same bytes on
+ * every platform, and the "unchanged" check compares whole renders byte for byte.
+ * The codec lives here because this script ships flat, without `scripts/lib`.
+ */
+export const CONSOLE_MODEL_SLOT_TYPE = 'application/x-nn-deflate-base64'
+
+/** The nn-model slot of a console page, whatever its type; group 1 is its text. */
+const MODEL_SLOT_RE = /<script type="[^"]*" id="(?:innfo|nn)-model">([\s\S]*?)<\/script>/
+
+/** The nn-model slot text for `model`: deterministic deflate-raw (level 9) + base64. */
+export function encodeConsoleModel(model) {
+  return deflateRawSync(Buffer.from(JSON.stringify(model), 'utf8'), { level: 9 }).toString('base64')
+}
+
+/** The payload JSON text an nn-model slot holds ('' for an empty slot). Throws on corrupt data. */
+export function decodeConsoleModelText(slotText) {
+  const text = String(slotText ?? '').trim()
+  if (text === '') return ''
+  return inflateRawSync(Buffer.from(text, 'base64')).toString('utf8')
+}
+
+/** The decoded model of a console page, or null when it has no readable nn-model slot. */
+export function readConsoleModel(htmlContent) {
+  const match = MODEL_SLOT_RE.exec(htmlContent)
   if (!match) return null
   try {
-    const data = JSON.parse(match[1])
-    return data?.meta ?? null
+    return JSON.parse(decodeConsoleModelText(match[1]) || '{}')
   } catch {
     return null
   }
+}
+
+function extractModelMetaFromHtml(htmlContent) {
+  // Dual read: a console exported before the `nn-` prefix migration carries
+  // `id="innfo-model"`.
+  return readConsoleModel(htmlContent)?.meta ?? null
 }
 
 /** Workspace-relative members of the family `(dir, key, ext)`, via the core name contract. */
@@ -822,11 +849,20 @@ function injectSlots(shell, config, schema, model, viewData) {
       new RegExp(`(<script type="application/json" id="${id}">)[\\s\\S]*?(</script>)`),
       (_m, open, close) => `${open}\n${serialize(json)}\n${close}`,
     )
-  return slot(
-    slot(slot(slot(shell, 'nn-config', config), 'nn-schema', schema), 'nn-model', model),
-    'nn-view-data',
-    viewData || {},
+  // The model is always compressed, whatever type the shell's slot declares. A fresh
+  // export carries no drafts, so nn-drafts is always `{}` (added when the shell lacks it).
+  const modelSlot = `<script type="${CONSOLE_MODEL_SLOT_TYPE}" id="nn-model">\n${encodeConsoleModel(model)}\n</script>`
+  let html = slot(slot(shell, 'nn-config', config), 'nn-schema', schema).replace(
+    /<script type="[^"]*" id="nn-model">[\s\S]*?<\/script>/,
+    () => modelSlot,
   )
+  if (!html.includes('<script type="application/json" id="nn-drafts">')) {
+    html = html.replace(
+      modelSlot,
+      () => `${modelSlot}\n    <script type="application/json" id="nn-drafts">{}</script>`,
+    )
+  }
+  return slot(slot(html, 'nn-drafts', {}), 'nn-view-data', viewData || {})
 }
 
 // Image fields hold asset paths relative to the domain (or repo) root, but a
@@ -2385,6 +2421,10 @@ export async function writeConsole(opts = {}) {
   }
   // Final size gate, before the first write of this run.
   const bytes = (text) => Buffer.byteLength(text, 'utf8')
+  const slotBytes = (rendered, id) => {
+    const match = new RegExp(`<script type="[^"]*" id="${id}">([\\s\\S]*?)</script>`).exec(rendered)
+    return match ? bytes(match[1].trim()) : 0
+  }
 
   // A domain declares its own thresholds in the manifest frontmatter; an
   // unusable declaration is reported and the shipped defaults stay.
@@ -2405,8 +2445,8 @@ export async function writeConsole(opts = {}) {
   const budgetOf = (rendered, strategy = 'none') =>
     viewsLib.evaluateSizeBudget({
       bundle: bytes(preparedAssets.bundleScript) + bytes(preparedAssets.css),
-      models:
-        bytes(JSON.stringify(domainPayload.schema)) + bytes(JSON.stringify(domainPayload.model)),
+      // What the payload costs in the page: the schema slot plus the compressed model slot.
+      models: slotBytes(rendered, 'nn-schema') + slotBytes(rendered, 'nn-model'),
       views: preparedAssets.viewScripts.reduce((sum, script) => sum + bytes(script), 0),
       total: bytes(rendered),
       budget: sizeBudget,
