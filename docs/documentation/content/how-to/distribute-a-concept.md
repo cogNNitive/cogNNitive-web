@@ -1,8 +1,9 @@
 # Distribute a concept
 
 Give each instance of a concept its own kNNowledge document: declare the storage in the
-bluepriNNt, create instance models, move or rename them, and extract instances out of an existing
-compact document. This guide uses the `coNNtent` shape: a Series that contains Videos.
+bluepriNNt, create instance models, move or rename them, extract instances out of an existing
+compact document, and remove them as recorded changes. This guide uses the `coNNtent` shape: a
+Series that contains Videos.
 
 Read [Storage and identity](../concepts/storage-and-identity.md) first if the terms *instance
 model*, *placement pattern* or *hierarchical id* are new.
@@ -13,7 +14,8 @@ model*, *placement pattern* or *hierarchical id* are new.
 2. Create each instance with `add_model` and a hierarchical id, container first.
 3. Rename or move an instance with `move_model`, retargeting its referrers in the same changeset.
 4. Convert instances that sit in a compact document with `extract_instance`.
-5. Ask your agent to run the domain check and fix anything it reports.
+5. Remove an instance with `remove_model`, clearing or retargeting its referrers in the same changeset.
+6. Ask your agent to run the domain check and fix anything it reports.
 
 > [!NOTE]
 > You normally ask your agent in plain words and review the proposal in the console, as described
@@ -223,7 +225,46 @@ The operation is also rejected, naming the problem, when the destination contain
 an element cannot become a valid instance model, or when the element belongs to a concept that is
 not distributed.
 
-## 5. Check the domaiNN
+## 5. Remove an instance model
+
+`remove_model` removes one instance model as a recorded change. `target` is the model id and the
+change carries nothing else; `to` would make it a move, and an element payload would make it an
+element change.
+
+```markdown
+## NN Change: c-01
+op:: remove_model
+target:: villabotijos-today/intro
+evidence:: decision
+author:: agent
+```
+
+What to expect:
+
+- The file is deleted inside the same atomic apply that records the change. No copy is kept in an
+  archive folder: the change block, the model's earlier changes and git history hold the content.
+- The id becomes a terminal state. `check_domain` stops reporting `MODEL_WITHOUT_FILE` for it, and
+  its units leave the live graph. The change log still answers for the removed units.
+- An address to the removed id is `REF_MODEL_NOT_FOUND`, and the message names the changeset that
+  recorded the removal. There is no successor: a move names one, a removal does not.
+- No version is bumped and the changeset records no version transition for the id — a removed model
+  has no next version.
+- The folder the removal empties is pruned, stopping at the first folder that still holds something.
+
+**Clear or retarget every referrer in the same changeset.** A reference that addresses the removed
+id (or a descendant) is rejected with `REMOVE_LEAVES_DANGLING_REFERENCES`. Add one `update_field`
+per referrer, with `to::` empty to clear it or the new target to retarget it. `propose_changeset`
+runs the same scan and returns the missing `update_field` changes ready to merge.
+
+| Diagnostic | Meaning | Fix |
+|---|---|---|
+| `REMOVE_REQUIRES_INSTANCE` | The target is a compact model. | `remove_model` removes an instance model only. Remove its elements with `remove_element`. |
+| `REMOVE_INVALID_TARGET` | The target or `to` is not a usable id. | Fix the id the message names. |
+| `REMOVE_MODEL_HAS_DESCENDANTS` | The model's folder still holds other models. The message names them. | Remove the children first, in their own changes. |
+| `REMOVE_LEAVES_DANGLING_REFERENCES` | A reference to the removed id is not cleared. | Add the `update_field` changes, or take them from `propose_changeset`. |
+| `MODEL_NOT_FOUND` | No instance model has that id. | Check the id, or `list_knowledge`. |
+
+## 6. Check the domaiNN
 
 Ask your agent to run the domain check. Layout problems appear in its `layout` section. Each
 message names the path, the id when there is one, and the fix.
@@ -243,7 +284,7 @@ message names the path, the id when there is one, and the fix.
 | `DUPLICATE_SLUG` | Give each element of the model its own `slug::`. |
 | `INSTANCE_SHADOWS_ELEMENT_ASSETS` | Warning. Rename the element or the instance so they do not share an `assets/` folder. |
 | `BLUEPRINT_VERSION_SKEW` | Ask your agent to run [nn-update](../skills/nn-update.md). It repins every document of the bluepriNNt, or none. |
-| `MODEL_WITHOUT_FILE` | A document touched by changes has no file. Restore it. See the limit below. |
+| `MODEL_WITHOUT_FILE` | A document touched by changes has no file. Restore it, or record the removal with `remove_model`. See the limit below. |
 | `STALE_TARGET_MOVED` | A pending change names an instance renamed after its `base_version`; retarget it to the id the message names. |
 
 References have their own codes (`REF_MODEL_NOT_FOUND`, `ADDRESS_MALFORMED` and others), listed in
@@ -251,8 +292,11 @@ References have their own codes (`REF_MODEL_NOT_FOUND`, `ADDRESS_MALFORMED` and 
 
 ## Limitations
 
-- **Removing an instance model is not supported.** No operation exists for it, so there is no
-  supported way to delete one. Deleting its file by hand is reported as `MODEL_WITHOUT_FILE`.
+- **Merging or splitting models is out of scope.** `move_model` keeps one model, `extract_instance`
+  splits along a concept boundary, and `remove_model` removes one. Merging two instance models into
+  one has no operation.
+- **A removal is not a cascade.** The children of a container are removed by their own changes, and a
+  referrer must be cleared or retargeted in the same changeset.
 - **Migrating existing domaiNNs is a separate change.** `move_model` and `extract_instance` are the
   tools it will use. Until then a domaiNN that stores a concept both ways fails the domain check.
 - **Scene and Layer cannot be split** into their own files.

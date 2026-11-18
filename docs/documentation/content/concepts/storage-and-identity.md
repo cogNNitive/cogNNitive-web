@@ -269,6 +269,24 @@ sealed changesets are never edited.
 If the new id is taken, the move is rejected with `MODEL_EXISTS`. Here `villabotijos-today/intro`
 already exists, so moving `innteresante/intro` there would fail.
 
+### When an instance is removed
+
+A removal is a change too. `remove_model` names the instance model id and nothing else, and applying
+it deletes the model file; the change block, the model's earlier changes and git history are what
+keep the old content recoverable, so nothing is copied into an archive folder.
+
+The id becomes a **terminal** state instead of a reported loss: `MODEL_WITHOUT_FILE` no longer fires
+for it, while a file that disappears with no recorded removal is still reported. An address to the
+removed id is `REF_MODEL_NOT_FOUND`, and the message names the changeset that recorded the removal —
+there is no successor to retarget to. The model's units leave the live graph, so `check_domain` and
+the console show no units for it, and its history stays queryable from the change log.
+
+Two guards make the removal deliberate. A model whose folder still holds another model is refused
+with `REMOVE_MODEL_HAS_DESCENDANTS`: remove the children first. A model a live typed reference
+addresses is refused with `REMOVE_LEAVES_DANGLING_REFERENCES`, and the same changeset must carry the
+`update_field` that retargets or clears each reference. A compact model is
+`REMOVE_REQUIRES_INSTANCE`: `remove_model` removes an instance model only.
+
 ## One reference grammar
 
 Every kNNowledge unit is addressed with one syntax:
@@ -329,7 +347,7 @@ citations of raw files: `sources/import/notes.md@## Heading`, CSV rows, JSON poi
 |---|---|
 | `ADDRESS_MALFORMED` | A segment breaks the grammar. The message names the segment. |
 | `ADDRESS_NOT_CANONICAL` | A same-document reference written as an absolute address. |
-| `REF_MODEL_NOT_FOUND` | No model has that id. The message lists candidates and, after a move, names the recorded successor. |
+| `REF_MODEL_NOT_FOUND` | No model has that id. The message lists candidates and, after a move, names the recorded successor; after a recorded removal, it names the changeset that removed the model. |
 | `REF_ELEMENT_NOT_FOUND` | The model exists but not the element. |
 | `REF_CONCEPT_MISMATCH` | Warning: the target's concept is not in `target_concepts`. |
 | `REF_BLUEPRINT_MISMATCH` | Warning: the target's bluepriNNt does not match. |
@@ -364,7 +382,7 @@ can know: placement, naming and cardinality.
 | `DUPLICATE_SLUG` | error | Two elements in one model carry the same `slug::`; the second is dropped from the graph. |
 | `INSTANCE_SHADOWS_ELEMENT_ASSETS` | warning | An element of the container model has the same slug as a contained instance, so both use that folder under `assets/`. |
 | `BLUEPRINT_VERSION_SKEW` | error | See the next section. |
-| `MODEL_WITHOUT_FILE` | warning in `check_domain`, error in strict replay | A model touched by applied changes has no file and no recorded move that ends in a live model. |
+| `MODEL_WITHOUT_FILE` | warning in `check_domain`, error in strict replay | A model touched by applied changes has no file and no recorded change — a move that ends in a live model, or a removal — that explains it. |
 | `STALE_TARGET_MOVED` | error | A pending change names an instance that was renamed after the change's `base_version`; retarget it to the new id. |
 
 Messages have the form `<CODE>: <subject> - <what is wrong>; <fix>`, always name the path, and
@@ -410,8 +428,9 @@ aborts the run. When a group is already skewed, the whole group goes to the adop
 - **Existing domaiNNs are not migrated.** The `video_NN` and `LC_programas` domaiNNs fail
   validation once their documents pin a bluepriNNt version that declares storage, and no flag
   silences the errors. Migrating them is a separate, later change.
-- **There is no operation that removes an instance model.** Deleting an instance file by hand is
-  reported as `MODEL_WITHOUT_FILE` (a warning in the default check, an error in strict replay).
+- **Removing an instance model is a recorded change.** `remove_model` deletes the file and keeps the
+  record; deleting a file by hand is still reported as `MODEL_WITHOUT_FILE` (a warning in the default
+  check, an error in strict replay).
 - **Scene and Layer cannot be split into their own files.** Children of a distributed concept stay
   elements.
 - **Compact to distributed only.** `extract_instance` converts in that direction. Converting back

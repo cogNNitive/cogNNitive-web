@@ -111,6 +111,12 @@ In cogNNitive:
    * `evidence`: Mandatory source citation backing the change (`evidence:: sources/import/prices.csv@SKU-101&price_usd`).
 3. **Audit on demand:** When viewing a field in the domain console or via CLI, the system derives its entire timeline by querying the chronological chain of changes pointing to that KU target.
 
+Two writes sit outside that rule, and they are named rather than implied: `generate_index`
+rewrites a model's index block in place, and the Level-2 bluepriNNt authoring operations
+(`add_concept`, `add_field`, and `bump_version` on a bluepriNNt) edit a schema document directly.
+Neither produces a changeset, so neither carries changeset provenance; for Level-3 content the rule
+above holds without exception.
+
 ---
 
 ## The conversational loop: agility meets safety

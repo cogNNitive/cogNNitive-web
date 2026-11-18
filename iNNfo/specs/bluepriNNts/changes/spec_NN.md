@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
 blueprint_name: "changes"
-blueprint_version: "V_0-9-0"
+blueprint_version: "V_0-10-0"
 title: "Changeset Blueprint"
 description: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."
 nature:
@@ -37,7 +37,7 @@ description:: Open vocabulary ad-hoc tags and classification labels.
 ## NN Field Definition: op
 concept:: Change
 type:: select
-options:: [update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default]
+options:: [update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, remove_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default]
 description:: Mutation or review operation.
 
 ## NN Field Definition: target
@@ -167,7 +167,7 @@ Every graph mutation in cogNNitive is represented as a structured changeset docu
 A changeset document lives in the changes/ directory at the domain root with the filename pattern <prefix>_<author>_<stamp>_changes_NN.md. The prefix is the workspace_id for a changeset written by the MCP (propose_changeset, init_knowledge, apply_change) and the model slug for a changeset exported by the console review.
 
 Each change is declared as an element of concept Change:
-- op: One of update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default.
+- op: One of update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, remove_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default.
 - update_element_text: Replaces the prose body of an element (ElementNode.description), named to mirror update_concept_text. target is model@element; from is the current prose and to the new prose. notes never writes the prose body, and update_field on description is rejected with USE_UPDATE_ELEMENT_TEXT.
 - rename_element: Changes one element's display name. target is model@element (with concept when the name is ambiguous) and to is the new display name. The element's slug is immutable and is preserved, so every address that uses the slug keeps resolving after the rename; that is why renaming is not a way to change identity. The cascade is part of the same atomic change, never a follow-up: taxonomy parent/child labels, matrix row and column labels, `[[...]]` wikilinks in fields and prose, declared `reference` and `knowledge` field values, and `relationships[].target` are all rewritten on apply. A sibling with the same display name inside the same concept is rejected (D3). On a model whose slugs are not frozen yet, the mutation freezes them first, so the applied change leaves explicit `slug::` declarations behind.
 - produce_artifact: Records that an artifact was produced. target is a workspace-relative artifact path; evidence lists the units or sources consumed; author is the producing procedure. A regenerable view (the console HTML, the impact report family) needs no record.
@@ -181,6 +181,7 @@ Each change is declared as an element of concept Change:
 - to: Proposed value.
 - add_model: Creates a new Level-3 kNNowledge document. target is the new model id; blueprint_name and blueprint_url are required; name (title) and knowledge_version are optional. It carries no from, to or base_hash and no element payload: initial elements are add_element changes that follow it in the same changeset. With concept it instantiates a distributed concept: target is then the instance's hierarchical id (container chain plus slug), the file is written at the concept's declared placement path, and the skeleton carries the instance root element (## NN &lt;Concept&gt;: &lt;name&gt; plus slug:: &lt;slug&gt;).
 - move_model: Renames or relocates an instance model, which changes its id and the ids of every descendant instance. target is the old instance model id and to is the new one (same concept). The instance root folder, the file stem and the root slug:: move together inside the same atomic persistence; only the moved model is bumped, and only when its body changed. Recorded targets are never rewritten: the fold carries them forward. Every typed reference to the old id must be retargeted by an update_field in the same changeset, or the move is rejected with MOVE_LEAVES_DANGLING_REFERENCES. A compact model is MOVE_REQUIRES_INSTANCE; an occupied id is MODEL_EXISTS; a missing container is CONTAINER_MISSING.
+- remove_model: Removes one instance model as a recorded change. target is the instance model id and the change carries nothing else: it is a sealed, reviewable change, not an unrecorded filesystem delete, and no copy is kept outside changes/. Applying it deletes the model file inside the same atomic persistence and writes the change's execution facts, so the removal is reversible from the model's earlier changes and git history; the model's units leave the fold and the id becomes a terminal state for MODEL_WITHOUT_FILE instead of a reported loss. A compact model is REMOVE_REQUIRES_INSTANCE; a model whose folder still holds another model is REMOVE_MODEL_HAS_DESCENDANTS (remove the children first); every typed reference to the id or a descendant must be retargeted by an update_field in the same changeset, or the removal is rejected with REMOVE_LEAVES_DANGLING_REFERENCES. An address to a removed id is REF_MODEL_NOT_FOUND, naming the changeset that recorded the removal. A removal records no version transition: a removed model has no next version.
 - freeze_slugs: Writes an explicit slug for every element of the model that lacks one. target is the bare model id; it carries no other payload.
 - extract_instance: Migrates a compact element into its own distributed instance model. target is the source element address (compact model id plus the element slug), to is the instance id it becomes (which must end in that slug), and blueprint_name with blueprint_url name the bluepriNNt that declares the concept distributed. The extracted element becomes the instance root, its descendants move with it, and both models are bumped. The change records the moved slug set as an execution fact (extracted_slugs), so the fold re-keys the units to the new id and no unit fires UNIT_WITHOUT_RECORD. A concept the bluepriNNt does not distribute is EXTRACT_NOT_DISTRIBUTED; an instance model is EXTRACT_REQUIRES_COMPACT; an existing instance or an occupied destination folder is a conflict, and every extraction of the same source then conflicts as DEPENDS_ON_CONFLICTED_CHANGE: the migration is all or nothing. Use remove_element to drop a duplicate, never extract_instance.
 - bump_version: Raises the model knowledge_version by the level named in to (patch, minor or major). target is the bare model id. The apply engine bumps each touched model exactly once: a changeset that carries bump_version applies that level instead of the default patch bump, never both. The unversioned lineage record cannot be bumped.
@@ -204,7 +205,7 @@ level: 3
 parent_spec:
   name: changes
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"
-blueprint_version: "V_0-9-0"
+blueprint_version: "V_0-10-0"
 status: proposed
 proposal_sha: "<64-character-sha256-hex>"
 title: "<Changeset Title>"

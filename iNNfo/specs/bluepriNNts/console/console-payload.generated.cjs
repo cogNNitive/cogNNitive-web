@@ -8880,7 +8880,7 @@ var REQUIRED_BY_PRIMITIVE = {
 
 // stub:canonical-registry-stub
 function findCanonicalBlueprint(key) {
-  return key === "changes" ? { name: "changes", version: "V_0-9-0", aliases: [], specContent: "" } : null;
+  return key === "changes" ? { name: "changes", version: "V_0-10-0", aliases: [], specContent: "" } : null;
 }
 
 // iNNfo/packages/nn-core/src/schema/nature.ts
@@ -10940,6 +10940,7 @@ var CHANGE_OPS = [
   "comment",
   "add_model",
   "move_model",
+  "remove_model",
   "extract_instance",
   "freeze_slugs",
   "bump_version",
@@ -10992,6 +10993,28 @@ function moveModelProblems(change) {
   if (!to) problems.push(`change "${id}": move_model requires "to" (the new instance model id)`);
   else if (!bareModelId(to) || to.startsWith("/")) {
     problems.push(`change "${id}": move_model "to" must be the new instance model id`);
+  }
+  return problems;
+}
+function removeModelProblems(change) {
+  if (change.op !== "remove_model") return [];
+  const problems = [];
+  const id = change.id;
+  for (const key of ["to", "from", "base_hash", "concept", "name", "knowledge_version"]) {
+    if (change[key] !== void 0) {
+      problems.push(`change "${id}": remove_model must not carry "${key}"`);
+    }
+  }
+  if (change.fields !== void 0 || change.slug !== void 0) {
+    problems.push(`change "${id}": remove_model must not carry element payload (slug, fields)`);
+  }
+  if (change.seed !== void 0) {
+    problems.push(`change "${id}": seed is valid only on add_matrix`);
+  }
+  const target = String(change.target ?? "").trim();
+  const bareModelId = target.length > 0 && !target.includes("@") && !target.includes("&") && !target.includes("\\") && !target.includes("..") && !/^[a-zA-Z]:/.test(target) && !target.startsWith("/");
+  if (!bareModelId) {
+    problems.push(`change "${id}": remove_model target must be the instance model id`);
   }
   return problems;
 }
@@ -11399,6 +11422,10 @@ function parseChangeset(rawContent) {
   if (extractProblems.length > 0) {
     throw new Error(`Invalid extract_instance change: ${extractProblems.join("; ")}`);
   }
+  const removeProblems = changes.flatMap(removeModelProblems);
+  if (removeProblems.length > 0) {
+    throw new Error(`Invalid remove_model change: ${removeProblems.join("; ")}`);
+  }
   const hasGate = changes.some((c) => c.op === "review_gate");
   if (hasGate) {
     for (const key of ["author_kind", "origin", "reviewer"]) {
@@ -11546,6 +11573,7 @@ function foldChanges(changes) {
   const tombstones = [];
   const epochs = /* @__PURE__ */ new Map();
   const elements = /* @__PURE__ */ new Map();
+  const models = /* @__PURE__ */ new Map();
   const relinks = /* @__PURE__ */ new Map();
   const rekeys = [];
   const addRelink = (model, from, to, order) => {
@@ -11558,6 +11586,9 @@ function foldChanges(changes) {
     if (!change.applied) return;
     const address = change.resolvedTarget ?? change.target;
     switch (change.op) {
+      case "add_model":
+        models.set(address.trim(), change);
+        return;
       case "add_element": {
         const { model, parts } = splitUnitKey(address);
         const key = change.resolvedTarget ? address : model ? `${model}@${slugifyHeading(change.name ?? change.slug ?? parts[0] ?? "")}` : address;
@@ -11612,6 +11643,7 @@ function foldChanges(changes) {
         const fromId = change.op === "extract_instance" ? change.target.split("@")[0].trim() : change.target;
         const toId = change.to ?? "";
         if (!fromId || !toId || fromId === toId) return;
+        models.set(toId, change);
         const rekey = (key) => rekeyKey(key, fromId, toId, slugs);
         const rekeyMap = (map, withKey) => {
           for (const [key, value] of [...map]) {
@@ -11679,6 +11711,28 @@ function foldChanges(changes) {
         }
         return;
       }
+      case "remove_model": {
+        const id = address.trim();
+        const inModel = (key) => {
+          const { model } = splitUnitKey(key);
+          return model === id || model.startsWith(`${id}/`);
+        };
+        for (const key of [...units.keys()]) {
+          if (inModel(key)) units.delete(key);
+        }
+        for (const key of [...cleared]) {
+          if (inModel(key)) cleared.delete(key);
+        }
+        for (const key of [...epochs.keys()]) {
+          if (inModel(key)) epochs.delete(key);
+        }
+        for (const key of [...elements.keys()]) {
+          if (inModel(key)) elements.delete(key);
+        }
+        models.set(id, change);
+        tombstones.push(change);
+        return;
+      }
       case "produce_artifact":
         setUnit(units, cleared, address, "artifact", address, change, order);
         return;
@@ -11686,7 +11740,7 @@ function foldChanges(changes) {
         return;
     }
   });
-  return { units, cleared, tombstones, epochs, elements, relinks, rekeys };
+  return { units, cleared, tombstones, epochs, elements, models, relinks, rekeys };
 }
 function applyRelinks(unit, relinks) {
   if (unit.kind === "cell" || unit.kind === "artifact") return unit.value;
@@ -11734,6 +11788,11 @@ function touchedModels(log) {
   for (const rekey of log.rekeys) {
     if (touched.has(rekey.to)) continue;
     if (rekey.change) touched.set(rekey.to, rekey.change);
+  }
+  for (const change of log.all) {
+    if (!change.applied || change.op !== "remove_model") continue;
+    const model = (change.resolvedTarget ?? change.target).trim();
+    if (model && !touched.has(model)) touched.set(model, change);
   }
   return touched;
 }
@@ -11854,6 +11913,10 @@ var ChangeLogImpl = class {
   }
   elementOrigin(elementKey) {
     return this.fold.elements.get(elementKey);
+  }
+  removalOf(id) {
+    const change = this.fold.models.get(id);
+    return change?.op === "remove_model" ? change : void 0;
   }
   get tombstones() {
     return this.fold.tombstones;

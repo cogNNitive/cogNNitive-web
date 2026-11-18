@@ -738,8 +738,9 @@ The agent proposes and applies changes through the `nn-mcp` server; the operatio
 # Distribute a concept
 
 Give each instance of a concept its own kNNowledge document: declare the storage in the
-bluepriNNt, create instance models, move or rename them, and extract instances out of an existing
-compact document. This guide uses the `coNNtent` shape: a Series that contains Videos.
+bluepriNNt, create instance models, move or rename them, extract instances out of an existing
+compact document, and remove them as recorded changes. This guide uses the `coNNtent` shape: a
+Series that contains Videos.
 
 Read [Storage and identity](content/concepts/storage-and-identity.md) first if the terms *instance
 model*, *placement pattern* or *hierarchical id* are new.
@@ -750,7 +751,8 @@ model*, *placement pattern* or *hierarchical id* are new.
 2. Create each instance with `add_model` and a hierarchical id, container first.
 3. Rename or move an instance with `move_model`, retargeting its referrers in the same changeset.
 4. Convert instances that sit in a compact document with `extract_instance`.
-5. Ask your agent to run the domain check and fix anything it reports.
+5. Remove an instance with `remove_model`, clearing or retargeting its referrers in the same changeset.
+6. Ask your agent to run the domain check and fix anything it reports.
 
 > [!NOTE]
 > You normally ask your agent in plain words and review the proposal in the console, as described
@@ -960,7 +962,46 @@ The operation is also rejected, naming the problem, when the destination contain
 an element cannot become a valid instance model, or when the element belongs to a concept that is
 not distributed.
 
-## 5. Check the domaiNN
+## 5. Remove an instance model
+
+`remove_model` removes one instance model as a recorded change. `target` is the model id and the
+change carries nothing else; `to` would make it a move, and an element payload would make it an
+element change.
+
+```markdown
+## NN Change: c-01
+op:: remove_model
+target:: villabotijos-today/intro
+evidence:: decision
+author:: agent
+```
+
+What to expect:
+
+- The file is deleted inside the same atomic apply that records the change. No copy is kept in an
+  archive folder: the change block, the model's earlier changes and git history hold the content.
+- The id becomes a terminal state. `check_domain` stops reporting `MODEL_WITHOUT_FILE` for it, and
+  its units leave the live graph. The change log still answers for the removed units.
+- An address to the removed id is `REF_MODEL_NOT_FOUND`, and the message names the changeset that
+  recorded the removal. There is no successor: a move names one, a removal does not.
+- No version is bumped and the changeset records no version transition for the id — a removed model
+  has no next version.
+- The folder the removal empties is pruned, stopping at the first folder that still holds something.
+
+**Clear or retarget every referrer in the same changeset.** A reference that addresses the removed
+id (or a descendant) is rejected with `REMOVE_LEAVES_DANGLING_REFERENCES`. Add one `update_field`
+per referrer, with `to::` empty to clear it or the new target to retarget it. `propose_changeset`
+runs the same scan and returns the missing `update_field` changes ready to merge.
+
+| Diagnostic | Meaning | Fix |
+|---|---|---|
+| `REMOVE_REQUIRES_INSTANCE` | The target is a compact model. | `remove_model` removes an instance model only. Remove its elements with `remove_element`. |
+| `REMOVE_INVALID_TARGET` | The target or `to` is not a usable id. | Fix the id the message names. |
+| `REMOVE_MODEL_HAS_DESCENDANTS` | The model's folder still holds other models. The message names them. | Remove the children first, in their own changes. |
+| `REMOVE_LEAVES_DANGLING_REFERENCES` | A reference to the removed id is not cleared. | Add the `update_field` changes, or take them from `propose_changeset`. |
+| `MODEL_NOT_FOUND` | No instance model has that id. | Check the id, or `list_knowledge`. |
+
+## 6. Check the domaiNN
 
 Ask your agent to run the domain check. Layout problems appear in its `layout` section. Each
 message names the path, the id when there is one, and the fix.
@@ -980,7 +1021,7 @@ message names the path, the id when there is one, and the fix.
 | `DUPLICATE_SLUG` | Give each element of the model its own `slug::`. |
 | `INSTANCE_SHADOWS_ELEMENT_ASSETS` | Warning. Rename the element or the instance so they do not share an `assets/` folder. |
 | `BLUEPRINT_VERSION_SKEW` | Ask your agent to run [nn-update](content/skills/nn-update.md). It repins every document of the bluepriNNt, or none. |
-| `MODEL_WITHOUT_FILE` | A document touched by changes has no file. Restore it. See the limit below. |
+| `MODEL_WITHOUT_FILE` | A document touched by changes has no file. Restore it, or record the removal with `remove_model`. See the limit below. |
 | `STALE_TARGET_MOVED` | A pending change names an instance renamed after its `base_version`; retarget it to the id the message names. |
 
 References have their own codes (`REF_MODEL_NOT_FOUND`, `ADDRESS_MALFORMED` and others), listed in
@@ -988,8 +1029,11 @@ References have their own codes (`REF_MODEL_NOT_FOUND`, `ADDRESS_MALFORMED` and 
 
 ## Limitations
 
-- **Removing an instance model is not supported.** No operation exists for it, so there is no
-  supported way to delete one. Deleting its file by hand is reported as `MODEL_WITHOUT_FILE`.
+- **Merging or splitting models is out of scope.** `move_model` keeps one model, `extract_instance`
+  splits along a concept boundary, and `remove_model` removes one. Merging two instance models into
+  one has no operation.
+- **A removal is not a cascade.** The children of a container are removed by their own changes, and a
+  referrer must be cleared or retargeted in the same changeset.
 - **Migrating existing domaiNNs is a separate change.** `move_model` and `extract_instance` are the
   tools it will use. Until then a domaiNN that stores a concept both ways fails the domain check.
 - **Scene and Layer cannot be split** into their own files.
@@ -1364,6 +1408,12 @@ In cogNNitive:
    * `applied_at`: ISO UTC timestamp.
    * `evidence`: Mandatory source citation backing the change (`evidence:: sources/import/prices.csv@SKU-101&price_usd`).
 3. **Audit on demand:** When viewing a field in the domain console or via CLI, the system derives its entire timeline by querying the chronological chain of changes pointing to that KU target.
+
+Two writes sit outside that rule, and they are named rather than implied: `generate_index`
+rewrites a model's index block in place, and the Level-2 bluepriNNt authoring operations
+(`add_concept`, `add_field`, and `bump_version` on a bluepriNNt) edit a schema document directly.
+Neither produces a changeset, so neither carries changeset provenance; for Level-3 content the rule
+above holds without exception.
 
 ---
 
@@ -2691,6 +2741,24 @@ sealed changesets are never edited.
 If the new id is taken, the move is rejected with `MODEL_EXISTS`. Here `villabotijos-today/intro`
 already exists, so moving `innteresante/intro` there would fail.
 
+### When an instance is removed
+
+A removal is a change too. `remove_model` names the instance model id and nothing else, and applying
+it deletes the model file; the change block, the model's earlier changes and git history are what
+keep the old content recoverable, so nothing is copied into an archive folder.
+
+The id becomes a **terminal** state instead of a reported loss: `MODEL_WITHOUT_FILE` no longer fires
+for it, while a file that disappears with no recorded removal is still reported. An address to the
+removed id is `REF_MODEL_NOT_FOUND`, and the message names the changeset that recorded the removal —
+there is no successor to retarget to. The model's units leave the live graph, so `check_domain` and
+the console show no units for it, and its history stays queryable from the change log.
+
+Two guards make the removal deliberate. A model whose folder still holds another model is refused
+with `REMOVE_MODEL_HAS_DESCENDANTS`: remove the children first. A model a live typed reference
+addresses is refused with `REMOVE_LEAVES_DANGLING_REFERENCES`, and the same changeset must carry the
+`update_field` that retargets or clears each reference. A compact model is
+`REMOVE_REQUIRES_INSTANCE`: `remove_model` removes an instance model only.
+
 ## One reference grammar
 
 Every kNNowledge unit is addressed with one syntax:
@@ -2751,7 +2819,7 @@ citations of raw files: `sources/import/notes.md@## Heading`, CSV rows, JSON poi
 |---|---|
 | `ADDRESS_MALFORMED` | A segment breaks the grammar. The message names the segment. |
 | `ADDRESS_NOT_CANONICAL` | A same-document reference written as an absolute address. |
-| `REF_MODEL_NOT_FOUND` | No model has that id. The message lists candidates and, after a move, names the recorded successor. |
+| `REF_MODEL_NOT_FOUND` | No model has that id. The message lists candidates and, after a move, names the recorded successor; after a recorded removal, it names the changeset that removed the model. |
 | `REF_ELEMENT_NOT_FOUND` | The model exists but not the element. |
 | `REF_CONCEPT_MISMATCH` | Warning: the target's concept is not in `target_concepts`. |
 | `REF_BLUEPRINT_MISMATCH` | Warning: the target's bluepriNNt does not match. |
@@ -2786,7 +2854,7 @@ can know: placement, naming and cardinality.
 | `DUPLICATE_SLUG` | error | Two elements in one model carry the same `slug::`; the second is dropped from the graph. |
 | `INSTANCE_SHADOWS_ELEMENT_ASSETS` | warning | An element of the container model has the same slug as a contained instance, so both use that folder under `assets/`. |
 | `BLUEPRINT_VERSION_SKEW` | error | See the next section. |
-| `MODEL_WITHOUT_FILE` | warning in `check_domain`, error in strict replay | A model touched by applied changes has no file and no recorded move that ends in a live model. |
+| `MODEL_WITHOUT_FILE` | warning in `check_domain`, error in strict replay | A model touched by applied changes has no file and no recorded change — a move that ends in a live model, or a removal — that explains it. |
 | `STALE_TARGET_MOVED` | error | A pending change names an instance that was renamed after the change's `base_version`; retarget it to the new id. |
 
 Messages have the form `<CODE>: <subject> - <what is wrong>; <fix>`, always name the path, and
@@ -2832,8 +2900,9 @@ aborts the run. When a group is already skewed, the whole group goes to the adop
 - **Existing domaiNNs are not migrated.** The `video_NN` and `LC_programas` domaiNNs fail
   validation once their documents pin a bluepriNNt version that declares storage, and no flag
   silences the errors. Migrating them is a separate, later change.
-- **There is no operation that removes an instance model.** Deleting an instance file by hand is
-  reported as `MODEL_WITHOUT_FILE` (a warning in the default check, an error in strict replay).
+- **Removing an instance model is a recorded change.** `remove_model` deletes the file and keeps the
+  record; deleting a file by hand is still reported as `MODEL_WITHOUT_FILE` (a warning in the default
+  check, an error in strict replay).
 - **Scene and Layer cannot be split into their own files.** Children of a distributed concept stay
   elements.
 - **Compact to distributed only.** `extract_instance` converts in that direction. Converting back
@@ -3279,26 +3348,27 @@ The table below is generated from the `nn-mcp` tool registry, so it always refle
 
 | Tool | Description |
 |------|-------------|
-| `list_knowledge` | Scan the knowledge directory and list all iNNfo knowledge documents |
+| `list_knowledge` | Scan the knowledge directory and list every iNNfo knowledge document with its id, path, version, blueprint and storage. Pass `collection` to list one concept's members instead (it spans distributed instances and compact copies; each item then carries its placement finding, if any) |
 | `read_knowledge` | Parse and return an iNNfo knowledge document's full structure by its id. For surgical work prefer bounded slices: pass concept (+ element) with max_lines (default 150); slices over the cap truncate with truncated=true unless override_reason records a manual override |
 | `get_spec` | Resolve the iNNfo specification (level-1) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — the URL is never taken from an internal constant |
 | `get_blueprint` | Resolve an iNNfo blueprint (level-2) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — blueprint names/URLs are never hardcoded |
 | `validate_knowledge` | Validate an iNNfo knowledge document against its blueprint. Provide id (file on disk) or content (raw text). The blueprint is resolved from the knowledge parent_spec.url, or from an optional blueprint_url |
-| `apply_change` | Apply an intent-level change or changeset to knowledge documents and re-validate. Supports two-phase execution (validate, then persist atomically) from changes/ documents or bare intent operations. Every operation that mutates a Level-3 kNNowledge model (including freeze_slugs and bump_version) is synthesized into a sealed, recorded changeset; only generate_index and the Level-2 bluepriNNt authoring operations (add_concept, add_field, bump_version on a bluepriNNt) write directly. After an applied or partially applied changeset the domain console is regenerated and opened in a browser tab (pass open: false to skip). The result carries console (the regeneration outcome) and next_steps: you MUST relay next_steps.notice to the user. |
-| `regenerate_console` | Regenerate the domain console (or one model-scoped console) and open it in a browser tab. Idempotent: an up-to-date console is reported as unchanged. Also the retry path after an apply whose console regeneration failed. The result carries console and next_steps: you MUST relay next_steps.notice to the user. |
-| `propose_changeset` | Write a sealed changeset with status proposed under changes/ from a structured list of operations, then regenerate and open the domain console so the user can review it. It never applies the changeset. You derive the operations (update_field, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, remove_matrix, add_matrix, comment, add_model, freeze_slugs, bump_version); the tool does not interpret conversations. Validation runs before any write: an unknown model, an add_model on an existing model, or an operation missing required keys returns errors and writes nothing. The result carries changeset, console and next_steps: you MUST relay next_steps.notice to the user. When the user replies OK, call apply_change with next_steps.approve.changeset. |
+| `apply_change` | Apply an intent-level change or changeset to knowledge documents and re-validate. Supports two-phase execution (validate, then persist atomically) from changes/ documents or bare intent operations. Every operation that mutates a Level-3 kNNowledge model (including freeze_slugs and bump_version) is synthesized into a sealed, recorded changeset; only generate_index and the Level-2 bluepriNNt authoring operations (add_concept, add_field, bump_version on a bluepriNNt) write directly. After an applied or partially applied changeset the domain console is regenerated (pass open: true to also open it in a browser tab). The result carries console (the regeneration outcome) and next_steps: you MUST relay next_steps.notice to the user. |
+| `regenerate_console` | Regenerate the domain console (or one model-scoped console); pass open: true to also open it in a browser tab. Idempotent: an up-to-date console is reported as unchanged. Also the retry path after an apply whose console regeneration failed. The result carries console and next_steps: you MUST relay next_steps.notice to the user. |
+| `propose_changeset` | Write a sealed changeset with status proposed under changes/ from a structured list of operations, then regenerate the domain console so the user can review it (pass open: true to also open it in a browser tab). It never applies the changeset. You derive the operations (update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_element_text, remove_matrix, add_matrix, comment, add_model, move_model, remove_model, freeze_slugs, bump_version, produce_artifact); the tool does not interpret conversations. Validation runs before any write: an unknown model, an add_model on an existing model, or an operation missing required keys returns errors and writes nothing. The result carries changeset, console and next_steps: you MUST relay next_steps.notice to the user. When the user replies OK, call apply_change with next_steps.approve.changeset. |
 | `init_domain` | Create an empty, conformant domaiNN container in a new directory: the canonical folders (kNNowledge/, sources/import/, sources/conversations/, conversations/, artifacts/, procedures/, staging/, changes/), a .gitattributes with * -text and a domaiNN_NN.md manifest listing no models. Refuses a directory that exists and is not empty. It is not a changeset; add models afterwards with an add_model changeset (propose_changeset) or init_knowledge. Migration recipe: init_domain for a NEW domain, import the old domain as a source (migrate-domain.js --import-as-source), derive add_model/add_element changes whose evidence cites it, propose_changeset, review, apply_change. |
 | `validate_knowledge_url` | Validate an iNNfo knowledge document fetched from a URL without writing to disk. Accepts a knowledge URL and optional blueprint_url. Returns validation results. |
 | `validate_blueprint` | Validate a Level 2 blueprint against its Level 1 parent spec with frontmatter level-2 auto-detection and parent resolution failure diagnostics |
 | `init_knowledge` | Create a new level-3 knowledge document. Create-only: it is a wrapper over a one-change add_model changeset (written to changes/ and applied), so the creation is recorded as a change. It scaffolds canonical YAML frontmatter and a starter body (one section per Concept, no index block: taxonomy lives in the blueprint) from the resolved blueprint schema; an unresolvable blueprint fails and writes nothing. The model id is `<name>_<blueprint>` and carries no version (the version lives in knowledge_version): the server canonicalizes the id you pass (drops any `_V_x-y-z` token, appends `_<blueprint>` when missing) and returns the canonical id. An existing id fails with MODEL_EXISTS and the file is untouched (it never repairs or rewrites a document). Returns filePath, content and changeset on success (none of them on failure), plus console and next_steps: you MUST relay next_steps.notice to the user. |
 | `list_blueprints` | List all available Level 2 spec blueprints across local domain, global environment, and installed skills |
 | `hydrate_blueprint` | Hydrate (copy) a Level 2 spec blueprint from global or skill store into active domain blueprints directory |
-| `sync_domain_manifest` | Reconcile the domain manifest ## NN Knowledge entries against discovered Level-3 knowledge files: additively appends new entries, archives entries whose file disappeared, and reactivates tool-owned entries whose file returned. Never touches hand-authored entries lacking the <!-- nn:auto --> ownership marker. Defaults to a dry run. |
+| `sync_domain_manifest` | Reconcile the domain manifest against the documents the domain is made of. The ## NN kNNowledge section (legacy ## NN Models) is an inventory: additively appends new entries, archives entries whose file disappeared, and reactivates tool-owned entries whose file returned. The # NN Sources, # NN Procedures and # NN Artifacts sections are single pointers: appends a tool-owned path:: entry for a discovered catalog document, never adds a status:: field, never creates a section the manifest does not declare, and reports a pointer whose catalog document is missing as missing-target without editing it. Never touches hand-authored entries lacking the <!-- nn:auto --> ownership marker. Defaults to a dry run. |
 | `check_domain` | Run one consolidated domain integrity pass over every Level-3 knowledge document: validate each against its blueprint and traceability, self-heal missing blueprint packages/specs (write-once hydration), classify each pinned blueprint version against the published catalog, check provenance (evidence warnings, drift between the applied changes and the files, and ARTIFACT_WITHOUT_RECORD; read-only), and return one report with a per-knowledge status and a domain aggregate. Non-blocking and informational — validation failures never fail the tool. |
 | `query_units` | Run a read-only content query over one workspace file and return matching knowledge-unit URIs: "path?filter=value[&filter...][&projection]". Filters use exact match (trimmed, case-insensitive); a trailing bare segment projects one column/field over the matches. Capped at 100 results with truncated=true. Pass max_values_chars to cap projected value characters for slice-only surgical reads. Never writes files. |
 | `cognitivize` | Create or refresh the sidecar (`<file>_sidecar_NN.md`) of one raw file in place, so it can be cited. Markdown, CSV, and JSON files are handled directly; binary formats (PDF, DOCX, XLSX, images) are converted when the environment has converter adapters available. Paths outside the workspace, sidecars, and NN documents are rejected. |
+| `read_lineage` | Read-only computed lineage view of the domain: {sources, models, artifacts, changes, edges, diagnostics}. Inventory comes from the filesystem; edges come from the applied changes (evidence: cited file -> model/artifact, target: unit -> owner, produced: artifact -> changeset). `scope` selects live evidence (the last applied change of each unit, default) or all-time evidence; `focus` narrows every section to refs containing it. A non-regenerable artifact with no produce_artifact change is ARTIFACT_WITHOUT_RECORD. Never writes files. |
 | `resolve_sources` | Read-only: resolve an element's citation-typed field(s) to their underlying file, anchor, and content. Returns one entry per citation reference: {path, anchor, exists, field, origin, author?, excerpt?, sha256?, version?, error?}. `origin` classifies who produced the cited content ("agent" \| "human" \| "document"), resolved from the `author::` of the `## NN Change:` block the citation anchors to. Omit fieldName to resolve across every citation-typed field on the element (name-based sources/source plus any schema-declared type:: citation field). Never writes files. |
-| `list_blueprint_procedures` | List all procedures defined in a blueprint and its transitively included blueprints up to depth 10. A procedure that loses a name clash is returned with status shadowed (shadowed_by names the winner), never dropped. With path (a document or scope directory) the listing is scope-aware: the procedures visible from that scope, selected and shadowed (model > nearest scope > ... > root procedures/ > the bluepriNNt package), each with its source, slots, fork record and warnings; a path outside any domaiNN returns NO_DOMAIN_ROOT with the directories searched. |
+| `list_blueprint_procedures` | List all procedures defined in a blueprint and its transitively included blueprints up to depth 10. A procedure that loses a name clash is returned with status shadowed (shadowed_by names the winner), never dropped. With path (a document or scope directory) the listing is scope-aware: the procedures visible from that scope, selected and shadowed (model > nearest scope > ... > root procedures/ > the bluepriNNt package), each with its source, slots, fork record and warnings; a path outside any domaiNN returns NO_DOMAIN_ROOT with the directories searched. The scoped listing is bound to the server domain root: path cannot be combined with domain or root (INVALID_ARGUMENT), and path must be a non-empty string. |
 | `list_blueprint_skills` | List all agent skills defined in a blueprint and its transitively included blueprints up to depth 10. Skills shipped inside a package under skills/<name>/SKILL.md are returned with embedded: true and a resolved absolute path. |
 | `resolve_effective` | Read-only: the effective value of a key at a document (or at one scope element of it), folded over the scope chain with a merge strategy, plus the trace that explains it. Strategies: override (nearest declaration wins), union (named entries accumulate, nearer shadows farther) and none (only the target node supplies the value; ancestors and the bluepriNNt floor are reported under notInherited, never inherited). The floor is the single document under the defaults/ folder of the bluepriNNt package named by the innermost scope document. Returns {present, value, winner, trace}, or a structured error (NO_DOMAIN_ROOT, PATH_OUTSIDE_SCOPE, UNSUPPORTED_STRATEGY, UNKNOWN_ELEMENT, ...). Never writes files. |
 | `explain` | Read-only: why a key resolves the way it does at a document (or at one scope element of it). Takes the same inputs as resolve_effective and returns the same trace, plus the chain of scopes it was computed over (node ids and kinds, outermost first) and the floor supplier. Never writes files. |
@@ -3317,7 +3387,7 @@ Most tools that read or write a domaiNN accept an optional `domain` argument nam
 Tools fall into two groups:
 
 - **Read-only** — scanning, reading, resolving, and validating. Examples: `list_knowledge`, `read_knowledge`, `get_spec`, `get_blueprint`, `list_blueprints`, `list_blueprint_procedures`, `list_blueprint_skills`, `validate_knowledge`, `validate_knowledge_url`, `validate_blueprint`, `check_domain`, `query_units`, `resolve_sources`, `resolve_effective`, `explain`, `read_lineage`. These never write to disk: `read_lineage` computes the lineage view from the filesystem and the applied changes and returns it, nothing more.
-- **Mutating** — creating or changing files. Examples: `init_domain`, `init_knowledge`, `apply_change`, `propose_changeset`, `regenerate_console`, `cognitivize`, `hydrate_blueprint`, `sync_domain_manifest`. A mutation of a Level-3 kNNowledge model is synthesized into a sealed, recorded changeset rather than written directly.
+- **Mutating** — creating or changing files. Examples: `init_domain`, `init_knowledge`, `apply_change`, `propose_changeset`, `regenerate_console`, `cognitivize`, `hydrate_blueprint`, `sync_domain_manifest`. A mutation of a Level-3 kNNowledge model is synthesized into a sealed, recorded changeset rather than written directly — including `remove_model`, which deletes the model file only as part of the recorded change. Two writes sit outside that rule: `generate_index` rewrites a model's index block in place, and the Level-2 authoring operations (`add_concept`, `add_field`, `bump_version` on a bluepriNNt) edit a schema document directly. Neither records a changeset, so neither carries changeset provenance.
 
 ## The `next_steps.notice` contract
 
