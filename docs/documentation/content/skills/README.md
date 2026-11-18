@@ -31,7 +31,7 @@ the full hand-off map.
 The catalog below is generated from `manifest/source.yaml`, so it lists exactly the skills the ecosystem distributes, with their pinned versions.
 
 <!-- generated:skills-catalog (source: manifest/source.yaml; run node scripts/generate-docs-facts.mjs) -->
-**8** skills
+**7** skills
 
 | Skill | Version | Description |
 |-------|---------|-------------|
@@ -40,8 +40,7 @@ The catalog below is generated from `manifest/source.yaml`, so it lists exactly 
 | [`nn-innfo`](nn-innfo.md) | `V_0-5-13` | Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard. |
 | [`nn-preflight`](nn-preflight.md) | `V_0-2-5` | Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference. |
 | [`nn-update`](nn-update.md) | `V_0-4-2` | Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints. |
-| [`nn-site-generator`](nn-site-generator.md) | `V_0-2-0` | Create or edit websites, add analytics, add contact forms. |
-| [`nn-design-presets`](nn-design-presets.md) | `V_1-4-0` | cogNNitive visual design presets — palettes, typography, spacing. |
+| [`nn-site-generator`](nn-site-generator.md) | `V_0-3-0` | Create or edit websites, add analytics, add contact forms, and apply the cogNNitive visual design presets — palettes, typography, spacing. |
 | [`nn-skills-lifecycle`](nn-skills-lifecycle.md) | `V_1-3-1` | Audit, update, and maintain cogNNitive skills. |
 <!-- /generated:skills-catalog -->
 

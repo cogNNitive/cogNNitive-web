@@ -37,13 +37,11 @@ stateDiagram-v2
     nn --> nn_preflight: readiness gate
     nn --> nn_sources: [s] Sources
     nn --> nn_innfo: [m] Model · [p] Procedures
-    nn --> nn_site_generator: [r] site/deliverable
-    nn --> nn_design_presets: visual artifact
+    nn --> nn_site_generator: [r] site/deliverable · visual artifact
     nn_preflight --> nn_upgrade: upgrade-available
     nn_upgrade --> nn_innfo: MARKERS_REMOVED recipe
-    nn_site_generator --> nn_design_presets: design tokens
     nn_innfo --> nn_sources: ingestion step
-    nn_innfo --> nn_design_presets: styled console
+    nn_innfo --> nn_site_generator: styled console
 ```
 
 ## Transitions
@@ -56,12 +54,12 @@ stateDiagram-v2
 | [nn](nn.md) | `[m] Model` selected | [nn-innfo](nn-innfo.md) |
 | [nn](nn.md) | `[r] Review & Deliverables` → site or web deliverable | [nn-site-generator](nn-site-generator.md) |
 | [nn](nn.md) | `[p] Procedures` → procedure selected | [nn-innfo](nn-innfo.md) (Procedure Execution Protocol) |
-| [nn](nn.md) | Visual artifact requested (console, dashboard, site) | [nn-design-presets](nn-design-presets.md) |
+| [nn](nn.md) | Visual artifact requested (console, dashboard, site) | [nn-site-generator](nn-site-generator.md) (design presets) |
 | [nn-preflight](nn-preflight.md) | Tier-3 scan reports `upgrade-available` | [nn-update](nn-update.md) |
 | [nn-update](nn-update.md) | Impact analysis finds a marker-bearing document | [nn-innfo](nn-innfo.md) (`MARKERS_REMOVED` recipe) |
 | [nn-innfo](nn-innfo.md) | A procedure step declares CLI ingestion | [nn-sources](nn-sources.md) |
-| [nn-innfo](nn-innfo.md) | Console/HTML artifact must be styled | [nn-design-presets](nn-design-presets.md) |
-| [nn-site-generator](nn-site-generator.md) | Design tokens needed for generated pages | [nn-design-presets](nn-design-presets.md) |
+| [nn-innfo](nn-innfo.md) | Console/HTML artifact must be styled | [nn-site-generator](nn-site-generator.md) (design presets) |
+| [nn-site-generator](nn-site-generator.md) | Design tokens needed for generated pages | its own `presets/` directory |
 | [nn-skills-lifecycle](nn-skills-lifecycle.md) | Activation gate / path lookup | [nn-preflight](nn-preflight.md) |
 
 ## Declared dependencies

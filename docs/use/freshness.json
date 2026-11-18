@@ -1,13 +1,27 @@
 {
-  "generatedAt": "2026-11-18T21:28:48.406Z",
-  "head": "367413c7c4a9f8f351bd2cd6ca00d3ef79070c28",
+  "generatedAt": "2026-11-18T22:19:16.036Z",
+  "head": "aad33f508b863cd3cdedb9ce76fdfe810af001b6",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v3.5.0",
       "pinnedTagDate": "2026-11-18T18:46:12+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "skills/nn-design-presets/SKILL.md",
+        "skills/nn-preflight/SKILL.md",
+        "skills/nn-site-generator/SKILL.md",
+        "skills/nn-site-generator/components/ai-readiness.md",
+        "skills/nn-site-generator/components/interactive-showcase.md",
+        "skills/nn-site-generator/demo/index.html",
+        "skills/nn-site-generator/presets/glassmorphism.md",
+        "skills/nn-site-generator/presets/morado-nazareno.md",
+        "skills/nn-site-generator/presets/neo-brutalism.md",
+        "skills/nn-site-generator/presets/nn-shad-cn.md",
+        "skills/nn-site-generator/presets/nordic-warm-editorial.md",
+        "skills/nn-site-generator/presets/sleek-dark.md",
+        "skills/nn/SKILL.md"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",

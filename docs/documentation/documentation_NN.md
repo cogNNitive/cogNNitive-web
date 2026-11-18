@@ -477,17 +477,6 @@ tags:: [docs, skills, site-generator, web]
 
 Website creation, analytics, and contact forms.
 
-## NN Page: nn-design-presets
-slug:: nn-design-presets
-title:: nn-design-presets
-source:: content/skills/nn-design-presets.md
-route:: content/skills/nn-design-presets.md
-order:: 70
-parent:: [[Canonical Skills]]
-tags:: [docs, skills, design, presets]
-
-Visual design presets: palettes, typography, and spacing.
-
 ## NN Page: nn-skills-lifecycle
 slug:: nn-skills-lifecycle
 title:: nn-skills-lifecycle

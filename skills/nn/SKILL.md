@@ -149,8 +149,8 @@ in favour of the applied changes.
 
 ### nn-specific additions
 
-5. **Visual Design Selection (`nn-design-presets`)**:
-   - When generating visual artifacts (HTML consoles, dashboards, sites), prompt for the visual preset using `nn-design-presets`.
+5. **Visual Design Selection (`nn-site-generator` presets)**:
+   - When generating visual artifacts (HTML consoles, dashboards, sites), prompt for the visual preset and read its token spec from `skills/nn-site-generator/presets/`.
 6. **Session Language Coherence**:
    - Maintain the user's active conversation language across all prompts, responses, and menus throughout the session.
 7. **Business User Abstraction Guard**:

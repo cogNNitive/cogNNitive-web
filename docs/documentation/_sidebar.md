@@ -47,5 +47,4 @@
   - [nn-preflight](content/skills/nn-preflight.md)
   - [nn-update](content/skills/nn-update.md)
   - [nn-site-generator](content/skills/nn-site-generator.md)
-  - [nn-design-presets](content/skills/nn-design-presets.md)
   - [nn-skills-lifecycle](content/skills/nn-skills-lifecycle.md)

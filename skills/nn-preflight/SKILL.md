@@ -53,7 +53,7 @@ Handle the runner process exit code deterministically:
 
 ## Consumer Skill Delegation
 
-All consumer skills (`nn`, `nn-innfo`, `nn-sources`, `nn-site-generator`, `nn-skills-lifecycle`, `nn-design-presets`) MUST delegate their activation gate in §0 to this canonical protocol using exactly:
+All consumer skills (`nn`, `nn-innfo`, `nn-sources`, `nn-site-generator`, `nn-skills-lifecycle`) MUST delegate their activation gate in §0 to this canonical protocol using exactly:
 
 ```markdown
 ## 0. Activation Gate

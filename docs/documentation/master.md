@@ -5,7 +5,7 @@ Generated from the DocSite model (`documentation_NN.md`) by
 `node scripts/generate-docs-master.mjs`, which `npm run regen` runs: do not edit it by hand,
 and do not copy it back into the pages below it.
 
-40 pages.
+39 pages.
 
 ## Contents
 
@@ -62,7 +62,6 @@ and do not copy it back into the pages below it.
 - [nn-preflight](content/skills/nn-preflight.md)
 - [nn-update](content/skills/nn-update.md)
 - [nn-site-generator](content/skills/nn-site-generator.md)
-- [nn-design-presets](content/skills/nn-design-presets.md)
 - [nn-skills-lifecycle](content/skills/nn-skills-lifecycle.md)
 
 ---
@@ -113,7 +112,7 @@ the full hand-off map.
 The catalog below is generated from `manifest/source.yaml`, so it lists exactly the skills the ecosystem distributes, with their pinned versions.
 
 <!-- generated:skills-catalog (source: manifest/source.yaml; run node scripts/generate-docs-facts.mjs) -->
-**8** skills
+**7** skills
 
 | Skill | Version | Description |
 |-------|---------|-------------|
@@ -122,8 +121,7 @@ The catalog below is generated from `manifest/source.yaml`, so it lists exactly 
 | [`nn-innfo`](content/skills/nn-innfo.md) | `V_0-5-13` | Author, edit, and validate iNNfo knowledge with built-in step-by-step Model Creation Wizard. |
 | [`nn-preflight`](content/skills/nn-preflight.md) | `V_0-2-5` | Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference. |
 | [`nn-update`](content/skills/nn-update.md) | `V_0-4-2` | Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints. |
-| [`nn-site-generator`](content/skills/nn-site-generator.md) | `V_0-2-0` | Create or edit websites, add analytics, add contact forms. |
-| [`nn-design-presets`](content/skills/nn-design-presets.md) | `V_1-4-0` | cogNNitive visual design presets — palettes, typography, spacing. |
+| [`nn-site-generator`](content/skills/nn-site-generator.md) | `V_0-3-0` | Create or edit websites, add analytics, add contact forms, and apply the cogNNitive visual design presets — palettes, typography, spacing. |
 | [`nn-skills-lifecycle`](content/skills/nn-skills-lifecycle.md) | `V_1-3-1` | Audit, update, and maintain cogNNitive skills. |
 <!-- /generated:skills-catalog -->
 
@@ -3287,13 +3285,11 @@ stateDiagram-v2
     nn --> nn_preflight: readiness gate
     nn --> nn_sources: [s] Sources
     nn --> nn_innfo: [m] Model · [p] Procedures
-    nn --> nn_site_generator: [r] site/deliverable
-    nn --> nn_design_presets: visual artifact
+    nn --> nn_site_generator: [r] site/deliverable · visual artifact
     nn_preflight --> nn_upgrade: upgrade-available
     nn_upgrade --> nn_innfo: MARKERS_REMOVED recipe
-    nn_site_generator --> nn_design_presets: design tokens
     nn_innfo --> nn_sources: ingestion step
-    nn_innfo --> nn_design_presets: styled console
+    nn_innfo --> nn_site_generator: styled console
 ```
 
 ## Transitions
@@ -3306,12 +3302,12 @@ stateDiagram-v2
 | [nn](content/skills/nn.md) | `[m] Model` selected | [nn-innfo](content/skills/nn-innfo.md) |
 | [nn](content/skills/nn.md) | `[r] Review & Deliverables` → site or web deliverable | [nn-site-generator](content/skills/nn-site-generator.md) |
 | [nn](content/skills/nn.md) | `[p] Procedures` → procedure selected | [nn-innfo](content/skills/nn-innfo.md) (Procedure Execution Protocol) |
-| [nn](content/skills/nn.md) | Visual artifact requested (console, dashboard, site) | [nn-design-presets](content/skills/nn-design-presets.md) |
+| [nn](content/skills/nn.md) | Visual artifact requested (console, dashboard, site) | [nn-site-generator](content/skills/nn-site-generator.md) (design presets) |
 | [nn-preflight](content/skills/nn-preflight.md) | Tier-3 scan reports `upgrade-available` | [nn-update](content/skills/nn-update.md) |
 | [nn-update](content/skills/nn-update.md) | Impact analysis finds a marker-bearing document | [nn-innfo](content/skills/nn-innfo.md) (`MARKERS_REMOVED` recipe) |
 | [nn-innfo](content/skills/nn-innfo.md) | A procedure step declares CLI ingestion | [nn-sources](content/skills/nn-sources.md) |
-| [nn-innfo](content/skills/nn-innfo.md) | Console/HTML artifact must be styled | [nn-design-presets](content/skills/nn-design-presets.md) |
-| [nn-site-generator](content/skills/nn-site-generator.md) | Design tokens needed for generated pages | [nn-design-presets](content/skills/nn-design-presets.md) |
+| [nn-innfo](content/skills/nn-innfo.md) | Console/HTML artifact must be styled | [nn-site-generator](content/skills/nn-site-generator.md) (design presets) |
+| [nn-site-generator](content/skills/nn-site-generator.md) | Design tokens needed for generated pages | its own `presets/` directory |
 | [nn-skills-lifecycle](content/skills/nn-skills-lifecycle.md) | Activation gate / path lookup | [nn-preflight](content/skills/nn-preflight.md) |
 
 ## Declared dependencies
@@ -4162,41 +4158,21 @@ pipeline in the hero and/or a before/after comparison at the closing of the page
 
 ## Design presets
 
-For design tokens the skill references [nn-design-presets](content/skills/nn-design-presets.md) and its `presets/`
-directory. The chosen preset supplies the palette, typography, and spacing applied to the generated
-site, so every page shares one visual identity.
+The skill ships the cogNNitive **visual design presets** in its own `presets/` directory, so a
+request for a site and a request for design tokens resolve to the same skill. It is the reference
+for palettes, typography, spacing, and branding tokens; there is no separate presets skill to load.
 
-## Post-generation preview
+> **Mandatory activation.** Applying a preset is part of the work whenever you create or style any
+> visual component, web application, HTML dashboard artifact, or web document in the cogNNitive
+> ecosystem.
 
-After any change, the skill offers a local preview:
-
-```powershell
-npx serve docs -p 8080
-```
-
-## See also
-
-- [nn-design-presets](content/skills/nn-design-presets.md) — the visual tokens the generated site uses.
-- [nn](content/skills/nn.md) — the front controller whose `[r] Review & Deliverables` stage produces sites.
-- [nn-sources](content/skills/nn-sources.md) — the ingestion and citation skill.
-
----
-
-# nn-design-presets
-
-`nn-design-presets` is the reference for cogNNitive **visual design presets** — palettes,
-typography, spacing, and branding tokens. It is not a workflow skill: it is reference material the
-agent loads on demand when generating or styling any visual artifact.
-
-> **Mandatory activation.** This skill must be activated whenever creating or styling any visual
-> component, web application, HTML dashboard artifact, or web document in the cogNNitive ecosystem.
-
-The skill is backed by the formal Level-2 `design-presets` bluepriNNt (see the
+The presets are backed by the formal Level-2 `design-presets` bluepriNNt (see the
 [bluepriNNts catalog](content/reference/blueprints.md)), which models structured, multi-modal design
-tokens across Web UI, video overlays, and generative-illustration prompt anchors. Each preset defines a complete visual identity: a palette,
-a UI typography stack, video title/subtitle overlays, and generative-image prompt modifiers.
+tokens across Web UI, video overlays, and generative-illustration prompt anchors. Each preset
+defines a complete visual identity: a palette, a UI typography stack, video title/subtitle
+overlays, and generative-image prompt modifiers.
 
-## The design preset directory
+### The design preset directory
 
 Presets live in the skill's `presets/` directory. Browse it for the full token specs. When a user or
 workflow creates a visual artifact, read the relevant preset and apply its CSS tokens.
@@ -4208,12 +4184,12 @@ real time:
 🎨 Visual Artifact Style Selection:
 
 Before creating your interface, test and preview all 6 design styles in real time:
-👉 [Open Interactive Design Presets Showcase](https://cognnitive.com/skills/nn-design-presets/demo/index.html)
+👉 [Open Interactive Design Presets Showcase](https://cognnitive.com/skills/nn-site-generator/demo/index.html)
 
 Which visual design style would you like to apply to this artifact/component?
 ```
 
-## Available presets
+### Available presets
 
 | Preset | Character | Palette highlights | Typography |
 |---|---|---|---|
@@ -4227,7 +4203,7 @@ Which visual design style would you like to apply to this artifact/component?
 For `nn-shad-cn`, color carries meaning only: success `#16A34A`, danger `#DC2626`, warning
 `#D97706`, info `#2563EB`.
 
-## Token categories
+### Token categories
 
 Every preset defines the same three categories, so a component can switch presets without changing
 its structure:
@@ -4236,11 +4212,20 @@ its structure:
 - **Typography** — the UI type stack (family pairing, weights, and scale).
 - **Spacing** — the layout rhythm, such as the 8px grid in the brand-classic preset.
 
+## Post-generation preview
+
+After any change, the skill offers a local preview:
+
+```powershell
+npx serve docs -p 8080
+```
+
 ## See also
 
-- [nn-site-generator](content/skills/nn-site-generator.md) — consumes these presets when generating a site.
+- [nn](content/skills/nn.md) — the front controller whose `[r] Review & Deliverables` stage produces sites and
+  prompts for a visual preset.
 - [nn-innfo](content/skills/nn-innfo.md) — the console export that renders styled HTML artifacts.
-- [nn](content/skills/nn.md) — prompts for a visual preset when generating visual artifacts.
+- [nn-sources](content/skills/nn-sources.md) — the ingestion and citation skill.
 
 ---
 

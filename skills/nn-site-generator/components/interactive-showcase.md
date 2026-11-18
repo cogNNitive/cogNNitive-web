@@ -24,7 +24,7 @@ The showcase consists of two coordinated visual blocks:
 
 ## 2. CSS Stylesheet (Tokens & Animations)
 
-Add to the site's stylesheet (adapt color variables to active `nn-design-presets` theme):
+Add to the site's stylesheet (adapt color variables to the active design preset from `../presets/`):
 
 ```css
 /* --- Quadratic-Inspired Interactive Showcase --- */

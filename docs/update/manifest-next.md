@@ -55,17 +55,10 @@ agent-bootstrap:
     - name: nn-site-generator
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-site-generator
-      version: "V_0-2-0"
+      version: "V_0-3-0"
       ref: "main"
       commit: "4f06d2e046c36b3c23b37099151ac681f9cc3f8f"
-      description: Create or edit websites, add analytics, add contact forms.
-    - name: nn-design-presets
-      repo: cogNNitive/cogNNitive-web
-      path: skills/nn-design-presets
-      version: "V_1-4-0"
-      ref: "main"
-      commit: "4f06d2e046c36b3c23b37099151ac681f9cc3f8f"
-      description: cogNNitive visual design presets — palettes, typography, spacing.
+      description: Create or edit websites, add analytics, add contact forms, and apply the cogNNitive visual design presets — palettes, typography, spacing.
     - name: nn-skills-lifecycle
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-skills-lifecycle
