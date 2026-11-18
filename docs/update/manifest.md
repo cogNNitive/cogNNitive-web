@@ -10,23 +10,23 @@ agent-bootstrap:
       repo: cogNNitive/cogNNitive-web
       path: skills/nn
       version: "V_3-4-3"
-      ref: "skills-v3.5.0"
-      commit: "86eb2c39e66d38d1bd90f54e310082365bb269aa"
+      ref: "skills-v3.6.0"
+      commit: "b1e4ae428ea63533c9c17c538ef9e32722c36fc5"
       description: Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [k] kNNowledge, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Triggers: /nn, NN, nn, cognnitive, cognitive, start, router.
     - name: nn-sources
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-sources
       version: "V_3-5-7"
-      ref: "skills-v3.5.0"
-      commit: "86eb2c39e66d38d1bd90f54e310082365bb269aa"
+      ref: "skills-v3.6.0"
+      commit: "b1e4ae428ea63533c9c17c538ef9e32722c36fc5"
       requires: [nn-innfo, nn-preflight]
       description: Ingest documents (PDF, DOCX, XLSX), normalize them into citable sources with mandatory sidecar provenance, and keep source lineage in sync.
     - name: nn-innfo
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-innfo
       version: "V_0-5-14"
-      ref: "skills-v3.5.0"
-      commit: "86eb2c39e66d38d1bd90f54e310082365bb269aa"
+      ref: "skills-v3.6.0"
+      commit: "b1e4ae428ea63533c9c17c538ef9e32722c36fc5"
       description: Author, edit, and validate iNNfo kNNowledge with built-in step-by-step kNNowledge Creation Wizard.
       blueprints: [domaiNN]
       mcp:
@@ -41,45 +41,38 @@ agent-bootstrap:
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-preflight
       version: "V_0-2-5"
-      ref: "skills-v3.5.0"
-      commit: "86eb2c39e66d38d1bd90f54e310082365bb269aa"
+      ref: "skills-v3.6.0"
+      commit: "b1e4ae428ea63533c9c17c538ef9e32722c36fc5"
       description: Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference.
     - name: nn-update
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-update
       version: "V_0-5-0"
-      ref: "skills-v3.5.0"
-      commit: "86eb2c39e66d38d1bd90f54e310082365bb269aa"
+      ref: "skills-v3.6.0"
+      commit: "b1e4ae428ea63533c9c17c538ef9e32722c36fc5"
       requires: [nn-preflight]
       description: Guided, consent-gated Blueprint Lineage Reconciliation of a domaiNN to the latest adopted iNNfo Level-2 bluepriNNts.
     - name: nn-upgrade
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-upgrade
       version: "V_0-1-0"
-      ref: "skills-v3.5.0"
-      commit: "86eb2c39e66d38d1bd90f54e310082365bb269aa"
+      ref: "skills-v3.6.0"
+      commit: "b1e4ae428ea63533c9c17c538ef9e32722c36fc5"
       requires: [nn-update]
       description: Deprecated alias of nn-update; forwards to it and logs a notice.
     - name: nn-site-generator
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-site-generator
-      version: "V_0-2-0"
-      ref: "skills-v3.5.0"
-      commit: "86eb2c39e66d38d1bd90f54e310082365bb269aa"
-      description: Create or edit websites, add analytics, add contact forms.
-    - name: nn-design-presets
-      repo: cogNNitive/cogNNitive-web
-      path: skills/nn-design-presets
-      version: "V_1-4-0"
-      ref: "skills-v3.5.0"
-      commit: "86eb2c39e66d38d1bd90f54e310082365bb269aa"
-      description: cogNNitive visual design presets — palettes, typography, spacing.
+      version: "V_0-3-0"
+      ref: "skills-v3.6.0"
+      commit: "b1e4ae428ea63533c9c17c538ef9e32722c36fc5"
+      description: Create or edit websites, add analytics, add contact forms, and apply the cogNNitive visual design presets — palettes, typography, spacing.
     - name: nn-skills-lifecycle
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-skills-lifecycle
       version: "V_1-3-1"
-      ref: "skills-v3.5.0"
-      commit: "86eb2c39e66d38d1bd90f54e310082365bb269aa"
+      ref: "skills-v3.6.0"
+      commit: "b1e4ae428ea63533c9c17c538ef9e32722c36fc5"
       requires: [nn-preflight]
       description: Audit, update, and maintain cogNNitive skills.
   blueprints:
