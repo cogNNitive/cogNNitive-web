@@ -4012,10 +4012,10 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key, sep: sep5, value } = collItem;
+        const { start, key, sep: sep6, value } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
-          next: key ?? sep5?.[0],
+          next: key ?? sep6?.[0],
           offset,
           onError,
           parentIndent: bm.indent,
@@ -4029,7 +4029,7 @@ var require_resolve_block_map = __commonJS({
             else if ("indent" in key && key.indent !== bm.indent)
               onError(offset, "BAD_INDENT", startColMsg);
           }
-          if (!keyProps.anchor && !keyProps.tag && !sep5) {
+          if (!keyProps.anchor && !keyProps.tag && !sep6) {
             commentEnd = keyProps.end;
             if (keyProps.comment) {
               if (map.comment)
@@ -4053,7 +4053,7 @@ var require_resolve_block_map = __commonJS({
         ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
-        const valueProps = resolveProps.resolveProps(sep5 ?? [], {
+        const valueProps = resolveProps.resolveProps(sep6 ?? [], {
           indicator: "map-value-ind",
           next: value,
           offset: keyNode.range[2],
@@ -4069,7 +4069,7 @@ var require_resolve_block_map = __commonJS({
             if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
               onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep5, null, valueProps, onError);
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep6, null, valueProps, onError);
           if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bm.indent, value, onError);
           offset = valueNode.range[2];
@@ -4160,7 +4160,7 @@ var require_resolve_end = __commonJS({
       let comment = "";
       if (end) {
         let hasSpace = false;
-        let sep5 = "";
+        let sep6 = "";
         for (const token of end) {
           const { source, type } = token;
           switch (type) {
@@ -4174,13 +4174,13 @@ var require_resolve_end = __commonJS({
               if (!comment)
                 comment = cb;
               else
-                comment += sep5 + cb;
-              sep5 = "";
+                comment += sep6 + cb;
+              sep6 = "";
               break;
             }
             case "newline":
               if (comment)
-                sep5 += source;
+                sep6 += source;
               hasSpace = true;
               break;
             default:
@@ -4223,18 +4223,18 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
-        const { start, key, sep: sep5, value } = collItem;
+        const { start, key, sep: sep6, value } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
-          next: key ?? sep5?.[0],
+          next: key ?? sep6?.[0],
           offset,
           onError,
           parentIndent: fc.indent,
           startOnNewline: false
         });
         if (!props.found) {
-          if (!props.anchor && !props.tag && !sep5 && !value) {
+          if (!props.anchor && !props.tag && !sep6 && !value) {
             if (i === 0 && props.comma)
               onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
             else if (i < fc.items.length - 1)
@@ -4288,8 +4288,8 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap && !sep5 && !props.found) {
-          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep5, null, props, onError);
+        if (!isMap && !sep6 && !props.found) {
+          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep6, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
           if (isBlock(value))
@@ -4301,7 +4301,7 @@ var require_resolve_flow_collection = __commonJS({
           if (isBlock(key))
             onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
           ctx.atKey = false;
-          const valueProps = resolveProps.resolveProps(sep5 ?? [], {
+          const valueProps = resolveProps.resolveProps(sep6 ?? [], {
             flow: fcName,
             indicator: "map-value-ind",
             next: value,
@@ -4312,8 +4312,8 @@ var require_resolve_flow_collection = __commonJS({
           });
           if (valueProps.found) {
             if (!isMap && !props.found && ctx.options.strict) {
-              if (sep5)
-                for (const st of sep5) {
+              if (sep6)
+                for (const st of sep6) {
                   if (st === valueProps.found)
                     break;
                   if (st.type === "newline") {
@@ -4330,7 +4330,7 @@ var require_resolve_flow_collection = __commonJS({
             else
               onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
           }
-          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep5, null, valueProps, onError) : null;
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep6, null, valueProps, onError) : null;
           if (valueNode) {
             if (isBlock(value))
               onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
@@ -4510,7 +4510,7 @@ var require_resolve_block_scalar = __commonJS({
           chompStart = i + 1;
       }
       let value = "";
-      let sep5 = "";
+      let sep6 = "";
       let prevMoreIndented = false;
       for (let i = 0; i < contentStart; ++i)
         value += lines[i][0].slice(trimIndent) + "\n";
@@ -4527,24 +4527,24 @@ var require_resolve_block_scalar = __commonJS({
           indent = "";
         }
         if (type === Scalar.Scalar.BLOCK_LITERAL) {
-          value += sep5 + indent.slice(trimIndent) + content;
-          sep5 = "\n";
+          value += sep6 + indent.slice(trimIndent) + content;
+          sep6 = "\n";
         } else if (indent.length > trimIndent || content[0] === "	") {
-          if (sep5 === " ")
-            sep5 = "\n";
-          else if (!prevMoreIndented && sep5 === "\n")
-            sep5 = "\n\n";
-          value += sep5 + indent.slice(trimIndent) + content;
-          sep5 = "\n";
+          if (sep6 === " ")
+            sep6 = "\n";
+          else if (!prevMoreIndented && sep6 === "\n")
+            sep6 = "\n\n";
+          value += sep6 + indent.slice(trimIndent) + content;
+          sep6 = "\n";
           prevMoreIndented = true;
         } else if (content === "") {
-          if (sep5 === "\n")
+          if (sep6 === "\n")
             value += "\n";
           else
-            sep5 = "\n";
+            sep6 = "\n";
         } else {
-          value += sep5 + content;
-          sep5 = " ";
+          value += sep6 + content;
+          sep6 = " ";
           prevMoreIndented = false;
         }
       }
@@ -4727,25 +4727,25 @@ var require_resolve_flow_scalar = __commonJS({
         trimBoth = /^[ \t]+|[ \t]+$/g;
       }
       let res = match[1].replace(trimEnd, "");
-      let sep5 = " ";
+      let sep6 = " ";
       let pos = line.lastIndex;
       while (match = line.exec(source)) {
         const lm = match[1].replace(trimBoth, "");
         if (lm === "") {
-          if (sep5 === "\n")
-            res += sep5;
+          if (sep6 === "\n")
+            res += sep6;
           else
-            sep5 = "\n";
+            sep6 = "\n";
         } else {
-          res += sep5 + lm;
-          sep5 = " ";
+          res += sep6 + lm;
+          sep6 = " ";
         }
         pos = line.lastIndex;
       }
       const last = /[ \t]*(.*)/sy;
       last.lastIndex = pos;
       match = last.exec(source);
-      return res + sep5 + (match?.[1] ?? "");
+      return res + sep6 + (match?.[1] ?? "");
     }
     function doubleQuotedValue(source, onError) {
       let res = "";
@@ -5555,14 +5555,14 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key, sep: sep5, value }) {
+    function stringifyItem({ start, key, sep: sep6, value }) {
       let res = "";
       for (const st of start)
         res += st.source;
       if (key)
         res += stringifyToken(key);
-      if (sep5)
-        for (const st of sep5)
+      if (sep6)
+        for (const st of sep6)
           res += st.source;
       if (value)
         res += stringifyToken(value);
@@ -6729,18 +6729,18 @@ var require_parser = __commonJS({
         if (this.type === "map-value-ind") {
           const prev = getPrevProps(this.peek(2));
           const start = getFirstKeyStartProps(prev);
-          let sep5;
+          let sep6;
           if (scalar.end) {
-            sep5 = scalar.end;
-            sep5.push(this.sourceToken);
+            sep6 = scalar.end;
+            sep6.push(this.sourceToken);
             delete scalar.end;
           } else
-            sep5 = [this.sourceToken];
+            sep6 = [this.sourceToken];
           const map = {
             type: "block-map",
             offset: scalar.offset,
             indent: scalar.indent,
-            items: [{ start, key: scalar, sep: sep5 }]
+            items: [{ start, key: scalar, sep: sep6 }]
           };
           this.onKeyLine = true;
           this.stack[this.stack.length - 1] = map;
@@ -6893,15 +6893,15 @@ var require_parser = __commonJS({
                 } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
                   const start2 = getFirstKeyStartProps(it.start);
                   const key = it.key;
-                  const sep5 = it.sep;
-                  sep5.push(this.sourceToken);
+                  const sep6 = it.sep;
+                  sep6.push(this.sourceToken);
                   delete it.key;
                   delete it.sep;
                   this.stack.push({
                     type: "block-map",
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start: start2, key, sep: sep5 }]
+                    items: [{ start: start2, key, sep: sep6 }]
                   });
                 } else if (start.length > 0) {
                   it.sep = it.sep.concat(start, this.sourceToken);
@@ -7095,13 +7095,13 @@ var require_parser = __commonJS({
             const prev = getPrevProps(parent);
             const start = getFirstKeyStartProps(prev);
             fixFlowSeqItems(fc);
-            const sep5 = fc.end.splice(1, fc.end.length);
-            sep5.push(this.sourceToken);
+            const sep6 = fc.end.splice(1, fc.end.length);
+            sep6.push(this.sourceToken);
             const map = {
               type: "block-map",
               offset: fc.offset,
               indent: fc.indent,
-              items: [{ start, key: fc, sep: sep5 }]
+              items: [{ start, key: fc, sep: sep6 }]
             };
             this.onKeyLine = true;
             this.stack[this.stack.length - 1] = map;
@@ -8831,6 +8831,340 @@ var init_storage = __esm({
   }
 });
 
+// iNNfo/packages/nn-core/dist/scope/resolve.js
+function visibleNodes2(nodes) {
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    if (nodes[i].isolate)
+      return { nodes: nodes.slice(i), cutAt: nodes[i].id };
+  }
+  return { nodes, cutAt: null };
+}
+function parseKeyedItem2(item) {
+  if (typeof item !== "string")
+    return null;
+  const i = item.indexOf("=");
+  if (i === -1)
+    return null;
+  const name = item.slice(0, i).trim();
+  if (name === "")
+    return null;
+  return { name, value: item.slice(i + 1).trim() };
+}
+function keyedEntries2(raw) {
+  const entries = [];
+  const skipped = [];
+  if (raw === null)
+    return { entries, skipped };
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      const entry = parseKeyedItem2(item);
+      if (entry)
+        entries.push(entry);
+      else
+        skipped.push(item);
+    }
+    return { entries, skipped };
+  }
+  if (typeof raw === "object") {
+    for (const [name, value] of Object.entries(raw))
+      entries.push({ name, value });
+    return { entries, skipped };
+  }
+  if (typeof raw !== "string")
+    return { entries, skipped: [raw] };
+  let text = raw.trim();
+  if (text.startsWith("[") && text.endsWith("]"))
+    text = text.slice(1, -1);
+  for (const part of text.split(",")) {
+    if (part.trim() === "")
+      continue;
+    const entry = parseKeyedItem2(part);
+    if (entry)
+      entries.push(entry);
+    else
+      skipped.push(part.trim());
+  }
+  return { entries, skipped };
+}
+function resolveOverride2(key, order, cutAt, consulted, options) {
+  const declaring = order.filter((n) => {
+    if (!declares2(n, key))
+      return false;
+    if (options?.accept && !options.accept(n.values[key], supplierOf2(n)))
+      return false;
+    return true;
+  });
+  const winnerNode = declaring.at(-1);
+  if (!winnerNode) {
+    return {
+      ok: true,
+      key,
+      strategy: "override",
+      present: false,
+      value: null,
+      explain: { v: 1, key, strategy: "override", consulted, cutAt, winner: null, overridden: [] }
+    };
+  }
+  const overridden = declaring.slice(0, -1).reverse().map((n) => ({ ...supplierOf2(n), value: n.values[key], by: winnerNode.id }));
+  return {
+    ok: true,
+    key,
+    strategy: "override",
+    present: true,
+    value: winnerNode.values[key],
+    explain: { v: 1, key, strategy: "override", consulted, cutAt, winner: supplierOf2(winnerNode), overridden }
+  };
+}
+function toStringList2(raw) {
+  if (Array.isArray(raw)) {
+    return raw.map(String).map((s) => s.trim()).filter((s) => s.length > 0);
+  }
+  if (typeof raw === "string") {
+    let text = raw.trim();
+    if (text.startsWith("[") && text.endsWith("]"))
+      text = text.slice(1, -1);
+    return text.split(",").map((s) => s.trim()).filter((s) => s.length > 0);
+  }
+  return [];
+}
+function resolveRestrict2(key, order, cutAt, consulted, options) {
+  const declaring = order.filter((n) => {
+    if (!declares2(n, key))
+      return false;
+    if (options?.accept && !options.accept(n.values[key], supplierOf2(n)))
+      return false;
+    return true;
+  });
+  if (declaring.length === 0) {
+    return {
+      ok: true,
+      key,
+      strategy: "restrict",
+      present: false,
+      value: null,
+      explain: { v: 1, key, strategy: "restrict", consulted, cutAt, winner: null, overridden: [] }
+    };
+  }
+  let allowed = [...new Set(toStringList2(declaring[0].values[key]))];
+  for (let i = 1; i < declaring.length; i++) {
+    const nodeItems = new Set(toStringList2(declaring[i].values[key]));
+    allowed = allowed.filter((item) => nodeItems.has(item));
+  }
+  const winnerNode = declaring.at(-1);
+  const overridden = declaring.slice(0, -1).reverse().map((n) => ({ ...supplierOf2(n), value: n.values[key], by: winnerNode.id }));
+  return {
+    ok: true,
+    key,
+    strategy: "restrict",
+    present: true,
+    value: allowed,
+    explain: { v: 1, key, strategy: "restrict", consulted, cutAt, winner: supplierOf2(winnerNode), overridden }
+  };
+}
+function resolveUnion2(key, order, cutAt, consulted, options) {
+  const sequence = [];
+  const skipped = [];
+  let present = false;
+  for (const n of order) {
+    if (!declares2(n, key))
+      continue;
+    if (options?.accept && !options.accept(n.values[key], supplierOf2(n)))
+      continue;
+    present = true;
+    const parsed = keyedEntries2(n.values[key]);
+    for (const e of parsed.entries)
+      sequence.push({ ...e, node: n });
+    for (const item of parsed.skipped)
+      skipped.push({ ...supplierOf2(n), item });
+  }
+  const lastIndex = /* @__PURE__ */ new Map();
+  sequence.forEach((c, i) => lastIndex.set(c.name, i));
+  const kept = sequence.filter((c, i) => lastIndex.get(c.name) === i);
+  const entries = kept.map((c) => ({
+    name: c.name,
+    from: supplierOf2(c.node),
+    shadowed: sequence.slice(0, lastIndex.get(c.name)).filter((s) => s.name === c.name).reverse().map((s) => ({ ...supplierOf2(s.node), value: s.value, by: c.node.id }))
+  }));
+  return {
+    ok: true,
+    key,
+    strategy: "union",
+    present,
+    value: kept.map((c) => ({ name: c.name, value: c.value })),
+    explain: { v: 1, key, strategy: "union", consulted, cutAt, winner: null, overridden: [], entries, skipped }
+  };
+}
+function resolveNone2(key, floor, nodes, cutAt, options) {
+  const target = nodes.at(-1) ?? null;
+  const own = target !== null && declares2(target, key) && (!options?.accept || options.accept(target.values[key], supplierOf2(target))) ? target : null;
+  const notInherited = [...floor ? [floor] : [], ...nodes.slice(0, -1)].filter((n) => declares2(n, key)).reverse().map((n) => ({ ...supplierOf2(n), value: n.values[key] }));
+  return {
+    ok: true,
+    key,
+    strategy: "none",
+    present: own !== null,
+    value: own === null ? null : own.values[key],
+    explain: {
+      v: 1,
+      key,
+      strategy: "none",
+      consulted: target === null ? [] : [supplierOf2(target)],
+      cutAt,
+      winner: own === null ? null : supplierOf2(own),
+      overridden: [],
+      notInherited
+    }
+  };
+}
+function resolve4(loaded, key, strategy, options) {
+  if (strategy !== "override" && strategy !== "union" && strategy !== "none" && strategy !== "restrict") {
+    return { ok: false, code: "UNSUPPORTED_STRATEGY", strategy };
+  }
+  const { nodes, cutAt } = visibleNodes2(loaded.nodes);
+  if (strategy === "none")
+    return resolveNone2(key, loaded.floor, nodes, cutAt, options);
+  const consulted = [...loaded.floor ? [loaded.floor] : [], ...nodes].map(supplierOf2);
+  const order = farToNear2(loaded.floor, nodes);
+  if (strategy === "override")
+    return resolveOverride2(key, order, cutAt, consulted, options);
+  if (strategy === "restrict")
+    return resolveRestrict2(key, order, cutAt, consulted, options);
+  return resolveUnion2(key, order, cutAt, consulted, options);
+}
+var supplierOf2, declares2, farToNear2;
+var init_resolve = __esm({
+  "iNNfo/packages/nn-core/dist/scope/resolve.js"() {
+    "use strict";
+    supplierOf2 = (n) => ({ scope: n.id, doc: n.doc });
+    declares2 = (n, key) => Object.hasOwn(n.values, key);
+    farToNear2 = (floor, nodes) => floor ? [floor, ...nodes] : [...nodes];
+  }
+});
+
+// iNNfo/packages/nn-core/dist/schema/writePolicy.js
+function parseWritePolicy(raw) {
+  if (typeof raw !== "string")
+    return void 0;
+  const value = raw.trim().toLowerCase();
+  return WRITE_POLICIES.find((p) => p === value);
+}
+function readWritePolicy(fields) {
+  const raw = fields[WRITE_POLICY_KEY];
+  if (raw === void 0 || raw === null || typeof raw === "string" && raw.trim() === "")
+    return void 0;
+  const policy = parseWritePolicy(raw);
+  return policy ? { policy } : { unknown: String(raw).trim() };
+}
+function validateWritePolicy(concepts) {
+  const diagnostics = [];
+  for (const concept of concepts) {
+    const unknown = concept.writePolicy?.unknown;
+    if (unknown === void 0)
+      continue;
+    diagnostics.push({
+      code: "WRITE_POLICY_UNKNOWN",
+      severity: "error",
+      path: `Concept Definition.${concept.name}.${WRITE_POLICY_KEY}`,
+      message: `WRITE_POLICY_UNKNOWN: concept "${concept.name}" - write_policy "${unknown}" is not a known policy; use one of: ${WRITE_POLICIES.join(", ")}`
+    });
+  }
+  return diagnostics;
+}
+function writeOperationOf(op) {
+  switch (op) {
+    case "add_element":
+    case "add_model":
+      return "add";
+    case "update_field":
+    case "set_fields":
+    case "rename_element":
+    case "update_element_text":
+    case "move_model":
+      return "update";
+    case "remove_element":
+    case "remove_model":
+    case "extract_instance":
+      return "remove";
+    default:
+      return null;
+  }
+}
+function policyOfAllowed(allowed) {
+  const set = new Set(allowed);
+  if (set.has("add") && set.has("update") && set.has("remove"))
+    return "mutable";
+  if (set.has("add"))
+    return "append-only";
+  return "read-only";
+}
+function resolveWritePolicy(input) {
+  let base;
+  let declaredBy;
+  if (input.concept) {
+    base = input.concept.policy ?? "read-only";
+    declaredBy = "concept";
+  } else if (input.blueprint !== void 0 && input.blueprint !== null && String(input.blueprint).trim() !== "") {
+    base = parseWritePolicy(input.blueprint) ?? "read-only";
+    declaredBy = "blueprint";
+  } else {
+    base = DEFAULT_WRITE_POLICY;
+    declaredBy = "default";
+  }
+  const scopes = input.scopes ?? [];
+  const unknownScopes = [];
+  if (scopes.length === 0) {
+    return { policy: base, allowed: ALLOWED[base], declaredBy, unknownScopes, explain: null };
+  }
+  const nodes = scopes.map((node) => {
+    if (!Object.hasOwn(node.values, WRITE_POLICY_KEY))
+      return { ...node, isolate: false };
+    const raw = node.values[WRITE_POLICY_KEY];
+    const parsed = parseWritePolicy(raw);
+    if (!parsed)
+      unknownScopes.push({ scope: node.id, value: String(raw) });
+    const values = { ...node.values, [WRITE_POLICY_KEY]: [...ALLOWED[parsed ?? "read-only"]] };
+    return { ...node, isolate: false, values };
+  });
+  const floor = {
+    id: `bluepriNNt:${declaredBy}`,
+    kind: "floor",
+    doc: null,
+    isolate: false,
+    values: { [WRITE_POLICY_KEY]: [...ALLOWED[base]] }
+  };
+  const folded = resolve4({ floor, nodes }, WRITE_POLICY_KEY, "restrict");
+  if (!folded.ok) {
+    return { policy: "read-only", allowed: [], declaredBy, unknownScopes, explain: null };
+  }
+  const allowedRaw = Array.isArray(folded.value) ? folded.value.map(String) : [];
+  const policy = policyOfAllowed(allowedRaw);
+  return { policy, allowed: ALLOWED[policy], declaredBy, unknownScopes, explain: folded.explain };
+}
+function writePolicyViolation(policy, op, concept) {
+  const operation = writeOperationOf(op);
+  if (operation === null || ALLOWED[policy].includes(operation))
+    return null;
+  return {
+    code: "WRITE_POLICY_DENIED",
+    message: `WRITE_POLICY_DENIED: concept "${concept}" is ${policy}; "${op}" is a ${operation} and only ${ALLOWED[policy].length === 0 ? "no write" : ALLOWED[policy].join(", ")} is allowed`
+  };
+}
+var WRITE_POLICIES, WRITE_POLICY_KEY, DEFAULT_WRITE_POLICY, ALLOWED;
+var init_writePolicy = __esm({
+  "iNNfo/packages/nn-core/dist/schema/writePolicy.js"() {
+    "use strict";
+    init_resolve();
+    WRITE_POLICIES = ["mutable", "append-only", "read-only"];
+    WRITE_POLICY_KEY = "write_policy";
+    DEFAULT_WRITE_POLICY = "mutable";
+    ALLOWED = {
+      mutable: ["add", "update", "remove"],
+      "append-only": ["add"],
+      "read-only": []
+    };
+  }
+});
+
 // iNNfo/packages/nn-core/dist/schema/extract.js
 function asString(v) {
   return typeof v === "string" && v.trim() !== "" ? v : void 0;
@@ -8881,6 +9215,9 @@ function extractBlueprintSchema(parsed) {
     const storage = readStorage(el.fields);
     if (storage)
       concept.storage = storage;
+    const writePolicy = readWritePolicy(el.fields);
+    if (writePolicy)
+      concept.writePolicy = writePolicy;
     concepts.push(concept);
     fieldsByConcept.set(concept.name, []);
   }
@@ -9002,6 +9339,7 @@ var init_extract = __esm({
     init_parser();
     init_parser2();
     init_storage();
+    init_writePolicy();
     CONCEPT_DEFINITION = "Concept Definition";
     FIELD_DEFINITION = "Field Definition";
     MATRIX_DEFINITION = "Matrix Definition";
@@ -9262,8 +9600,9 @@ function resolveBlueprintSchema(templateContent, resolveInclude, _seen = /* @__P
       delete local.globalFields;
     }
     attachDeclaredBy(local, provenance, declMetaOf(parsed.frontmatter, selfLabel));
-    if (_depth === 0 && includes.length === 0)
-      errors.push(...validateStorage(local.concepts));
+    if (_depth === 0 && includes.length === 0) {
+      errors.push(...validateStorage(local.concepts), ...validateWritePolicy(local.concepts));
+    }
     return { schema: local, errors };
   }
   if (_depth >= 10) {
@@ -9335,7 +9674,7 @@ function resolveBlueprintSchema(templateContent, resolveInclude, _seen = /* @__P
   if (_depth === 0) {
     attachDeclaredBy(base, provenance, declMetaOf(parsed.frontmatter, selfLabel));
     if (!errors.some((e) => e.path.startsWith("includes.") && /could not be resolved/.test(e.message))) {
-      errors.push(...validateStorage(base.concepts));
+      errors.push(...validateStorage(base.concepts), ...validateWritePolicy(base.concepts));
     }
   }
   return { schema: base, errors };
@@ -9347,6 +9686,7 @@ var init_compose = __esm({
     init_parser2();
     init_extract();
     init_storage();
+    init_writePolicy();
     SET_LIKE_KEYS = /* @__PURE__ */ new Set(["applies_to", "options", "target_concepts"]);
   }
 });
@@ -9814,6 +10154,7 @@ var init_schema = __esm({
     init_extract();
     init_compose();
     init_declaredField();
+    init_writePolicy();
     init_storage();
     init_metaschema();
     init_canonical_registry();
@@ -9852,12 +10193,12 @@ function parseSpecName(name) {
 }
 async function getMarkdownFiles(dir) {
   const { readdir: readdir6 } = await import("node:fs/promises");
-  const { join: join17 } = await import("node:path");
+  const { join: join19 } = await import("node:path");
   const files = [];
   try {
     const entries = await readdir6(dir, { withFileTypes: true });
     for (const entry of entries) {
-      const fullPath = join17(dir, entry.name);
+      const fullPath = join19(dir, entry.name);
       if (entry.isDirectory()) {
         if (entry.name === "node_modules" || entry.name.startsWith("."))
           continue;
@@ -9896,8 +10237,8 @@ function compareDottedVersions(a, b) {
 }
 async function matchSpecPath(reqParsed, filePath) {
   const { readFile: readFile10 } = await import("node:fs/promises");
-  const { basename: basename8 } = await import("node:path");
-  const fileParsed = parseSpecName(basename8(filePath));
+  const { basename: basename9 } = await import("node:path");
+  const fileParsed = parseSpecName(basename9(filePath));
   if (fileParsed.base !== reqParsed.base)
     return false;
   if (!reqParsed.version)
@@ -9919,11 +10260,11 @@ async function preferHighestVersion(matches) {
   if (matches.length === 0)
     return null;
   const { readFile: readFile10 } = await import("node:fs/promises");
-  const { basename: basename8 } = await import("node:path");
+  const { basename: basename9 } = await import("node:path");
   let best = matches[0];
   let bestVersion;
   for (const m of matches) {
-    const nameVersion = parseSpecName(basename8(m)).version;
+    const nameVersion = parseSpecName(basename9(m)).version;
     const v = nameVersion ?? versionFromFrontmatter(await readFile10(m, "utf-8").catch(() => ""));
     if (!bestVersion && v) {
       best = m;
@@ -9950,7 +10291,7 @@ async function findLocalSpec(specsDir, reqName) {
 }
 async function findSpecInPackageDir(dir, base) {
   const { readdir: readdir6 } = await import("node:fs/promises");
-  const { join: join17 } = await import("node:path");
+  const { join: join19 } = await import("node:path");
   try {
     const entries = await readdir6(dir, { withFileTypes: true });
     const files = entries.filter((e) => e.isFile() && /\.(md|markdown)$/i.test(e.name)).map((e) => e.name);
@@ -9958,20 +10299,20 @@ async function findSpecInPackageDir(dir, base) {
       return null;
     const specNN = files.find((f) => f.toLowerCase() === "spec_nn.md");
     if (specNN)
-      return join17(dir, specNN);
+      return join19(dir, specNN);
     const baseV = files.find((f) => f.toLowerCase().startsWith(`${base.toLowerCase()}_v_`));
     if (baseV)
-      return join17(dir, baseV);
+      return join19(dir, baseV);
     const baseNN = files.find((f) => f.toLowerCase() === `${base.toLowerCase()}_nn.md`);
     if (baseNN)
-      return join17(dir, baseNN);
+      return join19(dir, baseNN);
     const specMd = files.find((f) => f.toLowerCase() === "spec.md");
     if (specMd)
-      return join17(dir, specMd);
+      return join19(dir, specMd);
     const baseMd = files.find((f) => f.toLowerCase() === `${base.toLowerCase()}.md`);
     if (baseMd)
-      return join17(dir, baseMd);
-    return join17(dir, files[0]);
+      return join19(dir, baseMd);
+    return join19(dir, files[0]);
   } catch (err) {
     if (err?.code !== "ENOENT") {
       console.warn(`[resolver] Failed to scan package dir ${dir}: ${err}`);
@@ -9985,22 +10326,22 @@ function isDirectSpecEntryName(filePath, base) {
 }
 async function packageDirOf(rootDir, base) {
   const { readdir: readdir6 } = await import("node:fs/promises");
-  const { join: join17 } = await import("node:path");
-  const direct = join17(rootDir, "specs", "bluepriNNts", base);
+  const { join: join19 } = await import("node:path");
+  const direct = join19(rootDir, "specs", "bluepriNNts", base);
   try {
-    const entries = await readdir6(join17(rootDir, "specs", "bluepriNNts"), { withFileTypes: true });
+    const entries = await readdir6(join19(rootDir, "specs", "bluepriNNts"), { withFileTypes: true });
     const match = entries.find((e) => e.isDirectory() && e.name.toLowerCase() === base);
-    return match ? join17(rootDir, "specs", "bluepriNNts", match.name) : direct;
+    return match ? join19(rootDir, "specs", "bluepriNNts", match.name) : direct;
   } catch {
     return direct;
   }
 }
 async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
   const { readdir: readdir6, readFile: readFile10 } = await import("node:fs/promises");
-  const { join: join17 } = await import("node:path");
+  const { join: join19 } = await import("node:path");
   const { homedir: homedir3 } = await import("node:os");
-  const globalDir = options?.globalDir ?? process.env.INNFO_GLOBAL_DIR ?? join17(homedir3(), ".agents", "bluepriNNts");
-  const skillsDir = options?.skillsDir ?? process.env.INNFO_SKILLS_DIR ?? join17(homedir3(), ".agents", "skills");
+  const globalDir = options?.globalDir ?? process.env.INNFO_GLOBAL_DIR ?? join19(homedir3(), ".agents", "bluepriNNts");
+  const skillsDir = options?.skillsDir ?? process.env.INNFO_SKILLS_DIR ?? join19(homedir3(), ".agents", "skills");
   const parsed = parseSpecName(reqName);
   const base = parsed.base;
   const targetVersion = reqVersion ? normalizeVersion(reqVersion) : parsed.version;
@@ -10027,7 +10368,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
     if (targetVersion) {
       for (const d of verDirs) {
         if (normalizeVersion(d.name) === targetVersion) {
-          matchDir = join17(wsPackageBaseDir, d.name);
+          matchDir = join19(wsPackageBaseDir, d.name);
           matchVer = targetVersion;
           break;
         }
@@ -10038,7 +10379,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
         const v = normalizeVersion(d.name);
         if (!bestVer || compareDottedVersions(v, bestVer) > 0) {
           bestVer = v;
-          matchDir = join17(wsPackageBaseDir, d.name);
+          matchDir = join19(wsPackageBaseDir, d.name);
           matchVer = v;
         }
       }
@@ -10061,7 +10402,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
       console.warn(`[resolver] Failed to scan package tier dir: ${err}`);
     }
   }
-  const flatSearchDirs = [join17(rootDir, "specs")];
+  const flatSearchDirs = [join19(rootDir, "specs")];
   for (const dir of flatSearchDirs) {
     const matchFile = await findLocalSpec(dir, reqName);
     if (matchFile) {
@@ -10077,7 +10418,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
       };
     }
   }
-  const globalBaseDir = join17(globalDir, base);
+  const globalBaseDir = join19(globalDir, base);
   try {
     const entries = await readdir6(globalBaseDir, { withFileTypes: true });
     const verDirs = entries.filter((e) => e.isDirectory() && isVersionDirName(e.name));
@@ -10086,7 +10427,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
     if (targetVersion) {
       for (const d of verDirs) {
         if (normalizeVersion(d.name) === targetVersion) {
-          matchDir = join17(globalBaseDir, d.name);
+          matchDir = join19(globalBaseDir, d.name);
           matchVer = targetVersion;
           break;
         }
@@ -10097,7 +10438,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
         const v = normalizeVersion(d.name);
         if (!bestVer || compareDottedVersions(v, bestVer) > 0) {
           bestVer = v;
-          matchDir = join17(globalBaseDir, d.name);
+          matchDir = join19(globalBaseDir, d.name);
           matchVer = v;
         }
       }
@@ -10151,7 +10492,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
     const skillEntries = await readdir6(skillsDir, { withFileTypes: true });
     const skillDirs = skillEntries.filter((e) => e.isDirectory()).map((e) => e.name);
     for (const skillName of skillDirs) {
-      const skillPkgBase = join17(skillsDir, skillName, "bluepriNNts", base);
+      const skillPkgBase = join19(skillsDir, skillName, "bluepriNNts", base);
       try {
         const entries = await readdir6(skillPkgBase, { withFileTypes: true });
         const verDirs = entries.filter((e) => e.isDirectory() && isVersionDirName(e.name));
@@ -10160,7 +10501,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
         if (targetVersion) {
           for (const d of verDirs) {
             if (normalizeVersion(d.name) === targetVersion) {
-              matchDir = join17(skillPkgBase, d.name);
+              matchDir = join19(skillPkgBase, d.name);
               matchVer = targetVersion;
               break;
             }
@@ -10171,7 +10512,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
             const v = normalizeVersion(d.name);
             if (!bestVer || compareDottedVersions(v, bestVer) > 0) {
               bestVer = v;
-              matchDir = join17(skillPkgBase, d.name);
+              matchDir = join19(skillPkgBase, d.name);
               matchVer = v;
             }
           }
@@ -10190,7 +10531,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
           }
         }
       } catch {
-        const matchFile = await findLocalSpec(join17(skillsDir, skillName, "bluepriNNts"), reqName) || await findLocalSpec(join17(skillsDir, skillName), reqName);
+        const matchFile = await findLocalSpec(join19(skillsDir, skillName, "bluepriNNts"), reqName) || await findLocalSpec(join19(skillsDir, skillName), reqName);
         if (matchFile) {
           const content = await readFile10(matchFile, "utf-8").catch(() => "");
           const v = targetVersion || versionFromFrontmatter(content) || "0.1.0";
@@ -10349,22 +10690,22 @@ function baseOf2(path) {
   const i = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
   return i < 0 ? path : path.slice(i + 1);
 }
-function parseName2(basename8) {
-  if (NN_SUFFIX_RE2.test(basename8)) {
-    const stem2 = basename8.replace(NN_SUFFIX_RE2, "");
-    const sidecar = SIDECAR_PATH_RE2.exec(basename8);
-    return sidecar ? { kind: "nn", basename: basename8, stem: stem2, sidecarOf: sidecar[1] } : { kind: "nn", basename: basename8, stem: stem2 };
+function parseName2(basename9) {
+  if (NN_SUFFIX_RE2.test(basename9)) {
+    const stem2 = basename9.replace(NN_SUFFIX_RE2, "");
+    const sidecar = SIDECAR_PATH_RE2.exec(basename9);
+    return sidecar ? { kind: "nn", basename: basename9, stem: stem2, sidecarOf: sidecar[1] } : { kind: "nn", basename: basename9, stem: stem2 };
   }
-  const dot = basename8.lastIndexOf(".");
+  const dot = basename9.lastIndexOf(".");
   const hasExt = dot > 0;
-  const stem = hasExt ? basename8.slice(0, dot) : basename8;
-  const ext = hasExt ? basename8.slice(dot + 1) : "";
+  const stem = hasExt ? basename9.slice(0, dot) : basename9;
+  const ext = hasExt ? basename9.slice(dot + 1) : "";
   const m = STAMP_SUFFIX_RE2.exec(stem);
   if (!m)
-    return { kind: "file", basename: basename8, key: stem, ext };
+    return { kind: "file", basename: basename9, key: stem, ext };
   return {
     kind: "file",
-    basename: basename8,
+    basename: basename9,
     key: m[1],
     ext,
     stamp: { stamp: m[2], seq: m[3] ? Number(m[3]) : 1 }
@@ -10383,10 +10724,10 @@ function checkInstanceName(path, folderSlug, blueprint) {
   const expected = instanceFileName(folderSlug, blueprint);
   return baseOf2(path).toLowerCase() === expected.toLowerCase() ? null : { expected };
 }
-function displayStem2(basename8) {
-  if (NN_SUFFIX_RE2.test(basename8))
-    return basename8.replace(NN_SUFFIX_RE2, "");
-  return basename8.replace(/\.md$/i, "");
+function displayStem2(basename9) {
+  if (NN_SUFFIX_RE2.test(basename9))
+    return basename9.replace(NN_SUFFIX_RE2, "");
+  return basename9.replace(/\.md$/i, "");
 }
 function coreBlueprintKey2(parentSpecName) {
   return (parentSpecName ?? "").trim().toLowerCase().split("_")[0];
@@ -12038,8 +12379,8 @@ function compareVersions2(a, b) {
   return va.major - vb.major || va.minor - vb.minor || va.patch - vb.patch;
 }
 function parsePinnedUrl2(url) {
-  const basename8 = String(url).split("/").pop()?.replace(/\.md$/i, "") ?? "";
-  const flat = basename8.match(/^(.+?)_V_(\d+)-(\d+)-(\d+)(?:_spec)?_NN$/i);
+  const basename9 = String(url).split("/").pop()?.replace(/\.md$/i, "") ?? "";
+  const flat = basename9.match(/^(.+?)_V_(\d+)-(\d+)-(\d+)(?:_spec)?_NN$/i);
   if (flat)
     return { name: flat[1], version: `V_${flat[2]}-${flat[3]}-${flat[4]}` };
   const pkg = String(url).match(/bluepriNNts\/([^/]+)\/V_(\d+)-(\d+)-(\d+)\/spec_NN\.md/i);
@@ -12210,7 +12551,7 @@ ${url ?? ""}`;
     const group = byIdGroups.get(id);
     return group?.length === 1 ? group[0].model : void 0;
   };
-  const resolve10 = (address, from, expect) => {
+  const resolve11 = (address, from, expect) => {
     const parsed = typeof address === "string" ? parseAddress2(address) : address;
     const text = typeof address === "string" ? address.trim() : formatAddress2(address);
     const fail3 = (code, message) => ({
@@ -12293,7 +12634,7 @@ ${url ?? ""}`;
     byId,
     collection,
     byPath: (path) => pathMap.get(path),
-    resolve: resolve10,
+    resolve: resolve11,
     placementFor: (concept, id, blueprint) => {
       const declared2 = lookup(blueprint);
       if (!declared2) {
@@ -14771,6 +15112,19 @@ function isFile2(path) {
 }
 function isDomainRoot2(dir) {
   return isFile2((0, import_node_path6.join)(dir, ENTRYPOINT_FILENAME2));
+}
+function findDomainRoot2(path) {
+  let dir = (0, import_node_path6.resolve)(path);
+  if (isFile2(dir))
+    dir = (0, import_node_path6.dirname)(dir);
+  for (; ; ) {
+    if (isDomainRoot2(dir))
+      return dir;
+    const parent = (0, import_node_path6.dirname)(dir);
+    if (parent === dir)
+      return null;
+    dir = parent;
+  }
 }
 var import_node_fs6, import_node_path6;
 var init_root = __esm({
@@ -18287,6 +18641,36 @@ var init_scaffold = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/scope/chain.js
+function buildScopeChain2(startDir, probe, parentOf3) {
+  const searched = [];
+  const found = [];
+  let cutAt = null;
+  for (let dir = startDir; dir !== null; dir = parentOf3(dir)) {
+    searched.push(dir);
+    const { hasEntrypoint, scopeMarkers } = probe(dir);
+    if (scopeMarkers.length > 1 && cutAt === null) {
+      return {
+        ok: false,
+        code: "DUPLICATE_SCOPE_MARKER",
+        dir,
+        markers: scopeMarkers.map((m) => m.path)
+      };
+    }
+    const marker = scopeMarkers[0];
+    if (hasEntrypoint) {
+      if (cutAt === null) {
+        found.push({ dir, valuesDoc: marker?.path ?? null, kind: "root", isolate: false });
+      }
+      return { ok: true, chain: { root: dir, links: found.reverse(), cutAt } };
+    }
+    if (marker && cutAt === null) {
+      found.push({ dir, valuesDoc: marker.path, kind: "scope", isolate: marker.isolate });
+      if (marker.isolate)
+        cutAt = dir;
+    }
+  }
+  return { ok: false, code: "NO_DOMAIN_ROOT", searched };
+}
 var init_chain = __esm({
   "iNNfo/packages/nn-core/dist/scope/chain.js"() {
     "use strict";
@@ -18294,17 +18678,122 @@ var init_chain = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/scope/fs-chain.js
+function startDirOf2(path) {
+  const abs = (0, import_node_path12.resolve)(path);
+  try {
+    return (0, import_node_fs8.statSync)(abs).isFile() ? (0, import_node_path12.dirname)(abs) : abs;
+  } catch {
+    return abs;
+  }
+}
+function parentOf2(dir) {
+  const parent = (0, import_node_path12.dirname)(dir);
+  return parent === dir ? null : parent;
+}
+function knowledgeDocsOf2(dir) {
+  let names;
+  try {
+    names = (0, import_node_fs8.readdirSync)(dir, { withFileTypes: true }).filter((e) => e.isFile()).map((e) => e.name);
+  } catch {
+    return [];
+  }
+  return names.filter((name) => {
+    if (name === ENTRYPOINT_FILENAME2)
+      return false;
+    const parsed = parseName2(name);
+    return parsed.kind === "nn" && parsed.sidecarOf === void 0;
+  }).sort();
+}
+function posix2(root, path) {
+  return (0, import_node_path12.relative)(root, path).split(import_node_path12.sep).join("/");
+}
+function probeDir2(dir, root, failures) {
+  const scopeMarkers = [];
+  for (const name of knowledgeDocsOf2(dir)) {
+    const path = (0, import_node_path12.join)(dir, name);
+    let text;
+    try {
+      text = (0, import_node_fs8.readFileSync)(path, "utf-8");
+    } catch (error) {
+      failures.push({
+        ok: false,
+        code: "UNREADABLE_DOCUMENT",
+        path: posix2(root, path),
+        detail: error instanceof Error ? error.message : String(error)
+      });
+      continue;
+    }
+    const problems = [];
+    const fm = parseFrontmatter2(text, (message) => problems.push(message));
+    if (problems.length > 0) {
+      failures.push({ ok: false, code: "MALFORMED_FRONTMATTER", path: posix2(root, path), detail: problems.join("; ") });
+      continue;
+    }
+    if (fm?.["scope"] === true)
+      scopeMarkers.push({ path, isolate: fm["isolate"] === true });
+  }
+  return { hasEntrypoint: dir === root, scopeMarkers };
+}
+function toRelative2(chain) {
+  const { root } = chain;
+  return {
+    root,
+    cutAt: chain.cutAt === null ? null : posix2(root, chain.cutAt),
+    links: chain.links.map((l) => ({
+      ...l,
+      dir: posix2(root, l.dir),
+      valuesDoc: l.valuesDoc === null ? null : posix2(root, l.valuesDoc)
+    }))
+  };
+}
+function findScopeChain2(path) {
+  const start = startDirOf2(path);
+  const root = findDomainRoot2(start);
+  if (root === null)
+    return buildScopeChain2(start, () => NO_MARKERS2, parentOf2);
+  const failures = [];
+  const result = buildScopeChain2(start, (dir) => probeDir2(dir, root, failures), parentOf2);
+  if (failures.length > 0)
+    return failures[0];
+  if (result.ok)
+    return { ok: true, chain: toRelative2(result.chain) };
+  if (result.code === "DUPLICATE_SCOPE_MARKER") {
+    return {
+      ok: false,
+      code: "DUPLICATE_SCOPE_MARKER",
+      dir: posix2(root, result.dir),
+      markers: result.markers.map((m) => posix2(root, m))
+    };
+  }
+  return result;
+}
+var import_node_fs8, import_node_path12, NO_MARKERS2;
 var init_fs_chain = __esm({
   "iNNfo/packages/nn-core/dist/scope/fs-chain.js"() {
     "use strict";
+    import_node_fs8 = require("node:fs");
+    import_node_path12 = require("node:path");
     init_contract();
     init_parser2();
     init_chain();
     init_root();
+    NO_MARKERS2 = { hasEntrypoint: false, scopeMarkers: [] };
   }
 });
 
 // iNNfo/packages/nn-core/dist/scope/json.js
+function asJson2(value) {
+  if (value === null || typeof value === "boolean" || typeof value === "string")
+    return value;
+  if (typeof value === "number")
+    return Number.isFinite(value) ? value : String(value);
+  if (Array.isArray(value))
+    return value.map(asJson2);
+  if (typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, asJson2(v)]));
+  }
+  return String(value);
+}
 var init_json = __esm({
   "iNNfo/packages/nn-core/dist/scope/json.js"() {
     "use strict";
@@ -18312,11 +18801,64 @@ var init_json = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/scope/fs-layers.js
+function fillsOf2(frontmatter) {
+  const raw = isPlainObject4(frontmatter) ? frontmatter["fills"] : void 0;
+  if (!isPlainObject4(raw))
+    return null;
+  const fills = Object.fromEntries(Object.entries(raw).filter((entry) => isPlainObject4(entry[1])).map(([procedure, slots]) => [
+    procedure,
+    Object.fromEntries(Object.entries(slots).map(([slot, v]) => [slot, asJson2(v)]))
+  ]));
+  return Object.keys(fills).length > 0 ? fills : null;
+}
+function readValuesDoc2(path) {
+  const parsed = parseKnowledge2((0, import_node_fs9.readFileSync)(path, "utf-8"));
+  const fills = fillsOf2(parsed.frontmatter);
+  for (const [, elements] of parsed.elements.entries()) {
+    const first = elements[0];
+    if (first) {
+      return { values: Object.fromEntries(Object.entries(first.fields).map(([k, v]) => [k, asJson2(v)])), fills };
+    }
+  }
+  return { values: {}, fills };
+}
+function nodeOf3(base, path, shown) {
+  if (path === null)
+    return { ...base, values: {} };
+  let read;
+  try {
+    read = readValuesDoc2(path);
+  } catch (error) {
+    return { ok: false, code: "UNREADABLE_DOCUMENT", path: shown, detail: error instanceof Error ? error.message : String(error) };
+  }
+  return read.fills ? { ...base, values: read.values, fills: read.fills } : { ...base, values: read.values };
+}
+function loadChain2(chain, opts = {}) {
+  const nodes = [];
+  for (const link of chain.links) {
+    const node = nodeOf3({ id: link.dir, kind: link.kind, doc: link.valuesDoc, isolate: link.isolate }, link.valuesDoc === null ? null : (0, import_node_path13.join)(chain.root, link.valuesDoc), link.valuesDoc ?? link.dir);
+    if (failed2(node))
+      return node;
+    nodes.push(node);
+  }
+  const { floorDoc } = opts;
+  if (!floorDoc)
+    return { ok: true, loaded: { floor: null, nodes } };
+  const floor = nodeOf3({ id: `bluepriNNt:${floorDoc.label}`, kind: "floor", doc: (0, import_node_path13.basename)(floorDoc.path), isolate: false }, floorDoc.path, (0, import_node_path13.basename)(floorDoc.path));
+  if (failed2(floor))
+    return floor;
+  return { ok: true, loaded: { floor, nodes } };
+}
+var import_node_fs9, import_node_path13, isPlainObject4, failed2;
 var init_fs_layers = __esm({
   "iNNfo/packages/nn-core/dist/scope/fs-layers.js"() {
     "use strict";
+    import_node_fs9 = require("node:fs");
+    import_node_path13 = require("node:path");
     init_parser2();
     init_json();
+    isPlainObject4 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+    failed2 = (n) => "ok" in n;
   }
 });
 
@@ -18327,13 +18869,6 @@ var init_fs_procedures = __esm({
     init_contract();
     init_parser2();
     init_json();
-  }
-});
-
-// iNNfo/packages/nn-core/dist/scope/resolve.js
-var init_resolve = __esm({
-  "iNNfo/packages/nn-core/dist/scope/resolve.js"() {
-    "use strict";
   }
 });
 
@@ -18505,16 +19040,16 @@ var init_scoped_procedures = __esm({
 
 // iNNfo/packages/nn-mcp/src/tools/path-guard.ts
 function isInsideRoot(rootDir, candidate) {
-  const abs = (0, import_node_path12.resolve)(rootDir, candidate);
-  const rel = (0, import_node_path12.relative)((0, import_node_path12.resolve)(rootDir), abs);
-  return rel !== "" && !rel.startsWith("..") && !(0, import_node_path12.isAbsolute)(rel);
+  const abs = (0, import_node_path14.resolve)(rootDir, candidate);
+  const rel = (0, import_node_path14.relative)((0, import_node_path14.resolve)(rootDir), abs);
+  return rel !== "" && !rel.startsWith("..") && !(0, import_node_path14.isAbsolute)(rel);
 }
 function isSafeRelativeId(id) {
   if (!id) return false;
   const normalized = id.replace(/\\/g, "/");
   if (normalized.split("/").includes("..")) return false;
   if (normalized.startsWith("/")) return false;
-  if ((0, import_node_path12.isAbsolute)(id)) return false;
+  if ((0, import_node_path14.isAbsolute)(id)) return false;
   if (/^[a-zA-Z]:[/\\]/.test(id)) return false;
   if (/^[/\\]{2}/.test(id)) return false;
   return true;
@@ -18532,23 +19067,23 @@ function isDriveContained(rootDir, candidate) {
   const path = normalizeDrivePath(candidate);
   return path.length > root.length && path.toLowerCase().startsWith(`${root.toLowerCase()}/`);
 }
-var import_node_path12;
+var import_node_path14;
 var init_path_guard = __esm({
   "iNNfo/packages/nn-mcp/src/tools/path-guard.ts"() {
     "use strict";
-    import_node_path12 = require("node:path");
+    import_node_path14 = require("node:path");
   }
 });
 
 // iNNfo/packages/nn-mcp/src/tools/resolver-node.ts
 function defaultCacheDir() {
-  return process.env.INNFO_CACHE_DIR ?? (0, import_node_path13.join)((0, import_node_os.tmpdir)(), "innfo-specs");
+  return process.env.INNFO_CACHE_DIR ?? (0, import_node_path15.join)((0, import_node_os.tmpdir)(), "innfo-specs");
 }
 function isLocalPath(url) {
   if (!url) return false;
   if (url.startsWith("http://") || url.startsWith("https://")) return false;
   if (url.startsWith("file://")) return true;
-  if ((0, import_node_path13.isAbsolute)(url)) return true;
+  if ((0, import_node_path15.isAbsolute)(url)) return true;
   if (/^[a-zA-Z]:[/\\]/.test(url)) return true;
   if (url.startsWith(".") || url.endsWith(".md") || url.includes("/") || url.includes("\\"))
     return true;
@@ -18570,17 +19105,17 @@ function toLocalFilePath(url, rootDir) {
     return isDriveContained(rootDir, candidate) ? candidate : null;
   }
   if (!rootDir) {
-    return (0, import_node_path13.isAbsolute)(candidate) ? null : candidate;
+    return (0, import_node_path15.isAbsolute)(candidate) ? null : candidate;
   }
-  const resolved = (0, import_node_path13.isAbsolute)(candidate) ? candidate : (0, import_node_path13.join)(rootDir, candidate);
+  const resolved = (0, import_node_path15.isAbsolute)(candidate) ? candidate : (0, import_node_path15.join)(rootDir, candidate);
   return isInsideRoot(rootDir, resolved) ? resolved : null;
 }
 function resolveAuthToken() {
   const env = process.env.COGNNITIVE_TOKEN;
   if (env && env.trim()) return env.trim();
   try {
-    const credPath = process.env.COGNNITIVE_CREDENTIALS ?? (0, import_node_path13.join)((0, import_node_os.homedir)(), ".agents", "credentials.json");
-    const raw = (0, import_node_fs8.readFileSync)(credPath, "utf-8");
+    const credPath = process.env.COGNNITIVE_CREDENTIALS ?? (0, import_node_path15.join)((0, import_node_os.homedir)(), ".agents", "credentials.json");
+    const raw = (0, import_node_fs10.readFileSync)(credPath, "utf-8");
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed.token === "string" && parsed.token.trim()) return parsed.token.trim();
   } catch {
@@ -18622,9 +19157,9 @@ function canonicalSpecFilename(requestName, content) {
 }
 function packageCopyFilter(sourceDir) {
   return (src) => {
-    const rel = (0, import_node_path13.relative)(sourceDir, src);
+    const rel = (0, import_node_path15.relative)(sourceDir, src);
     if (!rel) return true;
-    const parts = rel.split(import_node_path13.sep);
+    const parts = rel.split(import_node_path15.sep);
     if (parts.some((p) => p.startsWith(".") || p === "node_modules")) return false;
     return !(parts.length === 1 && /^V_\d/i.test(parts[0]));
   };
@@ -18632,8 +19167,8 @@ function packageCopyFilter(sourceDir) {
 async function writeStagedTree(stagingDir, subdir, files) {
   if (!files) return;
   for (const [rel, content] of Object.entries(files)) {
-    const dest = (0, import_node_path13.join)(stagingDir, subdir, rel);
-    await (0, import_promises4.mkdir)((0, import_node_path13.join)(dest, ".."), { recursive: true });
+    const dest = (0, import_node_path15.join)(stagingDir, subdir, rel);
+    await (0, import_promises4.mkdir)((0, import_node_path15.join)(dest, ".."), { recursive: true });
     await (0, import_promises4.writeFile)(dest, content, "utf-8");
   }
 }
@@ -18643,8 +19178,8 @@ function uniqueSuffix() {
 async function hydrateBlueprintPackageAtomically(rootDir, base, version, payload, opts) {
   const pkg = typeof payload === "string" ? { spec: payload } : payload;
   const verSegment = `V_${normalizeVersion(version).replace(/\./g, "-")}`;
-  const templatesBase = opts?.baseDir ?? (0, import_node_path13.join)(rootDir, "specs", "bluepriNNts");
-  const targetPkgDir = (0, import_node_path13.join)(templatesBase, base, verSegment);
+  const templatesBase = opts?.baseDir ?? (0, import_node_path15.join)(rootDir, "specs", "bluepriNNts");
+  const targetPkgDir = (0, import_node_path15.join)(templatesBase, base, verSegment);
   try {
     const existing = await (0, import_promises4.readdir)(targetPkgDir);
     if (existing.length > 0) {
@@ -18655,17 +19190,17 @@ async function hydrateBlueprintPackageAtomically(rootDir, base, version, payload
       console.warn(`[resolver-node] Failed to inspect package dir ${targetPkgDir}: ${err}`);
     }
   }
-  const baseBlueprintsDir = (0, import_node_path13.join)(templatesBase, base);
+  const baseBlueprintsDir = (0, import_node_path15.join)(templatesBase, base);
   await (0, import_promises4.mkdir)(baseBlueprintsDir, { recursive: true });
-  const stagingDir = (0, import_node_path13.join)(baseBlueprintsDir, `.staging-${uniqueSuffix()}`);
+  const stagingDir = (0, import_node_path15.join)(baseBlueprintsDir, `.staging-${uniqueSuffix()}`);
   await (0, import_promises4.mkdir)(stagingDir, { recursive: true });
   if (pkg.sourceDir) {
     await (0, import_promises4.cp)(pkg.sourceDir, stagingDir, { recursive: true, filter: packageCopyFilter(pkg.sourceDir) });
   }
   const specFileName = SPEC_FILENAME2;
   const namedFileName = `${base}_${verSegment}_NN.md`;
-  await (0, import_promises4.writeFile)((0, import_node_path13.join)(stagingDir, specFileName), pkg.spec, "utf-8");
-  await (0, import_promises4.writeFile)((0, import_node_path13.join)(stagingDir, namedFileName), pkg.spec, "utf-8");
+  await (0, import_promises4.writeFile)((0, import_node_path15.join)(stagingDir, specFileName), pkg.spec, "utf-8");
+  await (0, import_promises4.writeFile)((0, import_node_path15.join)(stagingDir, namedFileName), pkg.spec, "utf-8");
   await writeStagedTree(stagingDir, "procedures", pkg.procedures);
   await writeStagedTree(stagingDir, "samples", pkg.samples);
   await writeStagedTree(stagingDir, "assets", pkg.assets);
@@ -18771,7 +19306,7 @@ async function atomicWriteFile(path, content) {
 }
 async function saveSpecOnce(specsDir, filename, content) {
   await (0, import_promises4.mkdir)(specsDir, { recursive: true });
-  const path = (0, import_node_path13.join)(specsDir, filename);
+  const path = (0, import_node_path15.join)(specsDir, filename);
   try {
     await (0, import_promises4.readFile)(path, "utf-8");
     return;
@@ -18785,10 +19320,10 @@ async function saveSpecOnce(specsDir, filename, content) {
 async function resolveParentChainNode(rootDir, parentUrl, parentName, options = {}) {
   const maxDepth = options.maxDepth ?? MAX_DEPTH_DEFAULT;
   const timeout = options.timeout ?? 1e4;
-  const specsDir = (0, import_node_path13.join)(rootDir, "specs");
+  const specsDir = (0, import_node_path15.join)(rootDir, "specs");
   const cacheDir = options.inPlace === true ? specsDir : options.cacheDir ?? defaultCacheDir();
   const writeDir = cacheDir;
-  const blueprintsBaseDir = (0, import_node_path13.join)(cacheDir, "bluepriNNts");
+  const blueprintsBaseDir = (0, import_node_path15.join)(cacheDir, "bluepriNNts");
   const specs = /* @__PURE__ */ new Map();
   const chain = [];
   const freshness = /* @__PURE__ */ new Map();
@@ -18979,14 +19514,14 @@ async function resolveIncludesInto(specs, specsDir, timeout, seen = /* @__PURE__
     }
   }
 }
-var import_node_crypto3, import_promises4, import_node_fs8, import_node_path13, import_node_url, import_node_os, MAX_DEPTH_DEFAULT, BlueprintAuthError, stagingCounter, IncompleteSkillsTreeError;
+var import_node_crypto3, import_promises4, import_node_fs10, import_node_path15, import_node_url, import_node_os, MAX_DEPTH_DEFAULT, BlueprintAuthError, stagingCounter, IncompleteSkillsTreeError;
 var init_resolver_node = __esm({
   "iNNfo/packages/nn-mcp/src/tools/resolver-node.ts"() {
     "use strict";
     import_node_crypto3 = require("node:crypto");
     import_promises4 = require("node:fs/promises");
-    import_node_fs8 = require("node:fs");
-    import_node_path13 = require("node:path");
+    import_node_fs10 = require("node:fs");
+    import_node_path15 = require("node:path");
     init_path_guard();
     import_node_url = require("node:url");
     import_node_os = require("node:os");
@@ -19101,14 +19636,14 @@ async function collectDomainFiles(dir, rootDir, relPaths, opts, depth = 0) {
       if (entry.name.startsWith(".")) continue;
       const skip = opts?.includeSpecs ? ["node_modules", ".git", "dist", ".spec-cache", "backups", "archive"] : ["node_modules", ".git", "dist", ".spec-cache", "specs", "backups", "archive"];
       if (skip.includes(nameLower)) continue;
-      const child = (0, import_node_path14.join)(dir, entry.name);
+      const child = (0, import_node_path16.join)(dir, entry.name);
       if (isDomainRoot2(child)) continue;
       await collectDomainFiles(child, rootDir, relPaths, opts, depth + 1);
       continue;
     }
     if (!entry.isFile()) continue;
     if (entry.name.startsWith(".")) continue;
-    const rel = (0, import_node_path14.relative)(rootDir, (0, import_node_path14.join)(dir, entry.name)).replace(/\\/g, "/");
+    const rel = (0, import_node_path16.relative)(rootDir, (0, import_node_path16.join)(dir, entry.name)).replace(/\\/g, "/");
     relPaths.push(rel);
   }
 }
@@ -19144,7 +19679,7 @@ async function findDocument(rootDir, bare, excluded, opts) {
   const lower = bare.toLowerCase();
   const strip = (p) => p.replace(/\.md$/i, "").replace(/(_NN)+$/i, "").toLowerCase();
   const hits = relPaths.filter((rel) => {
-    if (excluded.has((0, import_node_path14.join)(rootDir, rel))) return false;
+    if (excluded.has((0, import_node_path16.join)(rootDir, rel))) return false;
     if (!/\.md$/i.test(rel) && rel.toLowerCase() !== lower) return false;
     const base = rel.split("/").pop() ?? rel;
     if (strip(rel) === lower || !lower.includes("/") && strip(base) === lower) return true;
@@ -19156,9 +19691,9 @@ async function findDocument(rootDir, bare, excluded, opts) {
   });
   if (hits.length === 0) return null;
   if (hits.length > 1) {
-    throw new ModelIdError("DUPLICATE_MODEL_ID", bare, hits.map((h) => (0, import_node_path14.join)(rootDir, h)));
+    throw new ModelIdError("DUPLICATE_MODEL_ID", bare, hits.map((h) => (0, import_node_path16.join)(rootDir, h)));
   }
-  return (0, import_node_path14.join)(rootDir, hits[0]);
+  return (0, import_node_path16.join)(rootDir, hits[0]);
 }
 async function resolveBlueprintWithCache(rootDir, url, name, options) {
   let cache = null;
@@ -19183,11 +19718,11 @@ async function resolveBlueprintWithCache(rootDir, url, name, options) {
   const freshness = cache?.freshness?.get(name) ?? null;
   return { template, cache, resolveInclude, freshness };
 }
-var import_node_path14, import_promises6, ModelIdError;
+var import_node_path16, import_promises6, ModelIdError;
 var init_spec = __esm({
   "iNNfo/packages/nn-mcp/src/tools/spec.ts"() {
     "use strict";
-    import_node_path14 = require("node:path");
+    import_node_path16 = require("node:path");
     init_dist();
     init_scoped_procedures();
     import_promises6 = require("node:fs/promises");
@@ -19259,32 +19794,32 @@ function baseOf(path) {
   const i = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
   return i < 0 ? path : path.slice(i + 1);
 }
-function parseName(basename8) {
-  if (NN_SUFFIX_RE.test(basename8)) {
-    const stem2 = basename8.replace(NN_SUFFIX_RE, "");
-    const sidecar = SIDECAR_PATH_RE.exec(basename8);
-    return sidecar ? { kind: "nn", basename: basename8, stem: stem2, sidecarOf: sidecar[1] } : { kind: "nn", basename: basename8, stem: stem2 };
+function parseName(basename9) {
+  if (NN_SUFFIX_RE.test(basename9)) {
+    const stem2 = basename9.replace(NN_SUFFIX_RE, "");
+    const sidecar = SIDECAR_PATH_RE.exec(basename9);
+    return sidecar ? { kind: "nn", basename: basename9, stem: stem2, sidecarOf: sidecar[1] } : { kind: "nn", basename: basename9, stem: stem2 };
   }
-  const dot = basename8.lastIndexOf(".");
+  const dot = basename9.lastIndexOf(".");
   const hasExt = dot > 0;
-  const stem = hasExt ? basename8.slice(0, dot) : basename8;
-  const ext = hasExt ? basename8.slice(dot + 1) : "";
+  const stem = hasExt ? basename9.slice(0, dot) : basename9;
+  const ext = hasExt ? basename9.slice(dot + 1) : "";
   const m = STAMP_SUFFIX_RE.exec(stem);
-  if (!m) return { kind: "file", basename: basename8, key: stem, ext };
+  if (!m) return { kind: "file", basename: basename9, key: stem, ext };
   return {
     kind: "file",
-    basename: basename8,
+    basename: basename9,
     key: m[1],
     ext,
     stamp: { stamp: m[2], seq: m[3] ? Number(m[3]) : 1 }
   };
 }
-function displayStem(basename8) {
-  if (NN_SUFFIX_RE.test(basename8)) return basename8.replace(NN_SUFFIX_RE, "");
-  return basename8.replace(/\.md$/i, "");
+function displayStem(basename9) {
+  if (NN_SUFFIX_RE.test(basename9)) return basename9.replace(NN_SUFFIX_RE, "");
+  return basename9.replace(/\.md$/i, "");
 }
-function procedureIdOf(basename8) {
-  return displayStem(baseOf(basename8)).replace(/_procedures$/i, "").toLowerCase().replace(/_/g, "-");
+function procedureIdOf(basename9) {
+  return displayStem(baseOf(basename9)).replace(/_procedures$/i, "").toLowerCase().replace(/_/g, "-");
 }
 var CORE_BLUEPRINT_ROLE = {
   sidecar: "sidecar",
@@ -19338,11 +19873,11 @@ function findDomainRoot(path) {
 }
 
 // iNNfo/packages/nn-core/src/scope/chain.ts
-function buildScopeChain(startDir, probe, parentOf2) {
+function buildScopeChain(startDir, probe, parentOf3) {
   const searched = [];
   const found = [];
   let cutAt = null;
-  for (let dir = startDir; dir !== null; dir = parentOf2(dir)) {
+  for (let dir = startDir; dir !== null; dir = parentOf3(dir)) {
     searched.push(dir);
     const { hasEntrypoint, scopeMarkers } = probe(dir);
     if (scopeMarkers.length > 1 && cutAt === null) {
@@ -22228,7 +22763,7 @@ function serializeChangeset(doc) {
 // iNNfo/packages/nn-mcp/src/tools/apply-change.ts
 var import_promises11 = require("node:fs/promises");
 var import_node_crypto4 = require("node:crypto");
-var import_node_path18 = require("node:path");
+var import_node_path20 = require("node:path");
 init_dist();
 init_spec();
 init_domain_index();
@@ -22265,9 +22800,9 @@ function canonicalizeTarget(target, aliases) {
 
 // iNNfo/packages/nn-mcp/src/tools/produce-artifact.ts
 var import_promises7 = require("node:fs/promises");
-var import_node_path15 = require("node:path");
+var import_node_path17 = require("node:path");
 async function artifactTargetProblem(rootDir, rel) {
-  const info = await (0, import_promises7.stat)((0, import_node_path15.join)(rootDir, rel)).catch(() => null);
+  const info = await (0, import_promises7.stat)((0, import_node_path17.join)(rootDir, rel)).catch(() => null);
   if (info?.isFile()) return null;
   if (info?.isDirectory()) {
     return {
@@ -22445,7 +22980,7 @@ function mutationArgsForChange(change, model, schema) {
 
 // iNNfo/packages/nn-mcp/src/tools/propose-changeset.ts
 var import_promises9 = require("node:fs/promises");
-var import_node_path17 = require("node:path");
+var import_node_path19 = require("node:path");
 init_dist();
 init_spec();
 
@@ -22458,7 +22993,7 @@ init_domain_index();
 
 // iNNfo/packages/nn-mcp/src/tools/move-referrers.ts
 var import_promises8 = require("node:fs/promises");
-var import_node_path16 = require("node:path");
+var import_node_path18 = require("node:path");
 init_dist();
 init_domain_index();
 function modelPartOf(token) {
@@ -22493,7 +23028,7 @@ function retargetValue(value, fromId, toId) {
 async function findDanglingReferrers(rootDir, check2, retargets) {
   const addressing = await scanAddressingReferences(rootDir, check2.fromId, {
     files: [check2.fromPath],
-    folders: [(0, import_node_path16.dirname)(check2.fromPath)]
+    folders: [(0, import_node_path18.dirname)(check2.fromPath)]
   });
   const out = [];
   for (const hit of addressing) {
@@ -22517,7 +23052,7 @@ async function scanAddressingReferences(rootDir, id, exclude) {
   const out = [];
   for (const model of discovered) {
     if (exclude.files.includes(model.path)) continue;
-    if (exclude.folders.some((folder) => model.path.startsWith(`${folder}${import_node_path16.sep}`))) continue;
+    if (exclude.folders.some((folder) => model.path.startsWith(`${folder}${import_node_path18.sep}`))) continue;
     const modelId = index.byPath(model.input.path)?.id;
     if (!modelId) continue;
     let parsed;
@@ -22556,13 +23091,13 @@ function fileSegment(value, fallback) {
 }
 async function resolveWorkspaceId(rootDir) {
   try {
-    const manifest = await (0, import_promises9.readFile)((0, import_node_path17.join)(rootDir, ENTRYPOINT_FILENAME2), "utf-8");
+    const manifest = await (0, import_promises9.readFile)((0, import_node_path19.join)(rootDir, ENTRYPOINT_FILENAME2), "utf-8");
     const frontmatter = parseFrontmatter2(manifest) ?? {};
     const declared2 = frontmatter["workspace_id"];
     if (typeof declared2 === "string" && declared2.trim() !== "") return declared2.trim();
   } catch {
   }
-  return slugify2((0, import_node_path17.basename)((0, import_node_path17.resolve)(rootDir))) || "domain";
+  return slugify2((0, import_node_path19.basename)((0, import_node_path19.resolve)(rootDir))) || "domain";
 }
 function numberChanges(changes, author) {
   return changes.map((change, index) => ({
@@ -22596,13 +23131,13 @@ async function writeProposedChangeset(rootDir, input) {
   const workspaceId = input.workspaceId?.trim() || await resolveWorkspaceId(rootDir);
   const document = buildProposedChangeset(input.changes, { title: input.title, author, workspaceId });
   const text = serializeChangeset2(document);
-  const changesDir = (0, import_node_path17.join)(rootDir, "changes");
+  const changesDir = (0, import_node_path19.join)(rootDir, "changes");
   await (0, import_promises9.mkdir)(changesDir, { recursive: true });
   const base = input.now ?? /* @__PURE__ */ new Date();
   for (let attempt = 0; attempt < 60; attempt++) {
     const stamp = formatUtcStamp(new Date(base.getTime() + attempt * 1e3));
     const fileName = `${fileSegment(workspaceId, "domain")}_${fileSegment(author, "agent")}_${stamp}_changes_NN.md`;
-    const absolutePath = (0, import_node_path17.join)(changesDir, fileName);
+    const absolutePath = (0, import_node_path19.join)(changesDir, fileName);
     try {
       await (0, import_promises9.writeFile)(absolutePath, text, { encoding: "utf-8", flag: "wx" });
       return { path: `changes/${fileName}`, absolutePath, document };
@@ -22695,11 +23230,11 @@ async function findAllWorkspaceModelFiles(dir, ignore, rootDir) {
     if (entry.isDirectory()) {
       const lowerDir = entry.name.toLowerCase();
       if (entry.name.startsWith(".") || ignore.has(lowerDir) || lowerDir === "changes" || lowerDir === "archive") continue;
-      const sub = await findAllWorkspaceModelFiles((0, import_node_path18.join)(dir, entry.name), ignore, rootDir);
+      const sub = await findAllWorkspaceModelFiles((0, import_node_path20.join)(dir, entry.name), ignore, rootDir);
       results.push(...sub);
     } else if (entry.isFile() && isNNName2(entry.name) && entry.name.toLowerCase() !== "index.md" && !entry.name.endsWith("_changes_NN.md")) {
-      const filePath = (0, import_node_path18.join)(dir, entry.name);
-      const relPath = (0, import_node_path18.relative)(rootDir, filePath).split("\\").join("/");
+      const filePath = (0, import_node_path20.join)(dir, entry.name);
+      const relPath = (0, import_node_path20.relative)(rootDir, filePath).split("\\").join("/");
       if (isExcludedPath(relPath) || relPath.startsWith("changes/") || relPath.includes("/archive/") || relPath.startsWith("archive/")) continue;
       results.push(filePath);
     }
@@ -22793,7 +23328,7 @@ function hasUnfrozenElements(model) {
   return false;
 }
 async function artifactAlreadyRecorded(rootDir, rel) {
-  const dir = (0, import_node_path18.join)(rootDir, "changes");
+  const dir = (0, import_node_path20.join)(rootDir, "changes");
   let names;
   try {
     names = await (0, import_promises11.readdir)(dir);
@@ -22804,7 +23339,7 @@ async function artifactAlreadyRecorded(rootDir, rel) {
     if (!isNNName2(name)) continue;
     let doc;
     try {
-      doc = parseChangeset2(await (0, import_promises11.readFile)((0, import_node_path18.join)(dir, name), "utf-8"));
+      doc = parseChangeset2(await (0, import_promises11.readFile)((0, import_node_path20.join)(dir, name), "utf-8"));
     } catch {
       continue;
     }
@@ -22892,7 +23427,7 @@ async function evidenceShas(rootDir, evidence) {
     if (lower === "decision" || lower === "unknown") return void 0;
     const filePath = evidencePath(item) ?? item;
     try {
-      const bytes = await (0, import_promises11.readFile)((0, import_node_path18.join)(rootDir, filePath));
+      const bytes = await (0, import_promises11.readFile)((0, import_node_path20.join)(rootDir, filePath));
       shas.push((0, import_node_crypto4.createHash)("sha256").update(bytes).digest("hex"));
     } catch {
       return void 0;
@@ -22912,7 +23447,7 @@ async function latestAppliedAt(changesDir) {
     if (!isNNName2(name)) continue;
     let doc;
     try {
-      doc = parseChangeset2(await (0, import_promises11.readFile)((0, import_node_path18.join)(changesDir, name), "utf-8"));
+      doc = parseChangeset2(await (0, import_promises11.readFile)((0, import_node_path20.join)(changesDir, name), "utf-8"));
     } catch {
       continue;
     }
@@ -22926,7 +23461,7 @@ async function latestAppliedAt(changesDir) {
   return latest;
 }
 async function executeChangesetApply(rootDir, changesetPathInput) {
-  const resolvedChangesetPath = (0, import_node_path18.isAbsolute)(changesetPathInput) ? changesetPathInput : (0, import_node_path18.join)(rootDir, changesetPathInput);
+  const resolvedChangesetPath = (0, import_node_path20.isAbsolute)(changesetPathInput) ? changesetPathInput : (0, import_node_path20.join)(rootDir, changesetPathInput);
   if (!isInsideRoot(rootDir, resolvedChangesetPath)) {
     return {
       success: false,
@@ -22937,8 +23472,8 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       errors: [{ path: changesetPathInput, message: "Changeset path must resolve inside the workspace root" }]
     };
   }
-  const changesetStem = displayStem2((0, import_node_path18.basename)(resolvedChangesetPath));
-  const relChangesetPath = (0, import_node_path18.relative)(rootDir, resolvedChangesetPath).replace(/\\/g, "/");
+  const changesetStem = displayStem2((0, import_node_path20.basename)(resolvedChangesetPath));
+  const relChangesetPath = (0, import_node_path20.relative)(rootDir, resolvedChangesetPath).replace(/\\/g, "/");
   const lockHandle = await acquireLock(rootDir, changesetStem);
   try {
     let rawChangeset;
@@ -22969,8 +23504,8 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
     }
     const recordedTargets = new Map(csDoc.changes.map((c) => [c.id, c.target]));
     const writeBack = (doc) => serializeChangeset2(compactExecutionFacts(doc, recordedTargets));
-    const parentOf2 = /* @__PURE__ */ new Map();
-    const recordedIdOf = (id) => parentOf2.get(id) ?? id;
+    const parentOf3 = /* @__PURE__ */ new Map();
+    const recordedIdOf = (id) => parentOf3.get(id) ?? id;
     const recordRejection = async (errors, changeId, warnings, persist = true) => {
       const reason = errors.map((e) => e.code && !e.message.startsWith(e.code) ? `${e.code}: ${e.message}` : e.message).join("; ");
       try {
@@ -23236,7 +23771,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         return rejectProposal("ADD_MODEL_INVALID_TARGET", change.target, `change "${change.id}": ${placed.message}`, change.id);
       }
       if (placed.folder === "kNNowledge/") continue;
-      const filePath = (0, import_node_path18.join)(rootDir, placed.folder, placed.file);
+      const filePath = (0, import_node_path20.join)(rootDir, placed.folder, placed.file);
       if (!isInsideRoot(rootDir, filePath)) {
         return rejectProposal("ADD_MODEL_INVALID_TARGET", change.target, `model id "${change.target}" resolves outside the domain`, change.id);
       }
@@ -23375,14 +23910,14 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       if (!("folder" in placed)) {
         return rejectProposal("EXTRACT_INVALID_TARGET", toId, `change "${change.id}": ${placed.message}`, change.id);
       }
-      const path = (0, import_node_path18.join)(rootDir, placed.folder, placed.file);
+      const path = (0, import_node_path20.join)(rootDir, placed.folder, placed.file);
       if (!isInsideRoot(rootDir, path)) {
         return rejectProposal("EXTRACT_INVALID_TARGET", toId, `model id "${toId}" resolves outside the domain`, change.id);
       }
       const occupiedById = domainIndex.byId(toId) !== void 0 || await (0, import_promises11.stat)(path).then((s) => s.isFile(), () => false);
-      const occupiedFolder = await (0, import_promises11.stat)((0, import_node_path18.dirname)(path)).then((s) => s.isDirectory(), () => false);
+      const occupiedFolder = await (0, import_promises11.stat)((0, import_node_path20.dirname)(path)).then((s) => s.isDirectory(), () => false);
       if (occupiedById || occupiedFolder) {
-        const where = occupiedById ? `instance "${toId}" already exists` : `"${(0, import_node_path18.relative)(rootDir, (0, import_node_path18.dirname)(path)).replace(/\\/g, "/")}/" already exists`;
+        const where = occupiedById ? `instance "${toId}" already exists` : `"${(0, import_node_path20.relative)(rootDir, (0, import_node_path20.dirname)(path)).replace(/\\/g, "/")}/" already exists`;
         blockedChanges.set(change.id, {
           code: occupiedById ? "MODEL_EXISTS" : "EXTRACT_DESTINATION_OCCUPIED",
           message: `${occupiedById ? "MODEL_EXISTS" : "EXTRACT_DESTINATION_OCCUPIED"}: ${where}, so extracting into "${toId}" would write into it; remove the registry copy with remove_element instead`
@@ -23471,7 +24006,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       if (change.op !== "set_fields") return [change];
       const subs = setFieldsEntries2(change).map((entry) => {
         const id = `${change.id}&${entry.field}`;
-        parentOf2.set(id, change.id);
+        parentOf3.set(id, change.id);
         return {
           id,
           op: "update_field",
@@ -23497,11 +24032,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         for (const key of ["status", "resolution", "resolved_target", "evidence_sha256", "applied_at", "batch"]) {
           delete folded[key];
         }
-        const failed2 = subs.find((c) => c.status !== void 0 && c.status !== "applied");
+        const failed3 = subs.find((c) => c.status !== void 0 && c.status !== "applied");
         const first = subs[0];
-        if (failed2) {
-          folded.status = failed2.status;
-          if (failed2.resolution !== void 0) folded.resolution = failed2.resolution;
+        if (failed3) {
+          folded.status = failed3.status;
+          if (failed3.resolution !== void 0) folded.resolution = failed3.resolution;
         } else if (first?.status === "applied") {
           folded.status = "applied";
           folded.resolution = first.resolution;
@@ -23519,7 +24054,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       if (change.op !== "produce_artifact") continue;
       const rel = change.target.replace(/\\/g, "/");
       const segments = rel.split("/");
-      if (!isSafeRelativeId(rel) || (0, import_node_path18.isAbsolute)(rel) || segments.includes("..") || !isInsideRoot(rootDir, (0, import_node_path18.join)(rootDir, rel))) {
+      if (!isSafeRelativeId(rel) || (0, import_node_path20.isAbsolute)(rel) || segments.includes("..") || !isInsideRoot(rootDir, (0, import_node_path20.join)(rootDir, rel))) {
         return rejectProposal(
           "ARTIFACT_INVALID_PATH",
           rel,
@@ -23581,7 +24116,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
     }
     if (needsKnowledgeDir) {
-      const kDir = await (0, import_promises11.stat)((0, import_node_path18.join)(rootDir, "kNNowledge")).catch(() => null);
+      const kDir = await (0, import_promises11.stat)((0, import_node_path20.join)(rootDir, "kNNowledge")).catch(() => null);
       if (!kDir || !kDir.isDirectory()) {
         return rejectPhase1("DOMAIN_LAYOUT_INVALID", "kNNowledge", "the domain has no kNNowledge/ directory to create models in");
       }
@@ -23646,18 +24181,18 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       if (!("folder" in placed)) {
         return rejectProposal("MOVE_INVALID_TARGET", toId, `change "${change.id}": ${placed.message}`, change.id);
       }
-      const toPath = (0, import_node_path18.join)(rootDir, placed.folder, placed.file);
+      const toPath = (0, import_node_path20.join)(rootDir, placed.folder, placed.file);
       if (!isInsideRoot(rootDir, toPath)) {
         return rejectProposal("MOVE_INVALID_TARGET", toId, `model id "${toId}" resolves outside the domain`, change.id);
       }
-      const fromDir = (0, import_node_path18.dirname)(fromPath);
-      const toDir = (0, import_node_path18.dirname)(toPath);
+      const fromDir = (0, import_node_path20.dirname)(fromPath);
+      const toDir = (0, import_node_path20.dirname)(toPath);
       if (toDir !== fromDir) {
         if (await (0, import_promises11.stat)(toDir).then(() => true, () => false)) {
           return rejectPhase1(
             "MOVE_DESTINATION_OCCUPIED",
             toId,
-            `moving "${fromId}" to "${toId}" would write into "${(0, import_node_path18.relative)(rootDir, toDir)}", which already exists`
+            `moving "${fromId}" to "${toId}" would write into "${(0, import_node_path20.relative)(rootDir, toDir)}", which already exists`
           );
         }
       } else if (toPath !== fromPath && await (0, import_promises11.stat)(toPath).then(() => true, () => false)) {
@@ -23702,11 +24237,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       if (!path) {
         return rejectPhase1("MODEL_NOT_FOUND", id, `remove_model target "${id}" has no file`);
       }
-      const folder = (0, import_node_path18.dirname)(target.path);
+      const folder = (0, import_node_path20.dirname)(target.path);
       const children = domainIndex.models.filter((m) => {
         if (m.id === id) return false;
-        const inside = (0, import_node_path18.relative)(folder, m.path);
-        return inside !== "" && !inside.startsWith("..") && !(0, import_node_path18.isAbsolute)(inside);
+        const inside = (0, import_node_path20.relative)(folder, m.path);
+        return inside !== "" && !inside.startsWith("..") && !(0, import_node_path20.isAbsolute)(inside);
       }).map((m) => m.id);
       if (children.length > 0) {
         return rejectProposal(
@@ -23723,11 +24258,28 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         try {
           const { template: schemaBlueprint, resolveInclude: schemaInclude } = await resolveBlueprintForKnowledge(rootDir, entry.model);
           entry.schema = schemaBlueprint ? resolveBlueprintSchema(schemaBlueprint.rawContent, schemaInclude).schema : null;
+          const blueprintFm = schemaBlueprint?.frontmatter;
+          entry.blueprintWritePolicy = blueprintFm?.[WRITE_POLICY_KEY];
         } catch {
           entry.schema = null;
         }
       }
       return entry.schema ?? void 0;
+    };
+    const writeScopesFor = (entry) => {
+      if (entry.writeScopes !== void 0) return { ok: true, scopes: entry.writeScopes };
+      const found = findScopeChain2(entry.filePath);
+      if (!found.ok) {
+        if (found.code === "NO_DOMAIN_ROOT") {
+          entry.writeScopes = [];
+          return { ok: true, scopes: [] };
+        }
+        return { ok: false, detail: found.code };
+      }
+      const loaded = loadChain2(found.chain);
+      if (!loaded.ok) return { ok: false, detail: `${loaded.code}: ${loaded.path}` };
+      entry.writeScopes = [...loaded.loaded.nodes];
+      return { ok: true, scopes: entry.writeScopes };
     };
     for (const change of csDoc.changes) {
       if (change.op === "comment" || change.op === "produce_artifact") continue;
@@ -23773,7 +24325,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           blueprintFrontmatter: resolvedBlueprint.template.frontmatter,
           ...plan?.root ? { root: plan.root } : {}
         });
-        const filePath = plan ? plan.path : (0, import_node_path18.join)(rootDir, "kNNowledge", `${cleanId}_NN.md`);
+        const filePath = plan ? plan.path : (0, import_node_path20.join)(rootDir, "kNNowledge", `${cleanId}_NN.md`);
         if (!isInsideRoot(rootDir, filePath)) {
           return rejectPhase1("ADD_MODEL_INVALID_TARGET", change.target, `model id "${change.target}" resolves outside the domain`);
         }
@@ -23810,7 +24362,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         }
         if (!modelFile) {
           const { index: di } = await nodeIndex();
-          const stem = di.models.find((m) => displayStem2((0, import_node_path18.basename)(m.path)) === modelSlug);
+          const stem = di.models.find((m) => displayStem2((0, import_node_path20.basename)(m.path)) === modelSlug);
           if (stem) {
             return {
               success: false,
@@ -23889,7 +24441,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       const allFiles = await findAllWorkspaceModelFiles(rootDir, DEFAULT_WORKSPACE_IGNORE, rootDir);
       const unreadableCandidates = [];
       for (const f of allFiles) {
-        const fStem = displayStem2((0, import_node_path18.basename)(f)).toLowerCase();
+        const fStem = displayStem2((0, import_node_path20.basename)(f)).toLowerCase();
         if (workspaceModels.has(fStem)) continue;
         try {
           const m = await loadKnowledge(f);
@@ -23899,7 +24451,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           }
         } catch (err) {
           unreadableCandidates.push({
-            path: (0, import_node_path18.relative)(rootDir, f).split("\\").join("/"),
+            path: (0, import_node_path20.relative)(rootDir, f).split("\\").join("/"),
             detail: err instanceof Error ? err.message : String(err)
           });
         }
@@ -23961,7 +24513,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         modelBaseVersions.set(v.model.frontmatter.knowledge_slug.toLowerCase(), v.baseVersion);
       }
     }
-    const changesDir = (0, import_node_path18.join)(rootDir, "changes");
+    const changesDir = (0, import_node_path20.join)(rootDir, "changes");
     const { cleanSubset, conflictedSubset, conflictDiagnostics } = await partitionChangeset(
       csDoc.changes,
       loadedModelAsts,
@@ -23971,9 +24523,9 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       blockedChanges
     );
     for (const subIds of setFieldsParts.values()) {
-      const failed2 = conflictedSubset.find((c) => subIds.includes(c.id));
-      if (!failed2) continue;
-      const diag = conflictDiagnostics.get(failed2.id);
+      const failed3 = conflictedSubset.find((c) => subIds.includes(c.id));
+      if (!failed3) continue;
+      const diag = conflictDiagnostics.get(failed3.id);
       for (let i = cleanSubset.length - 1; i >= 0; i--) {
         const sibling = cleanSubset[i];
         if (!subIds.includes(sibling.id)) continue;
@@ -24219,6 +24771,30 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         }
       }
       const mutationArgs = mutationArgsForChange(change, entry.model, renameSchema);
+      const writeOperation = writeOperationOf(change.op);
+      if (writeOperation !== null) {
+        const policySchema = renameSchema ?? await schemaFor(entry);
+        const elementIdent = String(mutationArgs.elementName ?? "") || parseTargetAddress(change.target).remainder.split("&")[0].trim();
+        const conceptName = String(mutationArgs.conceptName ?? "") || findElementInModel(entry.model, void 0, elementIdent)?.concept || "";
+        const declared2 = conceptName ? policySchema?.concepts.find((c) => c.name.toLowerCase() === conceptName.toLowerCase()) : void 0;
+        const scopes = writeScopesFor(entry);
+        if (!scopes.ok) {
+          return rejectPhase1(
+            "WRITE_POLICY_UNRESOLVED",
+            change.target,
+            `change "${change.id}": the domaiNN scope chain of model "${entry.modelSlug}" could not be read (${scopes.detail}), so its write policy cannot be resolved`
+          );
+        }
+        const effective = resolveWritePolicy({
+          blueprint: entry.blueprintWritePolicy,
+          concept: declared2?.writePolicy,
+          scopes: scopes.scopes
+        });
+        const violation = writePolicyViolation(effective.policy, change.op, declared2?.name ?? (conceptName || entry.modelSlug));
+        if (violation) {
+          return recordRejection([{ path: change.target, message: violation.message, code: violation.code }], change.id);
+        }
+      }
       const mutRes = applyMutation(entry.model, change.op, mutationArgs, renameSchema);
       if (!mutRes.success) {
         return recordRejection(
@@ -24305,7 +24881,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       for (const [concept, nodes] of entry.model.elements) {
         for (const node of nodes) if (node.slug) elements.push({ concept, slug: node.slug });
       }
-      const rel = (0, import_node_path18.relative)(rootDir, entry.plannedPath ?? entry.filePath).replace(/\\/g, "/");
+      const rel = (0, import_node_path20.relative)(rootDir, entry.plannedPath ?? entry.filePath).replace(/\\/g, "/");
       const findings = fileLocalDiagnostics(
         { path: rel, frontmatter: entry.model.frontmatter, elements },
         declarations
@@ -24352,7 +24928,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         const present = await (0, import_promises11.stat)(current).then((s) => s.isDirectory(), () => false);
         if (present) break;
         missing.push(current);
-        const parent = (0, import_node_path18.dirname)(current);
+        const parent = (0, import_node_path20.dirname)(current);
         if (parent === current) break;
         current = parent;
       }
@@ -24373,11 +24949,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
     const performedMoves = [];
     const rollbackPersistence = async () => {
       for (const move of [...performedMoves].reverse()) {
-        const oldDir = (0, import_node_path18.dirname)(move.fromPath);
-        const newDir = (0, import_node_path18.dirname)(move.toPath);
+        const oldDir = (0, import_node_path20.dirname)(move.fromPath);
+        const newDir = (0, import_node_path20.dirname)(move.toPath);
         try {
           if (oldDir !== newDir) await (0, import_promises11.rename)(newDir, oldDir);
-          const movedFile = oldDir === newDir ? move.toPath : (0, import_node_path18.join)(oldDir, (0, import_node_path18.basename)(move.toPath));
+          const movedFile = oldDir === newDir ? move.toPath : (0, import_node_path20.join)(oldDir, (0, import_node_path20.basename)(move.toPath));
           if (movedFile !== move.fromPath) await (0, import_promises11.rename)(movedFile, move.fromPath);
         } catch (rollbackErr) {
           console.warn(`[apply-change] Failed to reverse the move of "${move.fromPath}": ${rollbackErr}`);
@@ -24385,17 +24961,17 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
       for (const [, entry] of loadedModels) {
         if (!entry.created) continue;
-        const stem = displayStem2((0, import_node_path18.basename)(entry.filePath));
+        const stem = displayStem2((0, import_node_path20.basename)(entry.filePath));
         await (0, import_promises11.rm)(entry.filePath, { force: true }).catch(() => {
         });
-        await (0, import_promises11.rm)((0, import_node_path18.join)((0, import_node_path18.dirname)(entry.filePath), `${stem}.tmp`), { force: true }).catch(() => {
+        await (0, import_promises11.rm)((0, import_node_path20.join)((0, import_node_path20.dirname)(entry.filePath), `${stem}.tmp`), { force: true }).catch(() => {
         });
       }
       for (const [filePath, originalText] of originalModelsBackup) {
         if (!persistedFiles.has(filePath)) continue;
         try {
-          const stem = displayStem2((0, import_node_path18.basename)(filePath));
-          const stagingPath = (0, import_node_path18.join)((0, import_node_path18.dirname)(filePath), `${stem}.rollback.tmp`);
+          const stem = displayStem2((0, import_node_path20.basename)(filePath));
+          const stagingPath = (0, import_node_path20.join)((0, import_node_path20.dirname)(filePath), `${stem}.rollback.tmp`);
           await writeAndSync(stagingPath, originalText);
           await persistAtomic(stagingPath, filePath);
         } catch (rollbackErr) {
@@ -24405,10 +24981,10 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       for (const [, entry] of loadedModels) {
         for (const filePath of [entry.filePath, entry.movedFrom, entry.plannedPath]) {
           if (!filePath) continue;
-          const stem = displayStem2((0, import_node_path18.basename)(filePath));
-          await (0, import_promises11.rm)((0, import_node_path18.join)((0, import_node_path18.dirname)(filePath), `${stem}.tmp`), { force: true }).catch(() => {
+          const stem = displayStem2((0, import_node_path20.basename)(filePath));
+          await (0, import_promises11.rm)((0, import_node_path20.join)((0, import_node_path20.dirname)(filePath), `${stem}.tmp`), { force: true }).catch(() => {
           });
-          await (0, import_promises11.rm)((0, import_node_path18.join)((0, import_node_path18.dirname)(filePath), `${stem}.rollback.tmp`), { force: true }).catch(() => {
+          await (0, import_promises11.rm)((0, import_node_path20.join)((0, import_node_path20.dirname)(filePath), `${stem}.rollback.tmp`), { force: true }).catch(() => {
           });
         }
       }
@@ -24422,13 +24998,13 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         const entry = loadedModels.get(plan.fromId.toLowerCase());
         if (!entry || entry.filePath === plan.toPath) continue;
         const oldPath = entry.filePath;
-        const oldDir = (0, import_node_path18.dirname)(oldPath);
-        const newDir = (0, import_node_path18.dirname)(plan.toPath);
+        const oldDir = (0, import_node_path20.dirname)(oldPath);
+        const newDir = (0, import_node_path20.dirname)(plan.toPath);
         if (oldDir !== newDir) {
-          await ensureDirectory((0, import_node_path18.dirname)(newDir));
+          await ensureDirectory((0, import_node_path20.dirname)(newDir));
           await (0, import_promises11.rename)(oldDir, newDir);
         }
-        const relocated = oldDir === newDir ? oldPath : (0, import_node_path18.join)(newDir, (0, import_node_path18.basename)(oldPath));
+        const relocated = oldDir === newDir ? oldPath : (0, import_node_path20.join)(newDir, (0, import_node_path20.basename)(oldPath));
         if (relocated !== plan.toPath) await (0, import_promises11.rename)(relocated, plan.toPath);
         performedMoves.push({ fromPath: oldPath, toPath: plan.toPath });
         entry.filePath = plan.toPath;
@@ -24438,9 +25014,9 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         if (!entry.mutated) continue;
         modelsTransitionMap[entry.movedTo ?? entry.modelSlug] = entry.created ? { result_version: entry.nextVersion } : { base_version: entry.baseVersion, result_version: entry.nextVersion };
         const modelFile = entry.filePath;
-        const modelStem = displayStem2((0, import_node_path18.basename)(modelFile));
-        const stagingPath = (0, import_node_path18.join)((0, import_node_path18.dirname)(modelFile), `${modelStem}.tmp`);
-        await ensureDirectory((0, import_node_path18.dirname)(modelFile));
+        const modelStem = displayStem2((0, import_node_path20.basename)(modelFile));
+        const stagingPath = (0, import_node_path20.join)((0, import_node_path20.dirname)(modelFile), `${modelStem}.tmp`);
+        await ensureDirectory((0, import_node_path20.dirname)(modelFile));
         const serialized = serializeKnowledge2(entry.model);
         await writeAndSync(stagingPath, serialized);
         await persistAtomic(stagingPath, modelFile);
@@ -24451,13 +25027,13 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         if (!entry.removed) continue;
         await (0, import_promises11.rm)(entry.filePath, { force: true });
         persistedFiles.add(entry.filePath);
-        const knowledgeRoot = (0, import_node_path18.join)(rootDir, "kNNowledge");
-        let dir = (0, import_node_path18.dirname)(entry.filePath);
+        const knowledgeRoot = (0, import_node_path20.join)(rootDir, "kNNowledge");
+        let dir = (0, import_node_path20.dirname)(entry.filePath);
         while (dir !== rootDir && dir !== knowledgeRoot && isInsideRoot(rootDir, dir)) {
           const left = await (0, import_promises11.readdir)(dir).catch(() => null);
           if (!left || left.length > 0) break;
           if (!await (0, import_promises11.rmdir)(dir).then(() => true, () => false)) break;
-          dir = (0, import_node_path18.dirname)(dir);
+          dir = (0, import_node_path20.dirname)(dir);
         }
       }
     } catch (err) {
@@ -24471,7 +25047,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       cleanSubset.filter((c) => !isNonMutating(c.op)).map((c) => recordedIdOf(c.id))
     ).size;
     const overallStatus = cleanAppliedCount === totalActionable ? "applied" : "partially_applied";
-    const batchId = displayStem2((0, import_node_path18.basename)(resolvedChangesetPath));
+    const batchId = displayStem2((0, import_node_path20.basename)(resolvedChangesetPath));
     csDoc.frontmatter.status = overallStatus;
     csDoc.frontmatter.models = modelsTransitionMap;
     const latest = await latestAppliedAt(changesDir);
@@ -24511,7 +25087,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
     else delete csDoc.frontmatter.evidence_sha256;
     const serializedCs = writeBack(recordedDocument());
     try {
-      const csStaging = (0, import_node_path18.join)((0, import_node_path18.dirname)(resolvedChangesetPath), `${(0, import_node_path18.basename)(resolvedChangesetPath)}.tmp`);
+      const csStaging = (0, import_node_path20.join)((0, import_node_path20.dirname)(resolvedChangesetPath), `${(0, import_node_path20.basename)(resolvedChangesetPath)}.tmp`);
       await writeAndSync(csStaging, serializedCs);
       await persistAtomic(csStaging, resolvedChangesetPath);
     } catch (err) {
@@ -24537,19 +25113,19 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
 }
 
 // iNNfo/packages/nn-core/src/console/locate-writer.ts
-var import_node_fs9 = require("node:fs");
+var import_node_fs11 = require("node:fs");
 var import_node_os2 = require("node:os");
-var import_node_path19 = require("node:path");
+var import_node_path21 = require("node:path");
 var import_node_url2 = require("node:url");
-var DEV_ROOT_MARKER2 = (0, import_node_path19.join)("iNNfo", "specs", "bluepriNNts", "console", "artifact_shell.html");
+var DEV_ROOT_MARKER2 = (0, import_node_path21.join)("iNNfo", "specs", "bluepriNNts", "console", "artifact_shell.html");
 var EXPORT_MODULE = "export-console.mjs";
 var NO_OPEN_ENV = "INNFO_CONSOLE_NO_OPEN";
 function devCheckoutRoot(opts = {}) {
   const requires = opts.requires ?? [];
-  let dir = opts.startDir ?? (0, import_node_path19.dirname)((0, import_node_url2.fileURLToPath)(__nnImportMetaUrl));
+  let dir = opts.startDir ?? (0, import_node_path21.dirname)((0, import_node_url2.fileURLToPath)(__nnImportMetaUrl));
   for (; ; ) {
-    if ((0, import_node_fs9.existsSync)((0, import_node_path19.join)(dir, DEV_ROOT_MARKER2)) && requires.every((rel) => (0, import_node_fs9.existsSync)((0, import_node_path19.join)(dir, rel)))) return dir;
-    const parent = (0, import_node_path19.dirname)(dir);
+    if ((0, import_node_fs11.existsSync)((0, import_node_path21.join)(dir, DEV_ROOT_MARKER2)) && requires.every((rel) => (0, import_node_fs11.existsSync)((0, import_node_path21.join)(dir, rel)))) return dir;
+    const parent = (0, import_node_path21.dirname)(dir);
     if (parent === dir) return null;
     dir = parent;
   }
@@ -24557,11 +25133,11 @@ function devCheckoutRoot(opts = {}) {
 function resolveConsoleModulePath2(opts = {}) {
   const env = opts.env ?? process.env;
   const candidates = [];
-  if (env.INNFO_CONSOLE_DIR) candidates.push((0, import_node_path19.join)(env.INNFO_CONSOLE_DIR, EXPORT_MODULE));
-  const devRoot = opts.devRoot === void 0 ? devCheckoutRoot({ requires: [(0, import_node_path19.join)("scripts", EXPORT_MODULE)] }) : opts.devRoot;
-  if (devRoot && (0, import_node_fs9.existsSync)((0, import_node_path19.join)(devRoot, DEV_ROOT_MARKER2))) candidates.push((0, import_node_path19.join)(devRoot, "scripts", EXPORT_MODULE));
-  candidates.push((0, import_node_path19.join)(opts.home ?? (0, import_node_os2.homedir)(), ".agents", "console", EXPORT_MODULE));
-  return candidates.find((candidate) => (0, import_node_fs9.existsSync)(candidate)) ?? null;
+  if (env.INNFO_CONSOLE_DIR) candidates.push((0, import_node_path21.join)(env.INNFO_CONSOLE_DIR, EXPORT_MODULE));
+  const devRoot = opts.devRoot === void 0 ? devCheckoutRoot({ requires: [(0, import_node_path21.join)("scripts", EXPORT_MODULE)] }) : opts.devRoot;
+  if (devRoot && (0, import_node_fs11.existsSync)((0, import_node_path21.join)(devRoot, DEV_ROOT_MARKER2))) candidates.push((0, import_node_path21.join)(devRoot, "scripts", EXPORT_MODULE));
+  candidates.push((0, import_node_path21.join)(opts.home ?? (0, import_node_os2.homedir)(), ".agents", "console", EXPORT_MODULE));
+  return candidates.find((candidate) => (0, import_node_fs11.existsSync)(candidate)) ?? null;
 }
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {

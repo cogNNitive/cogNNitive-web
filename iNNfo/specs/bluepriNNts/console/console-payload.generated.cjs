@@ -8346,6 +8346,35 @@ function validateStorage(concepts) {
   return diagnostics;
 }
 
+// iNNfo/packages/nn-core/src/schema/writePolicy.ts
+var WRITE_POLICIES = ["mutable", "append-only", "read-only"];
+var WRITE_POLICY_KEY = "write_policy";
+function parseWritePolicy(raw) {
+  if (typeof raw !== "string") return void 0;
+  const value = raw.trim().toLowerCase();
+  return WRITE_POLICIES.find((p) => p === value);
+}
+function readWritePolicy(fields) {
+  const raw = fields[WRITE_POLICY_KEY];
+  if (raw === void 0 || raw === null || typeof raw === "string" && raw.trim() === "") return void 0;
+  const policy = parseWritePolicy(raw);
+  return policy ? { policy } : { unknown: String(raw).trim() };
+}
+function validateWritePolicy(concepts) {
+  const diagnostics = [];
+  for (const concept of concepts) {
+    const unknown = concept.writePolicy?.unknown;
+    if (unknown === void 0) continue;
+    diagnostics.push({
+      code: "WRITE_POLICY_UNKNOWN",
+      severity: "error",
+      path: `Concept Definition.${concept.name}.${WRITE_POLICY_KEY}`,
+      message: `WRITE_POLICY_UNKNOWN: concept "${concept.name}" - write_policy "${unknown}" is not a known policy; use one of: ${WRITE_POLICIES.join(", ")}`
+    });
+  }
+  return diagnostics;
+}
+
 // iNNfo/packages/nn-core/src/schema/extract.ts
 var CONCEPT_DEFINITION = "Concept Definition";
 var FIELD_DEFINITION = "Field Definition";
@@ -8393,6 +8422,8 @@ function extractBlueprintSchema(parsed) {
     if (conceptDescription) concept.description = conceptDescription;
     const storage = readStorage(el.fields);
     if (storage) concept.storage = storage;
+    const writePolicy = readWritePolicy(el.fields);
+    if (writePolicy) concept.writePolicy = writePolicy;
     concepts.push(concept);
     fieldsByConcept.set(concept.name, []);
   }
@@ -8754,7 +8785,9 @@ function resolveBlueprintSchema(templateContent, resolveInclude, _seen = /* @__P
       delete local.globalFields;
     }
     attachDeclaredBy(local, provenance, declMetaOf(parsed.frontmatter, selfLabel));
-    if (_depth === 0 && includes.length === 0) errors.push(...validateStorage(local.concepts));
+    if (_depth === 0 && includes.length === 0) {
+      errors.push(...validateStorage(local.concepts), ...validateWritePolicy(local.concepts));
+    }
     return { schema: local, errors };
   }
   if (_depth >= 10) {
@@ -8835,7 +8868,7 @@ function resolveBlueprintSchema(templateContent, resolveInclude, _seen = /* @__P
   if (_depth === 0) {
     attachDeclaredBy(base, provenance, declMetaOf(parsed.frontmatter, selfLabel));
     if (!errors.some((e) => e.path.startsWith("includes.") && /could not be resolved/.test(e.message))) {
-      errors.push(...validateStorage(base.concepts));
+      errors.push(...validateStorage(base.concepts), ...validateWritePolicy(base.concepts));
     }
   }
   return { schema: base, errors };
