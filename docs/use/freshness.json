@@ -1,15 +1,13 @@
 {
-  "generatedAt": "2026-11-17T20:12:46.474Z",
-  "head": "ce776f9d366ec6b5920595aea08006f11ac2be7a",
+  "generatedAt": "2026-11-18T16:23:07.378Z",
+  "head": "469914391331487bf345dec054c3a72d343491fd",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
-      "pinnedTag": "skills-v3.4.1",
-      "pinnedTagDate": "2026-11-17T12:19:36+01:00",
-      "commitsSincePin": 1,
-      "filesTouched": [
-        "skills/nn-skills-lifecycle/scripts/skills-manager.js"
-      ]
+      "pinnedTag": "skills-v3.4.2",
+      "pinnedTagDate": "2026-11-17T21:11:44+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "blueprints": {
       "subsystem": "blueprints",
