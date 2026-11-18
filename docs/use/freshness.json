@@ -1,79 +1,41 @@
 {
-  "generatedAt": "2026-11-18T17:47:16.285Z",
-  "head": "81f9ca47a4f89f9fbc8943fb37a42f00da2a6402",
+  "generatedAt": "2026-11-18T18:32:04.329Z",
+  "head": "75280ddc2cf68789b5db53965c327c1c3f9fb7ee",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
-      "pinnedTag": "skills-v3.4.2",
-      "pinnedTagDate": "2026-11-17T21:11:44+01:00",
-      "commitsSincePin": 3,
-      "filesTouched": [
-        "skills/nn-innfo/SKILL.md",
-        "skills/nn-sources/scripts/lib/nn-core.generated.cjs"
-      ]
+      "pinnedTag": "skills-v3.5.0",
+      "pinnedTagDate": "2026-11-18T18:46:12+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.72.0",
-      "pinnedTagDate": "2026-11-17T18:11:21+01:00",
-      "commitsSincePin": 5,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs",
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/package.json"
-      ]
+      "pinnedTag": "blueprints-v0.73.0",
+      "pinnedTagDate": "2026-11-18T18:46:12+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.72.0",
-      "pinnedTagDate": "2026-11-17T18:11:21+01:00",
-      "commitsSincePin": 5,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs",
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/package.json"
-      ]
+      "pinnedTag": "blueprints-v0.73.0",
+      "pinnedTagDate": "2026-11-18T18:46:12+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
-      "pinnedTag": "nn-mcp-v0.38.0",
-      "pinnedTagDate": "2026-11-17T12:19:36+01:00",
-      "commitsSincePin": 3,
-      "filesTouched": [
-        "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js",
-        "iNNfo/packages/nn-mcp/package.json",
-        "iNNfo/packages/nn-mcp/src/server.ts",
-        "iNNfo/packages/nn-mcp/src/tools/apply-change-facts.spec.ts",
-        "iNNfo/packages/nn-mcp/src/tools/apply-change.ts",
-        "iNNfo/packages/nn-mcp/src/tools/console-regeneration.ts",
-        "iNNfo/packages/nn-mcp/src/tools/move-referrers.ts",
-        "iNNfo/packages/nn-mcp/src/tools/propose-changeset.ts",
-        "iNNfo/packages/nn-mcp/src/tools/provenance-strict.ts",
-        "iNNfo/packages/nn-mcp/src/tools/validate.ts",
-        "iNNfo/packages/nn-mcp/test/apply-change-models.test.ts",
-        "iNNfo/packages/nn-mcp/test/direct-operations.test.ts",
-        "iNNfo/packages/nn-mcp/test/provenance-strict.test.ts"
-      ]
+      "pinnedTag": "nn-mcp-v0.39.0",
+      "pinnedTagDate": "2026-11-18T18:46:12+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     },
     "nn-console": {
       "subsystem": "nn-console",
-      "pinnedTag": "nn-console-v0.38.0",
-      "pinnedTagDate": "2026-11-17T11:49:36+01:00",
-      "commitsSincePin": 2,
-      "filesTouched": [
-        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
-        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
-        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
-        "iNNfo/specs/bluepriNNts/console/package.json"
-      ]
+      "pinnedTag": "nn-console-v0.39.0",
+      "pinnedTagDate": "2026-11-18T18:46:12+01:00",
+      "commitsSincePin": 0,
+      "filesTouched": []
     }
   }
 }
