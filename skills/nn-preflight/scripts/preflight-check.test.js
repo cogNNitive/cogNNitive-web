@@ -2093,7 +2093,7 @@ agent-bootstrap:
   // Test 38: baseline readiness requires only Core manifest blueprints; optional
   // catalog verticals absent from ~/.agents/bluepriNNts are not reported.
   {
-    const coreNames = ['domaiNN', 'changes', 'sidecar', 'sources', 'artifacts', 'procedures', 'blank'];
+    const coreNames = ['domaiNN', 'changes', 'sidecar', 'sources', 'artifacts', 'procedures', 'executions', 'blank'];
     const manifestContent = `---
 agent-bootstrap:
   version: "2.0"

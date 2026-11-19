@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
 blueprint_name: "changes"
-blueprint_version: "V_0-11-0"
+blueprint_version: "V_0-12-0"
 title: "Changeset Blueprint"
 description: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."
 nature:
@@ -189,6 +189,22 @@ Each change is declared as an element of concept Change:
 - add_matrix: Adds a new matrix table to a Level-3 model. target is model@matrix:&lt;name&gt;; name is the matrix name, concept is the row-axis concept and to is the column-axis concept. seed ({columns, rows}) supplies the header elements; when omitted they default to the axis concepts' own elements. Every seeded cell starts empty, ready for update_matrix_cell, and records no cell unit. seed is sealed and is refused on any other op. It is refused on a Level-2 bluepriNNt (declare a Matrix Definition element there instead), and rejected when the matrix already exists.
 - base_hash: Optional precondition on the target element content; a mismatch is a conflict.
 - evidence: Mandatory. One citation, a bracketed list of citations, or the literal token decision / unknown (the keywords only ever alone); written by the proposer and sealed with the proposal. The change is the only provenance of the mutation.
+
+#### Origins of a value
+
+Evidence always points outside the living knowledge graph: every value of a model ends in one of these origins.
+
+| Origin | How the change records it |
+|---|---|
+| A person's decision | `evidence:: decision` in a changeset with `author_kind: human` |
+| An AI agent's decision or proposal | `evidence:: decision` in a changeset with `author_kind: agent`; the proposed changeset is the proposal |
+| A conversation | a citation of the transcript, `conversations/<file>.md@## <heading>` |
+| An external document | a citation of the source, `sources/<path>@<unit>` |
+| A run of a procedure | a citation of the closed run, `<run id>@<event>` (the `executions` bluepriNNt) |
+| A computed value | a citation of the closed run that computed it: the computation is a run whose events record each input read (address, value, version) and the result |
+| Not known | `evidence:: unknown` |
+
+A model is cited by its id (`<model id>@<element>`), never by its file path, and only once it is closed by `close_model`: a closed model is a frozen record, so it is a source, while an open model is knowledge still changing. Citing an open model is CITATION_NOT_CLOSED; the engine stamps the closed model file's sha256 in evidence_sha256 like any source.
 - Execution annotations (status, resolution, resolved_slug, applied_at, batch) and the execution facts (resolved_target, evidence_sha256) record the outcome of applying the change. Every change has an applied_at (UTC), status, author and batch. The batch-wide facts are written once, in the changeset frontmatter (applied_at, batch, status, and evidence_sha256 as a map from each cited path to its sha256), and every change inherits them: a change carries a fact only when its value differs (status when it differs from the changeset status, author when it differs from the frontmatter author, resolution only when the change did not apply, resolved_target only when it differs from target, evidence_sha256 only for a cited path the map does not carry; applied_at and batch never). The change log resolves each fact as the change's own value, else the changeset's, so a changeset whose changes carry every fact themselves resolves the same way. The change chain, ordered by (applied_at, changeset stamp, filename, document index), is a unit's history.
 
 Changeset status is one of proposed, applied, partially_applied, rejected, conflict. A changeset is rejected when the proposal itself is invalid (a failed validation or an unresolved citation): the status and the reason (resolution) are persisted and the changeset is never re-applied. A conflict is a failed precondition of the live model and may be fixed and retried.
