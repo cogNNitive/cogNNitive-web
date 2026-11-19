@@ -247,7 +247,7 @@
       "tier": "core",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.82.1",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {

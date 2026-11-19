@@ -18,10 +18,16 @@ registerView({
       return
     }
     return (
-      stepper.mount(ctx.container, {
-        schema: ctx.payload.schema,
-        model: ctx.payload.model,
-      }) || {}
+      stepper.mount(
+        ctx.container,
+        {
+          schema: ctx.payload.schema,
+          model: ctx.payload.model,
+        },
+        // The console's write facade (absent in a read-only export): the stepper uses it
+        // to propose a draft and offers no write without it.
+        ctx,
+      ) || {}
     )
   },
 })

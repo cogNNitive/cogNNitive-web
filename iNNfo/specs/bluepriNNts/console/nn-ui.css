@@ -5920,6 +5920,67 @@ details.collapse summary {
     .nn-procedure-view button.btn-primary:hover:not(:disabled),
     .nn-proc-host button.btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
 
+    /* Recorded events: the human's write surface on a run */
+    .proc-actions {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .proc-actions-title {
+      width: 100%;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .proc-action {
+      appearance: none;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .proc-action:hover:not(:disabled) { background: var(--surface-2); }
+    .proc-action:disabled { opacity: 0.4; cursor: not-allowed; }
+    .proc-action-outcome {
+      font: inherit;
+      font-size: 0.8rem;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--text);
+      max-width: 100%;
+    }
+    .proc-action-error {
+      width: 100%;
+      color: var(--danger);
+      font-size: 0.78rem;
+    }
+    .proc-action-error:empty { display: none; }
+    /* A draft waits for apply_change: nothing here is applied, so say it plainly */
+    .proc-draft-pending {
+      margin: 0 14px 12px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--warning);
+      border-left-width: 3px;
+      background: var(--warning-light);
+      color: var(--text);
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
     /* Live Execution Log */
     .exec-log-view {
       padding: 12px;

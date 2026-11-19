@@ -6505,7 +6505,28 @@
     if (d.comment) {
       lines.push('notes:: ' + formatChangesetValue(d.comment))
     }
-    if (op !== 'add_element' || !isObject(d.proposed)) return [lines.join('\n')]
+    if (op !== 'add_element') return [lines.join('\n')]
+    // A caller that already holds the element's fields as one JSON value (the procedure
+    // runner builds its `Execution Event` that way) emits them verbatim: `apply_change`
+    // writes `to` in the same `add_element` mutation, so element and values are one change.
+    if (!isObject(d.proposed)) {
+      if (typeof d.proposed === 'string' && d.proposed.trim() !== '') {
+        // The payload is already one JSON object (`apply_change` parses `to` as JSON). It
+        // must reach the file as JSON, not quoted a second time, or the parser's
+        // quote-stripping unwraps the object back into a string.
+        var raw = d.proposed.trim()
+        var asJson = null
+        try {
+          asJson = JSON.parse(raw)
+        } catch {
+          asJson = null
+        }
+        lines.push('to:: ' + (isObject(asJson) ? jsonLine(asJson) : formatChangesetValue(raw)))
+        return [lines.join('\n')]
+      }
+      return [lines.join('\n')]
+    }
+    if (Object.keys(d.proposed).length === 0) return [lines.join('\n')]
     // A change carries no inline fields. The filled fields share the draft's one
     // evidence, so they are set by ONE `set_fields` (a single field stays an
     // `update_field`), with no `from`: the fields do not exist yet.
