@@ -9,16 +9,16 @@
  * Zero external dependencies. ESM module.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { acquireSlot, withFileLock } from './file-lock.mjs';
-import { findDomainRoot } from './nn-core.generated.cjs';
+import fs from 'node:fs'
+import path from 'node:path'
+import { acquireSlot, withFileLock } from './file-lock.mjs'
+import { findDomainRoot } from './nn-core.generated.cjs'
 import {
   ledgerPath,
   appendLedgerRow,
   readLedgerRows as readLedger,
   sumLedgerSpend,
-} from './facts.mjs';
+} from './facts.mjs'
 
 /**
  * Appends one ledger row, stamping `ts` (ISO) when the caller does not. The ledger is
@@ -27,18 +27,18 @@ import {
  * @param {Record<string, any>} entry
  */
 function appendLedger(root, entry) {
-  const row = { ts: new Date().toISOString(), ...entry, cacheHit: entry.cacheHit === true };
-  return appendLedgerRow(root, row);
+  const row = { ts: new Date().toISOString(), ...entry, cacheHit: entry.cacheHit === true }
+  return appendLedgerRow(root, row)
 }
 
 // Re-export the facts ledger surface so consumers keep the historical names they import
 // from the guard module, still addressing one owner (facts.mjs) and one path
 // (`.cognnitive/video/ledger.jsonl`).
-export { ledgerPath, appendLedger, readLedger };
+export { ledgerPath, appendLedger, readLedger }
 
-export const GUARD_FILENAME = 'video-guard.json';
-export const LOCKS_RELATIVE_DIR = path.join('.cognnitive', 'locks');
-const DAY_MS = 24 * 3600 * 1000;
+export const GUARD_FILENAME = 'video-guard.json'
+export const LOCKS_RELATIVE_DIR = path.join('.cognnitive', 'locks')
+const DAY_MS = 24 * 3600 * 1000
 
 /**
  * Sum of spend recorded at or after `sinceMs` (cache hits do not count). Reads the
@@ -49,7 +49,7 @@ const DAY_MS = 24 * 3600 * 1000;
  * @returns {number}
  */
 export function sumLedgerSince(root, sinceMs) {
-  return sumLedgerSpend(root, sinceMs);
+  return sumLedgerSpend(root, sinceMs)
 }
 
 /** Safe defaults used when no video-guard.json is found (also the shape of the file). */
@@ -73,9 +73,58 @@ export const DEFAULT_GUARD = Object.freeze({
   voices: {},
   // Provider-native voices that need no registration or cloning; a trailing * is a prefix glob.
   systemVoices: [
-    'Friendly_Person', 'Wise_Woman', 'Deep_Voice_Man', 'Inspirational_girl', 'Calm_Woman', 'Casual_Guy', 'Lively_Girl', 'Patient_Man', 'Young_Knight', 'Determined_Man', 'Lovely_Girl', 'Decent_Boy', 'Imposing_Manner', 'Elegant_Man', 'Abbess', 'Sweet_Girl_2', 'Exuberant_Girl', 'English_*',
+    'Friendly_Person',
+    'Wise_Woman',
+    'Deep_Voice_Man',
+    'Inspirational_girl',
+    'Calm_Woman',
+    'Casual_Guy',
+    'Lively_Girl',
+    'Patient_Man',
+    'Young_Knight',
+    'Determined_Man',
+    'Lovely_Girl',
+    'Decent_Boy',
+    'Imposing_Manner',
+    'Elegant_Man',
+    'Abbess',
+    'Sweet_Girl_2',
+    'Exuberant_Girl',
+    'English_*',
   ],
-});
+})
+
+/**
+ * Output resolutions each avatar model accepts, keyed by its exact `api_id`, with the
+ * fallback used when nothing declares `avatar_resolution`.
+ *
+ * This is model capability carried as DATA, beside `allowedModels` and for the same
+ * reason: engine code must not re-derive it by matching a vendor name (the rule
+ * `no-phantom-providers.test.mjs` enforces). `p-video/avatar` accepts 720p or 1080p while
+ * its sibling `p-video-2-pro/avatar` accepts 480p or 768p, which is exactly what an
+ * `includes('pruna')` test got wrong for one of them.
+ *
+ * 1080p is deliberately absent from the p-video list: the blueprint's
+ * `avatar_resolution` select offers only 480p, 720p and 768p, so 1080p is unreachable
+ * from a model today. Widening that select is a separate change with its own delta spec.
+ */
+export const AVATAR_RESOLUTION_PROFILES = Object.freeze({
+  'pruna-ai/p-video/avatar': { resolutions: ['720p'], fallback: '720p' },
+  'pruna-ai/p-video-2-pro/avatar': { resolutions: ['480p', '768p'], fallback: '480p' },
+  'wavespeed-ai/infinitetalk': { resolutions: ['480p', '720p', '768p'], fallback: '720p' },
+  'wavespeed-ai/infinitetalk-fast': { resolutions: ['480p', '720p', '768p'], fallback: '720p' },
+})
+
+/** An avatar model with no profile: the schema's own list, and the existing default. */
+export const UNKNOWN_AVATAR_RESOLUTION_PROFILE = Object.freeze({
+  resolutions: ['480p', '720p', '768p'],
+  fallback: '720p',
+})
+
+/** Resolutions and fallback for an avatar model id, matched by its exact `api_id`. */
+export function avatarResolutionProfileFor(model) {
+  return AVATAR_RESOLUTION_PROFILES[normalizeModelId(model)] ?? UNKNOWN_AVATAR_RESOLUTION_PROFILE
+}
 
 /**
  * Model-alias normalization. A Template instance names models with a `replicate/` route prefix
@@ -88,29 +137,29 @@ export const DEFAULT_GUARD = Object.freeze({
  * @returns {string}
  */
 export function normalizeModelId(id) {
-  if (typeof id !== 'string') return id;
-  const m = /^replicate\/([^/]+\/.+)$/.exec(id);
-  return m ? m[1] : id;
+  if (typeof id !== 'string') return id
+  const m = /^replicate\/([^/]+\/.+)$/.exec(id)
+  return m ? m[1] : id
 }
 
 export class ModelBlockedError extends Error {
   constructor(message) {
-    super(message);
-    this.name = 'ModelBlockedError';
+    super(message)
+    this.name = 'ModelBlockedError'
   }
 }
 
 export class BudgetExceededError extends Error {
   constructor(message) {
-    super(message);
-    this.name = 'BudgetExceededError';
+    super(message)
+    this.name = 'BudgetExceededError'
   }
 }
 
 export class ApprovalRequiredError extends Error {
   constructor(message) {
-    super(message);
-    this.name = 'ApprovalRequiredError';
+    super(message)
+    this.name = 'ApprovalRequiredError'
   }
 }
 
@@ -123,11 +172,11 @@ export class ApprovalRequiredError extends Error {
  * @returns {{ root: string, guardFile: string | null }}
  */
 export function resolveWorkspace(startDir = process.cwd()) {
-  const start = path.resolve(startDir);
-  const root = findDomainRoot(start) ?? start;
-  const guardPath = path.join(root, GUARD_FILENAME);
-  const guardFile = fs.existsSync(guardPath) ? guardPath : null;
-  return { root, guardFile };
+  const start = path.resolve(startDir)
+  const root = findDomainRoot(start) ?? start
+  const guardPath = path.join(root, GUARD_FILENAME)
+  const guardFile = fs.existsSync(guardPath) ? guardPath : null
+  return { root, guardFile }
 }
 
 /**
@@ -135,11 +184,12 @@ export function resolveWorkspace(startDir = process.cwd()) {
  * @returns {string}
  */
 export function findWorkspaceRoot(startDir = process.cwd()) {
-  return resolveWorkspace(startDir).root;
+  return resolveWorkspace(startDir).root
 }
 
-const isStringArray = (v) => Array.isArray(v) && v.every((x) => typeof x === 'string' && x.length > 0);
-const isMoney = (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0;
+const isStringArray = (v) =>
+  Array.isArray(v) && v.every((x) => typeof x === 'string' && x.length > 0)
+const isMoney = (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0
 
 /**
  * True when `name` is a provider-native system voice: an exact match or a trailing-* prefix glob.
@@ -147,7 +197,7 @@ const isMoney = (v) => typeof v === 'number' && Number.isFinite(v) && v >= 0;
  * @param {string[]} systemVoices
  */
 export function isSystemVoice(name, systemVoices = []) {
-  return systemVoices.some((p) => (p.endsWith('*') ? name.startsWith(p.slice(0, -1)) : name === p));
+  return systemVoices.some((p) => (p.endsWith('*') ? name.startsWith(p.slice(0, -1)) : name === p))
 }
 
 /**
@@ -157,25 +207,32 @@ export function isSystemVoice(name, systemVoices = []) {
  * @param {string} source Where the config came from (for the message).
  */
 export function validateConfig(config, source) {
-  const problems = [];
-  if (!isMoney(config.budgetPerRunUsd)) problems.push('budgetPerRunUsd must be a finite number >= 0');
-  if (!isMoney(config.dailyCapUsd)) problems.push('dailyCapUsd must be a finite number >= 0');
+  const problems = []
+  if (!isMoney(config.budgetPerRunUsd))
+    problems.push('budgetPerRunUsd must be a finite number >= 0')
+  if (!isMoney(config.dailyCapUsd)) problems.push('dailyCapUsd must be a finite number >= 0')
   if (!Number.isInteger(config.maxAvatarConcurrency) || config.maxAvatarConcurrency < 1) {
-    problems.push('maxAvatarConcurrency must be a positive integer');
+    problems.push('maxAvatarConcurrency must be a positive integer')
   }
-  if (typeof config.maxAvatarSeconds !== 'number' || !Number.isFinite(config.maxAvatarSeconds) || config.maxAvatarSeconds <= 0) {
-    problems.push('maxAvatarSeconds must be a finite number > 0');
+  if (
+    typeof config.maxAvatarSeconds !== 'number' ||
+    !Number.isFinite(config.maxAvatarSeconds) ||
+    config.maxAvatarSeconds <= 0
+  ) {
+    problems.push('maxAvatarSeconds must be a finite number > 0')
   }
   if (!isStringArray(config.allowedModels) || config.allowedModels.length === 0) {
-    problems.push('allowedModels must be a non-empty array of model ids');
+    problems.push('allowedModels must be a non-empty array of model ids')
   }
-  if (!isStringArray(config.blockedModels)) problems.push('blockedModels must be an array of model ids');
-  if (!isStringArray(config.systemVoices)) problems.push('systemVoices must be an array of voice names (a trailing * is allowed)');
+  if (!isStringArray(config.blockedModels))
+    problems.push('blockedModels must be an array of model ids')
+  if (!isStringArray(config.systemVoices))
+    problems.push('systemVoices must be an array of voice names (a trailing * is allowed)')
   if (!config.voices || typeof config.voices !== 'object' || Array.isArray(config.voices)) {
-    problems.push('voices must be an object');
+    problems.push('voices must be an object')
   }
   if (problems.length > 0) {
-    throw new Error('Invalid ' + GUARD_FILENAME + ' (' + source + '): ' + problems.join('; '));
+    throw new Error('Invalid ' + GUARD_FILENAME + ' (' + source + '): ' + problems.join('; '))
   }
 }
 
@@ -185,22 +242,22 @@ export function validateConfig(config, source) {
  * @returns {{ config: Record<string, any>, source: string | null, root: string }}
  */
 export function loadGuard(startDir = process.cwd()) {
-  const { root, guardFile } = resolveWorkspace(startDir);
-  let config = structuredClone(DEFAULT_GUARD);
+  const { root, guardFile } = resolveWorkspace(startDir)
+  let config = structuredClone(DEFAULT_GUARD)
   if (guardFile) {
-    let parsed;
+    let parsed
     try {
-      parsed = JSON.parse(fs.readFileSync(guardFile, 'utf8'));
+      parsed = JSON.parse(fs.readFileSync(guardFile, 'utf8'))
     } catch (err) {
-      throw new Error('Invalid ' + GUARD_FILENAME + ' at ' + guardFile + ': ' + err.message);
+      throw new Error('Invalid ' + GUARD_FILENAME + ' at ' + guardFile + ': ' + err.message)
     }
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      throw new Error('Invalid ' + GUARD_FILENAME + ' at ' + guardFile + ': expected a JSON object');
+      throw new Error('Invalid ' + GUARD_FILENAME + ' at ' + guardFile + ': expected a JSON object')
     }
-    config = { ...config, ...parsed };
+    config = { ...config, ...parsed }
   }
-  validateConfig(config, guardFile || 'defaults');
-  return { config, source: guardFile, root };
+  validateConfig(config, guardFile || 'defaults')
+  return { config, source: guardFile, root }
 }
 
 /**
@@ -209,7 +266,7 @@ export function loadGuard(startDir = process.cwd()) {
  * @returns {string}
  */
 export function resolveDefaultCacheDir(startDir = process.cwd()) {
-  return path.join(findWorkspaceRoot(startDir), '.cognnitive', 'cache', 'video');
+  return path.join(findWorkspaceRoot(startDir), '.cognnitive', 'cache', 'video')
 }
 
 /**
@@ -220,20 +277,32 @@ export function resolveDefaultCacheDir(startDir = process.cwd()) {
  * @param {{ config: { allowedModels?: string[], blockedModels?: string[] }, allowBlocked?: string[] }} opts
  */
 export function assertModelAllowed(rawModel, { config, allowBlocked = [] }) {
-  const model = normalizeModelId(rawModel);
-  if (allowBlocked.map(normalizeModelId).includes(model)) return;
+  const model = normalizeModelId(rawModel)
+  if (allowBlocked.map(normalizeModelId).includes(model)) return
   if ((config.blockedModels || []).map(normalizeModelId).includes(model)) {
     throw new ModelBlockedError(
-      'Model "' + model + '" is blocked by ' + GUARD_FILENAME + ' (blockedModels). ' +
-        'Pass --allow-model ' + model + ' to override for this run.',
-    );
+      'Model "' +
+        model +
+        '" is blocked by ' +
+        GUARD_FILENAME +
+        ' (blockedModels). ' +
+        'Pass --allow-model ' +
+        model +
+        ' to override for this run.',
+    )
   }
-  const allowed = (config.allowedModels || []).map(normalizeModelId);
+  const allowed = (config.allowedModels || []).map(normalizeModelId)
   if (!allowed.includes(model)) {
     throw new ModelBlockedError(
-      'Model "' + model + '" is not in allowedModels of ' + GUARD_FILENAME + '. ' +
-        'Add it there, or pass --allow-model ' + model + ' for this run.',
-    );
+      'Model "' +
+        model +
+        '" is not in allowedModels of ' +
+        GUARD_FILENAME +
+        '. ' +
+        'Add it there, or pass --allow-model ' +
+        model +
+        ' for this run.',
+    )
   }
 }
 
@@ -247,8 +316,11 @@ export function assertModelAllowed(rawModel, { config, allowBlocked = [] }) {
  * @returns {SpendGuard}
  */
 export function spendGuardFromDocuments({ root, budget = null, dailyBudget = null, catalog = {} }) {
-  const models = catalog.models || [];
-  const catalogAllowed = models.filter((m) => m.allowed !== false).map((m) => m.slug).filter(Boolean);
+  const models = catalog.models || []
+  const catalogAllowed = models
+    .filter((m) => m.allowed !== false)
+    .map((m) => m.slug)
+    .filter(Boolean)
   const config = {
     version: 1,
     budgetPerRunUsd: Number.isFinite(budget) ? budget : DEFAULT_GUARD.budgetPerRunUsd,
@@ -259,38 +331,45 @@ export function spendGuardFromDocuments({ root, budget = null, dailyBudget = nul
     // The catalog is the author of the allow list; fall back to the shipped defaults
     // only when it declares none (so a fresh install still validates).
     allowedModels: catalogAllowed.length > 0 ? catalogAllowed : [...DEFAULT_GUARD.allowedModels],
-    blockedModels: models.filter((m) => m.allowed === false).map((m) => m.slug).filter(Boolean),
+    blockedModels: models
+      .filter((m) => m.allowed === false)
+      .map((m) => m.slug)
+      .filter(Boolean),
     systemVoices: [],
     voices: {},
-  };
-  validateConfig(config, 'spendGuardFromDocuments');
-  const guard = new SpendGuard({ config, root });
+  }
+  validateConfig(config, 'spendGuardFromDocuments')
+  const guard = new SpendGuard({ config, root })
   // Expose the catalog limits for the caller to apply per model.
   guard.catalogModelLimits = models
     .filter((m) => m.slug)
     .reduce((acc, m) => {
-      acc[normalizeModelId(m.slug)] = { maxSeconds: m.max_seconds ?? null, maxConcurrency: m.max_concurrency ?? null };
-      return acc;
-    }, {});
-  return guard;
+      acc[normalizeModelId(m.slug)] = {
+        maxSeconds: m.max_seconds ?? null,
+        maxConcurrency: m.max_concurrency ?? null,
+      }
+      return acc
+    }, {})
+  return guard
 }
 
 /** Per-run running total of estimated spend against a budget. */
 export class BudgetTracker {
   /** @param {{ budgetUsd: number }} opts */
   constructor({ budgetUsd }) {
-    if (!isMoney(budgetUsd)) throw new Error('BudgetTracker: budgetUsd must be a finite number >= 0');
-    this.budgetUsd = budgetUsd;
-    this.totalUsd = 0;
+    if (!isMoney(budgetUsd))
+      throw new Error('BudgetTracker: budgetUsd must be a finite number >= 0')
+    this.budgetUsd = budgetUsd
+    this.totalUsd = 0
   }
 
   /** Gives back a charge for a call that was rejected before any task was created. */
   refund(usd) {
-    this.totalUsd = Math.max(0, Math.round((this.totalUsd - usd) * 1e6) / 1e6);
+    this.totalUsd = Math.max(0, Math.round((this.totalUsd - usd) * 1e6) / 1e6)
   }
 
   get remainingUsd() {
-    return Math.round((this.budgetUsd - this.totalUsd) * 1e6) / 1e6;
+    return Math.round((this.budgetUsd - this.totalUsd) * 1e6) / 1e6
   }
 
   /**
@@ -301,17 +380,27 @@ export class BudgetTracker {
    */
   charge(estUsd, label = 'call', capUsd = this.budgetUsd) {
     if (typeof estUsd !== 'number' || !Number.isFinite(estUsd) || estUsd < 0) {
-      throw new TypeError('estUsd must be a finite number >= 0, got ' + String(estUsd) + ' for "' + label + '"');
+      throw new TypeError(
+        'estUsd must be a finite number >= 0, got ' + String(estUsd) + ' for "' + label + '"',
+      )
     }
-    const next = Math.round((this.totalUsd + estUsd) * 1e6) / 1e6;
+    const next = Math.round((this.totalUsd + estUsd) * 1e6) / 1e6
     if (next > capUsd) {
       throw new BudgetExceededError(
-        'Budget exceeded: "' + label + '" (~$' + estUsd.toFixed(4) + ') would raise the spend of this run to $' +
-          next.toFixed(4) + ', over the $' + capUsd.toFixed(2) + ' per-run cap (budgetPerRunUsd in ' + GUARD_FILENAME +
+        'Budget exceeded: "' +
+          label +
+          '" (~$' +
+          estUsd.toFixed(4) +
+          ') would raise the spend of this run to $' +
+          next.toFixed(4) +
+          ', over the $' +
+          capUsd.toFixed(2) +
+          ' per-run cap (budgetPerRunUsd in ' +
+          GUARD_FILENAME +
           ', or 1.25x the approved plan total). Nothing was spent on this call.',
-      );
+      )
     }
-    this.totalUsd = next;
+    this.totalUsd = next
   }
 }
 
@@ -322,27 +411,29 @@ export class BudgetTracker {
  */
 export function createLimiter(maxConcurrency) {
   if (!Number.isInteger(maxConcurrency) || maxConcurrency < 1) {
-    throw new Error('createLimiter: maxConcurrency must be a positive integer, got ' + maxConcurrency);
+    throw new Error(
+      'createLimiter: maxConcurrency must be a positive integer, got ' + maxConcurrency,
+    )
   }
-  let active = 0;
-  const queue = [];
+  let active = 0
+  const queue = []
   const next = () => {
-    if (active >= maxConcurrency || queue.length === 0) return;
-    active++;
-    const { fn, resolve, reject } = queue.shift();
+    if (active >= maxConcurrency || queue.length === 0) return
+    active++
+    const { fn, resolve, reject } = queue.shift()
     Promise.resolve()
       .then(fn)
       .then(resolve, reject)
       .finally(() => {
-        active--;
-        next();
-      });
-  };
+        active--
+        next()
+      })
+  }
   return (fn) =>
     new Promise((resolve, reject) => {
-      queue.push({ fn, resolve, reject });
-      next();
-    });
+      queue.push({ fn, resolve, reject })
+      next()
+    })
 }
 
 const failClosedApproval = () => ({
@@ -351,7 +442,7 @@ const failClosedApproval = () => ({
   message:
     'No spending policy is attached to this synthesizer, so billable calls are refused (fail closed). ' +
     'Run the episode through `produce`, or pass an explicit guard.',
-});
+})
 
 /**
  * Single authorization point for every billable provider call. Order of checks:
@@ -376,34 +467,45 @@ export class SpendGuard {
    *   none. It is the author's intent and is enforced per call, next to the machine's own
    *   `dailyCapUsd`; `--approve` never relaxes it.
    */
-  constructor({ config, root, allowModels = [], approval = failClosedApproval, dryRun = false, avatarStaleMs = 45 * 60 * 1000, dailyBudgetUsd = null }) {
-    validateConfig(config, 'SpendGuard');
-    this.config = config;
-    this.root = root;
-    this.allowModels = allowModels;
-    this.approval = approval;
-    this.dailyBudgetUsd = Number.isFinite(dailyBudgetUsd) ? dailyBudgetUsd : null;
-    this.dryRun = dryRun;
-    this.avatarStaleMs = avatarStaleMs;
-    this.budget = new BudgetTracker({ budgetUsd: config.budgetPerRunUsd });
-    this._avatarInProcess = createLimiter(config.maxAvatarConcurrency);
+  constructor({
+    config,
+    root,
+    allowModels = [],
+    approval = failClosedApproval,
+    dryRun = false,
+    avatarStaleMs = 45 * 60 * 1000,
+    dailyBudgetUsd = null,
+  }) {
+    validateConfig(config, 'SpendGuard')
+    this.config = config
+    this.root = root
+    this.allowModels = allowModels
+    this.approval = approval
+    this.dailyBudgetUsd = Number.isFinite(dailyBudgetUsd) ? dailyBudgetUsd : null
+    this.dryRun = dryRun
+    this.avatarStaleMs = avatarStaleMs
+    this.budget = new BudgetTracker({ budgetUsd: config.budgetPerRunUsd })
+    this._avatarInProcess = createLimiter(config.maxAvatarConcurrency)
     /** @type {{ kind: string, model: string, estUsd: number, ref?: string, blocked?: string }[]} */
-    this.planned = [];
+    this.planned = []
   }
 
   get plannedTotalUsd() {
-    const sum = this.planned.reduce((acc, p) => acc + (p.blocked ? 0 : p.estUsd), 0);
-    return Math.round(sum * 1e6) / 1e6;
+    const sum = this.planned.reduce((acc, p) => acc + (p.blocked ? 0 : p.estUsd), 0)
+    return Math.round(sum * 1e6) / 1e6
   }
 
   get dailySpentUsd() {
-    return sumLedgerSince(this.root, Date.now() - DAY_MS);
+    return sumLedgerSince(this.root, Date.now() - DAY_MS)
   }
 
   /** Effective per-run cap: budgetPerRunUsd, tightened to 1.25x the approved total when known. */
   runCapUsd(approvalData) {
-    const approved = approvalData && Number.isFinite(approvalData.totalUsd) ? approvalData.totalUsd * 1.25 : Infinity;
-    return Math.round(Math.min(this.config.budgetPerRunUsd, approved) * 1e6) / 1e6;
+    const approved =
+      approvalData && Number.isFinite(approvalData.totalUsd)
+        ? approvalData.totalUsd * 1.25
+        : Infinity
+    return Math.round(Math.min(this.config.budgetPerRunUsd, approved) * 1e6) / 1e6
   }
 
   /**
@@ -415,28 +517,33 @@ export class SpendGuard {
    */
   avatarLimit(fn) {
     return this._avatarInProcess(async () => {
-      if (this.dryRun) return fn();
-      const dir = path.join(this.root, LOCKS_RELATIVE_DIR);
+      if (this.dryRun) return fn()
+      const dir = path.join(this.root, LOCKS_RELATIVE_DIR)
       const release = await acquireSlot(dir, 'avatar', this.config.maxAvatarConcurrency, {
         staleMs: this.avatarStaleMs,
         timeoutMs: this.avatarStaleMs,
-      });
+      })
       try {
-        return await fn();
+        return await fn()
       } finally {
-        release();
+        release()
       }
-    });
+    })
   }
 
   _assertCovered(approvalData, model) {
-    if (!approvalData || !Array.isArray(approvalData.allowedModels)) return;
-    const covered = new Set([...approvalData.allowedModels, ...(approvalData.allowModels || [])].map(normalizeModelId));
+    if (!approvalData || !Array.isArray(approvalData.allowedModels)) return
+    const covered = new Set(
+      [...approvalData.allowedModels, ...(approvalData.allowModels || [])].map(normalizeModelId),
+    )
     if (!covered.has(model)) {
       throw new ApprovalRequiredError(
-        'Model "' + model + '" is not covered by the spending policy (allowed models: ' +
-          [...covered].join(', ') + '). Re-run the cost estimator with this model and produce again.',
-      );
+        'Model "' +
+          model +
+          '" is not covered by the spending policy (allowed models: ' +
+          [...covered].join(', ') +
+          '). Re-run the cost estimator with this model and produce again.',
+      )
     }
   }
 
@@ -446,54 +553,74 @@ export class SpendGuard {
    * @returns {Promise<null | { settle: (outcome: string, detail?: string) => void }>}
    *   null in dry-run (the caller must not perform the call); otherwise a ticket to settle afterwards.
    */
-  async authorize({ kind, model: rawModel, estUsd, ref }, { requireApproval = true, checkModel = true } = {}) {
-    const model = normalizeModelId(rawModel);
+  async authorize(
+    { kind, model: rawModel, estUsd, ref },
+    { requireApproval = true, checkModel = true } = {},
+  ) {
+    const model = normalizeModelId(rawModel)
     if (typeof estUsd !== 'number' || !Number.isFinite(estUsd) || estUsd < 0) {
-      throw new TypeError('estUsd must be a finite number >= 0, got ' + String(estUsd));
+      throw new TypeError('estUsd must be a finite number >= 0, got ' + String(estUsd))
     }
     if (checkModel) {
       try {
-        assertModelAllowed(model, { config: this.config, allowBlocked: this.allowModels });
+        assertModelAllowed(model, { config: this.config, allowBlocked: this.allowModels })
       } catch (err) {
-        if (!this.dryRun) throw err;
-        this.planned.push({ kind, model, estUsd, ref, blocked: err.message });
-        return null;
+        if (!this.dryRun) throw err
+        this.planned.push({ kind, model, estUsd, ref, blocked: err.message })
+        return null
       }
     }
     if (this.dryRun) {
-      this.planned.push({ kind, model, estUsd, ref });
-      return null;
+      this.planned.push({ kind, model, estUsd, ref })
+      return null
     }
 
-    let approvalData = null;
+    let approvalData = null
     if (requireApproval) {
-      const res = this.approval();
-      if (!res.ok) throw new ApprovalRequiredError(res.message || 'Plan approval required before billable synthesis.');
-      approvalData = res.approval || null;
-      if (checkModel) this._assertCovered(approvalData, model);
+      const res = this.approval()
+      if (!res.ok)
+        throw new ApprovalRequiredError(
+          res.message || 'Plan approval required before billable synthesis.',
+        )
+      approvalData = res.approval || null
+      if (checkModel) this._assertCovered(approvalData, model)
     }
-    const capUsd = this.runCapUsd(approvalData);
-    const label = kind + ' ' + model + (ref ? ' (' + ref + ')' : '');
+    const capUsd = this.runCapUsd(approvalData)
+    const label = kind + ' ' + model + (ref ? ' (' + ref + ')' : '')
 
     await withFileLock(path.join(this.root, LOCKS_RELATIVE_DIR, 'ledger.lock'), () => {
-      const spent = sumLedgerSince(this.root, Date.now() - DAY_MS);
+      const spent = sumLedgerSince(this.root, Date.now() - DAY_MS)
       if (spent + estUsd > this.config.dailyCapUsd + 1e-9) {
         throw new BudgetExceededError(
-          'Daily cap exceeded: "' + label + '" (~$' + estUsd.toFixed(4) + ') on top of $' + spent.toFixed(4) +
-            ' already spent in the last 24h would pass the $' + this.config.dailyCapUsd.toFixed(2) +
-            ' dailyCapUsd in ' + GUARD_FILENAME + '. Nothing was spent on this call.',
-        );
+          'Daily cap exceeded: "' +
+            label +
+            '" (~$' +
+            estUsd.toFixed(4) +
+            ') on top of $' +
+            spent.toFixed(4) +
+            ' already spent in the last 24h would pass the $' +
+            this.config.dailyCapUsd.toFixed(2) +
+            ' dailyCapUsd in ' +
+            GUARD_FILENAME +
+            '. Nothing was spent on this call.',
+        )
       }
       if (this.dailyBudgetUsd !== null && spent + estUsd > this.dailyBudgetUsd + 1e-9) {
         throw new BudgetExceededError(
-          'Daily budget exceeded: "' + label + '" (~$' + estUsd.toFixed(4) + ') on top of $' + spent.toFixed(4) +
-            ' already spent in the last 24h would pass the $' + this.dailyBudgetUsd.toFixed(2) +
+          'Daily budget exceeded: "' +
+            label +
+            '" (~$' +
+            estUsd.toFixed(4) +
+            ') on top of $' +
+            spent.toFixed(4) +
+            ' already spent in the last 24h would pass the $' +
+            this.dailyBudgetUsd.toFixed(2) +
             ' daily_budget the documents declare. Nothing was spent on this call.',
-        );
+        )
       }
-      this.budget.charge(estUsd, label, capUsd);
-      appendLedger(this.root, { kind, model, estUsd, ref, outcome: 'started' });
-    });
+      this.budget.charge(estUsd, label, capUsd)
+      appendLedger(this.root, { kind, model, estUsd, ref, outcome: 'started' })
+    })
 
     return {
       /**
@@ -506,29 +633,40 @@ export class SpendGuard {
        *   settles at $0.
        */
       settle: (outcome, detail, { refundUsd, chargedUsd } = {}) => {
-        const refund = Number.isFinite(refundUsd) && refundUsd > 0 ? refundUsd : 0;
-        const charge = Number.isFinite(chargedUsd) ? chargedUsd : refund > 0 ? 0 : estUsd;
-        if (refund > 0) this.budget.refund(refund);
+        const refund = Number.isFinite(refundUsd) && refundUsd > 0 ? refundUsd : 0
+        const charge = Number.isFinite(chargedUsd) ? chargedUsd : refund > 0 ? 0 : estUsd
+        if (refund > 0) this.budget.refund(refund)
         appendLedger(this.root, {
-          kind, model, estUsd: charge, ref, outcome,
+          kind,
+          model,
+          estUsd: charge,
+          ref,
+          outcome,
           supersedesStart: true,
           ...(refund > 0 ? { refundUsd: refund } : {}),
           ...(detail ? { detail } : {}),
-        });
+        })
       },
-    };
+    }
   }
 
   /** Ledgers the outcome of a task that was authorized earlier (e.g. a resumed poll). No new charge. */
   noteOutcome({ kind, model, ref }, outcome, detail) {
-    if (this.dryRun) return;
-    appendLedger(this.root, { kind, model: normalizeModelId(model), estUsd: 0, ref, outcome, ...(detail ? { detail } : {}) });
+    if (this.dryRun) return
+    appendLedger(this.root, {
+      kind,
+      model: normalizeModelId(model),
+      estUsd: 0,
+      ref,
+      outcome,
+      ...(detail ? { detail } : {}),
+    })
   }
 
   /** Records a free cache hit in the ledger (no-op in dry-run). */
   recordCacheHit({ kind, ref }) {
-    if (this.dryRun) return;
-    appendLedger(this.root, { kind, ref, estUsd: 0, outcome: 'cache-hit', cacheHit: true });
+    if (this.dryRun) return
+    appendLedger(this.root, { kind, ref, estUsd: 0, outcome: 'cache-hit', cacheHit: true })
   }
 
   /**
@@ -537,32 +675,45 @@ export class SpendGuard {
    * not covered by the approval, or the total would pass the per-run or 24h cap.
    */
   assertPlanAffordable() {
-    const blocked = this.planned.filter((p) => p.blocked);
+    const blocked = this.planned.filter((p) => p.blocked)
     if (blocked.length > 0) {
       throw new ModelBlockedError(
-        blocked.length + ' planned call(s) use a blocked or unlisted model; nothing was spent. First: ' + blocked[0].blocked,
-      );
+        blocked.length +
+          ' planned call(s) use a blocked or unlisted model; nothing was spent. First: ' +
+          blocked[0].blocked,
+      )
     }
-    if (this.planned.length === 0) return;
-    const res = this.approval();
-    if (!res.ok) throw new ApprovalRequiredError(res.message || 'Plan approval required before billable synthesis.');
-    const approvalData = res.approval || null;
-    for (const item of this.planned) this._assertCovered(approvalData, item.model);
+    if (this.planned.length === 0) return
+    const res = this.approval()
+    if (!res.ok)
+      throw new ApprovalRequiredError(
+        res.message || 'Plan approval required before billable synthesis.',
+      )
+    const approvalData = res.approval || null
+    for (const item of this.planned) this._assertCovered(approvalData, item.model)
 
-    const total = this.plannedTotalUsd;
-    const cap = this.runCapUsd(approvalData);
+    const total = this.plannedTotalUsd
+    const cap = this.runCapUsd(approvalData)
     if (total > cap + 1e-9) {
       throw new BudgetExceededError(
-        'Budget exceeded: the planned run (~$' + total.toFixed(4) + ') is over the $' + cap.toFixed(2) +
+        'Budget exceeded: the planned run (~$' +
+          total.toFixed(4) +
+          ') is over the $' +
+          cap.toFixed(2) +
           ' per-run cap (budgetPerRunUsd, or 1.25x the approved plan total). Nothing was spent.',
-      );
+      )
     }
-    const spent = this.dailySpentUsd;
+    const spent = this.dailySpentUsd
     if (spent + total > this.config.dailyCapUsd + 1e-9) {
       throw new BudgetExceededError(
-        'Daily cap exceeded: the planned run (~$' + total.toFixed(4) + ') plus $' + spent.toFixed(4) +
-          ' spent in the last 24h would pass the $' + this.config.dailyCapUsd.toFixed(2) + ' dailyCapUsd. Nothing was spent.',
-      );
+        'Daily cap exceeded: the planned run (~$' +
+          total.toFixed(4) +
+          ') plus $' +
+          spent.toFixed(4) +
+          ' spent in the last 24h would pass the $' +
+          this.config.dailyCapUsd.toFixed(2) +
+          ' dailyCapUsd. Nothing was spent.',
+      )
     }
   }
 }

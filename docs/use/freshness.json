@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-19T01:04:05.483Z",
-  "head": "d29ff7e85fa422ee8278d24e54eb38aa91153abf",
+  "generatedAt": "2026-11-19T01:33:32.982Z",
+  "head": "dd97c0c355929e514fd8112f23d1e62944dc28ed",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -13,15 +13,29 @@
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.76.0",
       "pinnedTagDate": "2026-11-19T01:23:29+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/avatar-jobs.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/video-guard.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/avatar-resolution.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
+      ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.76.0",
       "pinnedTagDate": "2026-11-19T01:23:29+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 3,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/catalog.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/avatar-jobs.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/video-guard.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/avatar-resolution.test.mjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
+      ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",

@@ -17,22 +17,24 @@
  * Zero external dependencies. ESM module.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import crypto from 'node:crypto';
-import { normalizeModelId } from './video-guard.mjs';
-import { AVATAR_IMAGE_MIME } from './avatar-request.mjs';
-import { buildTtsVoiceOptions, resolveRegisteredVoice } from './tts-options.mjs';
+import fs from 'node:fs'
+import path from 'node:path'
+import crypto from 'node:crypto'
+import { avatarResolutionProfileFor, normalizeModelId } from './video-guard.mjs'
+import { AVATAR_IMAGE_MIME } from './avatar-request.mjs'
+import { buildTtsVoiceOptions, resolveRegisteredVoice } from './tts-options.mjs'
 
-export const AVATAR_CACHE_CATEGORY = 'temp';
-export const AVATAR_CACHE_EXT = 'mp4';
-export const DEFAULT_AVATAR_RESOLUTION = '480p';
+export const AVATAR_CACHE_CATEGORY = 'temp'
+export const AVATAR_CACHE_EXT = 'mp4'
+export const DEFAULT_AVATAR_RESOLUTION = '480p'
 
-/** Resolutions each avatar model accepts. Pruna rejects 720p; InfiniTalk accepts it. */
+/**
+ * The resolution profile of an avatar model comes from the guard module: model ids are
+ * data there, never re-derived from a vendor name in engine code (the rule
+ * `no-phantom-providers.test.mjs` enforces).
+ */
 export function validResolutionsFor(model) {
-  const m = normalizeModelId(model);
-  if (m.includes('pruna')) return ['480p', '768p'];
-  return ['480p', '720p', '768p'];
+  return [...avatarResolutionProfileFor(model).resolutions]
 }
 
 /**
@@ -42,12 +44,12 @@ export function validResolutionsFor(model) {
  * @returns {number}
  */
 export function declaredHeightOf(resolution) {
-  const m = /^(\d+)p$/i.exec(String(resolution || '').trim());
-  return m ? Number.parseInt(m[1], 10) : 0;
+  const m = /^(\d+)p$/i.exec(String(resolution || '').trim())
+  return m ? Number.parseInt(m[1], 10) : 0
 }
 
 /** Tolerance when comparing an asset's aspect ratio to a square (a rounded PNG edge). */
-export const AVATAR_SQUARE_TOLERANCE = 0.02;
+export const AVATAR_SQUARE_TOLERANCE = 0.02
 
 /**
  * Compares the clip's measured size against the resolution that was requested.
@@ -63,7 +65,7 @@ export const AVATAR_SQUARE_TOLERANCE = 0.02;
  * @returns {{ ok: boolean, warning?: string, width?: number, height?: number, declaredHeight: number }}
  */
 export function checkAvatarClip({ resolution, width, height }) {
-  const declaredHeight = declaredHeightOf(resolution);
+  const declaredHeight = declaredHeightOf(resolution)
   if (!width || !height) {
     return {
       ok: false,
@@ -72,9 +74,9 @@ export function checkAvatarClip({ resolution, width, height }) {
         "could not read the produced avatar clip's dimensions, so the declared " +
         resolution +
         ' could not be verified. The provider treats `resolution` as advisory; check the output before delivery.',
-    };
+    }
   }
-  const shortSide = Math.min(width, height);
+  const shortSide = Math.min(width, height)
   if (declaredHeight > 0 && shortSide < declaredHeight) {
     return {
       ok: false,
@@ -82,13 +84,22 @@ export function checkAvatarClip({ resolution, width, height }) {
       width,
       height,
       warning:
-        'the avatar provider returned ' + width + 'x' + height + ' for a declared ' + resolution +
-        ' (short side ' + shortSide + ' < ' + declaredHeight + '). `resolution` is advisory: the provider keeps the ' +
-        "input aspect ratio and holds the pixel budget near 0.23 Mpx. Accept the clip as produced, or raise the " +
+        'the avatar provider returned ' +
+        width +
+        'x' +
+        height +
+        ' for a declared ' +
+        resolution +
+        ' (short side ' +
+        shortSide +
+        ' < ' +
+        declaredHeight +
+        '). `resolution` is advisory: the provider keeps the ' +
+        'input aspect ratio and holds the pixel budget near 0.23 Mpx. Accept the clip as produced, or raise the ' +
         "input image's pixels.",
-    };
+    }
   }
-  return { ok: true, declaredHeight, width, height };
+  return { ok: true, declaredHeight, width, height }
 }
 
 /**
@@ -100,20 +111,31 @@ export function checkAvatarClip({ resolution, width, height }) {
  * @returns {string | null}
  */
 export function checkAvatarAssetAspect({ width, height, label = 'avatar image' }) {
-  if (!width || !height) return null;
-  const ratio = width / height;
-  if (Math.abs(ratio - 1) <= AVATAR_SQUARE_TOLERANCE) return null;
-  const kept = Math.round((Math.min(width, height) / Math.max(width, height)) * 100);
+  if (!width || !height) return null
+  const ratio = width / height
+  if (Math.abs(ratio - 1) <= AVATAR_SQUARE_TOLERANCE) return null
+  const kept = Math.round((Math.min(width, height) / Math.max(width, height)) * 100)
   return (
-    label + ' is ' + width + 'x' + height + ' (' + ratio.toFixed(2) + ':1), not square. A square master ' +
-    'draws a full-frame avatar layer with `cover`, so only about ' + kept + '% of the frame survives ' +
-    '(roughly ' + (100 - kept) + '% is cropped). Compose it as square, or place it in a `contain` box.'
-  );
+    label +
+    ' is ' +
+    width +
+    'x' +
+    height +
+    ' (' +
+    ratio.toFixed(2) +
+    ':1), not square. A square master ' +
+    'draws a full-frame avatar layer with `cover`, so only about ' +
+    kept +
+    '% of the frame survives ' +
+    '(roughly ' +
+    (100 - kept) +
+    '% is cropped). Compose it as square, or place it in a `contain` box.'
+  )
 }
 
 /** Model-appropriate fallback when the script declares no resolution. */
 
-export const DEFAULT_MAX_AVATAR_UPSCALE = 3.0;
+export const DEFAULT_MAX_AVATAR_UPSCALE = 3.0
 
 /**
  * Warns when the centered-cover upscale factor of an avatar asset in any configured
@@ -121,36 +143,49 @@ export const DEFAULT_MAX_AVATAR_UPSCALE = 3.0;
  * @param {{ width?: number, height?: number, formats?: Array<{ width: number, height: number, size?: string }>, maxUpscale?: number, label?: string }} o
  * @returns {string[]}
  */
-export function checkAvatarUpscale({ width, height, formats = [], maxUpscale = DEFAULT_MAX_AVATAR_UPSCALE, label = 'avatar' }) {
-  if (!width || !height || !Array.isArray(formats) || formats.length === 0) return [];
-  const warnings = [];
+export function checkAvatarUpscale({
+  width,
+  height,
+  formats = [],
+  maxUpscale = DEFAULT_MAX_AVATAR_UPSCALE,
+  label = 'avatar',
+}) {
+  if (!width || !height || !Array.isArray(formats) || formats.length === 0) return []
+  const warnings = []
   for (const fmt of formats) {
-    if (!fmt.width || !fmt.height) continue;
-    const scale = Math.max(fmt.width / width, fmt.height / height);
+    if (!fmt.width || !fmt.height) continue
+    const scale = Math.max(fmt.width / width, fmt.height / height)
     if (scale > maxUpscale) {
-      const tag = fmt.size || `${fmt.width}x${fmt.height}`;
+      const tag = fmt.size || `${fmt.width}x${fmt.height}`
       warnings.push(
         `${label} (${width}x${height}) requires a ${scale.toFixed(2)}x upscale to cover ${tag} (threshold: ${maxUpscale}x). ` +
-        `Centered \`cover\` may show blur or pixelation. Opt in to a dedicated format clip or provide a higher-resolution portrait.`
-      );
+          `Centered \`cover\` may show blur or pixelation. Opt in to a dedicated format clip or provide a higher-resolution portrait.`,
+      )
     }
   }
-  return warnings;
+  return warnings
 }
 
 export function defaultResolutionFor(model) {
-  const m = normalizeModelId(model);
-  return m.includes('pruna') ? '480p' : '720p';
+  return avatarResolutionProfileFor(model).fallback
 }
 
 /** Validates a requested resolution against the model's allowed set (fail closed). */
 export function normalizeAvatarResolution(requested, model) {
-  const allowed = validResolutionsFor(model);
-  const r = requested ? String(requested) : defaultResolutionFor(model);
+  const allowed = validResolutionsFor(model)
+  const r = requested ? String(requested) : defaultResolutionFor(model)
   if (!allowed.includes(r)) {
-    throw new Error('Avatar resolution "' + r + '" is not supported by ' + model + ' (allowed: ' + allowed.join(', ') + ').');
+    throw new Error(
+      'Avatar resolution "' +
+        r +
+        '" is not supported by ' +
+        model +
+        ' (allowed: ' +
+        allowed.join(', ') +
+        ').',
+    )
   }
-  return r;
+  return r
 }
 
 /**
@@ -159,11 +194,13 @@ export function normalizeAvatarResolution(requested, model) {
  * and a name such as "Avatar Intro" alone is not enough.
  */
 export function isAvatarLayer(l) {
-  const t = String(l?.properties?.layer_type ?? l?.fields?.type ?? l?.type ?? '').toLowerCase().trim();
-  return t === 'talking_avatar' || t === 'talking-avatar' || t === 'avatar';
+  const t = String(l?.properties?.layer_type ?? l?.fields?.type ?? l?.type ?? '')
+    .toLowerCase()
+    .trim()
+  return t === 'talking_avatar' || t === 'talking-avatar' || t === 'avatar'
 }
 
-const sha256File = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+const sha256File = (file) => crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex')
 
 /**
  * Content-addressed key: image bytes + audio bytes + {model, resolution}. Moving or renaming
@@ -171,11 +208,17 @@ const sha256File = (file) => crypto.createHash('sha256').update(fs.readFileSync(
  * @param {{ computeHash: (c: string, o?: object) => string }} cacheManager
  * @param {{ imagePath: string, audioPath: string, model: string, resolution?: string }} job
  */
-export function avatarJobKey(cacheManager, { imagePath, audioPath, model, resolution = DEFAULT_AVATAR_RESOLUTION }) {
-  return cacheManager.computeHash('image:' + sha256File(imagePath) + ':audio:' + sha256File(audioPath), {
-    model: normalizeModelId(model),
-    resolution,
-  });
+export function avatarJobKey(
+  cacheManager,
+  { imagePath, audioPath, model, resolution = DEFAULT_AVATAR_RESOLUTION },
+) {
+  return cacheManager.computeHash(
+    'image:' + sha256File(imagePath) + ':audio:' + sha256File(audioPath),
+    {
+      model: normalizeModelId(model),
+      resolution,
+    },
+  )
 }
 
 /**
@@ -184,16 +227,20 @@ export function avatarJobKey(cacheManager, { imagePath, audioPath, model, resolu
  * @returns {string | undefined} Absolute cache file path, or undefined on a miss
  */
 export function ttsCacheKeyFor(sc, { cacheManager, config, models = {}, bags = {} }) {
-  const narration = String(sc.narration || '').trim();
-  if (!narration) return undefined;
-  const options = resolveRegisteredVoice(buildTtsVoiceOptions(sc, models, bags), config);
-  return cacheManager.computeHash(narration, options);
+  const narration = String(sc.narration || '').trim()
+  if (!narration) return undefined
+  const options = resolveRegisteredVoice(buildTtsVoiceOptions(sc, models, bags), config)
+  return cacheManager.computeHash(narration, options)
 }
 
 export function ttsCachePathFor(sc, opts) {
-  const key = ttsCacheKeyFor(sc, opts);
-  if (!key) return undefined;
-  return opts.cacheManager.getSync(key, 'mp3', 'tts') || opts.cacheManager.getSync(key + '-offline', 'mp3', 'tts') || undefined;
+  const key = ttsCacheKeyFor(sc, opts)
+  if (!key) return undefined
+  return (
+    opts.cacheManager.getSync(key, 'mp3', 'tts') ||
+    opts.cacheManager.getSync(key + '-offline', 'mp3', 'tts') ||
+    undefined
+  )
 }
 
 /**
@@ -216,46 +263,67 @@ export function ttsCachePathFor(sc, opts) {
  *   `problems` lists missing images/audio (no job is created for them); `skipped` lists avatar
  *   Layers whose Scene carries no narration, which render as their still image.
  */
-export function collectAvatarJobs({ parsed, scriptDir, cacheManager, sceneIds, config, models = {}, bags = {} }) {
-  const jobs = [];
-  const problems = [];
-  const skipped = [];
+export function collectAvatarJobs({
+  parsed,
+  scriptDir,
+  cacheManager,
+  sceneIds,
+  config,
+  models = {},
+  bags = {},
+}) {
+  const jobs = []
+  const problems = []
+  const skipped = []
   for (const sc of parsed.scenes) {
-    if (sceneIds && !sceneIds.includes(sc.id)) continue;
+    if (sceneIds && !sceneIds.includes(sc.id)) continue
     for (const layer of (sc.layers || []).filter(isAvatarLayer)) {
       // No narration, nothing to lip-sync: the Layer stays a still. Never a job.
       if (String(sc.narration || '').trim().length === 0) {
-        skipped.push({ sceneId: sc.id, layerName: layer.name });
-        continue;
+        skipped.push({ sceneId: sc.id, layerName: layer.name })
+        continue
       }
-      const src = layer.properties?.layer_asset_source;
-      const imagePath = src ? path.resolve(scriptDir, src) : null;
-      const audioPath = ttsCachePathFor(sc, { cacheManager, config, models, bags });
+      const src = layer.properties?.layer_asset_source
+      const imagePath = src ? path.resolve(scriptDir, src) : null
+      const audioPath = ttsCachePathFor(sc, { cacheManager, config, models, bags })
       if (!imagePath) {
-        const prompted = layer.properties?.layer_prompt || layer.properties?.prompt;
+        const prompted = layer.properties?.layer_prompt || layer.properties?.prompt
         problems.push(
-          'Scene ' + sc.id + ': ' + (prompted
-            ? 'the avatar layer has only a prompt. Avatar images must be real files: generate the image first (compile generates prompt layers into the cache) and reference the file with ![media](path).'
-            : 'the avatar layer has no image. Reference a real image file with ![media](path).'),
-        );
-        continue;
+          'Scene ' +
+            sc.id +
+            ': ' +
+            (prompted
+              ? 'the avatar layer has only a prompt. Avatar images must be real files: generate the image first (compile generates prompt layers into the cache) and reference the file with ![media](path).'
+              : 'the avatar layer has no image. Reference a real image file with ![media](path).'),
+        )
+        continue
       }
       if (!fs.existsSync(imagePath)) {
-        problems.push('Scene ' + sc.id + ': avatar image not found (' + imagePath + ').');
-        continue;
+        problems.push('Scene ' + sc.id + ': avatar image not found (' + imagePath + ').')
+        continue
       }
       if (!AVATAR_IMAGE_MIME[path.extname(imagePath).toLowerCase()]) {
-        problems.push('Scene ' + sc.id + ': avatar image extension must be one of ' + Object.keys(AVATAR_IMAGE_MIME).join(', ') + ' (got ' + imagePath + ').');
-        continue;
+        problems.push(
+          'Scene ' +
+            sc.id +
+            ': avatar image extension must be one of ' +
+            Object.keys(AVATAR_IMAGE_MIME).join(', ') +
+            ' (got ' +
+            imagePath +
+            ').',
+        )
+        continue
       }
       if (!audioPath || !fs.existsSync(audioPath)) {
         problems.push(
-          'Scene ' + sc.id + ': no TTS cache entry for its current narration, voice and model. Run compile first to populate the TTS cache.',
-        );
-        continue;
+          'Scene ' +
+            sc.id +
+            ': no TTS cache entry for its current narration, voice and model. Run compile first to populate the TTS cache.',
+        )
+        continue
       }
-      const model = normalizeModelId(layer.properties?.layer_avatar_model);
-      const resolution = normalizeAvatarResolution(layer.properties?.layer_avatar_resolution, model);
+      const model = normalizeModelId(layer.properties?.layer_avatar_model)
+      const resolution = normalizeAvatarResolution(layer.properties?.layer_avatar_resolution, model)
       jobs.push({
         sceneId: sc.id,
         layerName: layer.name,
@@ -265,10 +333,10 @@ export function collectAvatarJobs({ parsed, scriptDir, cacheManager, sceneIds, c
         model,
         resolution,
         cacheKey: avatarJobKey(cacheManager, { imagePath, audioPath, model, resolution }),
-      });
+      })
     }
   }
-  return { jobs, problems, skipped };
+  return { jobs, problems, skipped }
 }
 
 /**
@@ -277,25 +345,25 @@ export function collectAvatarJobs({ parsed, scriptDir, cacheManager, sceneIds, c
  * @returns {{ applied: number, missing: number, clips: string[] }} `clips` are the cached clip paths that were applied.
  */
 export function applyCachedAvatars({ parsed, scriptDir, cacheManager, config, models, bags }) {
-  const { jobs } = collectAvatarJobs({ parsed, scriptDir, cacheManager, config, models, bags });
-  let applied = 0;
-  let missing = 0;
-  const missingLayers = [];
-  const clips = [];
+  const { jobs } = collectAvatarJobs({ parsed, scriptDir, cacheManager, config, models, bags })
+  let applied = 0
+  let missing = 0
+  const missingLayers = []
+  const clips = []
   for (const job of jobs) {
-    const cached = cacheManager.getSync(job.cacheKey, AVATAR_CACHE_EXT, AVATAR_CACHE_CATEGORY);
+    const cached = cacheManager.getSync(job.cacheKey, AVATAR_CACHE_EXT, AVATAR_CACHE_CATEGORY)
     if (!cached) {
-      missing++;
-      missingLayers.push({ sceneId: job.sceneId, layerName: job.layerName });
-      continue;
+      missing++
+      missingLayers.push({ sceneId: job.sceneId, layerName: job.layerName })
+      continue
     }
-    job.layer.properties.layer_type = 'video';
-    job.layer.properties.layer_asset_source = cached;
-    job.layer.properties.layer_muted = true;
-    job.layer.properties.layer_avatar_origin = true;
-    job.layer.properties.layer_fit = { native: 'cover', mismatch: 'cover' };
-    clips.push(cached);
-    applied++;
+    job.layer.properties.layer_type = 'video'
+    job.layer.properties.layer_asset_source = cached
+    job.layer.properties.layer_muted = true
+    job.layer.properties.layer_avatar_origin = true
+    job.layer.properties.layer_fit = { native: 'cover', mismatch: 'cover' }
+    clips.push(cached)
+    applied++
   }
-  return { applied, missing, missingLayers, clips };
+  return { applied, missing, missingLayers, clips }
 }
