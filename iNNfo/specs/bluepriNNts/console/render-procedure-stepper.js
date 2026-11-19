@@ -25,12 +25,17 @@
           ? globalThis
           : this
 
-  var RENDERER_VERSION = '0.3.0'
+  var RENDERER_VERSION = '0.3.1'
 
-  var V = GLOBAL.nnVisuals && typeof GLOBAL.nnVisuals === 'object' ? GLOBAL.nnVisuals : null
-
+  // The console draws icons from `nnIcons`, which renders each path once into a per-document
+  // sprite and every instance as a `<use>`. `nnVisuals.iconSvg` was the older path and the
+  // console no longer populates it, so a view that kept calling it drew nothing at all.
+  // Looked up the same way nn-runtime does (`typeof nnIcons !== 'undefined'`), because the
+  // sprite hangs off the document; a missing `document` falls back to inline paths.
   function vIcon(name, size) {
-    return V && typeof V.iconSvg === 'function' ? V.iconSvg(name, size || 14) : ''
+    var icons = typeof nnIcons !== 'undefined' ? nnIcons : GLOBAL.nnIcons
+    if (icons && typeof icons.getSvg === 'function') return icons.getSvg(name, { size: size || 14 })
+    return ''
   }
 
   var TERMINAL_RUN = { completed: true, failed: true, cancelled: true }

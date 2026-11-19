@@ -5981,6 +5981,134 @@ details.collapse summary {
       line-height: 1.45;
     }
 
+    /* Summary strip: what this export contains, at a glance */
+    .proc-structure-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .proc-structure-summary {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+    .proc-structure-defects { display: flex; flex-direction: column; gap: 4px; }
+    .proc-defect-item {
+      font-size: 0.76rem;
+      color: var(--danger);
+    }
+    .proc-defect-item[data-severity='info'] { color: var(--muted); }
+
+    /* Run switcher: the definition plus one chip per recorded run */
+    .proc-runs {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin: 10px 0 14px;
+    }
+    .proc-runs-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      margin-right: 4px;
+    }
+    button.proc-run {
+      appearance: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--muted);
+      font: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      cursor: pointer;
+    }
+    button.proc-run:hover { border-color: var(--muted); color: var(--text); }
+    button.proc-run.active { background: var(--surface-2); border-color: var(--primary); color: var(--primary); font-weight: 700; }
+    button.proc-run[data-status='blocked'] { border-color: var(--danger); }
+    button.proc-run[data-status='drifted'] { border-color: var(--warning); }
+    button.proc-run[data-status='completed'] { border-color: var(--success); }
+    .proc-runs-empty { font-size: 0.78rem; color: var(--muted); font-style: italic; }
+
+    /* Ficha: the catalog entry that links this procedure document */
+    .proc-ficha {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: var(--shadow-card);
+    }
+    .proc-ficha-summary {
+      font-size: 0.86rem;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .proc-ficha > div:not(.proc-ficha-summary) {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .proc-no-catalog-note {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* Run panel: the folded state of one run */
+    .proc-run-state {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 0.8rem;
+      color: var(--text);
+    }
+    .proc-run-state > p { margin: 0; color: var(--muted); }
+    .proc-run-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-family: var(--mono);
+    }
+    .proc-run-status,
+    .proc-run-current,
+    .proc-run-path { color: var(--muted); }
+    .proc-run-path { font-family: var(--mono); font-size: 0.76rem; }
+    .proc-run-blocked,
+    .proc-run-crashed { color: var(--danger); font-weight: 600; }
+    .proc-run-paused,
+    .proc-run-drift { color: var(--warning); font-weight: 600; }
+    .proc-run-stale,
+    .proc-run-reopened { color: var(--warning); }
+    .proc-run-allowed,
+    .proc-run-artifacts { color: var(--muted); font-size: 0.76rem; }
+    .proc-run-next {
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    /* The step the fold points at, and the step the human opened */
+    .dag-node.current rect { stroke-width: 3; stroke: var(--primary); }
+    .dag-node.selected rect { stroke-dasharray: 5 3; }
+    .dag-node.current .node-title { fill: var(--primary); font-weight: 700; }
+
     /* Live Execution Log */
     .exec-log-view {
       padding: 12px;
