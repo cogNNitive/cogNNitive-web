@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * skills/nn-preflight/scripts/upgrade-check.js
+ * skills/nn-preflight/scripts/lineage-audit.js
  *
  * Tier-3 workspace template upgrade detection for the cogNNitive ecosystem.
  * Read-only: it inspects a workspace, classifies every Level-3 model against the
@@ -20,44 +20,53 @@
  * informational and NEVER flip the preflight exit code to a blocker.
  *
  * CLI:
- *   node upgrade-check.js --workspace-dir <dir> --catalog-file <catalog.json> [--json]
+ *   node lineage-audit.js --workspace-dir <dir> --catalog-file <catalog.json> [--json]
  */
 
-const fs = require('fs');
-const path = require('path');
-const { parseFrontmatter, parseFocusedYaml } = require('./lib/yaml-lite');
+const fs = require('fs')
+const path = require('path')
+const { parseFrontmatter, parseFocusedYaml } = require('./lib/yaml-lite')
 // Single classifier for the whole ecosystem: the primitives are bundled from
 // nn-core (AD-2) by scripts/build-preflight-primitives.mjs and drift-guarded
 // by scripts/verify.js step 11. No private copy may live here.
-const {
-  parseSemVer,
-  gapKind,
-  compareVersions,
-  parsePinnedUrl,
-  classifyAgainstCatalog,
-} = /** @type {any} */ (require('./lib/version-status.generated.cjs'));
+const { parseSemVer, gapKind, compareVersions, parsePinnedUrl, classifyAgainstCatalog } =
+  /** @type {any} */ (require('./lib/version-status.generated.cjs'))
 // Model identity is the naming contract's (bundled from nn-core, same drift guard).
-const { isNNName, isSidecarName } = /** @type {any} */ (require('./lib/naming-contract.generated.cjs'));
+const { isNNName, isSidecarName } = /** @type {any} */ (
+  require('./lib/naming-contract.generated.cjs')
+)
 
 const SCAN_SKIP_DIRS = new Set([
-  '.git', '.backup', '.spec-cache', 'node_modules', 'dist', 'backups', 'archive',
-  'sources', 'conversations', 'artifacts', 'procedures', 'specs', 'templates', 'changes',
-]);
+  '.git',
+  '.backup',
+  '.spec-cache',
+  'node_modules',
+  'dist',
+  'backups',
+  'archive',
+  'sources',
+  'conversations',
+  'artifacts',
+  'procedures',
+  'specs',
+  'templates',
+  'changes',
+])
 
 /** Recursive walk for `_NN.md` documents (sidecars excluded), skipping noise/staging dirs. */
 function walkModels(dir, files) {
-  let entries;
+  let entries
   try {
-    entries = fs.readdirSync(dir, { withFileTypes: true });
+    entries = fs.readdirSync(dir, { withFileTypes: true })
   } catch {
-    return;
+    return
   }
   for (const entry of entries) {
     if (entry.isDirectory()) {
-      if (entry.name.startsWith('.') || SCAN_SKIP_DIRS.has(entry.name)) continue;
-      walkModels(path.join(dir, entry.name), files);
+      if (entry.name.startsWith('.') || SCAN_SKIP_DIRS.has(entry.name)) continue
+      walkModels(path.join(dir, entry.name), files)
     } else if (entry.isFile() && isNNName(entry.name) && !isSidecarName(entry.name)) {
-      files.push(path.join(dir, entry.name));
+      files.push(path.join(dir, entry.name))
     }
   }
 }
@@ -69,32 +78,32 @@ function walkModels(dir, files) {
  * both read the workspace through this one walk.
  */
 function readNNDocuments(workspaceDir) {
-  const files = [];
-  walkModels(workspaceDir, files);
-  const docs = [];
+  const files = []
+  walkModels(workspaceDir, files)
+  const docs = []
   for (const file of files) {
-    let content;
+    let content
     try {
-      content = fs.readFileSync(file, 'utf-8');
+      content = fs.readFileSync(file, 'utf-8')
     } catch {
-      continue;
+      continue
     }
-    let fm;
-    let parseError = null;
+    let fm
+    let parseError = null
     try {
-      fm = parseFocusedYaml(parseFrontmatter(content)) || {};
+      fm = parseFocusedYaml(parseFrontmatter(content)) || {}
     } catch (err) {
-      fm = {};
-      parseError = err && err.message ? err.message : String(err);
+      fm = {}
+      parseError = err && err.message ? err.message : String(err)
     }
     docs.push({
       file,
       rel: path.relative(workspaceDir, file).replace(/\\/g, '/'),
       fm,
       parseError,
-    });
+    })
   }
-  return docs;
+  return docs
 }
 
 /** Discover Level-3 models in the workspace (models/ + root, recursively). */
@@ -105,7 +114,7 @@ function discoverModels(workspaceDir) {
       file: doc.file,
       rel: doc.rel,
       parentUrl: (doc.fm.parent_spec && doc.fm.parent_spec.url) || doc.fm.spec_url || null,
-    }));
+    }))
 }
 
 /**
@@ -119,8 +128,8 @@ function discoverModels(workspaceDir) {
  * item shape.
  */
 function scanWorkspaceUpgrades(workspaceDir, catalog) {
-  const models = discoverModels(workspaceDir);
-  const items = [];
+  const models = discoverModels(workspaceDir)
+  const items = []
   const summary = {
     modelsScanned: models.length,
     current: 0,
@@ -128,16 +137,16 @@ function scanWorkspaceUpgrades(workspaceDir, catalog) {
     ahead: 0,
     unlisted: 0,
     unpinned: 0,
-  };
+  }
 
   for (const model of models) {
-    const cls = classifyAgainstCatalog(model.parentUrl, catalog);
+    const cls = classifyAgainstCatalog(model.parentUrl, catalog)
 
-    if (cls.status === 'current') summary.current++;
-    else if (cls.status === 'upgrade-available') summary.upgradeAvailable++;
-    else if (cls.status === 'ahead') summary.ahead++;
-    else if (cls.status === 'unlisted') summary.unlisted++;
-    else if (cls.status === 'unpinned') summary.unpinned++;
+    if (cls.status === 'current') summary.current++
+    else if (cls.status === 'upgrade-available') summary.upgradeAvailable++
+    else if (cls.status === 'ahead') summary.ahead++
+    else if (cls.status === 'unlisted') summary.unlisted++
+    else if (cls.status === 'unpinned') summary.unpinned++
 
     const item = {
       type: 'template-upgrade',
@@ -145,19 +154,18 @@ function scanWorkspaceUpgrades(workspaceDir, catalog) {
       status: cls.status,
       // Canonical lineage vocabulary; `status` keeps the legacy value for one
       // release so existing consumers keep parsing it.
-      updateStatus:
-        cls.status === 'upgrade-available' ? 'update-available' : cls.status,
+      updateStatus: cls.status === 'upgrade-available' ? 'update-available' : cls.status,
       template: cls.template,
       pinned: cls.pinned,
       adopted: cls.adopted,
       url: model.parentUrl,
-    };
-    if (cls.status === 'upgrade-available') item.kind = cls.gap;
-    if (cls.detail) item.detail = cls.detail;
-    items.push(item);
+    }
+    if (cls.status === 'upgrade-available') item.kind = cls.gap
+    if (cls.detail) item.detail = cls.detail
+    items.push(item)
   }
 
-  return { summary, items, models };
+  return { summary, items, models }
 }
 
 /* ── Grouped upgrade plan (distributed-storage S4b, design A14) ─────────────
@@ -173,7 +181,7 @@ function scanWorkspaceUpgrades(workspaceDir, catalog) {
  * (a model added or repinned between planning and applying).
  */
 
-const crypto = require('crypto');
+const crypto = require('crypto')
 
 /** Stable hash of the plan's shape: per unit, the blueprint, the target and every member pin. */
 function hashPlan(units) {
@@ -181,8 +189,8 @@ function hashPlan(units) {
     unit.blueprint,
     unit.adopted,
     unit.members.map((m) => [m.path, m.pinned]),
-  ]);
-  return crypto.createHash('sha256').update(JSON.stringify(shape)).digest('hex');
+  ])
+  return crypto.createHash('sha256').update(JSON.stringify(shape)).digest('hex')
 }
 
 /**
@@ -193,15 +201,15 @@ function hashPlan(units) {
  * moving the whole group to the adopted version.
  */
 function planUpgrade(workspaceDir, catalog) {
-  const models = discoverModels(workspaceDir);
-  const groups = new Map();
+  const models = discoverModels(workspaceDir)
+  const groups = new Map()
   for (const model of models) {
-    const cls = classifyAgainstCatalog(model.parentUrl, catalog);
+    const cls = classifyAgainstCatalog(model.parentUrl, catalog)
     // A unit is the WHOLE bluepriNNt group, not just its stale members: consent
     // to upgrade a bluepriNNt has to cover every model that pins it, and a group
     // that already holds two pins is the skew this plan resolves.
-    if (cls.status !== 'upgrade-available' && cls.status !== 'current') continue;
-    const key = String(cls.template ?? '').toLowerCase();
+    if (cls.status !== 'upgrade-available' && cls.status !== 'current') continue
+    const key = String(cls.template ?? '').toLowerCase()
     const group = groups.get(key) ?? {
       blueprint: cls.template,
       adopted: cls.adopted,
@@ -209,13 +217,17 @@ function planUpgrade(workspaceDir, catalog) {
       members: [],
       pins: new Set(),
       upgradable: 0,
-    };
-    group.members.push({ path: model.rel, pinned: cls.pinned, moves: cls.status === 'upgrade-available' });
-    group.pins.add(cls.pinned);
-    if (cls.status === 'upgrade-available') group.upgradable++;
+    }
+    group.members.push({
+      path: model.rel,
+      pinned: cls.pinned,
+      moves: cls.status === 'upgrade-available',
+    })
+    group.pins.add(cls.pinned)
+    if (cls.status === 'upgrade-available') group.upgradable++
     // The widest gap in the unit drives how loud the plan is.
-    if (cls.status === 'upgrade-available' && cls.gap === 'major') group.gap = cls.gap;
-    groups.set(key, group);
+    if (cls.status === 'upgrade-available' && cls.gap === 'major') group.gap = cls.gap
+    groups.set(key, group)
   }
 
   const units = [...groups.values()]
@@ -238,14 +250,14 @@ function planUpgrade(workspaceDir, catalog) {
         members,
       }
     })
-    .map((unit) => ({ ...unit, planHash: hashPlan([unit]) }));
+    .map((unit) => ({ ...unit, planHash: hashPlan([unit]) }))
 
   return { units, planHash: hashPlan(units) }
 }
 
 /** True when the workspace still matches the plan it was produced from. */
 function isPlanFresh(plan, workspaceDir, catalog) {
-  return planUpgrade(workspaceDir, catalog).planHash === plan.planHash;
+  return planUpgrade(workspaceDir, catalog).planHash === plan.planHash
 }
 
 /**
@@ -269,45 +281,49 @@ function describePlan(plan) {
   return lines.join('\n')
 }
 
-function getArg(flag) {  const idx = process.argv.indexOf(flag);
-  return idx !== -1 && idx + 1 < process.argv.length ? process.argv[idx + 1] : null;
+function getArg(flag) {
+  const idx = process.argv.indexOf(flag)
+  return idx !== -1 && idx + 1 < process.argv.length ? process.argv[idx + 1] : null
 }
 
 function main() {
-  const isJson = process.argv.includes('--json');
+  const isJson = process.argv.includes('--json')
   // `--audit-lineage` is the canonical flag; bare invocation already audits.
-  const workspaceDir = getArg('--workspace-dir');
-  const catalogFile = getArg('--catalog-file');
+  const workspaceDir = getArg('--workspace-dir')
+  const catalogFile = getArg('--catalog-file')
 
   if (!workspaceDir || !catalogFile) {
-    console.error('Usage: node lineage-audit.js --workspace-dir <dir> --catalog-file <catalog.json> [--json] [--plan]');
-    process.exit(2);
+    console.error(
+      'Usage: node lineage-audit.js --workspace-dir <dir> --catalog-file <catalog.json> [--json] [--plan]',
+    )
+    process.exit(2)
   }
 
-  let catalog;
+  let catalog
   try {
-    catalog = JSON.parse(fs.readFileSync(catalogFile, 'utf-8'));
+    catalog = JSON.parse(fs.readFileSync(catalogFile, 'utf-8'))
   } catch (err) {
     if (isJson) {
-      console.log(JSON.stringify({ status: 'ERROR', error: err.message }));
+      console.log(JSON.stringify({ status: 'ERROR', error: err.message }))
     } else {
-      console.error(`lineage-audit: cannot read catalog: ${err.message}`);
+      console.error(`lineage-audit: cannot read catalog: ${err.message}`)
     }
-    process.exit(2);
+    process.exit(2)
   }
 
-  const result = scanWorkspaceUpgrades(workspaceDir, catalog);
+  const result = scanWorkspaceUpgrades(workspaceDir, catalog)
   if (isJson) {
-    console.log(JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2))
   } else {
-    console.log(`Templates scanned: ${result.summary.modelsScanned} model(s)`);
+    console.log(`Templates scanned: ${result.summary.modelsScanned} model(s)`)
     for (const item of result.items) {
-      const arrow = item.status === 'upgrade-available'
-        ? `${item.pinned} -> ${item.adopted} (${item.kind})`
-        : item.status === 'current'
-          ? item.pinned
-          : item.detail || item.status;
-      console.log(`  [${item.status.toUpperCase()}] ${item.name} — ${arrow}`);
+      const arrow =
+        item.status === 'upgrade-available'
+          ? `${item.pinned} -> ${item.adopted} (${item.kind})`
+          : item.status === 'current'
+            ? item.pinned
+            : item.detail || item.status
+      console.log(`  [${item.status.toUpperCase()}] ${item.name} — ${arrow}`)
     }
   }
 
@@ -322,7 +338,7 @@ function main() {
 }
 
 if (require.main === module) {
-  main();
+  main()
 }
 
 module.exports = {
@@ -338,4 +354,4 @@ module.exports = {
   isPlanFresh,
   describePlan,
   main,
-};
+}

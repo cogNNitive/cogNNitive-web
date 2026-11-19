@@ -3975,7 +3975,7 @@ Actionable findings recommend `node skills/nn-sources/scripts/index.js --scan` o
 ## Tier 3 checks (informational — workspace upgrades)
 
 When `--workspace-dir` is provided and the workspace contains Level-3 documents, the upgrade scan
-(`scripts/upgrade-check.js`) fetches the committed Level-2 catalog
+(`scripts/lineage-audit.js`) fetches the committed Level-2 catalog
 (`iNNfo/specs/bluepriNNts/catalog.json`, overridable with `--template-catalog-url`) and classifies
 each document's pinned `parent_spec` against the catalog's adopted version: `current`,
 `upgrade-available` (with major/minor/patch gap), `ahead`, or `unlisted`.
