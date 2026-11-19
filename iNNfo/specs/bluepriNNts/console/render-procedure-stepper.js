@@ -681,7 +681,20 @@
           return
         }
       }
-      runDraft(activeRun, fields)
+      var saved
+      try {
+        saved = runDraft(activeRun, fields)
+      } catch (err) {
+        // The console refuses the proposal (a read-only export, a malformed draft). Say
+        // so here: an exception thrown under a click is invisible otherwise, and the
+        // person is left wondering why nothing happened.
+        if (errorEl) errorEl.textContent = 'The console refused this draft: ' + String(err && err.message ? err.message : err)
+        return
+      }
+      if (!saved) {
+        if (errorEl) errorEl.textContent = 'The console did not accept this draft.'
+        return
+      }
       draftNote = { run: activeRun.id, kind: fields.kind, name: 'e-' + String((activeRun.events || []).length + 1).padStart(3, '0') }
       render()
     }

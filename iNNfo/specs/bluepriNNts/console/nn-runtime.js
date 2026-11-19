@@ -3964,7 +3964,7 @@
         return c
       }
       function anchor(a) {
-        return { elementId: a.elementId, field: a.field }
+        return { elementId: a.elementId, field: a.field, knowledge_id: a.knowledge_id }
       }
       return {
         store: {
@@ -4005,6 +4005,13 @@
               }
             }
             var payload = { kind: p.kind, proposed: p.proposed, comment: p.comment }
+            // A `new` draft names what it creates: review.js cannot look it up in the
+            // model, because the instance does not exist yet.
+            if (p.kind === 'new') {
+              if (p.concept) payload.concept = p.concept
+              if (p.element) payload.element = p.element
+              if (p.element_slug) payload.element_slug = p.element_slug
+            }
             if (p.kind === 'verdict') {
               payload.gate = p.gate
               payload.verdict = p.verdict
@@ -4032,7 +4039,15 @@
               }
             }
             var saved = controller().propose(anchor(p), payload)
-            if (!saved) throw new Error('cannot propose: unknown element "' + p.elementId + '"')
+            if (!saved) {
+              // A `new` draft supplies its own concept and element; anything else targets
+              // an element the console must already hold.
+              throw new Error(
+                p.kind === 'new'
+                  ? 'cannot propose: a new element needs `concept` and `element`'
+                  : 'cannot propose: unknown element "' + p.elementId + '"',
+              )
+            }
             return saved
           },
           remove: function (id) {

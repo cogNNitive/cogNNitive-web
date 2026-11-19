@@ -657,6 +657,29 @@
 
     function saveDraft(anchorData, payload) {
       if (!store) return null
+      // A `new` draft that names its own concept and fields is a whole new instance, not a
+      // field write on an existing element: the procedure runner records its
+      // `Execution Event` this way, and such a target is not in `elementsById` at all.
+      // It supplies everything the draft needs, so it never consults the element index.
+      if (payload.kind === 'new' && typeof payload.concept === 'string' && payload.concept !== '' && typeof payload.element === 'string' && payload.element !== '') {
+        var fresh = {
+          kind: 'new',
+          // The caller owns the address: a `new` draft's target model is whatever the view
+          // is naming (a run id, not the domain), and the element index cannot know it.
+          knowledge_id: anchorData.knowledge_id || anchorData.modelId || meta.modelId,
+          concept: payload.concept,
+          element: payload.element,
+        }
+        if (payload.element_slug) fresh.element_slug = payload.element_slug
+        if (payload.proposed !== undefined) fresh.proposed = payload.proposed
+        if (payload.comment !== undefined && payload.comment !== null) {
+          fresh.comment = String(payload.comment)
+        }
+        var savedFresh = store.addDraft(fresh)
+        showChangeToast()
+        refreshCount()
+        return savedFresh
+      }
       if (anchorData.matrixCell) {
         var matrixDraft = {
           matrix: anchorData.matrix,
