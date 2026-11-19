@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * skills/nn-upgrade/scripts/migrate-domain.js
+ * skills/nn-update/scripts/migrate-domain.js
  *
  * Domain utility CLI for iNNfo domains. There is no in-place migration of an old domain:
  * an old or broken domain is migrated by creating a NEW domain and importing the old one
@@ -18,7 +18,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 
 // Bundled core primitives (scripts/build-preflight-primitives.mjs), so the skill runs
-// from an installed ~/.agents/skills/nn-upgrade without the iNNfo/ source tree.
+// from an installed ~/.agents/skills/nn-update without the iNNfo/ source tree.
 async function loadInnfoCore() {
   return require('./lib/nn-core.generated.cjs')
 }
@@ -112,7 +112,10 @@ async function freezeDomainSlugs(domainDir, options = {}) {
       const entries = fs.readdirSync(d, { withFileTypes: true })
       for (const entry of entries) {
         if (entry.isFile() && entry.name.endsWith('.md')) {
-          if (d === ws && (entry.name.startsWith('domaiNN_') || entry.name.startsWith('workspace_'))) {
+          if (
+            d === ws &&
+            (entry.name.startsWith('domaiNN_') || entry.name.startsWith('workspace_'))
+          ) {
             continue
           }
           markdownFiles.add(path.join(d, entry.name))
@@ -179,7 +182,13 @@ const USAGE =
   'Usage: node migrate-domain.js --domain-dir <dir> (--freeze-slugs [--apply] [--json] | --import-as-source --new-domain-dir <dir> [--name <title>] [--workspace-id <id>])'
 
 /** Every option the CLI accepts; anything else starting with "--" is rejected. */
-const OPTIONS_WITH_VALUE = new Set(['--domain-dir', '--workspace-dir', '--new-domain-dir', '--name', '--workspace-id'])
+const OPTIONS_WITH_VALUE = new Set([
+  '--domain-dir',
+  '--workspace-dir',
+  '--new-domain-dir',
+  '--name',
+  '--workspace-id',
+])
 const OPTIONS_FLAG = new Set(['--freeze-slugs', '--import-as-source', '--json'])
 
 /**

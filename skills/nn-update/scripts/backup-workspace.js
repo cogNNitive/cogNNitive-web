@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * skills/nn-upgrade/scripts/backup-workspace.js
+ * skills/nn-update/scripts/backup-workspace.js
  *
  * Timestamped, full-tree out-of-workspace backup with SHA-256 manifest verification.
  *

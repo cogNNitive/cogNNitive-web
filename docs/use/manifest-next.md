@@ -44,14 +44,6 @@ agent-bootstrap:
       ref: "main"
       commit: "4f06d2e046c36b3c23b37099151ac681f9cc3f8f"
       description: Environment readiness gate (Tier 1/Tier 2/Tier 3) and canonical skill-location reference.
-    - name: nn-upgrade
-      repo: cogNNitive/cogNNitive-web
-      path: skills/nn-upgrade
-      version: "V_0-4-2"
-      ref: "main"
-      commit: "4f06d2e046c36b3c23b37099151ac681f9cc3f8f"
-      requires: [nn-preflight]
-      description: Guided, consent-gated migration of a domaiNN to the latest adopted iNNfo Level-2 blueprints.
     - name: nn-site-generator
       repo: cogNNitive/cogNNitive-web
       path: skills/nn-site-generator

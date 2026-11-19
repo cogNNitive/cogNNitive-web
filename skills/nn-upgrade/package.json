@@ -1,7 +1,0 @@
-{
-  "name": "nn-upgrade-skill",
-  "version": "1.0.0",
-  "private": true,
-  "type": "commonjs",
-  "description": "Deprecated alias; forwards to nn-update."
-}

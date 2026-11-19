@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * skills/nn-upgrade/scripts/backup-workspace.test.js
+ * skills/nn-update/scripts/backup-workspace.test.js
  *
  * Unit tests for backup-workspace.js. Zero external test framework deps.
  */

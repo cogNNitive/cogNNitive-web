@@ -15,7 +15,7 @@ You can upgrade your domaiNN skills, MCP runtime, and bluepriNNts using your AI 
 Paste the following command directly into your agent's chat (**OpenCode Desktop**, **Claude Code**, **Google Antigravity**, **Cursor**, **Codex**):
 
 ```text
-/nn-upgrade
+/nn-update
 ```
 
 Or trigger an explicit update from the public CDN endpoint:
@@ -71,4 +71,4 @@ The Level-2 domain bluepriNNt schemas are published at canonical same-origin URL
 
 ## Offline Resilience
 
-If your network is disconnected or the CDN is unreachable, preflight and lifecycle tools (`nn-preflight`, `nn-upgrade`, `nn-skills-lifecycle`) gracefully fall back to local snapshots and cached manifests without throwing unhandled exceptions.
+If your network is disconnected or the CDN is unreachable, preflight and lifecycle tools (`nn-preflight`, `nn-update`, `nn-skills-lifecycle`) gracefully fall back to local snapshots and cached manifests without throwing unhandled exceptions.

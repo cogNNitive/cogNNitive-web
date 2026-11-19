@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * skills/nn-upgrade/scripts/migrate-domain.test.js
+ * skills/nn-update/scripts/migrate-domain.test.js
  *
  * Test suite for migrate-domain.js: the retired in-place flows are rejected, while
  * --freeze-slugs and --import-as-source keep working.
@@ -20,7 +20,9 @@ const { freezeDomainSlugs } = require('./migrate-domain.js')
 
 async function loadCore() {
   const { pathToFileURL } = require('node:url')
-  return import(pathToFileURL(path.resolve(__dirname, '../../../iNNfo/packages/nn-core/dist/index.js')).href)
+  return import(
+    pathToFileURL(path.resolve(__dirname, '../../../iNNfo/packages/nn-core/dist/index.js')).href
+  )
 }
 
 function runCli(args) {
@@ -91,12 +93,19 @@ async function runTests() {
           `${flags[0]} reports "unknown option", got: ${res.stderr}`,
         )
       }
-      assert.deepStrictEqual(fs.readdirSync(domainDir).sort(), before, 'rejected flags wrote nothing')
+      assert.deepStrictEqual(
+        fs.readdirSync(domainDir).sort(),
+        before,
+        'rejected flags wrote nothing',
+      )
 
       const bare = runCli(['--domain-dir', domainDir])
       assert.notStrictEqual(bare.status, 0, 'no mode flag prints usage and exits non-zero')
       assert.ok(bare.stderr.includes('Usage:'), 'usage names the surviving modes')
-      assert.ok(!/--layout-only|--restore|--plan-hash|--migrate-references/.test(bare.stderr), 'usage names no retired flag')
+      assert.ok(
+        !/--layout-only|--restore|--plan-hash|--migrate-references/.test(bare.stderr),
+        'usage names no retired flag',
+      )
       console.log('✔ retired Flow A flags and --migrate-references are rejected as unknown options')
     }
 
@@ -118,11 +127,29 @@ async function runTests() {
       ])
       assert.strictEqual(res.status, 0, res.stderr)
       assert.ok(fs.existsSync(path.join(newDomainDir, 'domaiNN_NN.md')), 'new domaiNN created')
-      const importedFile = path.join(newDomainDir, 'sources', 'import', 'source-legacy-domain', 'workspace_NN.md')
-      assert.ok(fs.existsSync(importedFile), 'old tree copied under sources/import/<old-domain-folder>')
-      assert.strictEqual(initialLegacySha, sha256File(importedFile), 'imported legacy domain is byte-identical')
-      assert.ok(!fs.existsSync(path.join(newDomainDir, 'sources', 'legacy')), 'no sources/legacy directory')
-      console.log('✔ --import-as-source imports the old tree under sources/import/<old-domain-folder> byte-identically')
+      const importedFile = path.join(
+        newDomainDir,
+        'sources',
+        'import',
+        'source-legacy-domain',
+        'workspace_NN.md',
+      )
+      assert.ok(
+        fs.existsSync(importedFile),
+        'old tree copied under sources/import/<old-domain-folder>',
+      )
+      assert.strictEqual(
+        initialLegacySha,
+        sha256File(importedFile),
+        'imported legacy domain is byte-identical',
+      )
+      assert.ok(
+        !fs.existsSync(path.join(newDomainDir, 'sources', 'legacy')),
+        'no sources/legacy directory',
+      )
+      console.log(
+        '✔ --import-as-source imports the old tree under sources/import/<old-domain-folder> byte-identically',
+      )
 
       // The new domain is exactly the init_domain scaffold (same plan), plus the import.
       const { planDomainScaffold, createFsSourceResolver, resolveCitation } = await loadCore()
@@ -131,19 +158,36 @@ async function runTests() {
         assert.ok(fs.statSync(path.join(newDomainDir, dir)).isDirectory(), `scaffold folder ${dir}`)
       }
       for (const file of plan.files) {
-        assert.strictEqual(fs.readFileSync(path.join(newDomainDir, file.path), 'utf-8'), file.content, `scaffold file ${file.path}`)
+        assert.strictEqual(
+          fs.readFileSync(path.join(newDomainDir, file.path), 'utf-8'),
+          file.content,
+          `scaffold file ${file.path}`,
+        )
       }
       assert.ok(fs.statSync(path.join(newDomainDir, 'changes')).isDirectory(), 'changes/ exists')
-      assert.strictEqual(fs.readFileSync(path.join(newDomainDir, '.gitattributes'), 'utf-8'), '* -text\n')
-      assert.ok(!fs.readFileSync(path.join(newDomainDir, 'domaiNN_NN.md'), 'utf-8').includes('Legacy'), 'no inline legacy manifest')
+      assert.strictEqual(
+        fs.readFileSync(path.join(newDomainDir, '.gitattributes'), 'utf-8'),
+        '* -text\n',
+      )
+      assert.ok(
+        !fs.readFileSync(path.join(newDomainDir, 'domaiNN_NN.md'), 'utf-8').includes('Legacy'),
+        'no inline legacy manifest',
+      )
       const leftovers = fs.readdirSync(newDomainDir).filter((f) => f.endsWith('.tmp'))
       assert.deepStrictEqual(leftovers, [], 'no staging files left behind')
 
       // A sources:: citation into the import resolves like any citation.
       const citation = 'sources/import/source-legacy-domain/workspace_NN.md'
-      const resolved = resolveCitation(citation, 'sources', createFsSourceResolver(newDomainDir), path.join(newDomainDir, 'changes', 'x_changes_NN.md'))
+      const resolved = resolveCitation(
+        citation,
+        'sources',
+        createFsSourceResolver(newDomainDir),
+        path.join(newDomainDir, 'changes', 'x_changes_NN.md'),
+      )
       assert.strictEqual(resolved.exists, true, 'citation into the import resolves')
-      console.log('✔ --import-as-source reuses the init_domain scaffold and citations into the import resolve')
+      console.log(
+        '✔ --import-as-source reuses the init_domain scaffold and citations into the import resolve',
+      )
     }
 
     // 3. freezeDomainSlugs scans and freezes unfrozen Level-3 models
@@ -202,7 +246,9 @@ field:: other
       assert.strictEqual(cliJson.scanned, 1)
       assert.strictEqual(cliJson.modified, 0) // already frozen
 
-      console.log('✔ freezeDomainSlugs routine scans Level-3 models and freezes all unfrozen slugs in place')
+      console.log(
+        '✔ freezeDomainSlugs routine scans Level-3 models and freezes all unfrozen slugs in place',
+      )
     }
 
     // 4. ESM host: skill scripts must still load as CommonJS when the consuming
@@ -212,7 +258,11 @@ field:: other
       const agentsDir = path.join(hostDir, '.agents')
       const skillDest = path.join(agentsDir, 'skills', 'nn-upgrade')
       fs.mkdirSync(agentsDir, { recursive: true })
-      fs.writeFileSync(path.join(agentsDir, 'package.json'), JSON.stringify({ type: 'module' }), 'utf-8')
+      fs.writeFileSync(
+        path.join(agentsDir, 'package.json'),
+        JSON.stringify({ type: 'module' }),
+        'utf-8',
+      )
       fs.cpSync(path.resolve(SCRIPT_DIR, '..'), skillDest, { recursive: true })
 
       const res = spawnSync(
@@ -242,10 +292,20 @@ field:: other
       )
       const res = spawnSync(
         process.execPath,
-        [path.join(installed, 'scripts', 'migrate-domain.js'), '--domain-dir', domainDir, '--freeze-slugs', '--json'],
+        [
+          path.join(installed, 'scripts', 'migrate-domain.js'),
+          '--domain-dir',
+          domainDir,
+          '--freeze-slugs',
+          '--json',
+        ],
         { encoding: 'utf-8' },
       )
-      assert.strictEqual(res.status, 0, `freeze-slugs from an installed skill dir failed: ${res.stderr}`)
+      assert.strictEqual(
+        res.status,
+        0,
+        `freeze-slugs from an installed skill dir failed: ${res.stderr}`,
+      )
       assert.strictEqual(JSON.parse(res.stdout).modified, 1)
       console.log('✔ --freeze-slugs runs from an installed skill dir without the iNNfo/ tree')
     }
