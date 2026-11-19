@@ -256,7 +256,7 @@ field:: other
     {
       const hostDir = path.join(tmpRoot, 'esm-host')
       const agentsDir = path.join(hostDir, '.agents')
-      const skillDest = path.join(agentsDir, 'skills', 'nn-upgrade')
+      const skillDest = path.join(agentsDir, 'skills', 'nn-update')
       fs.mkdirSync(agentsDir, { recursive: true })
       fs.writeFileSync(
         path.join(agentsDir, 'package.json'),
@@ -273,15 +273,15 @@ field:: other
       const output = `${res.stdout || ''}\n${res.stderr || ''}`
       assert.ok(
         !/require is not defined|ERR_REQUIRE_ESM|Cannot use import statement/.test(output),
-        `nn-upgrade scripts must run as CommonJS inside a "type":"module" domaiNN, got: ${output.trim()}`,
+        `nn-update scripts must run as CommonJS inside a "type":"module" domaiNN, got: ${output.trim()}`,
       )
-      console.log('✔ nn-upgrade scripts run as CommonJS inside a "type":"module" domaiNN')
+      console.log('✔ nn-update scripts run as CommonJS inside a "type":"module" domaiNN')
     }
 
     // 5. Shipped layout: the skill dir copied outside the repo has no iNNfo/ tree, so
     //     --freeze-slugs must work from its own bundled core.
     {
-      const installed = path.join(tmpRoot, 'installed', '.agents', 'skills', 'nn-upgrade')
+      const installed = path.join(tmpRoot, 'installed', '.agents', 'skills', 'nn-update')
       fs.cpSync(path.resolve(SCRIPT_DIR, '..'), installed, { recursive: true })
       const domainDir = path.join(tmpRoot, 'standalone-domain')
       fs.mkdirSync(path.join(domainDir, 'kNNowledge'), { recursive: true })

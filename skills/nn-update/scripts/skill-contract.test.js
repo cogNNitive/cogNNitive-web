@@ -49,7 +49,7 @@ function run() {
   }
   console.log('✔ SKILL.md keeps the glossary (dry run, planHash, rehydration, backup)')
 
-  console.log('All nn-upgrade SKILL.md contract tests passed successfully!\n')
+  console.log('All nn-update SKILL.md contract tests passed successfully!\n')
 }
 
 run()

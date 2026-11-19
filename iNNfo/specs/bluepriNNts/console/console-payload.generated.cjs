@@ -10078,7 +10078,7 @@ function versionSkew(models) {
     findings.push(
       layoutDiagnostic(
         "BLUEPRINT_VERSION_SKEW",
-        `bluepriNNt "${blueprint}"${named} - pinned at ${versions.length} versions across ${members.length} models: ${listed}; a domaiNN uses one version per bluepriNNt, run nn-upgrade`,
+        `bluepriNNt "${blueprint}"${named} - pinned at ${versions.length} versions across ${members.length} models: ${listed}; a domaiNN uses one version per bluepriNNt, run nn-update`,
         members.map((m) => m.path).sort(byText),
         {
           meta: {
@@ -13368,7 +13368,7 @@ function buildConsolePayload(options) {
   if (unfrozen.length > 0) {
     const shown = unfrozen.slice(0, 3).join("; ");
     throw new Error(
-      `UNFROZEN_MODEL: model "${modelId}" has ${unfrozen.length} element(s) without a frozen slug (${shown}${unfrozen.length > 3 ? "; \u2026" : ""}). Freeze the model's slugs first (freeze_slugs, or node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <dir> --freeze-slugs).`
+      `UNFROZEN_MODEL: model "${modelId}" has ${unfrozen.length} element(s) without a frozen slug (${shown}${unfrozen.length > 3 ? "; \u2026" : ""}). Freeze the model's slugs first (freeze_slugs, or node skills/nn-update/scripts/migrate-domain.js --domain-dir <dir> --freeze-slugs).`
     );
   }
   let citationsResolved = false;

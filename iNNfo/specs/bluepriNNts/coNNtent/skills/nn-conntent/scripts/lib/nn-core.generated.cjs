@@ -12482,7 +12482,7 @@ function versionSkew(models) {
       return `${v.version} (${v.count}: ${preview}${v.paths.length > MESSAGE_PATHS ? "..." : ""})`;
     }).join(", ");
     const named = concepts.length > 0 ? ` (concepts: ${concepts.join(", ")})` : "";
-    findings.push(layoutDiagnostic("BLUEPRINT_VERSION_SKEW", `bluepriNNt "${blueprint}"${named} - pinned at ${versions.length} versions across ${members.length} models: ${listed}; a domaiNN uses one version per bluepriNNt, run nn-upgrade`, members.map((m) => m.path).sort(byText), {
+    findings.push(layoutDiagnostic("BLUEPRINT_VERSION_SKEW", `bluepriNNt "${blueprint}"${named} - pinned at ${versions.length} versions across ${members.length} models: ${listed}; a domaiNN uses one version per bluepriNNt, run nn-update`, members.map((m) => m.path).sort(byText), {
       meta: {
         blueprint,
         concepts,
