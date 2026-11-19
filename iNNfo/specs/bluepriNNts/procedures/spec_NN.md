@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
-blueprint_version: "V_0-6-0"
+blueprint_version: "V_0-6-1"
 title: "Procedures App"
 relationship_types:
   hierarchy:
@@ -128,7 +128,7 @@ target_concepts:: [Work]
 concept:: Work
 type:: reference
 target_concepts:: [Work]
-description:: Step or steps that may follow. A decision step lists several targets as an inline list (next:: [ [[approve]], [[decline]] ]); the run records the one it took.
+description:: Step or steps that may follow. A decision step lists several targets as an inline list (next:: [@approve, @decline], addresses like every reference field); the run records the one it took.
 
 ## NN Field Definition: condition
 concept:: Work

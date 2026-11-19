@@ -1,7 +1,7 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-6-0"
+  name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 knowledge_version: "undefined"
 title: "Ghostbusters Inc. Standard Containment Procedure Model"

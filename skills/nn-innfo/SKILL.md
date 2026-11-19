@@ -1,7 +1,7 @@
 ---
 name: nn-innfo
-version: "V_0-5-14"
-last_updated: 2026-11-03
+version: "V_0-6-0"
+last_updated: 2026-11-19
 metadata:
   source_type: "original"
   mcp: "nn-mcp"
@@ -882,18 +882,46 @@ The `scope::` element field of the procedures bluepriNNt (for example `scope:: i
 is unrelated to the `scope: true` frontmatter flag that marks a scope document and to
 `fork_of.scope`, the scope path of a forked original. The names coincide; the meanings do not.
 
-### 16-bis.3 Step order (FSM)
+### 16-bis.3 Run with the runner tools
 
-Read the procedure's step `Work` elements. The start step is the one no other
-step's `next::` reference targets; follow each `next::` to build the ordered
-list. If a `next::` targets a step that does not exist, stop and report the
-broken reference.
+A run is recorded by the MCP runner, never walked by hand. Do not derive the step
+order, the current step or the next step yourself: the runner folds them from the
+run's recorded events.
+
+1. **Start.** Call `procedure_start` with the procedure (an id visible from the
+   scope or its `*_procedures_NN.md` path), its `params` (the procedure's `slots`)
+   and the `actor`. A missing required slot is refused (`MISSING_REQUIRED_SLOT`):
+   ask the user for it. The run is created under `executions/<run>/` and pins
+   the procedure's `knowledge_version`.
+2. **Read the state.** Call `procedure_state` before every step. It returns the
+   current step, what it needs (executor, decision question, command with slots
+   substituted, input and output artifacts), the allowed transitions and the
+   `procedure_record` actions allowed now. It writes nothing.
+3. **Record each fact as it happens** with `procedure_record`, one call per fact:
+   `start` the step, do the work, record `input` values read, `artifact` facts
+   (`produced`, `validated`, `rejected`), then `complete` with the `outcome`
+   (a decision step's answer). When several transitions are allowed, the runner
+   refuses `AMBIGUOUS_TRANSITION` and lists them: ask the user and pass `next`.
+   Use `wait` when the step waits on a person, `fail` when it fails, `pause`/`resume`
+   when the user stops and returns, `cancel` to abandon the run.
+4. **Engine steps** (`executor: engine`) are run with `procedure_record action=run`,
+   which executes the step's `command` and records its exit code and file revisions.
+   Run one only after the user confirms the command.
+5. **Finish.** When the state reports `canComplete`, call `procedure_record`
+   `finish`; the terminal event closes the run (`close_model`), after which the run
+   is citable evidence (`<run>@<event>`).
+
+A refusal writes nothing; read its code, fix the cause and call again. If the
+procedure changed after the run started, the run is `drifted`: tell the user and
+continue only after `rebase`. Graph diagnostics in the state (a missing slug, an
+unknown `next` target, a cycle) are reported to the user, never patched around.
 
 ### 16-bis.4 Output routing
 
 Write each step's output to the destination the procedure declares (write-once
-under `artifacts/`); when none is declared, ask the user before writing. Append
-`produce_artifact` changes that record the artifacts the run produced.
+under `artifacts/`); when none is declared, ask the user before writing. Record it
+as an `artifact` fact on the run, and append the `produce_artifact` change that
+records the artifact in the domaiNN.
 
 ### 16-bis.5 Delegation
 
