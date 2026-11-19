@@ -6109,6 +6109,166 @@ details.collapse summary {
     .dag-node.selected rect { stroke-dasharray: 5 3; }
     .dag-node.current .node-title { fill: var(--primary); font-weight: 700; }
 
+    /* A step the pending drafts move: the applied state stays solid, the projection is drawn
+       as an outline so the two never read as the same thing. */
+    .dag-node.projected rect {
+      stroke-dasharray: 6 4;
+      stroke: var(--warning);
+      fill: var(--warning-light);
+    }
+    .dag-node.projected .node-sub { fill: var(--warning); font-weight: 700; }
+
+    /* The pending change on a step card: current value, then the value it would take */
+    .proc-projection {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px dashed var(--warning);
+      background: var(--warning-light);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .proc-projection-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--warning);
+    }
+    .proc-projection-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.84rem;
+      font-weight: 600;
+    }
+    .proc-projection-from { color: var(--muted); }
+    .proc-projection-arrow { color: var(--warning); }
+    .proc-projection-to { color: var(--text); }
+    .proc-projection-facts {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      color: var(--text);
+    }
+    .proc-projection-note {
+      font-size: 0.74rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .proc-run-projected {
+      color: var(--warning);
+      font-weight: 600;
+    }
+
+    /* Artifact chips: a file the step produces or consumes, its state, and the way in */
+    .proc-artifact-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .proc-artifact-row-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+    .proc-artifact-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .proc-artifact {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      font-size: 0.76rem;
+    }
+    .proc-artifact[data-status='validated'] { border-color: var(--success); }
+    .proc-artifact[data-status='rejected'] { border-color: var(--danger); }
+    .proc-artifact[data-status='stale'] { border-color: var(--warning); }
+    .proc-artifact-name { font-weight: 600; }
+    .proc-artifact-state { color: var(--muted); font-family: var(--mono); font-size: 0.72rem; }
+    .proc-artifact-pending { color: var(--muted); font-size: 0.72rem; font-style: italic; }
+    button.proc-artifact-producer,
+    button.proc-artifact-open {
+      appearance: none;
+      border: 0;
+      background: transparent;
+      color: var(--primary);
+      font: inherit;
+      font-size: 0.72rem;
+      padding: 0;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    button.proc-artifact-producer:hover,
+    button.proc-artifact-open:hover { color: var(--primary-hover); }
+    button.proc-artifact-open:disabled { color: var(--muted); cursor: default; text-decoration: none; }
+    .proc-run-artifacts { display: flex; flex-direction: column; gap: 4px; }
+    .proc-run-artifacts-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+    }
+
+    /* The opened artifact: read-only, and it says which file it came from */
+    .proc-artifact-view {
+      margin-top: 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+    }
+    .proc-artifact-view-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+    }
+    .proc-artifact-view-title { font-weight: 700; font-size: 0.82rem; }
+    button.proc-artifact-view-close {
+      appearance: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-size: 0.74rem;
+      padding: 3px 10px;
+      cursor: pointer;
+    }
+    .proc-artifact-view-path {
+      padding: 6px 14px 0;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .proc-artifact-view-body {
+      margin: 0;
+      padding: 10px 14px 14px;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      max-height: 420px;
+      overflow: auto;
+    }
+
     /* Live Execution Log */
     .exec-log-view {
       padding: 12px;

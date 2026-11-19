@@ -866,6 +866,39 @@ async function renderTree(models, root, consoles, out) {
   }
 }
 
+/**
+ * The body of the `nn-procedure-core` slot, or '' when the payload helper carries no fold.
+ *
+ * It ships the real `foldRun` as source rather than re-implementing it, so a console that
+ * projects a run answers with the same function the exporter used. The slot is inert data:
+ * `nnProcedureCore.use(...)` reads it at boot, and a view that never asks for a projection
+ * costs nothing.
+ */
+
+/**
+ * The body of the `nn-procedure-core` slot, or '' when the fold cannot be bundled.
+ *
+ * `foldRun` is not self-contained: `TERMINAL`, `ARTIFACT_STATUS`, `reachable` and `guardOf`
+ * live in the same module, so shipping the function's source alone would throw on the first
+ * artifact event. esbuild bundles the module instead, and the slot carries that bundle.
+ *
+ * Bundled once per process: `injectSlots` runs several times (the unchanged-console check
+ * calls it again with a different timestamp), and re-bundling on every call would rebuild
+ * the same bytes.
+ */
+let foldSlotCache = null
+async function loadProcedureFoldSlot() {
+  if (foldSlotCache !== null) return foldSlotCache
+  try {
+    const { procedureFoldBrowserSource } = await import('./lib/procedure-fold-browser.js')
+    foldSlotCache = await procedureFoldBrowserSource(repoRoot)
+  } catch {
+    // No bundler available: the console ships without a projection rather than a broken one.
+    foldSlotCache = ''
+  }
+  return foldSlotCache
+}
+
 function injectSlots(shell, config, schema, model, viewData) {
   const serialize = payloadHelper?.serializeConsoleSlot
     ? (json) => payloadHelper.serializeConsoleSlot(json)
@@ -882,6 +915,24 @@ function injectSlots(shell, config, schema, model, viewData) {
     /<script type="[^"]*" id="nn-model">[\s\S]*?<\/script>/,
     () => modelSlot,
   )
+  // The procedure fold, for a console that projects a run from drafts it has not applied.
+  // The implementation is nn-core's own (through the payload helper the exporter already
+  // loads), so the browser folds exactly what the exporter folded. It stays inert unless a
+  // view calls `nnProcedureCore.use(...)`, and a console that ships without it degrades to
+  // the exported state.
+  const foldSource = foldSlotCache || ''
+  if (foldSource) {
+    // The shell ships the slot empty; fill it in place so no second, empty one survives.
+    const foldSlot = new RegExp(`(<script type="application/json" id="nn-procedure-core">)[\\s\\S]*?(</script>)`)
+    if (foldSlot.test(html)) {
+      html = html.replace(foldSlot, (_m, open, close) => `${open}\n${foldSource}\n${close}`)
+    } else {
+      html = html.replace(
+        modelSlot,
+        () => `${modelSlot}\n    <script type="application/json" id="nn-procedure-core">\n${foldSource}\n</script>`,
+      )
+    }
+  }
   if (!html.includes('<script type="application/json" id="nn-drafts">')) {
     html = html.replace(
       modelSlot,
@@ -2522,6 +2573,8 @@ export async function writeConsole(opts = {}) {
   }
 
   const outDirAbs = familyDir ? join(root, familyDir) : dirname(join(root, relativePath))
+  // Bundle the fold once, before any render needs it; `buildHtml` runs several times.
+  await loadProcedureFoldSlot()
   const buildHtml = (generated) => {
     domainPayload.model.meta.generated = generated
     let rendered = renderConsole(resolvedShell, null, config, domainPayload, outDirAbs, root)

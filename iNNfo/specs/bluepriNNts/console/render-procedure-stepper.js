@@ -131,6 +131,53 @@
       return entry && entry.graph && entry.graph.steps ? entry.graph.steps : {}
     }
 
+    // ---- Pending drafts of a run, as events the fold can consume ----
+    //
+    // A draft the console holds is not applied, but it is a fact the person recorded. The
+    // projection answers "what would this run look like" by folding the recorded events plus
+    // these pending ones. It never decides what a draft means: the draft already says it, and
+    // the fold reads it exactly as it reads a recorded event.
+    var PENDING_EVENT_CONCEPT = 'Execution Event'
+
+    function pendingEventsOf(run) {
+      if (!store || !run) return []
+      var list = store.drafts()
+      var out = []
+      ;(Array.isArray(list) ? list : []).forEach(function (d) {
+        if (!d || d.concept !== PENDING_EVENT_CONCEPT) return
+        if (String(d.knowledge_id) !== String(run.id)) return
+        var fields = d.proposed
+        if (typeof fields === 'string') {
+          try {
+            fields = JSON.parse(fields)
+          } catch {
+            return
+          }
+        }
+        if (!fields || typeof fields !== 'object' || !fields.kind) return
+        out.push(fields)
+      })
+      return out
+    }
+
+    /** The state this run would reach with its pending drafts applied, or null. */
+    function projectedStateOf(run) {
+      var core = GLOBAL.nnProcedureCore
+      if (!core || typeof core.stateOf !== 'function' || !core.available()) return null
+      if (!run || !active || !active.graph) return null
+      var pending = pendingEventsOf(run)
+      if (!pending.length) return null
+      var recorded = Array.isArray(run.events) ? run.events : []
+      try {
+        return core.stateOf(active.graph, recorded.concat(pending), {
+          defRev: run.defRev,
+          lockFree: true,
+        })
+      } catch {
+        return null
+      }
+    }
+
     function stepName(slug) {
       var s = stepsOf(active)[slug]
       return s ? s.name || slug : slug
@@ -385,7 +432,15 @@
       return st ? st.status : 'pending'
     }
 
-    function renderGraph(host) {
+    // The same step under the pending drafts. A step whose status differs is the one the
+    // hold moves, and the graph marks it apart from everything that is already applied.
+    function projectedStatus(slug, projection) {
+      if (!projection || !projection.steps || !projection.steps[slug]) return null
+      var next = projection.steps[slug].status
+      return next === stepStatus(slug) ? null : next
+    }
+
+    function renderGraph(host, projection) {
       var graph = active.graph
       var svgNS = 'http://www.w3.org/2000/svg'
       var nodeW = 200
@@ -436,13 +491,20 @@
         var step = graph.steps[slug]
         var p = pos[slug]
         var status = stepStatus(slug)
+        var ahead = projectedStatus(slug, projection)
         var g = document.createElementNS(svgNS, 'g')
         g.setAttribute(
           'class',
-          'dag-node ' + status + (step.stepType === 'decision' ? ' decision' : '') + (slug === current ? ' current' : '') + (slug === selectedStep ? ' selected' : ''),
+          'dag-node ' +
+            status +
+            (step.stepType === 'decision' ? ' decision' : '') +
+            (slug === current ? ' current' : '') +
+            (slug === selectedStep ? ' selected' : '') +
+            (ahead ? ' projected' : ''),
         )
         g.setAttribute('data-step', slug)
         g.setAttribute('data-status', status)
+        if (ahead) g.setAttribute('data-projected-status', ahead)
         g.setAttribute('data-layer', String(p.layer))
         g.addEventListener('click', function () {
           selectedStep = slug
@@ -465,7 +527,11 @@
         sub.setAttribute('x', p.x + 30)
         sub.setAttribute('y', p.y + 20)
         sub.setAttribute('class', 'node-sub')
-        sub.textContent = (step.stepType || 'task').toUpperCase() + (step.executor ? ' · ' + step.executor : '') + (status !== 'definition' ? ' · ' + status : '')
+        sub.textContent =
+          (step.stepType || 'task').toUpperCase() +
+          (step.executor ? ' · ' + step.executor : '') +
+          (status !== 'definition' ? ' · ' + status : '') +
+          (ahead ? ' → ' + ahead : '')
         g.appendChild(sub)
         var title = document.createElementNS(svgNS, 'text')
         title.setAttribute('x', p.x + 30)
@@ -495,14 +561,182 @@
       return guard.text
     }
 
-    function artifactLine(slug) {
-      var def = active.graph.artifacts[slug]
-      var name = def ? def.name : slug
+    /**
+     * One artifact as a chip: its name, the state the fold gave it, and the file it lives in.
+     * The chip is what a person can act on — the artifact is a file, not a model element, so
+     * the useful affordances are "which step produced it" and "open the file".
+     */
+    function artifactChip(slug) {
+      var def = active.graph.artifacts[slug] || {}
       var st = activeRun && activeRun.state ? activeRun.state.artifacts[slug] : null
-      return name + (st ? ': ' + st.status + (st.rev ? ' (rev ' + st.rev + ')' : '') : '')
+      var chip = make('div', 'proc-artifact')
+      chip.setAttribute('data-proc-artifact', slug)
+      if (st) chip.setAttribute('data-status', st.status)
+      chip.appendChild(make('span', 'proc-artifact-name', def.name || slug))
+
+      var producer = (def.producers || [])[0] || (st && st.step) || null
+      if (producer && stepsOf(active)[producer]) {
+        var jump = make('button', 'proc-artifact-producer', 'produced by ' + stepName(producer))
+        jump.setAttribute('type', 'button')
+        jump.addEventListener('click', function () {
+          selectedStep = producer
+          render()
+        })
+        chip.appendChild(jump)
+      }
+      if (st) {
+        chip.appendChild(
+          make('span', 'proc-artifact-state', st.status + (st.rev ? ' · rev ' + st.rev : '')),
+        )
+      }
+      var path = verifyPathOf(def)
+      // An artifact the run has not produced yet has no file to open: offering one invites a
+      // click that can only fail. The name and the state already say it is still expected.
+      var exists = st && st.status !== 'expected' && st.status !== 'not_required'
+      if (path && exists) {
+        var open = make('button', 'proc-artifact-open', 'Open ' + path)
+        open.setAttribute('type', 'button')
+        open.setAttribute('title', 'Open ' + path + ' from the domain folder')
+        open.addEventListener('click', function () {
+          openArtifactFile(path, open)
+        })
+        chip.appendChild(open)
+      } else if (path) {
+        chip.appendChild(make('span', 'proc-artifact-pending', 'not produced yet'))
+      }
+      return chip
     }
 
-    function renderStepCard(host) {
+    /** The file an artifact names, when its `verify` points at one. */
+    function verifyPathOf(def) {
+      if (!def || typeof def.verify !== 'string') return ''
+      var m = /^file:\s*(.+)$/.exec(def.verify.trim())
+      return m ? m[1].trim() : ''
+    }
+
+    /**
+     * Opens the artifact's file. The console is static HTML, so it cannot read a local path on
+     * its own: it opens the domain folder once through the same picker the changeset writer
+     * uses, then reads and shows that one file. Nothing is written, and a refused permission
+     * leaves the chip saying so.
+     */
+    function openArtifactFile(path, button) {
+      // The page this view is mounted in owns the picker, not whatever global the module was
+      // first loaded under: a view can be mounted into a different document.
+      var host = (document && document.defaultView) || GLOBAL
+      var fsa = host.nnFsa
+      var rt = host.nnConsole
+      var writer = null
+      if (fsa && typeof fsa.createWriter === 'function') {
+        writer = fsa.createWriter({ win: host })
+      } else if (rt && typeof rt.fsaWriter === 'function') {
+        writer = rt.fsaWriter()
+      }
+      if (!writer || typeof writer.connect !== 'function') {
+        button.textContent = 'Open ' + path + ' — folder access is not available in this browser'
+        button.disabled = true
+        return
+      }
+      button.disabled = true
+      button.textContent = 'Opening ' + path + '…'
+      writer
+        .connect(meta.domainId)
+        .then(function (res) {
+          if (!res || !res.ok) {
+            button.textContent = 'Open ' + path + ' — ' + ((res && res.reason) || 'failed')
+            button.disabled = false
+            return
+          }
+          return readDomainFile(res.handle, path).then(function (text) {
+            // The chip already knows which artifact this is; deriving it from the file name
+            // would guess (a file `draft.md` can back an artifact named `draft-doc`).
+            showArtifact(defOfArtifact(button) || null, path, text)
+            button.textContent = 'Open ' + path
+            button.disabled = false
+          })
+        })
+        .catch(function () {
+          button.textContent = 'Open ' + path + ' — could not read it'
+          button.disabled = false
+        })
+    }
+
+    /** The artifact definition the chip that owns this button was built for. */
+    function defOfArtifact(button) {
+      var chip = button.parentNode
+      while (chip && chip.getAttribute && !chip.getAttribute('data-proc-artifact')) chip = chip.parentNode
+      var slug = chip && chip.getAttribute('data-proc-artifact')
+      return slug && active.graph.artifacts ? active.graph.artifacts[slug] : null
+    }
+
+    /** Reads one file under the connected domain folder, by its `/`-separated path. */
+    function readDomainFile(handle, path) {
+      var parts = String(path)
+        .split('/')
+        .filter(function (p) {
+          return p && p !== '.'
+        })
+      var name = parts.pop()
+      // The chain must thread the resolved directory through, not close over a mutated var:
+      // a `var` in a `.then` callback reads its final value, so every hop would look at the
+      // last path segment.
+      var dir = parts.reduce(function (p, segment) {
+        return p.then(function (d) {
+          return d.getDirectoryHandle(segment)
+        })
+      }, Promise.resolve(handle))
+      return dir
+        .then(function (d) {
+          return d.getFileHandle(name)
+        })
+        .then(function (f) {
+          return f.getFile()
+        })
+        .then(function (file) {
+          return file.text()
+        })
+    }
+
+    /** Shows the file's content in a panel inside the view: it reads, it never writes. */
+    function showArtifact(def, path, text) {
+      var host = container.querySelector('.proc-artifact-view')
+      if (!host) {
+        host = make('div', 'proc-artifact-view')
+        root.appendChild(host)
+      }
+      host.innerHTML = ''
+      var head = make('div', 'proc-artifact-view-head')
+      head.appendChild(make('span', 'proc-artifact-view-title', (def && def.name) || path))
+      var close = make('button', 'proc-artifact-view-close', 'Close')
+      close.setAttribute('type', 'button')
+      close.addEventListener('click', function () {
+        host.remove()
+      })
+      head.appendChild(close)
+      host.appendChild(head)
+      host.appendChild(make('div', 'proc-artifact-view-path', path))
+      var body = make('pre', 'proc-artifact-view-body', text === '' ? '(empty file)' : text)
+      host.appendChild(body)
+    }
+
+    /**
+     * A labeled row of artifact chips. A step with no artifacts prints nothing, so the card
+     * never shows an empty "Inputs:" line that reads like a missing value.
+     */
+    function renderArtifactRow(host, label, slugs) {
+      if (!Array.isArray(slugs) || !slugs.length) return
+      var row = make('div', 'proc-artifact-row')
+      row.setAttribute('data-proc-artifact-row', label.toLowerCase())
+      row.appendChild(make('div', 'proc-artifact-row-label', label))
+      var list = make('div', 'proc-artifact-list')
+      slugs.forEach(function (slug) {
+        list.appendChild(artifactChip(slug))
+      })
+      row.appendChild(list)
+      host.appendChild(row)
+    }
+
+    function renderStepCard(host, projection) {
       var graph = active.graph
       var slug = selectedStep || (activeRun && activeRun.state && activeRun.state.currentStep) || graph.start || Object.keys(graph.steps)[0]
       var col = make('div', 'exec-active-col')
@@ -541,8 +775,8 @@
       fact('Decision', step.decision)
       fact('Command', step.command)
       fact('Produces', step.produces)
-      fact('Inputs', step.inputs.map(artifactLine).join(', '))
-      fact('Outputs', step.outputs.map(artifactLine).join(', '))
+      renderArtifactRow(facts, 'Inputs', step.inputs)
+      renderArtifactRow(facts, 'Outputs', step.outputs)
       if (st) {
         fact('Attempt', st.attempt ? String(st.attempt) : '')
         fact('Waiting on', st.waitingOn)
@@ -550,6 +784,7 @@
         if (st.outcome || st.next) fact('Outcome', (st.outcome || '—') + (st.next ? ' → ' + stepName(st.next) : ''))
       }
       if (facts.children.length) card.appendChild(facts)
+      renderProjection(card, slug, projection)
       if (step.next.length > 1) {
         var branches = make('div', 'branch-outcomes')
         step.next.forEach(function (t) {
@@ -568,6 +803,56 @@
         card.appendChild(raciBox)
       }
       col.appendChild(card)
+    }
+
+    /**
+     * The pending change on this step, shown the way every other console view shows one:
+     * the value it has now, then the value it would have. A step with nothing pending on it
+     * prints nothing, so the card never claims a change that is not queued.
+     */
+    function renderProjection(card, slug, projection) {
+      if (!projection) return
+      var now = activeRun && activeRun.state ? activeRun.state.steps[slug] : null
+      var next = projection.steps ? projection.steps[slug] : null
+      if (!next) return
+      var from = now ? now.status : 'pending'
+      var to = next.status
+      if (from === to) return
+
+      var box = make('div', 'proc-projection')
+      box.setAttribute('data-proc-projection', slug)
+      var head = make('div', 'proc-projection-title', 'Pending change')
+      box.appendChild(head)
+      var row = make('div', 'proc-projection-row')
+      row.appendChild(make('span', 'proc-projection-from', from))
+      row.appendChild(make('span', 'proc-projection-arrow', '→'))
+      row.appendChild(make('span', 'proc-projection-to', to))
+      box.appendChild(row)
+      // Every fact the pending events assert, listed exactly as the event carries it.
+      var facts = []
+      pendingEventsOf(activeRun).forEach(function (e) {
+        if (e.step !== slug) return
+        var bits = [e.kind]
+        ;['outcome', 'next', 'value', 'field'].forEach(function (k) {
+          if (e[k] !== undefined && e[k] !== '') bits.push(k + ': ' + e[k])
+        })
+        facts.push(bits.join(' · '))
+      })
+      if (facts.length) {
+        var list = make('div', 'proc-projection-facts')
+        facts.forEach(function (f) {
+          list.appendChild(make('div', 'proc-projection-fact', f))
+        })
+        box.appendChild(list)
+      }
+      box.appendChild(
+        make(
+          'div',
+          'proc-projection-note',
+          'Not applied yet: this view shows the run with your pending drafts. The changeset applies them.',
+        ),
+      )
+      card.appendChild(box)
     }
 
     function rolesForStep(workName) {
@@ -751,7 +1036,7 @@
     }
 
     // ---- Run panel ----
-    function renderRunPanel(host) {
+    function renderRunPanel(host, projection) {
       var col = make('div', 'exec-log-col')
       host.appendChild(col)
       var panel = make('div', 'proc-run-state')
@@ -768,6 +1053,11 @@
         return
       }
       panel.appendChild(make('div', 'proc-run-status', 'Status: ' + state.status))
+      if (projection && projection.status !== state.status) {
+        var moved = make('div', 'proc-run-projected', 'With pending drafts: ' + projection.status)
+        moved.setAttribute('data-proc-projected-status', projection.status)
+        panel.appendChild(moved)
+      }
       panel.appendChild(make('div', 'proc-run-current', 'Current step: ' + (state.currentStep ? stepName(state.currentStep) : 'none')))
       panel.appendChild(make('div', 'proc-run-path', 'Path: ' + state.path.map(stepName).join(' → ')))
       if (state.blockedBy) panel.appendChild(make('div', 'proc-run-blocked', 'Blocked: ' + state.blockedBy))
@@ -784,7 +1074,9 @@
       }
       if (state.stale.length) panel.appendChild(make('div', 'proc-run-stale', 'Stale artifacts: ' + state.stale.join(', ')))
       if (state.reopened.length) panel.appendChild(make('div', 'proc-run-reopened', 'Reopened steps: ' + state.reopened.map(stepName).join(', ')))
-      if (state.allowedNext.length) {
+      // "Allowed next" is what the step's guards permit, which is meaningless when the fold
+      // says the run cannot advance. A blocked step would read as if its branches were open.
+      if (state.allowedNext.length && !state.blockedBy && !state.drift && !TERMINAL_RUN[state.status]) {
         panel.appendChild(
           make(
             'div',
@@ -799,7 +1091,16 @@
         )
       }
       var artifactSlugs = Object.keys(state.artifacts)
-      if (artifactSlugs.length) panel.appendChild(make('div', 'proc-run-artifacts', 'Artifacts: ' + artifactSlugs.map(artifactLine).join(', ')))
+      if (artifactSlugs.length) {
+        var artBox = make('div', 'proc-run-artifacts')
+        artBox.appendChild(make('div', 'proc-run-artifacts-label', 'Artifacts'))
+        var artList = make('div', 'proc-artifact-list')
+        artifactSlugs.forEach(function (slug) {
+          artList.appendChild(artifactChip(slug))
+        })
+        artBox.appendChild(artList)
+        panel.appendChild(artBox)
+      }
       if (!activeRun.closed && !TERMINAL_RUN[state.status]) {
         var ref = JSON.stringify({ run: activeRun.id })
         panel.appendChild(
@@ -854,9 +1155,11 @@
       }
       var ws = make('div', 'exec-workspace')
       body.appendChild(ws)
-      renderGraph(ws)
-      renderStepCard(ws)
-      renderRunPanel(ws)
+      // One projection per render: the graph, the step card and the panel must agree.
+      var projection = projectedStateOf(activeRun)
+      renderGraph(ws, projection)
+      renderStepCard(ws, projection)
+      renderRunPanel(ws, projection)
     }
 
     selectEntry(active)

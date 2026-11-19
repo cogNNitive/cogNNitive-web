@@ -7473,6 +7473,11 @@
     var slots = parseSlots(slotText(active, 'nn-schema'), modelText)
     var viewData = parseViewData(slotText(active, 'nn-view-data'))
     var savedDrafts = parseDraftsSlot(slotText(active, 'nn-drafts'))
+    // Wire the procedure fold when the export shipped one, so a view can project a run from
+    // the drafts it holds. Absent slot: views fall back to the exported state.
+    if (typeof nnProcedureCore !== 'undefined' && nnProcedureCore && typeof nnProcedureCore.useFromDocument === 'function') {
+      nnProcedureCore.useFromDocument(active)
+    }
     var uiState = isObject(savedDrafts.uiState) ? savedDrafts.uiState : null
     var schema = slots.schema
     var model = slots.model
