@@ -983,13 +983,13 @@ var require_Collection = __commonJS({
 var require_stringifyComment = __commonJS({
   "node_modules/yaml/dist/stringify/stringifyComment.js"(exports2) {
     "use strict";
-    var stringifyComment = (str2) => str2.replace(/^(?!$)(?: $)?/gm, "#");
+    var stringifyComment = (str4) => str4.replace(/^(?!$)(?: $)?/gm, "#");
     function indentComment(comment, indent) {
       if (/^\n+$/.test(comment))
         return comment.substring(1);
       return indent ? comment.replace(/^(?! *$)/gm, indent) : comment;
     }
-    var lineComment = (str2, indent, comment) => str2.endsWith("\n") ? indentComment(comment, indent) : comment.includes("\n") ? "\n" + indentComment(comment, indent) : (str2.endsWith(" ") ? "" : " ") + comment;
+    var lineComment = (str4, indent, comment) => str4.endsWith("\n") ? indentComment(comment, indent) : comment.includes("\n") ? "\n" + indentComment(comment, indent) : (str4.endsWith(" ") ? "" : " ") + comment;
     exports2.indentComment = indentComment;
     exports2.lineComment = lineComment;
     exports2.stringifyComment = stringifyComment;
@@ -1143,16 +1143,16 @@ var require_stringifyString = __commonJS({
       lineWidth: ctx.options.lineWidth,
       minContentWidth: ctx.options.minContentWidth
     });
-    var containsDocumentMarker = (str2) => /^(%|---|\.\.\.)/m.test(str2);
-    function lineLengthOverLimit(str2, lineWidth, indentLength) {
+    var containsDocumentMarker = (str4) => /^(%|---|\.\.\.)/m.test(str4);
+    function lineLengthOverLimit(str4, lineWidth, indentLength) {
       if (!lineWidth || lineWidth < 0)
         return false;
       const limit = lineWidth - indentLength;
-      const strLen = str2.length;
+      const strLen = str4.length;
       if (strLen <= limit)
         return false;
       for (let i = 0, start = 0; i < strLen; ++i) {
-        if (str2[i] === "\n") {
+        if (str4[i] === "\n") {
           if (i - start > limit)
             return true;
           start = i + 1;
@@ -1163,74 +1163,74 @@ var require_stringifyString = __commonJS({
       return true;
     }
     function doubleQuotedString(value, ctx) {
-      const json = JSON.stringify(value);
+      const json2 = JSON.stringify(value);
       if (ctx.options.doubleQuotedAsJSON)
-        return json;
+        return json2;
       const { implicitKey } = ctx;
       const minMultiLineLength = ctx.options.doubleQuotedMinMultiLineLength;
       const indent = ctx.indent || (containsDocumentMarker(value) ? "  " : "");
-      let str2 = "";
+      let str4 = "";
       let start = 0;
-      for (let i = 0, ch = json[i]; ch; ch = json[++i]) {
-        if (ch === " " && json[i + 1] === "\\" && json[i + 2] === "n") {
-          str2 += json.slice(start, i) + "\\ ";
+      for (let i = 0, ch = json2[i]; ch; ch = json2[++i]) {
+        if (ch === " " && json2[i + 1] === "\\" && json2[i + 2] === "n") {
+          str4 += json2.slice(start, i) + "\\ ";
           i += 1;
           start = i;
           ch = "\\";
         }
         if (ch === "\\")
-          switch (json[i + 1]) {
+          switch (json2[i + 1]) {
             case "u":
               {
-                str2 += json.slice(start, i);
-                const code = json.substr(i + 2, 4);
+                str4 += json2.slice(start, i);
+                const code = json2.substr(i + 2, 4);
                 switch (code) {
                   case "0000":
-                    str2 += "\\0";
+                    str4 += "\\0";
                     break;
                   case "0007":
-                    str2 += "\\a";
+                    str4 += "\\a";
                     break;
                   case "000b":
-                    str2 += "\\v";
+                    str4 += "\\v";
                     break;
                   case "001b":
-                    str2 += "\\e";
+                    str4 += "\\e";
                     break;
                   case "0085":
-                    str2 += "\\N";
+                    str4 += "\\N";
                     break;
                   case "00a0":
-                    str2 += "\\_";
+                    str4 += "\\_";
                     break;
                   case "2028":
-                    str2 += "\\L";
+                    str4 += "\\L";
                     break;
                   case "2029":
-                    str2 += "\\P";
+                    str4 += "\\P";
                     break;
                   default:
                     if (code.substr(0, 2) === "00")
-                      str2 += "\\x" + code.substr(2);
+                      str4 += "\\x" + code.substr(2);
                     else
-                      str2 += json.substr(i, 6);
+                      str4 += json2.substr(i, 6);
                 }
                 i += 5;
                 start = i + 1;
               }
               break;
             case "n":
-              if (implicitKey || json[i + 2] === '"' || json.length < minMultiLineLength) {
+              if (implicitKey || json2[i + 2] === '"' || json2.length < minMultiLineLength) {
                 i += 1;
               } else {
-                str2 += json.slice(start, i) + "\n\n";
-                while (json[i + 2] === "\\" && json[i + 3] === "n" && json[i + 4] !== '"') {
-                  str2 += "\n";
+                str4 += json2.slice(start, i) + "\n\n";
+                while (json2[i + 2] === "\\" && json2[i + 3] === "n" && json2[i + 4] !== '"') {
+                  str4 += "\n";
                   i += 2;
                 }
-                str2 += indent;
-                if (json[i + 2] === " ")
-                  str2 += "\\";
+                str4 += indent;
+                if (json2[i + 2] === " ")
+                  str4 += "\\";
                 i += 1;
                 start = i + 1;
               }
@@ -1239,8 +1239,8 @@ var require_stringifyString = __commonJS({
               i += 1;
           }
       }
-      str2 = start ? str2 + json.slice(start) : json;
-      return implicitKey ? str2 : foldFlowLines.foldFlowLines(str2, indent, foldFlowLines.FOLD_QUOTED, getFoldOptions(ctx, false));
+      str4 = start ? str4 + json2.slice(start) : json2;
+      return implicitKey ? str4 : foldFlowLines.foldFlowLines(str4, indent, foldFlowLines.FOLD_QUOTED, getFoldOptions(ctx, false));
     }
     function singleQuotedString(value, ctx) {
       if (ctx.options.singleQuote === false || ctx.implicitKey && value.includes("\n") || /[ \t]\n|\n[ \t]/.test(value))
@@ -1368,15 +1368,15 @@ ${indent}${start}${value}${end}`;
           return quotedString(value, ctx);
         }
       }
-      const str2 = value.replace(/\n+/g, `$&
+      const str4 = value.replace(/\n+/g, `$&
 ${indent}`);
       if (actualString) {
-        const test = (tag) => tag.default && tag.tag !== "tag:yaml.org,2002:str" && tag.test?.test(str2);
+        const test = (tag) => tag.default && tag.tag !== "tag:yaml.org,2002:str" && tag.test?.test(str4);
         const { compat, tags } = ctx.doc.schema;
         if (tags.some(test) || compat?.some(test))
           return quotedString(value, ctx);
       }
-      return implicitKey ? str2 : foldFlowLines.foldFlowLines(str2, indent, foldFlowLines.FOLD_FLOW, getFoldOptions(ctx, false));
+      return implicitKey ? str4 : foldFlowLines.foldFlowLines(str4, indent, foldFlowLines.FOLD_FLOW, getFoldOptions(ctx, false));
     }
     function stringifyString(item, ctx, onComment, onChompKeep) {
       const { implicitKey, inFlow } = ctx;
@@ -1528,11 +1528,11 @@ var require_stringify = __commonJS({
       const props = stringifyProps(node, tagObj, ctx);
       if (props.length > 0)
         ctx.indentAtStart = (ctx.indentAtStart ?? 0) + props.length + 1;
-      const str2 = typeof tagObj.stringify === "function" ? tagObj.stringify(node, ctx, onComment, onChompKeep) : identity.isScalar(node) ? stringifyString.stringifyString(node, ctx, onComment, onChompKeep) : node.toString(ctx, onComment, onChompKeep);
+      const str4 = typeof tagObj.stringify === "function" ? tagObj.stringify(node, ctx, onComment, onChompKeep) : identity.isScalar(node) ? stringifyString.stringifyString(node, ctx, onComment, onChompKeep) : node.toString(ctx, onComment, onChompKeep);
       if (!props)
-        return str2;
-      return identity.isScalar(node) || str2[0] === "{" || str2[0] === "[" ? `${props} ${str2}` : `${props}
-${ctx.indent}${str2}`;
+        return str4;
+      return identity.isScalar(node) || str4[0] === "{" || str4[0] === "[" ? `${props} ${str4}` : `${props}
+${ctx.indent}${str4}`;
     }
     exports2.createStringifyContext = createStringifyContext;
     exports2.stringify = stringify;
@@ -1567,8 +1567,8 @@ var require_stringifyPair = __commonJS({
       });
       let keyCommentDone = false;
       let chompKeep = false;
-      let str2 = stringify.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
-      if (!explicitKey && !ctx.inFlow && str2.length > 1024) {
+      let str4 = stringify.stringify(key, ctx, () => keyCommentDone = true, () => chompKeep = true);
+      if (!explicitKey && !ctx.inFlow && str4.length > 1024) {
         if (simpleKeys)
           throw new Error("With simple keys, single line scalar must not span more than 1024 characters");
         explicitKey = true;
@@ -1577,27 +1577,27 @@ var require_stringifyPair = __commonJS({
         if (allNullValues || value == null) {
           if (keyCommentDone && onComment)
             onComment();
-          return str2 === "" ? "?" : explicitKey ? `? ${str2}` : str2;
+          return str4 === "" ? "?" : explicitKey ? `? ${str4}` : str4;
         }
       } else if (allNullValues && !simpleKeys || value == null && explicitKey) {
-        str2 = `? ${str2}`;
+        str4 = `? ${str4}`;
         if (keyComment && !keyCommentDone) {
-          str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(keyComment));
+          str4 += stringifyComment.lineComment(str4, ctx.indent, commentString(keyComment));
         } else if (chompKeep && onChompKeep)
           onChompKeep();
-        return str2;
+        return str4;
       }
       if (keyCommentDone)
         keyComment = null;
       if (explicitKey) {
         if (keyComment)
-          str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(keyComment));
-        str2 = `? ${str2}
+          str4 += stringifyComment.lineComment(str4, ctx.indent, commentString(keyComment));
+        str4 = `? ${str4}
 ${indent}:`;
       } else {
-        str2 = `${str2}:`;
+        str4 = `${str4}:`;
         if (keyComment)
-          str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(keyComment));
+          str4 += stringifyComment.lineComment(str4, ctx.indent, commentString(keyComment));
       }
       let vsb, vcb, valueComment;
       if (identity.isNode(value)) {
@@ -1613,7 +1613,7 @@ ${indent}:`;
       }
       ctx.implicitKey = false;
       if (!explicitKey && !keyComment && identity.isScalar(value))
-        ctx.indentAtStart = str2.length + 1;
+        ctx.indentAtStart = str4.length + 1;
       chompKeep = false;
       if (!indentSeq && indentStep.length >= 2 && !ctx.inFlow && !explicitKey && identity.isSeq(value) && !value.flow && !value.tag && !value.anchor) {
         ctx.indent = ctx.indent.substring(2);
@@ -1657,16 +1657,16 @@ ${ctx.indent}`;
       } else if (valueStr === "" || valueStr[0] === "\n") {
         ws = "";
       }
-      str2 += ws + valueStr;
+      str4 += ws + valueStr;
       if (ctx.inFlow) {
         if (valueCommentDone && onComment)
           onComment();
       } else if (valueComment && !valueCommentDone) {
-        str2 += stringifyComment.lineComment(str2, ctx.indent, commentString(valueComment));
+        str4 += stringifyComment.lineComment(str4, ctx.indent, commentString(valueComment));
       } else if (chompKeep && onChompKeep) {
         onChompKeep();
       }
-      return str2;
+      return str4;
     }
     exports2.stringifyPair = stringifyPair;
   }
@@ -1893,31 +1893,31 @@ var require_stringifyCollection = __commonJS({
           }
         }
         chompKeep = false;
-        let str3 = stringify.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
+        let str5 = stringify.stringify(item, itemCtx, () => comment2 = null, () => chompKeep = true);
         if (comment2)
-          str3 += stringifyComment.lineComment(str3, itemIndent, commentString(comment2));
+          str5 += stringifyComment.lineComment(str5, itemIndent, commentString(comment2));
         if (chompKeep && comment2)
           chompKeep = false;
-        lines.push(blockItemPrefix + str3);
+        lines.push(blockItemPrefix + str5);
       }
-      let str2;
+      let str4;
       if (lines.length === 0) {
-        str2 = flowChars.start + flowChars.end;
+        str4 = flowChars.start + flowChars.end;
       } else {
-        str2 = lines[0];
+        str4 = lines[0];
         for (let i = 1; i < lines.length; ++i) {
           const line = lines[i];
-          str2 += line ? `
+          str4 += line ? `
 ${indent}${line}` : "\n";
         }
       }
       if (comment) {
-        str2 += "\n" + stringifyComment.indentComment(commentString(comment), indent);
+        str4 += "\n" + stringifyComment.indentComment(commentString(comment), indent);
         if (onComment)
           onComment();
       } else if (chompKeep && onChompKeep)
         onChompKeep();
-      return str2;
+      return str4;
     }
     function stringifyFlowCollection({ items }, ctx, { flowChars, itemIndent }) {
       const { indent, indentStep, flowCollectionPadding: fcPadding, options: { commentString } } = ctx;
@@ -1960,21 +1960,21 @@ ${indent}${line}` : "\n";
         }
         if (comment)
           reqNewline = true;
-        let str2 = stringify.stringify(item, itemCtx, () => comment = null);
-        reqNewline || (reqNewline = lines.length > linesAtValue || str2.includes("\n"));
+        let str4 = stringify.stringify(item, itemCtx, () => comment = null);
+        reqNewline || (reqNewline = lines.length > linesAtValue || str4.includes("\n"));
         if (i < items.length - 1) {
-          str2 += ",";
+          str4 += ",";
         } else if (ctx.options.trailingComma) {
           if (ctx.options.lineWidth > 0) {
-            reqNewline || (reqNewline = lines.reduce((sum, line) => sum + line.length + 2, 2) + (str2.length + 2) > ctx.options.lineWidth);
+            reqNewline || (reqNewline = lines.reduce((sum, line) => sum + line.length + 2, 2) + (str4.length + 2) > ctx.options.lineWidth);
           }
           if (reqNewline) {
-            str2 += ",";
+            str4 += ",";
           }
         }
         if (comment)
-          str2 += stringifyComment.lineComment(str2, itemIndent, commentString(comment));
-        lines.push(str2);
+          str4 += stringifyComment.lineComment(str4, itemIndent, commentString(comment));
+        lines.push(str4);
         linesAtValue = lines.length;
       }
       const { start, end } = flowChars;
@@ -1986,11 +1986,11 @@ ${indent}${line}` : "\n";
           reqNewline = ctx.options.lineWidth > 0 && len > ctx.options.lineWidth;
         }
         if (reqNewline) {
-          let str2 = start;
+          let str4 = start;
           for (const line of lines)
-            str2 += line ? `
+            str4 += line ? `
 ${indentStep}${indent}${line}` : "\n";
-          return `${str2}
+          return `${str4}
 ${indent}${end}`;
         } else {
           return `${start}${fcPadding}${lines.join(" ")}${fcPadding}${end}`;
@@ -2322,7 +2322,7 @@ var require_string = __commonJS({
       identify: (value) => typeof value === "string",
       default: true,
       tag: "tag:yaml.org,2002:str",
-      resolve: (str2) => str2,
+      resolve: (str4) => str4,
       stringify(item, ctx, onComment, onChompKeep) {
         ctx = Object.assign({ actualString: true }, ctx);
         return stringifyString.stringifyString(item, ctx, onComment, onChompKeep);
@@ -2360,7 +2360,7 @@ var require_bool = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:bool",
       test: /^(?:[Tt]rue|TRUE|[Ff]alse|FALSE)$/,
-      resolve: (str2) => new Scalar.Scalar(str2[0] === "t" || str2[0] === "T"),
+      resolve: (str4) => new Scalar.Scalar(str4[0] === "t" || str4[0] === "T"),
       stringify({ source, value }, ctx) {
         if (source && boolTag.test.test(source)) {
           const sv = source[0] === "t" || source[0] === "T";
@@ -2412,7 +2412,7 @@ var require_float = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
-      resolve: (str2) => str2.slice(-3).toLowerCase() === "nan" ? NaN : str2[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
+      resolve: (str4) => str4.slice(-3).toLowerCase() === "nan" ? NaN : str4[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
       stringify: stringifyNumber.stringifyNumber
     };
     var floatExp = {
@@ -2421,7 +2421,7 @@ var require_float = __commonJS({
       tag: "tag:yaml.org,2002:float",
       format: "EXP",
       test: /^[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)[eE][-+]?[0-9]+$/,
-      resolve: (str2) => parseFloat(str2),
+      resolve: (str4) => parseFloat(str4),
       stringify(node) {
         const num = Number(node.value);
         return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node);
@@ -2432,11 +2432,11 @@ var require_float = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^[-+]?(?:\.[0-9]+|[0-9]+\.[0-9]*)$/,
-      resolve(str2) {
-        const node = new Scalar.Scalar(parseFloat(str2));
-        const dot = str2.indexOf(".");
-        if (dot !== -1 && str2[str2.length - 1] === "0")
-          node.minFractionDigits = str2.length - dot - 1;
+      resolve(str4) {
+        const node = new Scalar.Scalar(parseFloat(str4));
+        const dot = str4.indexOf(".");
+        if (dot !== -1 && str4[str4.length - 1] === "0")
+          node.minFractionDigits = str4.length - dot - 1;
         return node;
       },
       stringify: stringifyNumber.stringifyNumber
@@ -2453,7 +2453,7 @@ var require_int = __commonJS({
     "use strict";
     var stringifyNumber = require_stringifyNumber();
     var intIdentify = (value) => typeof value === "bigint" || Number.isInteger(value);
-    var intResolve = (str2, offset, radix, { intAsBigInt }) => intAsBigInt ? BigInt(str2) : parseInt(str2.substring(offset), radix);
+    var intResolve = (str4, offset, radix, { intAsBigInt }) => intAsBigInt ? BigInt(str4) : parseInt(str4.substring(offset), radix);
     function intStringify(node, radix, prefix) {
       const { value } = node;
       if (intIdentify(value) && value >= 0)
@@ -2466,7 +2466,7 @@ var require_int = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "OCT",
       test: /^0o[0-7]+$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 2, 8, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 2, 8, opt),
       stringify: (node) => intStringify(node, 8, "0o")
     };
     var int = {
@@ -2474,7 +2474,7 @@ var require_int = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:int",
       test: /^[-+]?[0-9]+$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 0, 10, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 0, 10, opt),
       stringify: stringifyNumber.stringifyNumber
     };
     var intHex = {
@@ -2483,7 +2483,7 @@ var require_int = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "HEX",
       test: /^0x[0-9a-fA-F]+$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 2, 16, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 2, 16, opt),
       stringify: (node) => intStringify(node, 16, "0x")
     };
     exports2.int = int;
@@ -2536,7 +2536,7 @@ var require_schema2 = __commonJS({
         identify: (value) => typeof value === "string",
         default: true,
         tag: "tag:yaml.org,2002:str",
-        resolve: (str2) => str2,
+        resolve: (str4) => str4,
         stringify: stringifyJSON
       },
       {
@@ -2553,7 +2553,7 @@ var require_schema2 = __commonJS({
         default: true,
         tag: "tag:yaml.org,2002:bool",
         test: /^true$|^false$/,
-        resolve: (str2) => str2 === "true",
+        resolve: (str4) => str4 === "true",
         stringify: stringifyJSON
       },
       {
@@ -2561,7 +2561,7 @@ var require_schema2 = __commonJS({
         default: true,
         tag: "tag:yaml.org,2002:int",
         test: /^-?(?:0|[1-9][0-9]*)$/,
-        resolve: (str2, _onError, { intAsBigInt }) => intAsBigInt ? BigInt(str2) : parseInt(str2, 10),
+        resolve: (str4, _onError, { intAsBigInt }) => intAsBigInt ? BigInt(str4) : parseInt(str4, 10),
         stringify: ({ value }) => intIdentify(value) ? value.toString() : JSON.stringify(value)
       },
       {
@@ -2569,7 +2569,7 @@ var require_schema2 = __commonJS({
         default: true,
         tag: "tag:yaml.org,2002:float",
         test: /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]*)?(?:[eE][-+]?[0-9]+)?$/,
-        resolve: (str2) => parseFloat(str2),
+        resolve: (str4) => parseFloat(str4),
         stringify: stringifyJSON
       }
     ];
@@ -2577,9 +2577,9 @@ var require_schema2 = __commonJS({
       default: true,
       tag: "",
       test: /^/,
-      resolve(str2, onError) {
-        onError(`Unresolved plain scalar ${JSON.stringify(str2)}`);
-        return str2;
+      resolve(str4, onError) {
+        onError(`Unresolved plain scalar ${JSON.stringify(str4)}`);
+        return str4;
       }
     };
     var schema = [map.map, seq.seq].concat(jsonScalars, jsonError);
@@ -2611,10 +2611,10 @@ var require_binary = __commonJS({
         if (typeof node_buffer.Buffer === "function") {
           return node_buffer.Buffer.from(src, "base64");
         } else if (typeof atob === "function") {
-          const str2 = atob(src.replace(/[\n\r]/g, ""));
-          const buffer = new Uint8Array(str2.length);
-          for (let i = 0; i < str2.length; ++i)
-            buffer[i] = str2.charCodeAt(i);
+          const str4 = atob(src.replace(/[\n\r]/g, ""));
+          const buffer = new Uint8Array(str4.length);
+          for (let i = 0; i < str4.length; ++i)
+            buffer[i] = str4.charCodeAt(i);
           return buffer;
         } else {
           onError("This environment does not support reading binary tags; either Buffer or atob is required");
@@ -2625,28 +2625,28 @@ var require_binary = __commonJS({
         if (!value)
           return "";
         const buf = value;
-        let str2;
+        let str4;
         if (typeof node_buffer.Buffer === "function") {
-          str2 = buf instanceof node_buffer.Buffer ? buf.toString("base64") : node_buffer.Buffer.from(buf.buffer).toString("base64");
+          str4 = buf instanceof node_buffer.Buffer ? buf.toString("base64") : node_buffer.Buffer.from(buf.buffer).toString("base64");
         } else if (typeof btoa === "function") {
           let s = "";
           for (let i = 0; i < buf.length; ++i)
             s += String.fromCharCode(buf[i]);
-          str2 = btoa(s);
+          str4 = btoa(s);
         } else {
           throw new Error("This environment does not support writing binary tags; either Buffer or btoa is required");
         }
         type ?? (type = Scalar.Scalar.BLOCK_LITERAL);
         if (type !== Scalar.Scalar.QUOTE_DOUBLE) {
           const lineWidth = Math.max(ctx.options.lineWidth - ctx.indent.length, ctx.options.minContentWidth);
-          const n = Math.ceil(str2.length / lineWidth);
+          const n = Math.ceil(str4.length / lineWidth);
           const lines = new Array(n);
           for (let i = 0, o = 0; i < n; ++i, o += lineWidth) {
-            lines[i] = str2.substr(o, lineWidth);
+            lines[i] = str4.substr(o, lineWidth);
           }
-          str2 = lines.join(type === Scalar.Scalar.BLOCK_LITERAL ? "\n" : " ");
+          str4 = lines.join(type === Scalar.Scalar.BLOCK_LITERAL ? "\n" : " ");
         }
-        return stringifyString.stringifyString({ comment, type, value: str2 }, ctx, onComment, onChompKeep);
+        return stringifyString.stringifyString({ comment, type, value: str4 }, ctx, onComment, onChompKeep);
       }
     };
     exports2.binary = binary;
@@ -2852,7 +2852,7 @@ var require_float2 = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
-      resolve: (str2) => str2.slice(-3).toLowerCase() === "nan" ? NaN : str2[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
+      resolve: (str4) => str4.slice(-3).toLowerCase() === "nan" ? NaN : str4[0] === "-" ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY,
       stringify: stringifyNumber.stringifyNumber
     };
     var floatExp = {
@@ -2861,7 +2861,7 @@ var require_float2 = __commonJS({
       tag: "tag:yaml.org,2002:float",
       format: "EXP",
       test: /^[-+]?(?:[0-9][0-9_]*)?(?:\.[0-9_]*)?[eE][-+]?[0-9]+$/,
-      resolve: (str2) => parseFloat(str2.replace(/_/g, "")),
+      resolve: (str4) => parseFloat(str4.replace(/_/g, "")),
       stringify(node) {
         const num = Number(node.value);
         return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node);
@@ -2872,11 +2872,11 @@ var require_float2 = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^[-+]?(?:[0-9][0-9_]*)?\.[0-9_]*$/,
-      resolve(str2) {
-        const node = new Scalar.Scalar(parseFloat(str2.replace(/_/g, "")));
-        const dot = str2.indexOf(".");
+      resolve(str4) {
+        const node = new Scalar.Scalar(parseFloat(str4.replace(/_/g, "")));
+        const dot = str4.indexOf(".");
         if (dot !== -1) {
-          const f = str2.substring(dot + 1).replace(/_/g, "");
+          const f = str4.substring(dot + 1).replace(/_/g, "");
           if (f[f.length - 1] === "0")
             node.minFractionDigits = f.length;
         }
@@ -2896,34 +2896,34 @@ var require_int2 = __commonJS({
     "use strict";
     var stringifyNumber = require_stringifyNumber();
     var intIdentify = (value) => typeof value === "bigint" || Number.isInteger(value);
-    function intResolve(str2, offset, radix, { intAsBigInt }) {
-      const sign = str2[0];
+    function intResolve(str4, offset, radix, { intAsBigInt }) {
+      const sign = str4[0];
       if (sign === "-" || sign === "+")
         offset += 1;
-      str2 = str2.substring(offset).replace(/_/g, "");
+      str4 = str4.substring(offset).replace(/_/g, "");
       if (intAsBigInt) {
         switch (radix) {
           case 2:
-            str2 = `0b${str2}`;
+            str4 = `0b${str4}`;
             break;
           case 8:
-            str2 = `0o${str2}`;
+            str4 = `0o${str4}`;
             break;
           case 16:
-            str2 = `0x${str2}`;
+            str4 = `0x${str4}`;
             break;
         }
-        const n2 = BigInt(str2);
+        const n2 = BigInt(str4);
         return sign === "-" ? BigInt(-1) * n2 : n2;
       }
-      const n = parseInt(str2, radix);
+      const n = parseInt(str4, radix);
       return sign === "-" ? -1 * n : n;
     }
     function intStringify(node, radix, prefix) {
       const { value } = node;
       if (intIdentify(value)) {
-        const str2 = value.toString(radix);
-        return value < 0 ? "-" + prefix + str2.substr(1) : prefix + str2;
+        const str4 = value.toString(radix);
+        return value < 0 ? "-" + prefix + str4.substr(1) : prefix + str4;
       }
       return stringifyNumber.stringifyNumber(node);
     }
@@ -2933,7 +2933,7 @@ var require_int2 = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "BIN",
       test: /^[-+]?0b[0-1_]+$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 2, 2, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 2, 2, opt),
       stringify: (node) => intStringify(node, 2, "0b")
     };
     var intOct = {
@@ -2942,7 +2942,7 @@ var require_int2 = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "OCT",
       test: /^[-+]?0[0-7_]+$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 1, 8, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 1, 8, opt),
       stringify: (node) => intStringify(node, 8, "0")
     };
     var int = {
@@ -2950,7 +2950,7 @@ var require_int2 = __commonJS({
       default: true,
       tag: "tag:yaml.org,2002:int",
       test: /^[-+]?[0-9][0-9_]*$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 0, 10, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 0, 10, opt),
       stringify: stringifyNumber.stringifyNumber
     };
     var intHex = {
@@ -2959,7 +2959,7 @@ var require_int2 = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "HEX",
       test: /^[-+]?0x[0-9a-fA-F_]+$/,
-      resolve: (str2, _onError, opt) => intResolve(str2, 2, 16, opt),
+      resolve: (str4, _onError, opt) => intResolve(str4, 2, 16, opt),
       stringify: (node) => intStringify(node, 16, "0x")
     };
     exports2.int = int;
@@ -3063,9 +3063,9 @@ var require_timestamp = __commonJS({
   "node_modules/yaml/dist/schema/yaml-1.1/timestamp.js"(exports2) {
     "use strict";
     var stringifyNumber = require_stringifyNumber();
-    function parseSexagesimal(str2, asBigInt) {
-      const sign = str2[0];
-      const parts = sign === "-" || sign === "+" ? str2.substring(1) : str2;
+    function parseSexagesimal(str4, asBigInt) {
+      const sign = str4[0];
+      const parts = sign === "-" || sign === "+" ? str4.substring(1) : str4;
       const num = (n) => asBigInt ? BigInt(n) : Number(n);
       const res = parts.replace(/_/g, "").split(":").reduce((res2, p) => res2 * num(60) + num(p), num(0));
       return sign === "-" ? num(-1) * res : res;
@@ -3102,7 +3102,7 @@ var require_timestamp = __commonJS({
       tag: "tag:yaml.org,2002:int",
       format: "TIME",
       test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+$/,
-      resolve: (str2, _onError, { intAsBigInt }) => parseSexagesimal(str2, intAsBigInt),
+      resolve: (str4, _onError, { intAsBigInt }) => parseSexagesimal(str4, intAsBigInt),
       stringify: stringifySexagesimal
     };
     var floatTime = {
@@ -3111,7 +3111,7 @@ var require_timestamp = __commonJS({
       tag: "tag:yaml.org,2002:float",
       format: "TIME",
       test: /^[-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*$/,
-      resolve: (str2) => parseSexagesimal(str2, false),
+      resolve: (str4) => parseSexagesimal(str4, false),
       stringify: stringifySexagesimal
     };
     var timestamp = {
@@ -3122,8 +3122,8 @@ var require_timestamp = __commonJS({
       // may be omitted altogether, resulting in a date format. In such a case, the time part is
       // assumed to be 00:00:00Z (start of day, UTC).
       test: RegExp("^([0-9]{4})-([0-9]{1,2})-([0-9]{1,2})(?:(?:t|T|[ \\t]+)([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2}(\\.[0-9]+)?)(?:[ \\t]*(Z|[-+][012]?[0-9](?::[0-9]{2})?))?)?$"),
-      resolve(str2) {
-        const match = str2.match(timestamp.test);
+      resolve(str4) {
+        const match = str4.match(timestamp.test);
         if (!match)
           throw new Error("!!timestamp expects a date, starting with yyyy-mm-dd");
         const [, year, month, day, hour, minute, second] = match.map(Number);
@@ -3661,11 +3661,11 @@ var require_Document = __commonJS({
           throw new Error(`With a null YAML version, the { schema: Schema } option is required`);
       }
       // json & jsonArg are only used from toJSON()
-      toJS({ json, jsonArg, mapAsMap, maxAliasCount, onAnchor, reviver } = {}) {
+      toJS({ json: json2, jsonArg, mapAsMap, maxAliasCount, onAnchor, reviver } = {}) {
         const ctx = {
           anchors: /* @__PURE__ */ new Map(),
           doc: this,
-          keep: !json,
+          keep: !json2,
           mapAsMap: mapAsMap === true,
           mapKeyWarned: false,
           maxAliasCount: typeof maxAliasCount === "number" ? maxAliasCount : 100
@@ -7404,6 +7404,7 @@ __export(index_exports, {
   displayStem: () => displayStem,
   extractExcerpt: () => extractExcerpt,
   findEnclosingChangeBlock: () => findEnclosingChangeBlock,
+  foldRun: () => foldRun,
   groupCitationsByField: () => groupCitationsByField,
   hashParsedElement: () => hashParsedElement,
   isConsoleModel: () => isConsoleModel,
@@ -7422,9 +7423,11 @@ __export(index_exports, {
   parseAndValidateSidecar: () => parseAndValidateSidecar,
   parseChangesetTarget: () => parseChangesetTarget,
   parseFrontmatter: () => parseFrontmatter,
+  parseKnowledge: () => parseKnowledge,
   parseName: () => parseName,
   parseUnitAddress: () => parseUnitAddress,
   parseYaml: () => parseYaml,
+  procedureGraph: () => procedureGraph,
   readChangeAuthor: () => readChangeAuthor,
   readSynchronizations: () => readSynchronizations,
   resolveArtifactReverseLineage: () => resolveArtifactReverseLineage,
@@ -7433,6 +7436,7 @@ __export(index_exports, {
   resolveConsoleSchema: () => resolveConsoleSchema,
   resolveEvidenceCitation: () => resolveEvidenceCitation,
   roleOf: () => roleOf,
+  runRecordOf: () => runRecordOf,
   serializeConsoleSlot: () => serializeConsoleSlot,
   sidecarPathFor: () => sidecarPathFor,
   sidecarSubjectPath: () => sidecarSubjectPath,
@@ -8396,9 +8400,9 @@ function asObject(v) {
   return v && typeof v === "object" && !Array.isArray(v) ? v : void 0;
 }
 function cleanWikilink(v) {
-  const str2 = asString(v);
-  if (!str2) return void 0;
-  const trimmed = str2.trim();
+  const str4 = asString(v);
+  if (!str4) return void 0;
+  const trimmed = str4.trim();
   if (trimmed.startsWith("[[") && trimmed.endsWith("]]")) {
     const inner = trimmed.slice(2, -2).trim();
     return inner !== "" ? inner : void 0;
@@ -10028,10 +10032,10 @@ function parsePinnedUrl(url) {
   return null;
 }
 function parseUnversionedBlueprintName(url) {
-  const str2 = String(url);
-  const pkg = str2.match(/bluepriNNts\/([^/]+)\/(?:spec_NN|[a-zA-Z0-9_-]+_spec_NN)\.md$/i);
+  const str4 = String(url);
+  const pkg = str4.match(/bluepriNNts\/([^/]+)\/(?:spec_NN|[a-zA-Z0-9_-]+_spec_NN)\.md$/i);
   if (pkg) return pkg[1];
-  const flat = str2.match(/bluepriNNts\/([^/]+?)_spec_NN\.md$/i);
+  const flat = str4.match(/bluepriNNts\/([^/]+?)_spec_NN\.md$/i);
   if (flat) return flat[1];
   return null;
 }
@@ -11222,8 +11226,8 @@ function inheritedEvidenceShas(evidence, map) {
 
 // iNNfo/packages/nn-core/src/changeset/parser.ts
 var import_yaml6 = __toESM(require_dist(), 1);
-function stripQuotes(str2) {
-  const trimmed = str2.trim();
+function stripQuotes(str4) {
+  const trimmed = str4.trim();
   if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
     try {
       const parsed = JSON.parse(trimmed);
@@ -11237,8 +11241,8 @@ function stripQuotes(str2) {
   }
   return trimmed;
 }
-function parseJsonObject(str2) {
-  const trimmed = str2.trim();
+function parseJsonObject(str4) {
+  const trimmed = str4.trim();
   if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return void 0;
   try {
     const parsed = JSON.parse(trimmed);
@@ -11251,8 +11255,8 @@ function parseStringArray(value) {
   if (!Array.isArray(value)) return void 0;
   return value.map((v) => String(v));
 }
-function parseFieldsValue(str2) {
-  const trimmed = str2.trim();
+function parseFieldsValue(str4) {
+  const trimmed = str4.trim();
   if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
     try {
       const parsed = JSON.parse(trimmed);
@@ -12382,6 +12386,315 @@ function hashParsedElement(concept, node) {
   });
 }
 
+// iNNfo/packages/nn-core/src/procedure/graph.ts
+var EXECUTORS = ["human", "agent", "engine"];
+function referenceTokens(value) {
+  if (value === void 0 || value === null || value === "") return [];
+  if (Array.isArray(value)) return value.flatMap(referenceTokens);
+  const text2 = String(value);
+  const links = [...text2.matchAll(/\[\[([^\]]+)\]\]/g)].map((m) => m[1]);
+  const parts = links.length > 0 ? links : [text2.replace(/^\[|\]$/g, "")];
+  return parts.flatMap((p) => p.split(",")).map((p) => p.trim().replace(/^@/, "")).filter((p) => p !== "");
+}
+function resolver(nodes) {
+  const slugs = new Set(nodes.map((n) => n.slug ?? ""));
+  const byName = new Map(nodes.map((n) => [n.name.toLowerCase(), n.slug ?? ""]));
+  return (token) => slugs.has(token) ? token : byName.get(token.toLowerCase());
+}
+var str2 = (v) => v === void 0 || v === null || v === "" ? void 0 : String(v);
+function procedureGraph(model) {
+  const work = model.elements.get("Work") ?? [];
+  const artifactNodes = model.elements.get("Artifact") ?? [];
+  const toWork = resolver(work);
+  const toArtifact = resolver(artifactNodes);
+  const diagnostics = [];
+  const parentOf = (n) => referenceTokens(n.fields["parent"]).map(toWork)[0];
+  const containers = new Set(work.map(parentOf).filter((p) => p !== void 0));
+  const artifactRefs = (v) => referenceTokens(v).map((t) => toArtifact(t) ?? t);
+  const steps = {};
+  for (const n of work) {
+    const slug = n.slug ?? "";
+    if (containers.has(slug)) continue;
+    if (!n.slugExplicit) {
+      diagnostics.push({
+        code: "MISSING_SLUG",
+        severity: "error",
+        step: slug,
+        detail: `Work "${n.name}" has no slug:: line; runs reference steps by slug (R4).`
+      });
+    }
+    const executor = str2(n.fields["executor"]);
+    steps[slug] = {
+      slug,
+      name: n.name,
+      stepType: str2(n.fields["step_type"]),
+      executor: executor && EXECUTORS.includes(executor) ? executor : void 0,
+      parent: parentOf(n),
+      next: [],
+      condition: str2(n.fields["condition"]),
+      decision: str2(n.fields["decision"]),
+      command: str2(n.fields["command"]),
+      produces: str2(n.fields["produces"]),
+      inputs: artifactRefs(n.fields["input"]),
+      outputs: artifactRefs(n.fields["output"])
+    };
+  }
+  for (const n of work) {
+    const step = steps[n.slug ?? ""];
+    if (!step) continue;
+    for (const token of referenceTokens(n.fields["next"])) {
+      const target = toWork(token);
+      if (target && steps[target]) step.next.push(target);
+      else
+        diagnostics.push({
+          code: "UNKNOWN_NEXT",
+          severity: "error",
+          step: step.slug,
+          detail: `Step "${step.slug}" names next "${token}", which is not a step of this procedure.`
+        });
+    }
+  }
+  const artifacts = {};
+  for (const n of artifactNodes) {
+    const slug = n.slug ?? "";
+    const required = n.fields["required"];
+    artifacts[slug] = {
+      slug,
+      name: n.name,
+      verify: str2(n.fields["verify"]),
+      required: !(required === false || required === "false"),
+      producers: Object.values(steps).filter((s) => s.outputs.includes(slug)).map((s) => s.slug)
+    };
+  }
+  const incoming = new Set(Object.values(steps).flatMap((s) => s.next));
+  const starts = Object.keys(steps).filter((s) => !incoming.has(s));
+  if (starts.length === 0 && Object.keys(steps).length > 0)
+    diagnostics.push({
+      code: "NO_START",
+      severity: "error",
+      detail: "Every step has an incoming next."
+    });
+  if (starts.length > 1)
+    diagnostics.push({
+      code: "MULTIPLE_STARTS",
+      severity: "error",
+      detail: `Several steps have no incoming next: ${starts.join(", ")}.`
+    });
+  diagnostics.push(...findCycles(steps));
+  return {
+    defRev: str2(model.frontmatter.knowledge_version) ?? null,
+    steps,
+    artifacts,
+    start: starts.length === 1 ? starts[0] : null,
+    terminals: Object.values(steps).filter((s) => s.next.length === 0).map((s) => s.slug),
+    diagnostics
+  };
+}
+function findCycles(steps) {
+  const found = [];
+  const state = /* @__PURE__ */ new Map();
+  const visit = (slug, trail) => {
+    state.set(slug, "visiting");
+    for (const t of steps[slug].next) {
+      if (state.get(t) === "visiting") {
+        const walked = [...trail, slug];
+        const loop = [...walked.slice(walked.indexOf(t)), t];
+        found.push({
+          code: "CYCLE",
+          severity: "error",
+          step: slug,
+          detail: `Loop ${loop.join(" -> ")}; loops are not runnable yet.`
+        });
+      } else if (!state.has(t)) visit(t, [...trail, slug]);
+    }
+    state.set(slug, "done");
+  };
+  for (const slug of Object.keys(steps)) if (!state.has(slug)) visit(slug, []);
+  return found;
+}
+
+// iNNfo/packages/nn-core/src/procedure/fold.ts
+var TERMINAL = /* @__PURE__ */ new Set(["completed", "failed", "cancelled"]);
+var ARTIFACT_STATUS = {
+  artifact_produced: "produced",
+  artifact_validated: "validated",
+  artifact_rejected: "rejected"
+};
+function foldRun(graph, events, opts) {
+  const steps = {};
+  for (const slug of Object.keys(graph.steps)) steps[slug] = { status: "pending", attempt: 0 };
+  const startedInputs = {};
+  const artifacts = {};
+  const validatedRev = {};
+  const inputs = {};
+  let pinned = opts.defRev;
+  let paused = false;
+  let terminal;
+  for (const e of events) {
+    const prev = e.step !== void 0 ? steps[e.step] : void 0;
+    if (prev && e.step !== void 0) {
+      if (e.kind === "step_started") {
+        steps[e.step] = { status: "active", attempt: e.attempt ?? prev.attempt + 1 };
+        startedInputs[e.step] = e.inputs ?? {};
+      } else if (e.kind === "step_waiting")
+        steps[e.step] = { ...prev, status: "waiting", waitingOn: e.value };
+      else if (e.kind === "step_completed")
+        steps[e.step] = { status: "done", attempt: prev.attempt, outcome: e.outcome, next: e.next };
+      else if (e.kind === "step_failed")
+        steps[e.step] = { status: "failed", attempt: prev.attempt, failure: e.value };
+    }
+    if (e.kind in ARTIFACT_STATUS && e.field !== void 0) {
+      const status2 = ARTIFACT_STATUS[e.kind];
+      artifacts[e.field] = { status: status2, rev: e.rev, value: e.value, step: e.step };
+      if (status2 === "validated") validatedRev[e.field] = e.rev;
+    }
+    if (e.kind === "input_recorded" && e.field !== void 0)
+      inputs[e.field] = { value: e.value, rev: e.rev };
+    if (e.kind === "interrupted") paused = true;
+    if (e.kind === "resumed") paused = false;
+    if (e.kind === "rebased") pinned = e.value ?? null;
+    if (TERMINAL.has(e.kind)) terminal = e.kind;
+  }
+  const path2 = [];
+  let current = null;
+  let blockedBy;
+  if (graph.start === null) blockedBy = "The procedure has no single start step.";
+  for (let s = graph.start ?? void 0; s !== void 0; ) {
+    if (path2.includes(s)) {
+      blockedBy = `Step "${s}" is reached twice; loops are not runnable yet.`;
+      current = s;
+      break;
+    }
+    path2.push(s);
+    const def = graph.steps[s];
+    const st = steps[s];
+    if (st.status !== "done") {
+      current = s;
+      break;
+    }
+    if (def.next.length === 0) break;
+    const t = st.next ?? (def.next.length === 1 ? def.next[0] : void 0);
+    if (t === void 0 || !def.next.includes(t)) {
+      current = s;
+      blockedBy = t === void 0 ? `Step "${s}" completed without choosing among ${def.next.join(", ")}.` : `Step "${s}" completed with next "${t}", which is not one of ${def.next.join(", ")}.`;
+      break;
+    }
+    s = t;
+  }
+  const stale = Object.keys(artifacts).filter((slug) => {
+    const a = artifacts[slug];
+    if (a.status !== "validated") return false;
+    const producer = a.step ?? graph.artifacts[slug]?.producers[0];
+    const consumed = producer && startedInputs[producer] || {};
+    return Object.entries(consumed).some(
+      ([inp, rev]) => validatedRev[inp] !== void 0 && validatedRev[inp] !== rev
+    );
+  });
+  for (const slug of stale) artifacts[slug] = { ...artifacts[slug], status: "stale" };
+  const reopened = path2.filter(
+    (slug) => steps[slug].status === "done" && graph.steps[slug].outputs.some((o) => stale.includes(o))
+  );
+  for (const slug of reopened) steps[slug] = { ...steps[slug], status: "reopened" };
+  if (reopened.length > 0) current = reopened[0];
+  const ahead = reachable(graph, current);
+  for (const slug of Object.keys(steps))
+    if (!path2.includes(slug) && !ahead.has(slug))
+      steps[slug] = { ...steps[slug], status: "off_path" };
+  for (const [slug, def] of Object.entries(graph.artifacts)) {
+    if (artifacts[slug]) continue;
+    const offPath = def.producers.length > 0 && def.producers.every((p) => steps[p].status === "off_path");
+    artifacts[slug] = { status: !def.required || offPath ? "not_required" : "expected" };
+  }
+  const last = events[events.length - 1];
+  const crashed = opts.lockFree === true && last?.kind === "step_started" && last.step !== void 0 && graph.steps[last.step]?.executor === "engine";
+  if (crashed && !blockedBy)
+    blockedBy = `Engine step "${last.step}" started and never reported back.`;
+  if (current && steps[current].status === "failed" && !blockedBy)
+    blockedBy = `Step "${current}" failed: ${steps[current].failure ?? "no reason recorded"}.`;
+  const drift = pinned !== graph.defRev ? { pinned, current: graph.defRev } : null;
+  const waiting = paused || current !== null && steps[current].status === "waiting";
+  const status = terminal ?? (drift ? "drifted" : blockedBy ? "blocked" : waiting ? "waiting" : "open");
+  return {
+    status,
+    currentStep: current,
+    path: path2,
+    steps,
+    artifacts,
+    allowedNext: current ? graph.steps[current].next.map((to) => ({ to, guard: guardOf(graph, to, artifacts) })) : [],
+    stale,
+    reopened,
+    drift,
+    crashed,
+    paused,
+    blockedBy,
+    canComplete: terminal === void 0 && current === null && path2.length > 0 && !blockedBy,
+    inputs,
+    staleInputs: Object.keys(inputs).filter((f) => {
+      const now = opts.currentRevs?.[f];
+      return now !== void 0 && now !== inputs[f].rev;
+    })
+  };
+}
+function reachable(graph, from) {
+  const seen = /* @__PURE__ */ new Set();
+  const todo = from ? [...graph.steps[from].next] : [];
+  for (let s = todo.pop(); s !== void 0; s = todo.pop()) {
+    if (seen.has(s)) continue;
+    seen.add(s);
+    todo.push(...graph.steps[s].next);
+  }
+  return seen;
+}
+function guardOf(graph, to, artifacts) {
+  const text2 = graph.steps[to].condition?.trim();
+  if (!text2) return { kind: "none" };
+  const outcome = /^outcome\s*==\s*["']?([\w-]+)["']?$/.exec(text2);
+  if (outcome) return { kind: "outcome", token: outcome[1] };
+  const art = /^(?:\[\[([^\]]+)\]\]|@([\w-]+))\s+validated$/.exec(text2);
+  const ref = art ? (art[1] ?? art[2]).trim() : void 0;
+  const slug = ref === void 0 ? void 0 : graph.artifacts[ref] ? ref : Object.values(graph.artifacts).find((a) => a.name.toLowerCase() === ref.toLowerCase())?.slug;
+  if (slug)
+    return { kind: "artifact", artifact: slug, holds: artifacts[slug]?.status === "validated" };
+  return { kind: "prose", text: text2 };
+}
+
+// iNNfo/packages/nn-core/src/procedure/run.ts
+var str3 = (v) => v === void 0 || v === null || v === "" ? void 0 : String(v);
+function json(v) {
+  if (v !== null && typeof v === "object" && !Array.isArray(v)) return v;
+  const text2 = str3(v);
+  if (text2 === void 0) return void 0;
+  try {
+    const parsed = JSON.parse(text2);
+    return parsed !== null && typeof parsed === "object" ? parsed : void 0;
+  } catch {
+    return void 0;
+  }
+}
+function eventOf(fields) {
+  const e = { kind: String(fields["kind"]) };
+  for (const key of ["step", "outcome", "next", "field", "value", "rev", "actor", "at"]) {
+    const v = str3(fields[key]);
+    if (v !== void 0) e[key] = v;
+  }
+  const attempt = Number(fields["attempt"]);
+  if (str3(fields["attempt"]) !== void 0 && Number.isFinite(attempt)) e.attempt = attempt;
+  const inputs = json(fields["inputs"]);
+  if (inputs) e.inputs = Object.fromEntries(Object.entries(inputs).map(([k, v]) => [k, String(v)]));
+  return e;
+}
+function runRecordOf(model) {
+  const header = model.elements.get("Procedure Execution")?.[0];
+  if (!header) return null;
+  return {
+    closed: model.frontmatter["closed"] === true,
+    procedure: str3(header.fields["procedure"]) ?? "",
+    defRev: str3(header.fields["def_rev"]) ?? null,
+    params: json(header.fields["params"]) ?? {},
+    events: (model.elements.get("Execution Event") ?? []).map((el) => eventOf(el.fields))
+  };
+}
+
 // iNNfo/packages/nn-core/src/sync/declarations.ts
 var CONCEPT2 = "Synchronization";
 var text = (value) => typeof value === "string" ? value.trim() : "";
@@ -12541,13 +12854,13 @@ function extractExcerpt(content, unit) {
       return assertNever(unit, "resolved unit kind");
   }
 }
-function resolveCitation(raw, field, resolver, modelPath = "") {
+function resolveCitation(raw, field, resolver2, modelPath = "") {
   const ref = parseCitation(raw);
   if (!ref) {
     return { path: raw, exists: false, field, origin: "document", error: "MALFORMED" };
   }
   const anchor = anchorOf(ref);
-  const resolved = resolver(ref.filePath, modelPath);
+  const resolved = resolver2(ref.filePath, modelPath);
   if (!resolved || !resolved.exists) {
     return { path: ref.filePath, anchor, exists: false, field, origin: "document", error: "DANGLING_FILE" };
   }
@@ -12607,7 +12920,7 @@ function resolveCitation(raw, field, resolver, modelPath = "") {
     ...version ? { version } : {}
   };
 }
-function resolveEvidenceCitation(evidence, resolver, basePath = "") {
+function resolveEvidenceCitation(evidence, resolver2, basePath = "") {
   const ev = String(evidence ?? "").trim();
   if (ev === "decision") {
     return { path: "decision", exists: true, field: "evidence", origin: "human" };
@@ -12615,7 +12928,7 @@ function resolveEvidenceCitation(evidence, resolver, basePath = "") {
   if (ev === "unknown") {
     return { path: "unknown", exists: true, field: "evidence", origin: "document" };
   }
-  return resolveCitation(ev, "evidence", resolver, basePath);
+  return resolveCitation(ev, "evidence", resolver2, basePath);
 }
 function groupCitationsByField(citations) {
   const grouped = {};
@@ -13306,7 +13619,7 @@ function standaloneModelId(filePath, fallbackTitle) {
   return fallbackTitle ? slugify(fallbackTitle) : "model";
 }
 function buildConsolePayload(options) {
-  const { content, path: modelPath, schema: inputSchema, resolver, changesets, generated } = options;
+  const { content, path: modelPath, schema: inputSchema, resolver: resolver2, changesets, generated } = options;
   const rawSha256 = computeSha256(content);
   const parsed = parseKnowledge(content);
   const fm = parsed.frontmatter || parseFrontmatter(content) || {};
@@ -13391,13 +13704,13 @@ function buildConsolePayload(options) {
     if (relations.length > 0) {
       elem.relations = relations;
     }
-    if (resolver) {
+    if (resolver2) {
       const citationFields = citationFieldsFor(elem.concept, rawFields, inputSchema);
       const flatCitations = [];
       for (const fieldName of citationFields) {
         const val = rawFields[fieldName];
         for (const raw of splitSourceFieldValue(val)) {
-          flatCitations.push(resolveCitation(raw, fieldName, resolver, modelPath || ""));
+          flatCitations.push(resolveCitation(raw, fieldName, resolver2, modelPath || ""));
         }
       }
       if (flatCitations.length > 0) {
@@ -13462,7 +13775,7 @@ function buildConsolePayload(options) {
   attachChangesetHistory(
     elements,
     changesets,
-    resolver ? (evidence) => resolveEvidenceCitation(evidence, resolver, modelPath || "") : void 0,
+    resolver2 ? (evidence) => resolveEvidenceCitation(evidence, resolver2, modelPath || "") : void 0,
     changeLog
   );
   const genTime = generated || (/* @__PURE__ */ new Date()).toISOString();
@@ -13979,6 +14292,7 @@ function auditModelRecords(log, models) {
   displayStem,
   extractExcerpt,
   findEnclosingChangeBlock,
+  foldRun,
   groupCitationsByField,
   hashParsedElement,
   isConsoleModel,
@@ -13997,9 +14311,11 @@ function auditModelRecords(log, models) {
   parseAndValidateSidecar,
   parseChangesetTarget,
   parseFrontmatter,
+  parseKnowledge,
   parseName,
   parseUnitAddress,
   parseYaml,
+  procedureGraph,
   readChangeAuthor,
   readSynchronizations,
   resolveArtifactReverseLineage,
@@ -14008,6 +14324,7 @@ function auditModelRecords(log, models) {
   resolveConsoleSchema,
   resolveEvidenceCitation,
   roleOf,
+  runRecordOf,
   serializeConsoleSlot,
   sidecarPathFor,
   sidecarSubjectPath,

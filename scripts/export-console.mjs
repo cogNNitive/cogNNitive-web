@@ -1120,6 +1120,78 @@ async function openConsole(file, { open, launcher, platform, cooldownMs, now = D
   }
 }
 
+/* ── Procedure runs ────────────────────────────────────────────── */
+
+/**
+ * The procedure graphs and folded runs the console stepper shows (procedure-runner S2). The
+ * graph and the state come from nn-core `procedureGraph` / `foldRun` through the payload
+ * mirror, the same functions `procedure_state` calls; the browser only renders the result.
+ *
+ * One entry per procedure document: every exported `procedures` model, plus, in a whole-domaiNN
+ * export, every other procedure a run names (read from its domain-relative path). A run whose
+ * procedure lives in a bluepriNNt package (`bluepriNNt:<pkg>/<doc>`) or cannot be read keeps
+ * an entry with a null graph and no state, so it is listed, never dropped. Runs are the
+ * `executions` instance models of the domaiNN, ordered by id.
+ *
+ * @param {{ root: string, models: Array<{ filePath: string, content: string, fm: any }>,
+ *   payloadModels: Array<{ filePath: string, content: string, fm: any }>, wholeDomain: boolean,
+ *   helper: any, compare: (a: string, b: string) => number }} input
+ */
+export function collectProcedureRuns({ root, models, payloadModels, wholeDomain, helper, compare }) {
+  const relOf = (m) => relative(root, m.filePath).replace(/\\/g, '/')
+  const blueprintOf = (m) => coreBlueprintOf(helper.parentSpecNameOf(m.fm))
+  const entries = new Map()
+  const addEntry = (file, content) => {
+    let graph = null
+    let title = file
+    if (content !== null) {
+      const parsed = helper.parseKnowledge(content)
+      graph = helper.procedureGraph(parsed)
+      title = (parsed.frontmatter && parsed.frontmatter.title) || file
+    }
+    const entry = { file, title, graph, runs: [] }
+    entries.set(file, entry)
+    return entry
+  }
+  for (const m of payloadModels) {
+    const file = relOf(m)
+    if (helper.roleOf({ path: file, parentSpecName: helper.parentSpecNameOf(m.fm) }) === 'procedure')
+      addEntry(file, m.content)
+  }
+  // The apply lock is the I/O fact the crash derivation needs (as `procedure_state` reads it).
+  const lockFree = !existsSync(join(root, 'changes', '.lock'))
+  const runs = models
+    .filter((m) => blueprintOf(m) === 'executions')
+    .map((m) => ({ file: relOf(m), record: helper.runRecordOf(helper.parseKnowledge(m.content)) }))
+    .filter((r) => r.record !== null)
+    .map((r) => ({ ...r, id: r.file.split('/').slice(-2, -1)[0] || r.file }))
+    .sort((a, b) => compare(a.id, b.id))
+  for (const { file, record, id } of runs) {
+    let entry = entries.get(record.procedure)
+    if (!entry) {
+      if (!wholeDomain) continue
+      const abs = resolve(root, record.procedure)
+      const inside =
+        record.procedure !== '' &&
+        !record.procedure.startsWith('bluepriNNt:') &&
+        !relative(root, abs).startsWith('..')
+      entry = addEntry(record.procedure, inside && existsSync(abs) ? readFileSync(abs, 'utf-8') : null)
+    }
+    entry.runs.push({
+      id,
+      file,
+      closed: record.closed,
+      defRev: record.defRev,
+      params: record.params,
+      events: record.events,
+      state: entry.graph
+        ? helper.foldRun(entry.graph, record.events, { defRev: record.defRev, lockFree })
+        : null,
+    })
+  }
+  return [...entries.values()].sort((a, b) => compare(a.file, b.file))
+}
+
 /* ── Model discovery ───────────────────────────────────────────── */
 
 async function loadModels(root, onWarning = writeExportWarning) {
@@ -2256,6 +2328,15 @@ export async function writeConsole(opts = {}) {
     }
   }
 
+  const procedureGraphs = collectProcedureRuns({
+    root,
+    models,
+    payloadModels,
+    wholeDomain,
+    helper: payloadHelper,
+    compare: viewsLib.compareCodeUnits,
+  })
+
   const domainPayload = {
     viewData,
     schema: {
@@ -2290,6 +2371,7 @@ export async function writeConsole(opts = {}) {
         viewsLib.compareCodeUnits(String(b.path), String(a.path)),
       ),
       ...(filesData ? { files: filesData } : {}),
+      ...(procedureGraphs.length > 0 ? { procedureGraphs } : {}),
     },
   }
 

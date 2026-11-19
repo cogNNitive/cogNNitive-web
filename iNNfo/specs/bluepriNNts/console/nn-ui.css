@@ -5857,7 +5857,7 @@ details.collapse summary {
     }
 
     /* Contextual RACI Panel */
-    .exec-raci-box, .exec-tool-box, .exec-decision-box {
+    .exec-raci-box {
       background: var(--surface-2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -5872,99 +5872,6 @@ details.collapse summary {
       text-transform: uppercase;
       letter-spacing: 0.5px;
       color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .exec-raci-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    button.raci-item-btn {
-      appearance: none;
-      font: inherit;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: var(--radius-sm);
-      padding: 4px 8px;
-      font-size: 0.76rem;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.12s ease;
-    }
-    button.raci-item-btn:hover { border-color: var(--primary); }
-    .raci-badge {
-      font-size: 0.65rem;
-      font-weight: 800;
-      padding: 1px 5px;
-      border-radius: 3px;
-      text-transform: uppercase;
-    }
-    .raci-r { background: #fee2e2; color: #b91c1c; }
-    .raci-a { background: #fef3c7; color: #b45309; }
-    .raci-c { background: #e0f2fe; color: #0369a1; }
-    .raci-i { background: #f1f5f9; color: #475569; }
-
-    /* Artifact I/O Grid */
-    .exec-io-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    @media (max-width: 600px) { .exec-io-grid { grid-template-columns: 1fr; } }
-    .io-panel {
-      background: var(--surface-2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    .io-panel-label {
-      font-size: 0.68rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .io-panel-name {
-      font-weight: 600;
-      font-size: 0.88rem;
-      color: var(--text);
-    }
-    .io-check-label {
-      font-size: 0.76rem;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-    }
-
-    /* CLI Tool Helper */
-    .exec-cli-snippet {
-      background: #090d16;
-      color: #38bdf8;
-      font-family: var(--mono);
-      font-size: 0.78rem;
-      padding: 8px 12px;
-      border-radius: var(--radius-sm);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      user-select: all;
-    }
-    .exec-cli-snippet code {
-      overflow-x: auto;
-      white-space: nowrap;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -5985,35 +5892,6 @@ details.collapse summary {
       gap: 4px;
     }
     .btn-copy:hover { background: rgba(255, 255, 255, 0.25); }
-
-    /* Decision Gate */
-    .decision-btn-row {
-      display: flex;
-      gap: 8px;
-    }
-    .btn-branch {
-      flex: 1;
-      padding: 8px 12px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      border: 1px solid var(--border-strong);
-      border-radius: var(--radius-sm);
-      background: var(--surface);
-      color: var(--text);
-      cursor: pointer;
-      transition: all 0.12s ease;
-    }
-    .btn-branch:hover { border-color: var(--warning); background: var(--surface-3); }
-
-    /* Stepper Actions */
-    .exec-actions-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-top: 10px;
-      border-top: 1px solid var(--border);
-    }
-    .btn-group-right { display: flex; gap: 8px; }
 
     .nn-procedure-view button.btn,
     .nn-proc-host button.btn {

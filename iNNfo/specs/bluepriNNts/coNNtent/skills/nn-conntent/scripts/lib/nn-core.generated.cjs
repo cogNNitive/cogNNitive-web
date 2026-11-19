@@ -17328,6 +17328,37 @@ var init_audit = __esm({
   }
 });
 
+// iNNfo/packages/nn-core/dist/procedure/graph.js
+var init_graph2 = __esm({
+  "iNNfo/packages/nn-core/dist/procedure/graph.js"() {
+    "use strict";
+  }
+});
+
+// iNNfo/packages/nn-core/dist/procedure/fold.js
+var init_fold2 = __esm({
+  "iNNfo/packages/nn-core/dist/procedure/fold.js"() {
+    "use strict";
+  }
+});
+
+// iNNfo/packages/nn-core/dist/procedure/run.js
+var init_run = __esm({
+  "iNNfo/packages/nn-core/dist/procedure/run.js"() {
+    "use strict";
+  }
+});
+
+// iNNfo/packages/nn-core/dist/procedure/index.js
+var init_procedure = __esm({
+  "iNNfo/packages/nn-core/dist/procedure/index.js"() {
+    "use strict";
+    init_graph2();
+    init_fold2();
+    init_run();
+  }
+});
+
 // iNNfo/packages/nn-core/dist/sync/declarations.js
 var init_declarations = __esm({
   "iNNfo/packages/nn-core/dist/sync/declarations.js"() {
@@ -17383,6 +17414,7 @@ var init_console = __esm({
     init_load();
     init_audit();
     init_parser2();
+    init_procedure();
     init_declarations();
     init_contract();
     init_plan();
@@ -18780,6 +18812,10 @@ function scaffoldBodyFromSchema(schema, root) {
       lines.push(`_Describe ${c.name} here._`, "");
       continue;
     }
+    if (c.writePolicy && c.writePolicy.policy !== "mutable") {
+      lines.push("");
+      continue;
+    }
     const ex = exampleFor(c.name);
     lines.push(`## NN ${c.name}: ${ex}`);
     lines.push(`slug:: ${slugify2(ex)}`);
@@ -19171,29 +19207,6 @@ var init_scope = __esm({
     init_elements();
     init_fs_elements();
     init_drift2();
-  }
-});
-
-// iNNfo/packages/nn-core/dist/procedure/graph.js
-var init_graph2 = __esm({
-  "iNNfo/packages/nn-core/dist/procedure/graph.js"() {
-    "use strict";
-  }
-});
-
-// iNNfo/packages/nn-core/dist/procedure/fold.js
-var init_fold2 = __esm({
-  "iNNfo/packages/nn-core/dist/procedure/fold.js"() {
-    "use strict";
-  }
-});
-
-// iNNfo/packages/nn-core/dist/procedure/index.js
-var init_procedure = __esm({
-  "iNNfo/packages/nn-core/dist/procedure/index.js"() {
-    "use strict";
-    init_graph2();
-    init_fold2();
   }
 });
 

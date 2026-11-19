@@ -775,146 +775,9 @@
     return null
   }
 
-  function nextTargetsOf(node, nodes) {
-    if (!node || !nodes) return []
-    var targets = []
-    var seen = {}
-
-    function addTarget(targetId) {
-      if (targetId && nodes[targetId] && !seen[targetId]) {
-        seen[targetId] = true
-        targets.push(nodes[targetId])
-      }
-    }
-
-    var rels = node.relations || []
-    for (var i = 0; i < rels.length; i++) {
-      if (rels[i] && rels[i].field === 'next' && rels[i].target) {
-        addTarget(rels[i].target)
-      }
-    }
-
-    var label = node.fields && node.fields.next
-    if (label && label !== '-' && label !== '') {
-      var rawValues = Array.isArray(label) ? label : String(label).split(',')
-      for (var j = 0; j < rawValues.length; j++) {
-        var s = String(rawValues[j]).trim()
-        if (!s || s === '-') continue
-        var cleaned = cleanRefValue(s)
-        if (nodes[s]) {
-          addTarget(s)
-          continue
-        }
-        if (cleaned && nodes[cleaned]) {
-          addTarget(cleaned)
-          continue
-        }
-        for (var id in nodes) {
-          var n = nodes[id]
-          if (n && n.el && (n.el.name === s || (cleaned && n.el.name === cleaned))) {
-            addTarget(id)
-            break
-          }
-        }
-      }
-    }
-    return targets
-  }
-
-  function deriveStepChain(root, children, nodes, defects) {
-    var list = Array.isArray(children) ? children : []
-    if (list.length === 0) return []
-
-    var childById = {}
-    list.forEach(function (c) {
-      childById[c.el.id] = c
-    })
-
-    var targetedBy = {}
-    list.forEach(function (c) {
-      var targets = nextTargetsOf(c, nodes)
-      targets.forEach(function (t) {
-        if (t.parentId !== root.el.id) {
-          if (defects) {
-            defects.push({
-              kind: 'external_target',
-              element: c.el.name || c.el.id,
-              message: 'Step "' + (c.el.name || c.el.id) + '" next:: targets "' + (t.el.name || t.el.id) + '" outside parent procedure'
-            })
-          }
-        } else if (childById[t.el.id]) {
-          targetedBy[t.el.id] = targetedBy[t.el.id] || []
-          targetedBy[t.el.id].push(c)
-        }
-      })
-    })
-
-    var heads = list.filter(function (c) {
-      return !targetedBy[c.el.id] || targetedBy[c.el.id].length === 0
-    })
-
-    if (heads.length === 0) {
-      if (defects) {
-        defects.push({
-          kind: 'cycle',
-          element: root.el.name || root.el.id,
-          message: 'Procedure "' + (root.el.name || root.el.id) + '" has a next:: cycle with no head step'
-        })
-      }
-      heads = list.slice().sort(function (a, b) { return a.docOrder - b.docOrder })
-    } else if (heads.length > 1) {
-      if (defects) {
-        var headNames = heads.map(function (h) { return h.el.name || h.el.id }).join(', ')
-        defects.push({
-          kind: 'fork',
-          element: headNames,
-          message: 'Procedure "' + (root.el.name || root.el.id) + '" has multiple head steps: ' + headNames
-        })
-      }
-      heads.sort(function (a, b) { return a.docOrder - b.docOrder })
-    }
-
-    var ordered = []
-    var visited = {}
-
-    heads.forEach(function (head) {
-      var cursor = head
-      while (cursor && !visited[cursor.el.id]) {
-        visited[cursor.el.id] = true
-        ordered.push(cursor)
-        var targets = nextTargetsOf(cursor, nodes).filter(function (t) {
-          return t.parentId === root.el.id
-        })
-        var next = null
-        for (var i = 0; i < targets.length; i++) {
-          if (!visited[targets[i].el.id]) {
-            next = targets[i]
-            break
-          }
-        }
-        cursor = next
-      }
-    })
-
-    var unreachable = list.filter(function (c) { return !visited[c.el.id] })
-    if (unreachable.length > 0) {
-      unreachable.sort(function (a, b) { return a.docOrder - b.docOrder })
-      unreachable.forEach(function (c) {
-        if (defects) {
-          defects.push({
-            kind: 'unreachable',
-            element: c.el.name || c.el.id,
-            message: 'Step "' + (c.el.name || c.el.id) + '" is unreachable from head'
-          })
-        }
-        visited[c.el.id] = true
-        ordered.push(c)
-      })
-    }
-
-    return ordered
-  }
-
+  // The parent tree of a model's elements, children in document order. Procedure steps are
+  // never walked here: their graph and run state come from nn-core `procedureGraph` /
+  // `foldRun`, computed at export time (`model.procedureGraphs`, render-procedure-stepper.js).
   function buildTree(elements) {
     var nodes = {}
     var roots = []
@@ -944,75 +807,12 @@
     roots.forEach(function (root) {
       root.children.sort(function (a, b) { return a.docOrder - b.docOrder })
     })
-
-    var defects = []
-    var procedureCount = 0
-    var stepCount = 0
-    var ungroupedCount = 0
-
-    roots.forEach(function (root) {
-      if (root.children.length > 0) {
-        procedureCount++
-        stepCount += root.children.length
-        sortChildren(root.children, nodes, defects, root)
-      } else if (root.el.concept === 'Work') {
-        ungroupedCount++
-        defects.push({
-          kind: 'ungrouped',
-          element: root.el.name || root.el.id,
-          message: 'Work element "' + (root.el.name || root.el.id) + '" has no parent procedure'
-        })
-      }
-    })
-
-    return {
-      nodes: nodes,
-      roots: roots,
-      defects: defects,
-      summary: {
-        procedures: procedureCount,
-        steps: stepCount,
-        ungrouped: ungroupedCount,
-        formatted: procedureCount + ' procedures \u00b7 ' + stepCount + ' steps \u00b7 ' + ungroupedCount + ' ungrouped'
-      }
-    }
+    return { nodes: nodes, roots: roots }
   }
 
-  function sortChildren(children, nodes, defects, root) {
-    if (!children || !children.length) return
-    var parentNode = root || (children[0].parentId && nodes ? nodes[children[0].parentId] : null) || { el: { id: 'unknown', name: 'unknown' } }
-    var ordered = deriveStepChain(parentNode, children, nodes, defects)
-    children.length = 0
-    for (var i = 0; i < ordered.length; i++) {
-      children.push(ordered[i])
-    }
-  }
-
-  function firstChild(node) {
-    return node && node.children && node.children.length ? node.children[0] : null
-  }
-
-  function nextStep(node, nodes) {
-    if (!node || !nodes) return null
-    var targets = nextTargetsOf(node, nodes)
-    for (var i = 0; i < targets.length; i++) {
-      if (targets[i].parentId === node.parentId) return targets[i]
-    }
-    return null
-  }
-
-  function nextSteps(node, nodes) {
-    if (!node || !nodes) return []
-    return nextTargetsOf(node, nodes).filter(function (t) {
-      return t.parentId === node.parentId
-    })
-  }
-
-  function chainOf(root, nodes) {
+  function chainOf(root) {
     if (!root) return []
-    var children = root.children || []
-    var orderedSteps = deriveStepChain(root, children, nodes, null)
-    return [root].concat(orderedSteps)
+    return [root].concat(root.children || [])
   }
 
   // ---- Charts (shared console capability) ----
@@ -6469,7 +6269,7 @@
       return
     }
     roots.forEach(function (root) {
-      renderDocument(doc, chainOf(root, tree.nodes), {
+      renderDocument(doc, chainOf(root), {
         colorOf: colorOf,
         iconOf: iconOf,
         append: true,
@@ -8501,10 +8301,6 @@
     renderDocumentView: renderDocumentView,
     buildTree: buildTree,
     resolveParentId: resolveParentId,
-    sortChildren: sortChildren,
-    firstChild: firstChild,
-    nextStep: nextStep,
-    nextSteps: nextSteps,
     chainOf: chainOf,
     compileChartSeries: compileChartSeries,
     monthAxis: monthAxis,
