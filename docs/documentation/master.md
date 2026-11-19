@@ -2048,6 +2048,7 @@ this page is the human-readable rendering of it.
 | Ecosystem / Role | **instance model** | *(none)* | A kNNowledge document that is itself one instance of a distributed concept: its root element is that concept and its `slug::` equals its folder slug. Addressed by a hierarchical id. It is a kNNowledge document, not a new level. |
 | Ecosystem / Role | **collection** | *(none)* | The domaiNN-wide set of instances of one concept, ordered by id and identical whatever the storage form: instance models and compact elements are members alike. Same word and one meaning as the `members` collection of the `changes` bluepriNNt: the set of units of one kind, grouped by the concept or document that defines them. A kNNowledge-level concept, not a new level. |
 | Ecosystem / Role | **placement rule** | *(none)* | The `placement::` path pattern a distributed concept declares: where each of its instance models lives relative to the domaiNN root, with exactly one `{slug}` and an optional leading `{container}`. It says where an instance lives, never what it inherits. A kNNowledge-level declaration, not a new level. |
+| Ecosystem / Role | **write policy** | *(none)* | The `write_policy` a concept declares: which kinds of write its instances accept. `mutable` accepts adding, updating and removing; `append-only` accepts adding instances and filling values that are still empty, never overwriting or removing; `read-only` accepts none. Declared on the Concept Definition or as a bluepriNNt default, and only tightened by the domaiNN scope chain. A kNNowledge-level rule, not a new level. |
 | Ecosystem / Role | **synchronization** | *(none)* | A concept of the sources catalog that declares an origin (a file, a folder or a URL) landed into a domaiNN on demand by `nn-sources --sync [alias]`. Models land as mirrors, other files as sources. A kNNowledge-level concept, not a new level. |
 | Ecosystem / Role | **mirror** | *(none)* | A read-only copy of an origin's kNNowledge document under `sources/sync/<alias>/`, replaced in place on each synchronization. A consumer addresses its elements with a `reference` path such as `sources/sync/org/organization_NN.md@manager`. Never a model of the consumer domaiNN. |
 | Ecosystem / Role | **hierarchical id** | `model id` | The identity of a kNNowledge document, derived only from its own path and the declarations of its bluepriNNt: the stem without `_NN` for a compact model, or a container chain plus slug (`<container-id>/<slug>`) for an instance model. A stem, a title and a path are never ids. A kNNowledge-level concept, not a new level. |
@@ -2129,6 +2130,11 @@ this page is the human-readable rendering of it.
 
 - **Sense**: The `placement::` path pattern a distributed concept declares: where each of its instance models lives relative to the domaiNN root, with exactly one `{slug}` and an optional leading `{container}`. It says where an instance lives, never what it inherits. A kNNowledge-level declaration, not a new level.
 - **Excluded Senses** (not renamed): `css-placement`, `ad-placement`
+
+### **write policy**
+
+- **Sense**: The `write_policy` a concept declares: which kinds of write its instances accept. `mutable` accepts adding, updating and removing; `append-only` accepts adding instances and filling values that are still empty, never overwriting or removing; `read-only` accepts none. Declared on the Concept Definition or as a bluepriNNt default, and only tightened by the domaiNN scope chain. A kNNowledge-level rule, not a new level.
+- **Excluded Senses** (not renamed): `file-permissions`, `access-control`
 
 ### **synchronization**
 

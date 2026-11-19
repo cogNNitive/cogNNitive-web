@@ -9516,7 +9516,8 @@ var CHANGE_OPS = [
   "repin_blueprint",
   "rename_field",
   "set_field_default",
-  "review_gate"
+  "review_gate",
+  "close_model"
 ];
 function isChangeStatus(val) {
   return typeof val === "string" && ["proposed", "applied", "partially_applied", "rejected", "conflict"].includes(val);

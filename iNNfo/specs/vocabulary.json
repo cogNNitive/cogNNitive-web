@@ -136,6 +136,15 @@
         "ad-placement"
       ]
     },
+    "write policy": {
+      "canonical": true,
+      "aliases": [],
+      "sense": "The `write_policy` a concept declares: which kinds of write its instances accept. `mutable` accepts adding, updating and removing; `append-only` accepts adding instances and filling values that are still empty, never overwriting or removing; `read-only` accepts none. Declared on the Concept Definition or as a bluepriNNt default, and only tightened by the domaiNN scope chain. A kNNowledge-level rule, not a new level.",
+      "excludes": [
+        "file-permissions",
+        "access-control"
+      ]
+    },
     "synchronization": {
       "canonical": true,
       "aliases": [],

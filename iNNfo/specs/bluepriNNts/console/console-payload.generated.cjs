@@ -8913,7 +8913,7 @@ var REQUIRED_BY_PRIMITIVE = {
 
 // stub:canonical-registry-stub
 function findCanonicalBlueprint(key) {
-  return key === "changes" ? { name: "changes", version: "V_0-10-0", aliases: [], specContent: "" } : null;
+  return key === "changes" ? { name: "changes", version: "V_0-11-0", aliases: [], specContent: "" } : null;
 }
 
 // iNNfo/packages/nn-core/src/schema/nature.ts
@@ -10982,7 +10982,8 @@ var CHANGE_OPS = [
   "repin_blueprint",
   "rename_field",
   "set_field_default",
-  "review_gate"
+  "review_gate",
+  "close_model"
 ];
 function isChangeStatus(val) {
   return typeof val === "string" && ["proposed", "applied", "partially_applied", "rejected", "conflict"].includes(val);

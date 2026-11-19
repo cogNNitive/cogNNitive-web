@@ -8481,6 +8481,12 @@ function parseKnowledge(content) {
   };
 }
 
+// iNNfo/packages/nn-core/src/schema/writePolicy.ts
+var MODEL_CLOSED_KEY = "closed";
+function isModelClosed(frontmatter) {
+  return frontmatter?.[MODEL_CLOSED_KEY] === true;
+}
+
 // iNNfo/packages/nn-core/src/schema/extract.ts
 var CONCEPT_DEFINITION = "Concept Definition";
 var FIELD_DEFINITION = "Field Definition";
@@ -8797,7 +8803,8 @@ var MUTATION_HANDLERS = {
   extract_instance: (model, args) => extractInstance(model, args),
   repin_blueprint: (model, args) => repinBlueprint(model, args),
   rename_field: (model, args) => renameFieldKey(model, args),
-  set_field_default: (model, args) => setFieldDefault(model, args)
+  set_field_default: (model, args) => setFieldDefault(model, args),
+  close_model: (model) => closeModel(model)
 };
 function repinBlueprint(model, args) {
   const to = typeof args.to === "string" ? args.to.trim() : "";
@@ -8828,6 +8835,14 @@ function repinBlueprint(model, args) {
   const version = to.match(/V_\d+-\d+-\d+/)?.[0];
   fm.parent_spec = { ...fm.parent_spec ?? {}, name: to, url };
   if (version) fm.blueprint_version = version;
+  return { success: true };
+}
+function closeModel(model) {
+  const fm = model.frontmatter;
+  if (isModelClosed(fm)) {
+    return { success: false, errors: [{ path: MODEL_CLOSED_KEY, message: "MODEL_CLOSED: the model is already closed" }] };
+  }
+  fm[MODEL_CLOSED_KEY] = true;
   return { success: true };
 }
 function renameFieldKey(model, args) {
