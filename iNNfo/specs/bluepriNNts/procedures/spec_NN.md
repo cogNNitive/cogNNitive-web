@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
-blueprint_version: "V_0-5-1"
+blueprint_version: "V_0-6-0"
 title: "Procedures App"
 relationship_types:
   hierarchy:
@@ -128,10 +128,33 @@ target_concepts:: [Work]
 concept:: Work
 type:: reference
 target_concepts:: [Work]
+description:: Step or steps that may follow. A decision step lists several targets as an inline list (next:: [ [[approve]], [[decline]] ]); the run records the one it took.
 
 ## NN Field Definition: condition
 concept:: Work
 type:: string
+description:: Guard to enter the step. Evaluable forms are outcome == <token> and [[artifact]] validated; anything else is prose the actor asserts.
+
+## NN Field Definition: decision
+concept:: Work
+type:: string
+description:: Question a decision step asks; its answer is the outcome the run records.
+
+## NN Field Definition: command
+concept:: Work
+type:: string
+description:: Shell command an engine step runs; {slot} placeholders take the run's parameters.
+
+## NN Field Definition: produces
+concept:: Work
+type:: string
+description:: Path or address the step produces; {slot} placeholders take the run's parameters.
+
+## NN Field Definition: executor
+concept:: Work
+type:: select
+options:: [human, agent, engine]
+description:: Who performs the step. A step without executor is performed by an agent.
 
 ## NN Field Definition: input
 concept:: Work
@@ -151,6 +174,16 @@ type:: string
 concept:: Work
 type:: reference
 target_concepts:: [Tools]
+
+## NN Field Definition: verify
+concept:: Artifact
+type:: string
+description:: How the artifact is checked: file:<glob>, element:<address>, command:<cmd> or human.
+
+## NN Field Definition: required
+concept:: Artifact
+type:: boolean
+description:: Whether a run must produce the artifact when its producer is on the walked path (default true).
 
 ## NN Field Definition: scope
 concept:: Roles
@@ -224,6 +257,15 @@ outputs_expected:: [[Artifact Name]]
 executed_by:: Lead Engineer
 procedure_model:: procedures/workflow_NN.md
 ```
+
+### Running a Procedure
+
+A procedure is run by the procedure runner, which records each run as an `executions` instance model and derives the run's state from its events; a run never writes the procedure definition.
+
+- **Parameters.** The procedure's frontmatter `slots` are the run's parameters: a required slot must be given when the run starts, and a slot's `default` applies otherwise.
+- **Steps.** Every runnable Work step carries a `slug::`: run events reference steps by slug. `next` names the following step; a decision step (`step_type:: decision`) asks its `decision` question and lists several `next` targets, each guarded by the target's `condition`.
+- **Executors.** `executor` says who performs a step: `human`, `agent` (the default) or `engine`, which runs `command` with the slots substituted.
+- **Artifacts.** A step's `output` artifacts declare `verify`, and `required:: false` exempts an optional one.
 
 ### Usage Procedure
 

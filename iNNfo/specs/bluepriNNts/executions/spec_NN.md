@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-8-0_NN.md"
-blueprint_version: "V_0-1-1"
+blueprint_version: "V_0-2-0"
 title: "Executions App"
 description: "Level-2 blueprint recording runs of procedures: one instance model per run, with an append-only log of events, closed after its terminal event."
 relationship_types:
@@ -57,12 +57,12 @@ description:: knowledge_version of the procedure model when the run started; the
 ## NN Field Definition: params
 concept:: Procedure Execution
 type:: string
-description:: Opaque parameters the run was started with (a JSON object).
+description:: Opaque parameters the run was started with (a JSON object of slot values).
 
 ## NN Field Definition: kind
 concept:: Execution Event
 type:: select
-options:: [started, step_started, step_completed, input_recorded, artifact_produced, interrupted, resumed, completed, failed, cancelled]
+options:: [started, step_started, step_waiting, step_completed, step_failed, input_recorded, artifact_produced, artifact_validated, artifact_rejected, interrupted, resumed, rebased, completed, failed, cancelled]
 description:: What happened. completed, failed and cancelled are terminal.
 
 ## NN Field Definition: step
@@ -73,12 +73,37 @@ description:: Address of the Work step the event belongs to, when it belongs to 
 ## NN Field Definition: field
 concept:: Execution Event
 type:: string
-description:: Name of the input an input_recorded event records.
+description:: Name of the input an input_recorded event records, or the slug of the Artifact an artifact event records.
 
 ## NN Field Definition: value
 concept:: Execution Event
 type:: string
-description:: Value the event records (an input value, an artifact path).
+description:: Value the event records: an input value, an artifact path or address, what a step waits on, a failure reason, or the new definition revision of a rebased event.
+
+## NN Field Definition: outcome
+concept:: Execution Event
+type:: string
+description:: Answer a step_completed event records; for a decision step, the token its next conditions test.
+
+## NN Field Definition: next
+concept:: Execution Event
+type:: string
+description:: Slug of the Work step a step_completed event moves to.
+
+## NN Field Definition: attempt
+concept:: Execution Event
+type:: number
+description:: Attempt number of a step_started event (1 for the first try).
+
+## NN Field Definition: inputs
+concept:: Execution Event
+type:: string
+description:: Input revisions a step_started event froze: a JSON object mapping artifact slug to its validated rev.
+
+## NN Field Definition: rev
+concept:: Execution Event
+type:: string
+description:: Revision of what an input or artifact event records: sha256 for a file or command, the last change id for an element, empty for a human check.
 
 ## NN Field Definition: actor
 concept:: Execution Event
@@ -113,7 +138,22 @@ The root element of a run carries `procedure` (the address of what runs), `def_r
 
 ### Event Log
 
-Everything that happens is appended as an **Execution Event**: `started`, `step_started`, `step_completed`, `input_recorded` (with `field` and `value`), `artifact_produced`, `interrupted`, `resumed`, and a terminal `completed`, `failed` or `cancelled`, each with its `actor` and `at`. Events are `write_policy:: append-only` (iNNfo V_0-8-0): an event is added, its empty values may be filled once, and nothing written is ever changed or removed; a mistake is corrected by a new event. The state of a run (current step, recorded inputs, outcome) is derived from its events and is not stored.
+Everything that happens is appended as an **Execution Event**, each with its `actor` and `at`:
+
+| kind | meaning | fields |
+|---|---|---|
+| `started` | run created | `actor` |
+| `step_started` | a step began | `step`, `attempt`, `inputs` (artifact slug to rev, frozen) |
+| `step_waiting` | handed to a person, an agent or the console | `step`, `value` (what it waits on) |
+| `step_completed` | step done | `step`, `outcome`, `next` (slug of the step taken) |
+| `step_failed` | step failed | `step`, `value` (reason or exit code) |
+| `input_recorded` | a value read or entered | `field`, `value`, `rev` |
+| `artifact_produced`, `artifact_validated`, `artifact_rejected` | artifact fact | `step`, `field` (artifact slug), `value` (path or address), `rev` |
+| `interrupted`, `resumed` | a person paused or resumed the run | `actor` |
+| `rebased` | the actor accepted a new definition revision | `value` (the new revision) |
+| `completed`, `failed`, `cancelled` | terminal | `actor` |
+
+Each event is one `add_element` change that carries its fields (`to:: {json}`). Events are `write_policy:: append-only` (iNNfo V_0-8-0): an event is added, its empty values may be filled once, and nothing written is ever changed or removed; a mistake is corrected by a new event. The state of a run (current step, recorded inputs, outcome, stale artifacts, drift from `def_rev`) is derived from its events and is not stored. An engine step that started and recorded nothing else is a crash, derived and never written.
 
 ### Closing
 
