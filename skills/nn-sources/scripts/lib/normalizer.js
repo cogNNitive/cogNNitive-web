@@ -48,6 +48,53 @@ function pickMetadata(from) {
 }
 
 /**
+ * The converter that actually produced the body, per extension. `.md` has none
+ * (it is its own text), and the text-native formats excluded by
+ * `TEXT_NATIVE_FORMATS` have none either: their sidecar carries no body, so no
+ * converter ran and there is nothing to attribute.
+ */
+const BACKEND_BY_EXT = {
+  '.pdf': 'pdf-parse',
+  '.docx': 'mammoth',
+  '.xlsx': 'xlsx',
+  '.xls': 'xlsx',
+  '.html': 'html-to-text',
+  '.htm': 'html-to-text',
+  '.srt': 'subtitles-to-markdown',
+  '.vtt': 'subtitles-to-markdown',
+  '.txt': 'text-reflow',
+};
+
+/** Why a backend is limited, when it is. Absent when the extractor is not lossy. */
+const BACKEND_REASON_BY_EXT = {
+  '.pdf': 'text layer only; scanned pages produce no text',
+  '.html': 'structural tags stripped; no layout or reading order',
+};
+
+/**
+ * Conversion keys written into the sidecar frontmatter. `backend` and
+ * `backend_reason` say what produced the body; `quality` and `quality_reason`
+ * say how well it went. `quality` is the producer's claim about its own output,
+ * never a consumer's inference: an extractor that could only partially read the
+ * subject marks it `fair` and records why. Formats with no converter write none
+ * of these keys, so nothing is asserted about text that was never converted.
+ *
+ * @param {string} ext
+ * @param {{ partial?: boolean, note?: string }} [result]
+ * @returns {Record<string, string>}
+ */
+function conversionMetadata(ext, { partial = false, note } = {}) {
+  const key = ext.startsWith('.') ? ext : `.${ext}`;
+  const backend = BACKEND_BY_EXT[key];
+  if (!backend) return {};
+  const out = { backend };
+  if (BACKEND_REASON_BY_EXT[key]) out.backend_reason = BACKEND_REASON_BY_EXT[key];
+  out.quality = partial ? 'fair' : 'good';
+  if (partial && note) out.quality_reason = note;
+  return out;
+}
+
+/**
  * @param {{ projectDir: string, webImportMeta?: Record<string, Record<string, any>>, options?: Record<string, any>, notes?: Map<string, { partial: boolean, note?: string }> }} config
  *   `webImportMeta` is keyed by workspace-relative path; `notes` collects per-file remarks (partial PDF parses).
  * @returns {(input: { path: string, ext: string, bytes: Uint8Array }) => Promise<{ body: string, normalizedBy: string, metadata?: Record<string, any> }>}
@@ -78,18 +125,26 @@ function createNormalizer({ projectDir, webImportMeta = {}, notes = new Map() })
         if (result.info.Author && !metadata.author) metadata.author = result.info.Author;
       }
       if (result.partial) notes.set(rel, { partial: true, note: result.note });
-      return { body: result.body, normalizedBy, metadata };
+      const conversion = conversionMetadata(dotExt, result);
+      return { body: result.body, normalizedBy, metadata: { ...metadata, ...conversion } };
     }
 
     const body = converters.convertOkFormat(dotExt, abs, baseName);
     // The HTML branch returns a bare string (D1), so the incomplete-extraction signal is
     // derived here, next to the `notes` map the PDF branch already writes to.
+    let partial = false;
+    let note;
     if (dotExt === '.html' || dotExt === '.htm') {
       const reason = converters.looksPartial(body);
-      if (reason) notes.set(rel, { partial: true, note: reason });
+      if (reason) {
+        partial = true;
+        note = reason;
+        notes.set(rel, { partial: true, note: reason });
+      }
     }
-    return { body, normalizedBy, metadata };
+    const conversion = conversionMetadata(dotExt, { partial, note });
+    return { body, normalizedBy, metadata: { ...metadata, ...conversion } };
   };
 }
 
-module.exports = { createNormalizer, TRANNNSFORM_VERSION };
+module.exports = { createNormalizer, TRANNNSFORM_VERSION, conversionMetadata };
