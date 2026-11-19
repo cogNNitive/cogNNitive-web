@@ -251,7 +251,12 @@ function isConsoleModel(f) {
   const role = roleOf({ path: f.path, parentSpecName });
   if ((role === "knowledge" || role === "procedure") && isUnderRootSources(f.path)) return false;
   if (role === "knowledge") return true;
-  if (role === "procedure") return !segmentsOf(f.path).includes("procedures");
+  if (role === "procedure") {
+    if (!segmentsOf(f.path).includes("procedures")) return true;
+    const linked = f.linkedProcedureModels;
+    if (!linked) return false;
+    return !linked.has(f.path.replace(/\\/g, "/"));
+  }
   return natureOfBlueprint(coreBlueprintKey(parentSpecName))?.structure === "catalog";
 }
 var VERSION_TOKEN_RE = /_V_\d+-\d+-\d+/i;
