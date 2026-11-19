@@ -23419,6 +23419,7 @@ function numberChanges(changes, author) {
 }
 function buildProposedChangeset(changes, meta) {
   const numbered = numberChanges(changes, meta.author);
+  const provenance = meta.authorKind ? { author_kind: meta.authorKind } : void 0;
   return {
     frontmatter: {
       spec_version: CHANGESET_SPEC_VERSION,
@@ -23426,9 +23427,10 @@ function buildProposedChangeset(changes, meta) {
       parent_spec: { name: "changes", url: CHANGES_SPEC_URL },
       blueprint_version: changesBlueprintVersion(),
       status: "proposed",
-      proposal_sha: computeProposalSha2(numbered),
+      proposal_sha: computeProposalSha2(numbered, provenance),
       ...meta.title ? { title: meta.title } : {},
       author: meta.author,
+      ...provenance,
       workspace_id: meta.workspaceId
     },
     changes: numbered
@@ -23440,7 +23442,8 @@ async function writeProposedChangeset(rootDir, input) {
   const document = buildProposedChangeset(input.changes, {
     title: input.title,
     author,
-    workspaceId
+    workspaceId,
+    authorKind: input.authorKind
   });
   const text = serializeChangeset2(document);
   const changesDir = (0, import_node_path19.join)(rootDir, "changes");
