@@ -2954,6 +2954,7 @@
           citations:
             element.citations && typeof element.citations === 'object' ? element.citations : undefined,
           history: Array.isArray(element.history) && element.history.length ? element.history : undefined,
+          historyTotal: typeof element.historyTotal === 'number' ? element.historyTotal : undefined,
           qud: { id: element.id, concept: element.concept, hash: element.hash, path: element.canonicalUnit || element.modelFile || element.modelTitle || null },
           path: element.location || element.modelFile || element.modelTitle || null,
           tags: getElementEffectiveTags(element),

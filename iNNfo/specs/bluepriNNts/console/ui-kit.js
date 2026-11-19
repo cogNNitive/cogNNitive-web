@@ -3346,6 +3346,19 @@
         makeEl(doc, 'div', 'nn-history-empty', data.fieldName ? 'No recorded changes for this field.' : 'No recorded changes for this element.'),
       )
     }
+    // The payload keeps the newest hops only. Say so, and say where the rest lives:
+    // showing twelve of forty without a word is the console claiming the element has
+    // twelve changes.
+    if (!data.fieldName && typeof data.historyTotal === 'number' && data.historyTotal > historyItems.length) {
+      histSection.appendChild(
+        makeEl(
+          doc,
+          'div',
+          'nn-history-empty',
+          'Showing the last ' + String(historyItems.length) + ' of ' + String(data.historyTotal) + ' recorded changes. The full lineage is in the changes model.',
+        ),
+      )
+    }
     panelHistory.appendChild(histSection)
     modal.appendChild(panelHistory)
 

@@ -796,6 +796,7 @@
       var base = {
         citations: flattenCitations(el.citations),
         history: Array.isArray(el.history) ? el.history : [],
+        historyTotal: typeof el.historyTotal === 'number' ? el.historyTotal : undefined,
       }
       if (anchorData.relRetarget) {
         var relTargetEl = resolveElement(anchorData.relTarget, anchorData.modelId)
@@ -811,7 +812,7 @@
           draftField: anchorData.relField,
           original: anchorData.relTarget,
           citations: base.citations,
-          history: base.history,
+          history: base.history, historyTotal: base.historyTotal,
         }
       }
       var field = anchorData.field
@@ -821,7 +822,7 @@
           fieldName: null,
           value: null,
           citations: base.citations,
-          history: base.history,
+          history: base.history, historyTotal: base.historyTotal,
           modelId: el.modelId || meta.modelId,
         }
       }
@@ -834,7 +835,7 @@
           draftField: 'name',
           original: el.name,
           citations: base.citations,
-          history: base.history,
+          history: base.history, historyTotal: base.historyTotal,
         }
       }
       if (field === '__description') {
@@ -846,7 +847,7 @@
           draftField: 'description',
           original: el.description,
           citations: base.citations,
-          history: base.history,
+          history: base.history, historyTotal: base.historyTotal,
         }
       }
       var fieldVal = docFieldValue(el, field)
@@ -885,7 +886,7 @@
         citations: base.citations.filter(function (c) {
           return !c.field || c.field === field
         }),
-        history: base.history,
+        history: base.history, historyTotal: base.historyTotal,
       }
     }
 

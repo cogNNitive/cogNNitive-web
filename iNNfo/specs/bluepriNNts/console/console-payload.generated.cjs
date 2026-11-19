@@ -7370,6 +7370,7 @@ var require_dist = __commonJS({
 var index_exports = {};
 __export(index_exports, {
   CHANGE_CONCEPT: () => CHANGE_CONCEPT,
+  CONSOLE_HISTORY_LIMIT: () => CONSOLE_HISTORY_LIMIT,
   DEV_ROOT_MARKER: () => DEV_ROOT_MARKER,
   DOMAIN_CONSOLE_FILENAME: () => DOMAIN_CONSOLE_FILENAME,
   EXCERPT_CHAR_CAP: () => EXCERPT_CHAR_CAP,
@@ -12766,6 +12767,7 @@ function historyItem(change, resolveEvidence) {
     resolution: change.resolution
   };
 }
+var CONSOLE_HISTORY_LIMIT = 12;
 function attachChangesetHistory(elements, changesets, resolveEvidence, prebuiltLog) {
   if (!Array.isArray(changesets) || changesets.length === 0) return;
   const log = prebuiltLog ?? buildChangeLogFromChangesets(changesets);
@@ -12781,6 +12783,11 @@ function attachChangesetHistory(elements, changesets, resolveEvidence, prebuiltL
       if (!el.history) el.history = [];
       el.history.push(historyItem(change, resolveEvidence));
     }
+  }
+  for (const el of elements) {
+    if (!el.history || el.history.length <= CONSOLE_HISTORY_LIMIT) continue;
+    el.historyTotal = el.history.length;
+    el.history = el.history.sort((a, b) => String(a.timestamp ?? "").localeCompare(String(b.timestamp ?? ""))).slice(-CONSOLE_HISTORY_LIMIT);
   }
 }
 
@@ -13938,6 +13945,7 @@ function auditModelRecords(log, models) {
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   CHANGE_CONCEPT,
+  CONSOLE_HISTORY_LIMIT,
   DEV_ROOT_MARKER,
   DOMAIN_CONSOLE_FILENAME,
   EXCERPT_CHAR_CAP,
