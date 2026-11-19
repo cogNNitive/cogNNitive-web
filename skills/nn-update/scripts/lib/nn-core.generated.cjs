@@ -8691,6 +8691,80 @@ function updateWikiLinks(text, oldName, newName) {
   });
 }
 
+// iNNfo/packages/nn-core/src/changeset/types.ts
+function jsonObjectKeys(text) {
+  const keys = [];
+  let depth = 0;
+  let expectKey = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') {
+      let j = i + 1;
+      while (j < text.length && text[j] !== '"') j += text[j] === "\\" ? 2 : 1;
+      if (depth === 1 && expectKey) {
+        keys.push(JSON.parse(text.slice(i, j + 1)));
+        expectKey = false;
+      }
+      i = j;
+      continue;
+    }
+    if (ch === "{" || ch === "[") {
+      depth++;
+      if (ch === "{" && depth === 1) expectKey = true;
+    } else if (ch === "}" || ch === "]") {
+      depth--;
+    } else if (ch === "," && depth === 1) {
+      expectKey = true;
+    }
+  }
+  return keys;
+}
+function parseFieldMap(raw, key, op = "set_fields") {
+  if (raw === void 0) return { ok: false, reason: `${op} requires "${key}"` };
+  const text = String(raw).trim();
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return { ok: false, reason: `${op} "${key}" must be a JSON object of field -> value` };
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return { ok: false, reason: `${op} "${key}" must be a JSON object of field -> value` };
+  }
+  const keys = jsonObjectKeys(text);
+  if (keys.length === 0) return { ok: false, reason: `${op} "${key}" must set at least one field` };
+  const seen = /* @__PURE__ */ new Set();
+  const values = /* @__PURE__ */ new Map();
+  for (const field of keys) {
+    if (seen.has(field)) return { ok: false, reason: `${op} "${key}" repeats the field "${field}"` };
+    seen.add(field);
+    if (field.trim() === "" || field !== field.trim() || /[&@]/.test(field)) {
+      return { ok: false, reason: `${op} "${key}" has an invalid field name "${field}"` };
+    }
+    const value = parsed[field];
+    if (typeof value === "string") values.set(field, value);
+    else if (typeof value === "number" || typeof value === "boolean")
+      values.set(field, String(value));
+    else
+      return { ok: false, reason: `${op} "${key}".${field} must be a serialized value (a string)` };
+  }
+  return { ok: true, values };
+}
+function addElementFieldsProblems(change) {
+  if (change.op !== "add_element" || change.to === void 0) return [];
+  const to = parseFieldMap(change.to, "to", "add_element");
+  if (!to.ok) return [{ code: "INVALID_OPERATION", message: to.reason }];
+  return [...to.values.keys()].filter((field) => field.toLowerCase() === "description").map(() => ({
+    code: "USE_UPDATE_ELEMENT_TEXT",
+    message: "the element prose is not a field; use update_element_text on the bare element target"
+  }));
+}
+function addElementFieldsEntries(change) {
+  if (change.op !== "add_element" || change.to === void 0) return [];
+  const to = parseFieldMap(change.to, "to", "add_element");
+  return to.ok ? [...to.values].map(([field, value]) => ({ field, to: value })) : [];
+}
+
 // iNNfo/packages/nn-core/src/mutate.ts
 function requireArgs(args, keys) {
   const values = {};
@@ -8738,7 +8812,10 @@ function cloneKnowledge(model) {
   const { elements, ...rest } = model;
   const clonedElements = new ElementsMap();
   for (const [key, nodes] of elements.entries()) {
-    clonedElements.set(key, nodes.map((node) => structuredClone(node)));
+    clonedElements.set(
+      key,
+      nodes.map((node) => structuredClone(node))
+    );
   }
   return { ...structuredClone(rest), elements: clonedElements };
 }
@@ -8840,7 +8917,10 @@ function repinBlueprint(model, args) {
 function closeModel(model) {
   const fm = model.frontmatter;
   if (isModelClosed(fm)) {
-    return { success: false, errors: [{ path: MODEL_CLOSED_KEY, message: "MODEL_CLOSED: the model is already closed" }] };
+    return {
+      success: false,
+      errors: [{ path: MODEL_CLOSED_KEY, message: "MODEL_CLOSED: the model is already closed" }]
+    };
   }
   fm[MODEL_CLOSED_KEY] = true;
   return { success: true };
@@ -8892,7 +8972,10 @@ function setFieldDefault(model, args) {
   const value = args.value !== void 0 ? args.value : args.to;
   const scope = typeof args.conceptName === "string" ? args.conceptName.trim() : "";
   if (!fieldName) {
-    return { success: false, errors: [{ path: "name", message: 'set_field_default requires "name"' }] };
+    return {
+      success: false,
+      errors: [{ path: "name", message: 'set_field_default requires "name"' }]
+    };
   }
   if (value === void 0) {
     return { success: false, errors: [{ path: "to", message: 'set_field_default requires "to"' }] };
@@ -8912,7 +8995,9 @@ function setFieldDefault(model, args) {
   if (filled === 0) {
     return {
       success: true,
-      warnings: [{ path: "", message: `set_field_default: every element already has "${fieldName}"` }]
+      warnings: [
+        { path: "", message: `set_field_default: every element already has "${fieldName}"` }
+      ]
     };
   }
   return { success: true };
@@ -8976,15 +9061,20 @@ function addConcept(model, args) {
   if (RESERVED_CONCEPT_NAMES.has(conceptName)) {
     return {
       success: false,
-      errors: [{
-        path: "Concept Definition",
-        message: `"${conceptName}" is a reserved pseudo-concept name and MUST NOT be declared`
-      }]
+      errors: [
+        {
+          path: "Concept Definition",
+          message: `"${conceptName}" is a reserved pseudo-concept name and MUST NOT be declared`
+        }
+      ]
     };
   }
   const defs = model.elements.get(CONCEPT_DEFINITION) ?? [];
   if (defs.some((c) => c.name.toLowerCase() === conceptName.toLowerCase())) {
-    return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" already exists` }] };
+    return {
+      success: false,
+      errors: [{ path: "", message: `Concept "${conceptName}" already exists` }]
+    };
   }
   const fields = { type: args.type ?? "text" };
   if (args.icon !== void 0) fields["icon"] = args.icon;
@@ -9013,12 +9103,18 @@ function addField(model, args) {
   } else if (Array.isArray(conceptVal)) {
     for (const c of conceptVal) {
       if (!declaredConceptNames.has(String(c).toLowerCase())) {
-        return { success: false, errors: [{ path: "concept", message: `Concept "${c}" not found` }] };
+        return {
+          success: false,
+          errors: [{ path: "concept", message: `Concept "${c}" not found` }]
+        };
       }
     }
   } else if (typeof conceptVal === "string") {
     if (!declaredConceptNames.has(conceptVal.toLowerCase())) {
-      return { success: false, errors: [{ path: "", message: `Concept "${conceptVal}" not found` }] };
+      return {
+        success: false,
+        errors: [{ path: "", message: `Concept "${conceptVal}" not found` }]
+      };
     }
   }
   const fds = model.elements.get(FIELD_DEFINITION) ?? [];
@@ -9028,7 +9124,12 @@ function addField(model, args) {
   if (existingField) {
     return {
       success: false,
-      errors: [{ path: "", message: `Field "${fieldName}" already exists on concept "${String(conceptVal)}"` }]
+      errors: [
+        {
+          path: "",
+          message: `Field "${fieldName}" already exists on concept "${String(conceptVal)}"`
+        }
+      ]
     };
   }
   const fieldType = args.fieldType ?? args.type ?? "string";
@@ -9041,7 +9142,12 @@ function addField(model, args) {
     if (mult && fieldType !== "select") {
       return {
         success: false,
-        errors: [{ path: "multiple", message: `Field "${fieldName}" has multiple:: true, which requires type:: select (got "${fieldType}")` }]
+        errors: [
+          {
+            path: "multiple",
+            message: `Field "${fieldName}" has multiple:: true, which requires type:: select (got "${fieldType}")`
+          }
+        ]
       };
     }
     fields["multiple"] = mult;
@@ -9051,13 +9157,20 @@ function addField(model, args) {
     if (widget === "scale" && fieldType !== "number") {
       return {
         success: false,
-        errors: [{ path: "widget", message: `widget "scale" requires type:: number (got "${fieldType}")` }]
+        errors: [
+          { path: "widget", message: `widget "scale" requires type:: number (got "${fieldType}")` }
+        ]
       };
     }
     if (widget === "boolean" && fieldType !== "boolean") {
       return {
         success: false,
-        errors: [{ path: "widget", message: `widget "boolean" requires type:: boolean (got "${fieldType}")` }]
+        errors: [
+          {
+            path: "widget",
+            message: `widget "boolean" requires type:: boolean (got "${fieldType}")`
+          }
+        ]
       };
     }
     if (widget === "cycle") {
@@ -9066,7 +9179,12 @@ function addField(model, args) {
       if (fieldType !== "select" || fields["multiple"] === true || !hasOptions) {
         return {
           success: false,
-          errors: [{ path: "widget", message: `widget "cycle" requires a single-valued select with options` }]
+          errors: [
+            {
+              path: "widget",
+              message: `widget "cycle" requires a single-valued select with options`
+            }
+          ]
         };
       }
     }
@@ -9074,14 +9192,18 @@ function addField(model, args) {
       if (fieldType !== "select" || fields["multiple"] !== true) {
         return {
           success: false,
-          errors: [{ path: "widget", message: `widget "set" requires type:: select with multiple:: true` }]
+          errors: [
+            { path: "widget", message: `widget "set" requires type:: select with multiple:: true` }
+          ]
         };
       }
     }
     if (widget === "text" && fieldType !== "string") {
       return {
         success: false,
-        errors: [{ path: "widget", message: `widget "text" requires type:: string (got "${fieldType}")` }]
+        errors: [
+          { path: "widget", message: `widget "text" requires type:: string (got "${fieldType}")` }
+        ]
       };
     }
     fields["widget"] = widget;
@@ -9092,7 +9214,9 @@ function addField(model, args) {
     if (!widget) {
       return {
         success: false,
-        errors: [{ path: "widget_config", message: `"${fieldName}" declares widget_config but no widget` }]
+        errors: [
+          { path: "widget_config", message: `"${fieldName}" declares widget_config but no widget` }
+        ]
       };
     }
     const allowed = WIDGET_CONFIG_KEYS[widget] || [];
@@ -9101,7 +9225,12 @@ function addField(model, args) {
         if (!allowed.includes(k)) {
           return {
             success: false,
-            errors: [{ path: `widget_config.${k}`, message: `"${k}" is not a widget_config key for widget "${widget}". Allowed: ${allowed.join(", ") || "(none)"}` }]
+            errors: [
+              {
+                path: `widget_config.${k}`,
+                message: `"${k}" is not a widget_config key for widget "${widget}". Allowed: ${allowed.join(", ") || "(none)"}`
+              }
+            ]
           };
         }
       }
@@ -9110,13 +9239,23 @@ function addField(model, args) {
         if (scaleCfg["min"] === void 0 || scaleCfg["max"] === void 0) {
           return {
             success: false,
-            errors: [{ path: "widget_config", message: `widget "scale" requires widget_config.min and max` }]
+            errors: [
+              {
+                path: "widget_config",
+                message: `widget "scale" requires widget_config.min and max`
+              }
+            ]
           };
         }
         if (Number(scaleCfg["min"]) >= Number(scaleCfg["max"])) {
           return {
             success: false,
-            errors: [{ path: "widget_config", message: `widget "scale" min (${scaleCfg["min"]}) must be less than max (${scaleCfg["max"]})` }]
+            errors: [
+              {
+                path: "widget_config",
+                message: `widget "scale" min (${scaleCfg["min"]}) must be less than max (${scaleCfg["max"]})`
+              }
+            ]
           };
         }
       }
@@ -9148,7 +9287,9 @@ function addElement(model, args, schema) {
       const declaredNames = schema.concepts.map((c) => c.name);
       return {
         success: false,
-        errors: [{ path: "conceptName", message: unknownConceptMessage(conceptName, declaredNames) }]
+        errors: [
+          { path: "conceptName", message: unknownConceptMessage(conceptName, declaredNames) }
+        ]
       };
     }
   }
@@ -9156,7 +9297,12 @@ function addElement(model, args, schema) {
   if (existingElements.some((e) => e.name.toLowerCase() === elementName.toLowerCase())) {
     return {
       success: false,
-      errors: [{ path: "", message: `Element "${elementName}" already exists in concept "${conceptName}"` }]
+      errors: [
+        {
+          path: "",
+          message: `Element "${elementName}" already exists in concept "${conceptName}"`
+        }
+      ]
     };
   }
   const requestedSlug = typeof args.slug === "string" && args.slug.trim() ? args.slug.trim() : void 0;
@@ -9166,7 +9312,12 @@ function addElement(model, args, schema) {
         if (el.slug?.toLowerCase() === requestedSlug.toLowerCase()) {
           return {
             success: false,
-            errors: [{ path: "slug", message: `Slug "${requestedSlug}" already exists in this model \u2014 element slugs must be unique model-wide` }]
+            errors: [
+              {
+                path: "slug",
+                message: `Slug "${requestedSlug}" already exists in this model \u2014 element slugs must be unique model-wide`
+              }
+            ]
           };
         }
       }
@@ -9178,9 +9329,17 @@ function addElement(model, args, schema) {
       errors: [
         {
           path: "fields",
-          message: "INVALID_OPERATION: add_element must not carry inline fields; emit one set_fields change (target model@element) for the fields that share one evidence, or one update_field per field (target model@element&field)"
+          message: 'INVALID_OPERATION: add_element carries its initial fields in "to" (a JSON object of field -> value, the shape set_fields uses), never in "fields"'
         }
       ]
+    };
+  }
+  const initialTo = args.to === void 0 || args.to === null ? void 0 : typeof args.to === "string" ? args.to : JSON.stringify(args.to);
+  const toProblem = addElementFieldsProblems({ op: "add_element", to: initialTo })[0];
+  if (toProblem) {
+    return {
+      success: false,
+      errors: [{ path: "to", message: `${toProblem.code}: ${toProblem.message}` }]
     };
   }
   const reservedArgsKeys = /* @__PURE__ */ new Set([
@@ -9189,6 +9348,7 @@ function addElement(model, args, schema) {
     "slug",
     "description",
     "fields",
+    "to",
     // Not a field: a change derives from `evidence`. Accepted here only so the
     // generic copy below does not smuggle it into the element's fields.
     "sources",
@@ -9205,10 +9365,6 @@ function addElement(model, args, schema) {
     if (!reservedArgsKeys.has(k) && v !== void 0) {
       fields[k] = v;
     }
-  }
-  if (existingElements.length > 0) {
-    const prevLast = existingElements[existingElements.length - 1];
-    prevLast.trailingBlankLine = true;
   }
   let elementSlug;
   if (requestedSlug) {
@@ -9238,6 +9394,14 @@ function addElement(model, args, schema) {
     slugExplicit: true,
     trailingBlankLine: true
   };
+  for (const entry of addElementFieldsEntries({ op: "add_element", to: initialTo })) {
+    const written = writeFieldValue(newElement, conceptName, entry.field, entry.to, schema);
+    if (!written.success) return written;
+  }
+  if (existingElements.length > 0) {
+    const prevLast = existingElements[existingElements.length - 1];
+    prevLast.trailingBlankLine = true;
+  }
   existingElements.push(newElement);
   model.elements.set(conceptName, existingElements);
   return { success: true };
@@ -9298,7 +9462,12 @@ function updateField(model, args, schema) {
     if (!fieldName) missing.push("fieldName");
     return {
       success: false,
-      errors: [{ path: "", message: `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} required` }]
+      errors: [
+        {
+          path: "",
+          message: `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} required`
+        }
+      ]
     };
   }
   if (fieldName.trim().toLowerCase() === "description") {
@@ -9320,7 +9489,10 @@ function updateField(model, args, schema) {
   if (conceptName) {
     const existingElements = model.elements.get(conceptName);
     if (!existingElements) {
-      return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found` }] };
+      return {
+        success: false,
+        errors: [{ path: "", message: `Concept "${conceptName}" not found` }]
+      };
     }
     foundElement = existingElements.find((e) => matchesElement(e, elementName));
     foundConcept = conceptName;
@@ -9345,6 +9517,9 @@ function updateField(model, args, schema) {
       ]
     };
   }
+  return writeFieldValue(foundElement, foundConcept, fieldName, val, schema);
+}
+function writeFieldValue(foundElement, foundConcept, fieldName, val, schema) {
   if (val === "") {
     delete foundElement.fields[fieldName];
     if (foundElement.rawFields) {
@@ -9361,7 +9536,9 @@ function updateField(model, args, schema) {
   }
   let fieldDef;
   if (schema && foundConcept) {
-    const conceptObj = schema.concepts?.find((c) => c.name.toLowerCase() === foundConcept.toLowerCase());
+    const conceptObj = schema.concepts?.find(
+      (c) => c.name.toLowerCase() === foundConcept.toLowerCase()
+    );
     fieldDef = conceptObj?.fields?.find((f) => f.name.toLowerCase() === fieldName.toLowerCase());
     if (!fieldDef && Array.isArray(schema.fields)) {
       fieldDef = schema.fields.find(
@@ -9421,7 +9598,8 @@ function updateMatrixCell(model, args, schema) {
     }
     if (matrixName) {
       if (slugify(name).toLowerCase() === slugify(matrixName).toLowerCase()) return true;
-      if (slugifyHeading(name).toLowerCase() === slugifyHeading(matrixName).toLowerCase()) return true;
+      if (slugifyHeading(name).toLowerCase() === slugifyHeading(matrixName).toLowerCase())
+        return true;
       if (normalizeKey(name) === normalizeKey(matrixName)) return true;
     }
     return false;
@@ -9493,7 +9671,12 @@ function removeElement(model, args) {
     (e) => e.name.toLowerCase() !== elementName.toLowerCase() && (!e.slug || e.slug.toLowerCase() !== elementName.toLowerCase()) && slugifyHeading(e.name).toLowerCase() !== elementName.toLowerCase()
   );
   if (filtered.length === existingElements.length) {
-    return { success: false, errors: [{ path: "", message: `Element "${elementName}" not found in concept "${conceptName}"` }] };
+    return {
+      success: false,
+      errors: [
+        { path: "", message: `Element "${elementName}" not found in concept "${conceptName}"` }
+      ]
+    };
   }
   model.elements.set(conceptName, filtered);
   let cascadedCells = 0;
@@ -9607,7 +9790,10 @@ function updateElementText(model, args) {
   if (conceptName) {
     const existingElements = model.elements.get(conceptName);
     if (!existingElements) {
-      return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found` }] };
+      return {
+        success: false,
+        errors: [{ path: "", message: `Concept "${conceptName}" not found` }]
+      };
     }
     foundElement = existingElements.find((e) => matchesElement(e, elementName));
   } else {
@@ -9643,9 +9829,7 @@ function updateConceptText(model, args, schema) {
   }
   let targetKey = conceptName;
   if (schema) {
-    const declared = schema.concepts.find(
-      (c) => c.name.toLowerCase() === conceptName.toLowerCase()
-    );
+    const declared = schema.concepts.find((c) => c.name.toLowerCase() === conceptName.toLowerCase());
     if (declared) targetKey = declared.name;
   }
   for (const k of Object.keys(model.rawSections)) {
@@ -9686,7 +9870,12 @@ function updateConceptField(model, args, schema) {
     if (!fieldName) missing.push("fieldName");
     return {
       success: false,
-      errors: [{ path: "", message: `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} required` }]
+      errors: [
+        {
+          path: "",
+          message: `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} required`
+        }
+      ]
     };
   }
   if (val === void 0) {
@@ -9694,9 +9883,7 @@ function updateConceptField(model, args, schema) {
   }
   let targetConceptKey = conceptName;
   if (schema) {
-    const declared = schema.concepts.find(
-      (c) => c.name.toLowerCase() === conceptName.toLowerCase()
-    );
+    const declared = schema.concepts.find((c) => c.name.toLowerCase() === conceptName.toLowerCase());
     if (declared) targetConceptKey = declared.name;
   } else if (model.conceptFields) {
     for (const k of Object.keys(model.conceptFields)) {
@@ -9720,7 +9907,9 @@ function updateConceptField(model, args, schema) {
     rawValString = String(val);
   }
   if (schema) {
-    const conceptObj = schema.concepts?.find((c) => c.name.toLowerCase() === targetConceptKey.toLowerCase());
+    const conceptObj = schema.concepts?.find(
+      (c) => c.name.toLowerCase() === targetConceptKey.toLowerCase()
+    );
     let fieldDef = conceptObj?.fields?.find((f) => f.name.toLowerCase() === fieldName.toLowerCase());
     if (!fieldDef && Array.isArray(schema.fields)) {
       fieldDef = schema.fields.find(
@@ -9778,13 +9967,17 @@ function addMatrix(model, args) {
     return matrixIdentMatches(ident, matrixName);
   });
   if (exists) {
-    return { success: false, errors: [{ path: "", message: `Matrix "${matrixName}" already exists` }] };
+    return {
+      success: false,
+      errors: [{ path: "", message: `Matrix "${matrixName}" already exists` }]
+    };
   }
   const source = args.source || args.conceptName || "";
   const targetConcept = args.targetConcept || args.axisTarget || args.to || "";
   const listArg = (value) => {
     if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean);
-    if (typeof value === "string") return value.split(",").map((v) => v.trim()).filter(Boolean);
+    if (typeof value === "string")
+      return value.split(",").map((v) => v.trim()).filter(Boolean);
     return [];
   };
   const elementNamesOf = (concept) => {
@@ -9868,19 +10061,35 @@ function renameConcept(model, args) {
   if (RESERVED_CONCEPT_NAMES.has(newName)) {
     return {
       success: false,
-      errors: [{ path: "Concept Definition", message: `"${newName}" is a reserved pseudo-concept name` }]
+      errors: [
+        { path: "Concept Definition", message: `"${newName}" is a reserved pseudo-concept name` }
+      ]
     };
   }
   const lowerOld = conceptName.toLowerCase();
   const lowerNew = newName.toLowerCase();
-  if (lowerOld === lowerNew) return { success: false, errors: [{ path: "", message: "newName must differ from conceptName" }] };
+  if (lowerOld === lowerNew)
+    return {
+      success: false,
+      errors: [{ path: "", message: "newName must differ from conceptName" }]
+    };
   const defs = model.elements.get(CONCEPT_DEFINITION) ?? [];
   const def = defs.find((c) => c.name.toLowerCase() === lowerOld);
   if (!def) {
-    return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found in Concept Definition elements` }] };
+    return {
+      success: false,
+      errors: [
+        { path: "", message: `Concept "${conceptName}" not found in Concept Definition elements` }
+      ]
+    };
   }
   if (defs.some((c) => c.name.toLowerCase() === lowerNew && c !== def)) {
-    return { success: false, errors: [{ path: "", message: `Concept "${newName}" already exists in Concept Definition elements` }] };
+    return {
+      success: false,
+      errors: [
+        { path: "", message: `Concept "${newName}" already exists in Concept Definition elements` }
+      ]
+    };
   }
   def.name = newName;
   const fds = model.elements.get(FIELD_DEFINITION) ?? [];
@@ -9938,11 +10147,22 @@ function renameElement(model, args, schema) {
   const { conceptName, elementName, newName } = req.values;
   let lowerOld = elementName.toLowerCase();
   const lowerNew = newName.toLowerCase();
-  if (lowerOld === lowerNew) return { success: false, errors: [{ path: "", message: "newName must differ from elementName" }] };
+  if (lowerOld === lowerNew)
+    return {
+      success: false,
+      errors: [{ path: "", message: "newName must differ from elementName" }]
+    };
   const existingElements = model.elements.get(conceptName);
-  if (!existingElements) return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found` }] };
+  if (!existingElements)
+    return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found` }] };
   const element = existingElements.find((e) => matchesElement(e, elementName));
-  if (!element) return { success: false, errors: [{ path: "", message: `Element "${elementName}" not found in concept "${conceptName}"` }] };
+  if (!element)
+    return {
+      success: false,
+      errors: [
+        { path: "", message: `Element "${elementName}" not found in concept "${conceptName}"` }
+      ]
+    };
   const oldDisplayName = element.name;
   lowerOld = oldDisplayName.toLowerCase();
   const duplicateSibling = existingElements.find(
@@ -9951,7 +10171,9 @@ function renameElement(model, args, schema) {
   if (duplicateSibling) {
     return {
       success: false,
-      errors: [{ path: "", message: `Element "${newName}" already exists in concept "${conceptName}"` }]
+      errors: [
+        { path: "", message: `Element "${newName}" already exists in concept "${conceptName}"` }
+      ]
     };
   }
   element.name = newName;
@@ -9976,9 +10198,7 @@ function renameElement(model, args, schema) {
           if (typeof fVal === "string") {
             el.fields[fKey] = rewrite(fVal);
           } else if (Array.isArray(fVal)) {
-            el.fields[fKey] = fVal.map(
-              (item) => typeof item === "string" ? rewrite(item) : item
-            );
+            el.fields[fKey] = fVal.map((item) => typeof item === "string" ? rewrite(item) : item);
           }
         }
       }

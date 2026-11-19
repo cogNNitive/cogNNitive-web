@@ -1,55 +1,73 @@
 {
-  "generatedAt": "2026-11-19T01:33:32.982Z",
-  "head": "dd97c0c355929e514fd8112f23d1e62944dc28ed",
+  "generatedAt": "2026-11-19T09:19:29.381Z",
+  "head": "c9c56f72a1d14fcaf8126f81e3756e33dd4d03b2",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v3.8.0",
       "pinnedTagDate": "2026-11-19T01:23:29+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 2,
+      "filesTouched": [
+        "skills/nn-sources/scripts/lib/nn-core.generated.cjs",
+        "skills/nn-update/scripts/lib/nn-core.generated.cjs"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",
-      "pinnedTag": "blueprints-v0.76.0",
-      "pinnedTagDate": "2026-11-19T01:23:29+01:00",
+      "pinnedTag": "blueprints-v0.76.1",
+      "pinnedTagDate": "2026-11-19T02:32:31+01:00",
       "commitsSincePin": 3,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/avatar-jobs.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/video-guard.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/avatar-resolution.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
+        "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/package.json"
       ]
     },
     "templates": {
       "subsystem": "templates",
-      "pinnedTag": "blueprints-v0.76.0",
-      "pinnedTagDate": "2026-11-19T01:23:29+01:00",
+      "pinnedTag": "blueprints-v0.76.1",
+      "pinnedTagDate": "2026-11-19T02:32:31+01:00",
       "commitsSincePin": 3,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/avatar-jobs.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/video-guard.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/test/avatar-resolution.test.mjs",
-        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
+        "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/package.json"
       ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.42.0",
       "pinnedTagDate": "2026-11-19T01:23:29+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 2,
+      "filesTouched": [
+        "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js",
+        "iNNfo/packages/nn-mcp/package.json",
+        "iNNfo/packages/nn-mcp/src/server.ts",
+        "iNNfo/packages/nn-mcp/src/tools/apply-change.ts",
+        "iNNfo/packages/nn-mcp/src/tools/propose-changeset.ts",
+        "iNNfo/packages/nn-mcp/src/tools/set-fields.spec.ts",
+        "iNNfo/packages/nn-mcp/test/procedure-execution.test.ts"
+      ]
     },
     "nn-console": {
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.42.0",
       "pinnedTagDate": "2026-11-19T01:23:29+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 2,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/artifact_shell.html",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/package.json"
+      ]
     }
   }
 }

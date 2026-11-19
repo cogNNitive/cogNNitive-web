@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
 blueprint_name: "changes"
-blueprint_version: "V_0-12-0"
+blueprint_version: "V_0-13-0"
 title: "Changeset Blueprint"
 description: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."
 nature:
@@ -53,7 +53,7 @@ description:: Precondition check value prior to mutation.
 ## NN Field Definition: to
 concept:: Change
 type:: string
-description:: Proposed target value. For bump_version, the version level to bump: patch, minor or major. For add_matrix, the column-axis concept. For move_model, the new instance model id. For extract_instance, the new instance model id the extracted element becomes. For set_fields, a one-line JSON object field -> serialized value; from is then an optional JSON object with the expected current value of some of those fields.
+description:: Proposed target value. For bump_version, the version level to bump: patch, minor or major. For add_matrix, the column-axis concept. For move_model, the new instance model id. For extract_instance, the new instance model id the extracted element becomes. For add_element, the optional initial fields, a one-line JSON object field -> serialized value. For set_fields, a one-line JSON object field -> serialized value; from is then an optional JSON object with the expected current value of some of those fields.
 
 ## NN Field Definition: base_hash
 concept:: Change
@@ -175,7 +175,7 @@ Each change is declared as an element of concept Change:
 - rename_field: Renames one field key on every element of the model that carries it. target is the bare model id, from is the current field name, to is the new one, and concept optionally scopes the rename to one concept. It replaces text-level rewrites of a field a newer bluepriNNt renamed. Renaming a field no element carries is a successful no-op with a warning.
 - set_field_default: Populates a field introduced by the newer bluepriNNt on every element that lacks it, never overwriting an existing value. target is the bare model id, name is the field, to is the default value, and concept optionally scopes it. It is a successful no-op when every element already carries the field.
 - close_model: The closing event of a model. target is the bare model id; it sets `closed: true` in the model frontmatter, and the changeset that carries it records who closed the model and when. After it, every write to the model is refused with MODEL_CLOSED, in the same changeset too, and a second close_model is MODEL_CLOSED. A log that never ends is closed in segments.
-- add_element: Creates an element with its concept, name and optional explicit slug only. It carries no inline field values: its fields are set afterwards by one set_fields change for the fields that share one evidence, and one update_field change for each field whose evidence differs (no from, because the fields do not exist yet). notes is rationale, never prose.
+- add_element: Creates an element with its concept, name and optional explicit slug, and optionally its initial fields in to: a one-line JSON object field -> serialized value, the shape set_fields uses (an empty or non-object to or a repeated key is INVALID_OPERATION; the key description is USE_UPDATE_ELEMENT_TEXT). Every value is validated like update_field validates it, and the element is written with its fields in the one change under its one evidence, all or nothing; an append-only instance is thus written once with its values. The change log records one unit per field (model@slug&field) whose origin is the add_element. There is no fields key. A field whose evidence differs is set afterwards by its own update_field change (no from, because the field does not exist yet). notes is rationale, never prose.
 - set_fields: Sets several fields of one element from one evidence in one change. target is model@element (no &field); to is a one-line JSON object whose keys are field names and whose values are the serialized field values update_field would write; from is optional and holds the expected current value of a subset of the keys of to (a key absent from from has no precondition). It is all or nothing: a failed from or base_hash precondition conflicts the whole change and writes no field. An empty or non-object to, a repeated key, or a from key that to does not set is INVALID_OPERATION; the key description is USE_UPDATE_ELEMENT_TEXT. to and from are sealed as written. The change log records one unit per field (model@slug&field), each with the same history hop, evidence and position. update_field stays for a single field or for fields whose evidence differs.
 - target: Canonical target address identifying the model, element, field, matrix, row, or column.
 - from: Precondition value that must match the live model state.

@@ -8913,7 +8913,7 @@ var REQUIRED_BY_PRIMITIVE = {
 
 // stub:canonical-registry-stub
 function findCanonicalBlueprint(key) {
-  return key === "changes" ? { name: "changes", version: "V_0-12-0", aliases: [], specContent: "" } : null;
+  return key === "changes" ? { name: "changes", version: "V_0-13-0", aliases: [], specContent: "" } : null;
 }
 
 // iNNfo/packages/nn-core/src/schema/nature.ts
@@ -11064,8 +11064,10 @@ function extractInstanceProblems(change) {
   if (change.fields !== void 0 || change.slug !== void 0) {
     problems.push(`change "${id}": extract_instance must not carry element payload (slug, fields)`);
   }
-  if (!change.blueprint_name) problems.push(`change "${id}": extract_instance requires "blueprint_name"`);
-  if (!change.blueprint_url) problems.push(`change "${id}": extract_instance requires "blueprint_url"`);
+  if (!change.blueprint_name)
+    problems.push(`change "${id}": extract_instance requires "blueprint_name"`);
+  if (!change.blueprint_url)
+    problems.push(`change "${id}": extract_instance requires "blueprint_url"`);
   const target = String(change.target ?? "").trim();
   const at = target.indexOf("@");
   const modelPart = at === -1 ? target : target.slice(0, at);
@@ -11077,7 +11079,8 @@ function extractInstanceProblems(change) {
     );
   }
   const to = String(change.to ?? "").trim();
-  if (!to) problems.push(`change "${id}": extract_instance requires "to" (the new instance model id)`);
+  if (!to)
+    problems.push(`change "${id}": extract_instance requires "to" (the new instance model id)`);
   else if (unsafe(to) || to.startsWith("/") || to.endsWith("/") || to.includes("//")) {
     problems.push(`change "${id}": extract_instance "to" must be a valid instance model id`);
   }
@@ -11110,32 +11113,34 @@ function jsonObjectKeys(text2) {
   }
   return keys;
 }
-function parseFieldMap(raw, key) {
-  if (raw === void 0) return { ok: false, reason: `set_fields requires "${key}"` };
+function parseFieldMap(raw, key, op = "set_fields") {
+  if (raw === void 0) return { ok: false, reason: `${op} requires "${key}"` };
   const text2 = String(raw).trim();
   let parsed;
   try {
     parsed = JSON.parse(text2);
   } catch {
-    return { ok: false, reason: `set_fields "${key}" must be a JSON object of field -> value` };
+    return { ok: false, reason: `${op} "${key}" must be a JSON object of field -> value` };
   }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    return { ok: false, reason: `set_fields "${key}" must be a JSON object of field -> value` };
+    return { ok: false, reason: `${op} "${key}" must be a JSON object of field -> value` };
   }
   const keys = jsonObjectKeys(text2);
-  if (keys.length === 0) return { ok: false, reason: `set_fields "${key}" must set at least one field` };
+  if (keys.length === 0) return { ok: false, reason: `${op} "${key}" must set at least one field` };
   const seen = /* @__PURE__ */ new Set();
   const values = /* @__PURE__ */ new Map();
   for (const field of keys) {
-    if (seen.has(field)) return { ok: false, reason: `set_fields "${key}" repeats the field "${field}"` };
+    if (seen.has(field)) return { ok: false, reason: `${op} "${key}" repeats the field "${field}"` };
     seen.add(field);
     if (field.trim() === "" || field !== field.trim() || /[&@]/.test(field)) {
-      return { ok: false, reason: `set_fields "${key}" has an invalid field name "${field}"` };
+      return { ok: false, reason: `${op} "${key}" has an invalid field name "${field}"` };
     }
     const value = parsed[field];
     if (typeof value === "string") values.set(field, value);
-    else if (typeof value === "number" || typeof value === "boolean") values.set(field, String(value));
-    else return { ok: false, reason: `set_fields "${key}".${field} must be a serialized value (a string)` };
+    else if (typeof value === "number" || typeof value === "boolean")
+      values.set(field, String(value));
+    else
+      return { ok: false, reason: `${op} "${key}".${field} must be a serialized value (a string)` };
   }
   return { ok: true, values };
 }
@@ -11149,6 +11154,11 @@ function setFieldsEntries(change) {
     const expected = from?.ok ? from.values.get(field) : void 0;
     return expected === void 0 ? { field, to: value } : { field, to: value, from: expected };
   });
+}
+function addElementFieldsEntries(change) {
+  if (change.op !== "add_element" || change.to === void 0) return [];
+  const to = parseFieldMap(change.to, "to", "add_element");
+  return to.ok ? [...to.values].map(([field, value]) => ({ field, to: value })) : [];
 }
 
 // iNNfo/packages/nn-core/src/changeset/evidence.ts
@@ -12004,6 +12014,7 @@ function resolveChangeFacts(change, cs) {
   return facts;
 }
 function expandSetFields(change) {
+  if (change.op === "add_element") return expandAddElementFields(change);
   if (change.op !== "set_fields" || !change.applied) return [change];
   const entries = setFieldsEntries(change);
   if (entries.length === 0) return [change];
@@ -12020,6 +12031,25 @@ function expandSetFields(change) {
       subIndex
     };
   });
+}
+function expandAddElementFields(change) {
+  if (!change.applied) return [change];
+  const entries = addElementFieldsEntries(change);
+  if (entries.length === 0) return [change];
+  const model = change.target.split("@")[0] ?? "";
+  const element = change.resolvedTarget ?? `${model}@${change.resolvedSlug ?? slugifyHeading(change.name ?? change.slug ?? "")}`;
+  const fields = entries.map((entry, subIndex) => {
+    const { from: _from, resolvedSlug: _slug, ...rest } = change;
+    return {
+      ...rest,
+      op: "update_field",
+      target: `${element}&${entry.field}`,
+      resolvedTarget: `${element}&${entry.field}`,
+      to: entry.to,
+      subIndex
+    };
+  });
+  return [change, ...fields];
 }
 function loggedChanges(cs) {
   const changesetStatus = cs.status ?? "proposed";
@@ -12301,7 +12331,13 @@ var EXECUTION_FACT_KEYS = [
 
 // iNNfo/packages/nn-core/src/changeset/serializer.ts
 var import_yaml9 = __toESM(require_dist(), 1);
-var ANNOTATION_KEYS = ["status", "resolution", "applied_at", "batch", ...EXECUTION_FACT_KEYS];
+var ANNOTATION_KEYS = [
+  "status",
+  "resolution",
+  "applied_at",
+  "batch",
+  ...EXECUTION_FACT_KEYS
+];
 var ANNOTATION_RE = new RegExp(`^(${ANNOTATION_KEYS.join("|")})::`);
 
 // iNNfo/packages/nn-core/src/console/element-hash.ts

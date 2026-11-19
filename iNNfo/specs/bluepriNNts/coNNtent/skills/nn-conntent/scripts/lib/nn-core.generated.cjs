@@ -9955,7 +9955,7 @@ var init_canonical_registry = __esm({
     SOURCES_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\nblueprint_version: "V_0-4-0"\ntitle: "Sources Catalog App"\nrelationship_types:\n  hierarchy:\n    enabled: true\n    via: "index block"\n  evaluable_matrix:\n    enabled: true\n  graph_edge:\n    enabled: false\n  sequence:\n    enabled: false\nnature:\n  structure: catalog\n  ownership: derived\n---\n\n# NN index\n\n* [[Source]]\n* [[Synchronization]]\n\n# NN Concept Definition\n\n## NN Concept Definition: Source\nicon:: file-input\ntype:: list\ncolor:: teal\nweight:: 100\n\n## NN Concept Definition: Synchronization\nicon:: refresh-cw\ntype:: list\ncolor:: teal\nweight:: 90\ndescription:: Declares an origin (a file, a folder or a URL) that `nn-sources --sync` lands into this domaiNN on demand: models as mirrors under `sources/sync/<alias>/`, other files as sources under `sources/import/<alias>/`.\n\n# NN Field Definition\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\ndescription:: Open vocabulary ad-hoc tags and classification labels.\n\n## NN Field Definition: type\nconcept:: Source\ntype:: select\noptions:: [local_file, url_snapshot, dynamic_feed, git_repo, api_export]\ndescription:: Polymorphic origin category of the primary source.\n\n## NN Field Definition: origin_uri\nconcept:: [Source, Synchronization]\ntype:: string\ndescription:: Universal identifier of origin: local path, web URL (https://), or git repository URI.\n\n## NN Field Definition: alias\nconcept:: Synchronization\ntype:: string\ndescription:: Folder-safe slug that names the landing folders `sources/sync/<alias>/` and `sources/import/<alias>/`. Unique within the catalog.\n\n## NN Field Definition: kind\nconcept:: Synchronization\ntype:: select\noptions:: [file, folder]\ndescription:: Whether the origin is a single file or a folder. A URL origin is always a file.\n\n## NN Field Definition: state\nconcept:: Synchronization\ntype:: select\noptions:: [active, paused]\ndescription:: A paused Synchronization is skipped by `nn-sources --sync`.\n\n## NN Field Definition: format\nconcept:: Source\ntype:: select\noptions:: [pdf, docx, html, md, json, csv, audio, xlsx, repo]\ndescription:: Original file or payload format.\n\n## NN Field Definition: raw_path\nconcept:: Source\ntype:: string\ndescription:: Workspace-relative path to the raw/binary asset in sources/import/.\n\n## NN Field Definition: summary\nconcept:: Source\ntype:: string\ndescription:: Mandatory concise semantic summary of the source contents for progressive disclosure.\n\n## NN Field Definition: status\nconcept:: Source\ntype:: select\noptions:: [ready, stale, processing, error]\ndescription:: Operational and synchronization state of the source.\n\n## NN Field Definition: source_model\nconcept:: Source\ntype:: knowledge\ndescription:: Relative link to the source\'s co-located sidecar, `<file>.<ext>_sidecar_NN.md` under sources/import/.\n\n# Sources Catalog Template\n\n## A level-2 template for indexing polymorphic primary sources and normalized source models with progressive disclosure summaries\n\n## Philosophy\n\nThe Sources Catalog serves as the single source of truth for all primary and normalized sources in an iNNfo workspace. By maintaining concise semantic summaries directly in the catalog, AI agents and human users can query source inventories and make informed citation decisions without performing expensive file I/O operations against normalized leaf models. Physical cryptographic metadata (e.g. SHA-256 hashes, timestamps) remains strictly isolated within each source\'s co-located sidecar under `sources/import/`.\n\n## Template\n\n### Level 3 Model Template (Lightweight)\n\n```yaml\n---\nlevel: 3\nparent_spec:\n  name: "sources"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md"\nknowledge_version: "V_0-1-0"\ntitle: "<Sources Catalog Name>"\n---\n\n# NN index\n\n* [[Source]]\n\n# NN Source\n\n## NN Source: Source Name\ntype:: local_file\norigin_uri:: sources/import/document.pdf\nraw_path:: sources/import/document.pdf\nformat:: pdf\nsummary:: Concise summary of the source document contents.\ntags:: [tag1, tag2]\nstatus:: ready\nsource_model:: sources/import/document.pdf_sidecar_NN.md\n```\n\n### Synchronization\n\n```markdown\n# NN Synchronization\n\n## NN Synchronization: Organization\nalias:: org\norigin_uri:: ../organization\nkind:: folder\nstate:: active\n```\n\nA Synchronization is a declaration, not a copy. `nn-sources --sync [alias]` lands the origin on demand: a folder holding a `domaiNN_NN.md` is mirrored model by model, any other folder splits into mirrored models and imported raw files. A consumer points at a mirrored element with a `reference` field whose value is a path address such as `sources/sync/org/organization_NN.md@manager`.\n';
     ARTIFACTS_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\nblueprint_version: "V_0-5-2"\ntitle: "Artifacts Catalog App"\nrelationship_types:\n  hierarchy:\n    enabled: true\n    via: "index block"\n  evaluable_matrix:\n    enabled: true\n  graph_edge:\n    enabled: false\n  sequence:\n    enabled: false\nnature:\n  structure: catalog\n  ownership: derived\n---\n\n# NN index\n\n* [[Artifact]]\n\n# NN Concept Definition\n\n## NN Concept Definition: Artifact\nicon:: file-output\ntype:: list\ncolor:: teal\nweight:: 100\n\n# NN Field Definition\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\ndescription:: Open vocabulary ad-hoc tags and classification labels.\n\n## NN Field Definition: format\nconcept:: Artifact\ntype:: select\noptions:: [model, markdown, html, json, csv, binary]\ndescription:: Format of the deliverable or output artifact.\n\n## NN Field Definition: summary\nconcept:: Artifact\ntype:: string\ndescription:: Mandatory concise summary of the artifact contents for progressive disclosure.\n\n## NN Field Definition: status\nconcept:: Artifact\ntype:: select\noptions:: [draft, verified, published, deprecated]\ndescription:: Lifecycle and verification state of the artifact.\n\n## NN Field Definition: artifact_model\nconcept:: Artifact\ntype:: knowledge\ndescription:: Link to structured output model in artifacts/models/ when format is model.\n\n## NN Field Definition: file_path\nconcept:: Artifact\ntype:: string\ndescription:: Relative path to generated deliverable file when format is non-model.\n\n# Artifacts Catalog Template\n\n## A level-2 template for indexing derivative deliverables, generated reports, structured models, and export artifacts with progressive disclosure summaries\n\n## Philosophy\n\nThe Artifacts Catalog registers all tangible and digital outputs generated within an iNNfo workspace. Artifacts encompass interactive web consoles, compiled HTML hubs, documents, tabular datasets, and structured downstream models. By capturing concise summaries in the catalog, agents and users can discover outputs without scanning raw deliverable files.\n\n## Template\n\n### Level 3 Model Template (Lightweight)\n\n```yaml\n---\nlevel: 3\nparent_spec:\n  name: "artifacts"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"\nknowledge_version: "V_0-1-0"\ntitle: "<Artifacts Catalog Name>"\n---\n\n# NN index\n\n* [[Artifact]]\n\n# NN Artifact\n\n## NN Artifact: Artifact Name\nformat:: model\nsummary:: Concise summary of the deliverable contents.\nstatus:: verified\ntags:: [report, summary]\nartifact_model:: artifacts/models/report_NN.md\n```\n';
     SIDECAR_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sidecar/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\nblueprint_version: "V_0-2-0"\ntitle: "Sidecar App"\nrelationship_types:\n  hierarchy:\n    enabled: true\n    via: "index block"\n  evaluable_matrix:\n    enabled: true\n  graph_edge:\n    enabled: false\n  sequence:\n    enabled: false\n---\n\n# NN index\n\n* [[Sidecar]]\n\n# NN Concept Definition\n\n## NN Concept Definition: Sidecar\nicon:: file-check\ntype:: list\ncolor:: teal\nweight:: 100\n\n# NN Field Definition\n\n## NN Field Definition: source_file\nconcept:: Sidecar\ntype:: string\ndescription:: Workspace-relative path of the file this sidecar describes (its subject). Must match the subject implied by the sidecar file name.\n\n## NN Field Definition: sha256\nconcept:: Sidecar\ntype:: string\ndescription:: SHA-256 of the subject\'s raw bytes (never of decoded text), as lowercase hex. A changed hash makes the sidecar stale.\n\n## NN Field Definition: size_bytes\nconcept:: Sidecar\ntype:: string\ndescription:: Size of the subject in bytes, written as a decimal integer.\n\n## NN Field Definition: source_format\nconcept:: Sidecar\ntype:: string\ndescription:: Format of the subject, taken from its extension (for example pdf, docx, csv, md, json).\n\n## NN Field Definition: normalized_at\nconcept:: Sidecar\ntype:: string\ndescription:: ISO-8601 UTC instant at which the sidecar was written or last refreshed.\n\n## NN Field Definition: normalized_by\nconcept:: Sidecar\ntype:: string\ndescription:: Optional. Name of the normalizer that produced the body for a binary subject. Absent for text-native subjects, whose sidecar has no body.\n\n## NN Field Definition: synchronization\nconcept:: Sidecar\ntype:: string\ndescription:: Optional. Alias of the Synchronization that landed the subject. Absent for a manual import.\n\n## NN Field Definition: origin_path\nconcept:: Sidecar\ntype:: string\ndescription:: Optional. Path of the subject relative to its origin, in posix form. Tells apart same-named files that come from different origin folders.\n\n## NN Field Definition: origin_uri\nconcept:: Sidecar\ntype:: string\ndescription:: Optional. Where the subject was fetched from: the origin path or the `https://` URL of the Synchronization.\n\n## NN Field Definition: retrieved_at\nconcept:: Sidecar\ntype:: string\ndescription:: Optional. ISO-8601 UTC instant at which the subject was copied or downloaded from its origin.\n\n# Sidecar Template\n\n## A level-2 template for the co-located metadata document that makes any workspace file a citable source\n\n## Philosophy\n\nA sidecar binds metadata to bytes. It sits next to its subject, keeps the subject\'s original extension in its own name, and records the subject\'s hash, size, and format. For binary subjects it also carries a normalized Markdown body, so citations by heading or row stay valid while the raw file stays untouched. Text-native subjects (Markdown, CSV, JSON) need no body: the file is its own text.\n\nA sidecar is a concept, not a new level. It is a kNNowledge-level document that is never a model: model discovery, manifests, console targets, and editor workspace detection all ignore it. It is created or refreshed by the `cognitivize` operation, which is the only writer. Raw files and write-once artifacts are never edited; a sidecar is rewritten when the subject\'s hash changes.\n\n## Naming\n\nA sidecar is named `<file>.<ext>_sidecar_NN.md`. The original extension stays in the name, so `report.pdf` is described by `report.pdf_sidecar_NN.md` in the same folder. The name carries the blueprint, so the name invariant holds without exception: the stem `report.pdf_sidecar` ends with `_sidecar`.\n\n## Template\n\n### Level 3 Document Template\n\n```yaml\n---\nlevel: 3\nparent_spec:\n  name: "sidecar"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sidecar/spec_NN.md"\nsource_file: "sources/import/report.pdf"\nsha256: "<64 lowercase hex characters>"\nsize_bytes: 1048576\nsource_format: "pdf"\nnormalized_at: "2026-10-02T10:15:00Z"\nnormalized_by: "nn-trannsform"\nsynchronization: "org"\norigin_path: "docs/report.pdf"\norigin_uri: "../organization"\nretrieved_at: "2026-10-02T10:14:00Z"\nsources: []\n---\n```\n\nThe body is optional. A sidecar for a binary subject carries the normalized Markdown under ordinary headings; a sidecar for a Markdown, CSV, or JSON subject has no body.\n\n## Rules\n\n1. `source_file`, `sha256`, `size_bytes`, `source_format`, and `normalized_at` are required. `normalized_by`, `sources`, `synchronization`, `origin_path`, `origin_uri` and `retrieved_at` are optional. The four origin keys are written together by `nn-sources --sync` and are absent on a manual import.\n2. A normalizer may add its own metadata keys to the frontmatter; they are preserved on refresh.\n3. A sidecar never declares `derived_from`. The upstream edge of a subject is `sources`; the lineage projection derives its own `derived_from` from it.\n4. The sidecar of a sidecar does not exist. `cognitivize` rejects sidecars, `_NN.md` documents, excluded paths, and over-long paths.\n';
-    CHANGES_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\nblueprint_name: "changes"\nblueprint_version: "V_0-12-0"\ntitle: "Changeset Blueprint"\ndescription: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."\nnature:\n  structure: members\n  ownership: derived\n---\n\n# NN index\n\n* [[Change]]\n\n# NN Concept Definition\n\n## NN Concept Definition: Change\nicon:: git-commit\ntype:: list\ncolor:: blue\nweight:: 100\n\n# NN Field Definition\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\ndescription:: Open vocabulary ad-hoc tags and classification labels.\n\n## NN Field Definition: op\nconcept:: Change\ntype:: select\noptions:: [update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, remove_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default, close_model]\ndescription:: Mutation or review operation.\n\n## NN Field Definition: target\nconcept:: Change\ntype:: address\ndescription:: Canonical D5 target address (model@element&field or model@matrix&row&col).\n\n## NN Field Definition: from\nconcept:: Change\ntype:: string\ndescription:: Precondition check value prior to mutation.\n\n## NN Field Definition: to\nconcept:: Change\ntype:: string\ndescription:: Proposed target value. For bump_version, the version level to bump: patch, minor or major. For add_matrix, the column-axis concept. For move_model, the new instance model id. For extract_instance, the new instance model id the extracted element becomes. For set_fields, a one-line JSON object field -> serialized value; from is then an optional JSON object with the expected current value of some of those fields.\n\n## NN Field Definition: base_hash\nconcept:: Change\ntype:: string\ndescription:: Content hash of the target element when the change was written (the console\'s element hash). A different current hash is a precondition failure (conflict). Optional; absent means the change is not guarded by element content.\n\n## NN Field Definition: concept\nconcept:: Change\ntype:: string\ndescription:: Target concept for add_element operations, the row-axis concept for add_matrix, and the distributed concept an add_model instantiates. add_model only: naming a distributed concept makes target the instance\'s hierarchical id (container chain plus slug), and the new model is written at the concept\'s declared placement path, not under kNNowledge/. extract_instance takes the concept from the source element it cuts.\n\n## NN Field Definition: name\nconcept:: Change\ntype:: string\ndescription:: Display name for added or renamed entities; the title of a model created by add_model (defaults to the id); the matrix name for add_matrix.\n\n## NN Field Definition: slug\nconcept:: Change\ntype:: string\ndescription:: Proposed explicit slug.\n\n## NN Field Definition: seed\nconcept:: Change\ntype:: string\ndescription:: add_matrix only. Header elements the matrix is created with, as a JSON object {columns:[...],rows:[...]}. Sealed into proposal_sha. Creates empty cells and records no cell units; each non-empty cell needs its own update_matrix_cell change.\n\n## NN Field Definition: author\nconcept:: Change\ntype:: string\ndescription:: Identifier of author, reviewer, or agent.\n\n## NN Field Definition: notes\nconcept:: Change\ntype:: string\ndescription:: Rationale, commit note, or review critique.\n\n## NN Field Definition: evidence\nconcept:: Change\ntype:: citation\ndescription:: Evidence the change derives from \u2014 the ONLY provenance of the mutation \u2014 in the shared citation grammar (<path>@## <Heading>, <csv>@<row>, <json>@/<pointer>, a bare path, or the literal tokens decision / unknown). Mandatory on every change; written by the proposer at proposal time and sealed into proposal_sha; apply only verifies that it resolves.\n\n## NN Field Definition: blueprint_name\nconcept:: Change\ntype:: string\ndescription:: add_model and extract_instance. Name of the parent bluepriNNt of the model to create.\n\n## NN Field Definition: blueprint_url\nconcept:: Change\ntype:: string\ndescription:: add_model and extract_instance. Immutable URL of the parent bluepriNNt of the model to create.\n\n## NN Field Definition: knowledge_version\nconcept:: Change\ntype:: string\ndescription:: add_model only. Optional initial knowledge_version of the created model (inferred from the bluepriNNt when omitted).\n\n## NN Field Definition: status\nconcept:: Change\ntype:: select\noptions:: [proposed, applied, partially_applied, rejected, conflict]\ndescription:: Execution status annotation assigned by the apply engine. partially_applied is a changeset-level status (some changes applied, some conflicted); a change itself is applied, conflict or rejected. Written once in the changeset frontmatter; a change carries its own status only when it differs.\n\n## NN Field Definition: resolution\nconcept:: Change\ntype:: string\ndescription:: Conflict description or rejection reason, written only on a change that did not apply. A rejected changeset records why it was rejected here and is never re-applied.\n\n## NN Field Definition: resolved_slug\nconcept:: Change\ntype:: string\ndescription:: Disambiguated slug assigned upon insertion.\n\n## NN Field Definition: resolved_target\nconcept:: Change\ntype:: string\ndescription:: Execution fact stamped by the apply engine: the canonical unit address the change resolved to (model@frozen-slug&field, model@frozen-slug&#body, model@matrix-slug&row-slug&col-slug, model@concept:<Name>[&field], or the artifact path; model@frozen-slug for set_fields). Outside the seal; never accepted from a proposal. Written only when it differs from target; otherwise target is the address.\n\n## NN Field Definition: evidence_sha256\nconcept:: Change\ntype:: string\ndescription:: Execution fact stamped by the apply engine: one lowercase hex sha256 per evidence entry, in evidence order, as a positional list [a, b]. Omitted for decision and unknown. Outside the seal; a later mismatch downgrades anchor checks to EVIDENCE_SOURCE_CHANGED. The changeset frontmatter carries one evidence_sha256 map (cited path -> sha256) for the whole batch; a change carries its own list only for a cited path the map does not carry.\n\n## NN Field Definition: applied_at\nconcept:: Change\ntype:: string\ndescription:: Execution fact stamped by the apply engine: when the change was applied, UTC ISO-8601. Outside the seal. Changes of one batch share it; apply clamps it to max(now, latest + 1 ms). Written once in the changeset frontmatter and inherited by every change.\n\n## NN Field Definition: batch\nconcept:: Change\ntype:: string\ndescription:: Execution fact: the batch identity of the apply (the changeset stem). Outside the seal. Written once in the changeset frontmatter and inherited by every change.\n\n# Changeset Blueprint\n\n## A level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive\n\n## Philosophy\n\nEvery graph mutation in cogNNitive is represented as a structured changeset document. Rather than performing uncoordinated mutations or relying on informal agent chat transcript promotion, changesets serve as the single authoritative mutation and provenance medium. Changesets are sealed with a proposal hash, an integrity check verified before application that catches an accidental modification of the proposal between proposal and apply, and are recorded permanently to form the chain of provenance. The seal carries no key: anyone able to edit the file can recompute it, and it does not cover the execution facts. The seal is produced at intake when a proposer omits it (see Specification).\n\n## Objectives\n\n- Standardize graph mutation operations across models, elements, fields, and matrices.\n- Seal each proposal with a hash: an integrity check against accidental modification between proposal and apply, not an authentication of who wrote it.\n- Support atomic two-phase transactions with zero partial side-effects on validation failure.\n- The change is the only provenance: no field of a model carries a citation.\n- Enable structured human and agent review feedback as comment operations.\n\n## Specification\n\nA changeset document lives in the changes/ directory at the domain root with the filename pattern <prefix>_<author>_<stamp>_changes_NN.md. The prefix is the workspace_id for a changeset written by the MCP (propose_changeset, init_knowledge, apply_change) and the model slug for a changeset exported by the console review.\n\nEach change is declared as an element of concept Change:\n- op: One of update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, remove_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default, close_model.\n- update_element_text: Replaces the prose body of an element (ElementNode.description), named to mirror update_concept_text. target is model@element; from is the current prose and to the new prose. notes never writes the prose body, and update_field on description is rejected with USE_UPDATE_ELEMENT_TEXT.\n- rename_element: Changes one element\'s display name. target is model@element (with concept when the name is ambiguous) and to is the new display name. The element\'s slug is immutable and is preserved, so every address that uses the slug keeps resolving after the rename; that is why renaming is not a way to change identity. The cascade is part of the same atomic change, never a follow-up: taxonomy parent/child labels, matrix row and column labels, `[[...]]` wikilinks in fields and prose, declared `reference` and `knowledge` field values, and `relationships[].target` are all rewritten on apply. A sibling with the same display name inside the same concept is rejected (D3). On a model whose slugs are not frozen yet, the mutation freezes them first, so the applied change leaves explicit `slug::` declarations behind.\n- produce_artifact: Records that an artifact was produced. target is a workspace-relative artifact path; evidence lists the units or sources consumed; author is the producing procedure. A regenerable view (the console HTML, the impact report family) needs no record.\n- repin_blueprint: Moves a model\'s parent_spec (name and url) and its blueprint_version pin to a target bluepriNNt version. target is the bare model id, to is the target parent_spec.name, blueprint_url is the target url, and from is an optional precondition on the current parent_spec.name. It is the only supported way to repoint a model: patching frontmatter text is not a change and leaves no record. A stale from is MUTATION_FAILED.\n- rename_field: Renames one field key on every element of the model that carries it. target is the bare model id, from is the current field name, to is the new one, and concept optionally scopes the rename to one concept. It replaces text-level rewrites of a field a newer bluepriNNt renamed. Renaming a field no element carries is a successful no-op with a warning.\n- set_field_default: Populates a field introduced by the newer bluepriNNt on every element that lacks it, never overwriting an existing value. target is the bare model id, name is the field, to is the default value, and concept optionally scopes it. It is a successful no-op when every element already carries the field.\n- close_model: The closing event of a model. target is the bare model id; it sets `closed: true` in the model frontmatter, and the changeset that carries it records who closed the model and when. After it, every write to the model is refused with MODEL_CLOSED, in the same changeset too, and a second close_model is MODEL_CLOSED. A log that never ends is closed in segments.\n- add_element: Creates an element with its concept, name and optional explicit slug only. It carries no inline field values: its fields are set afterwards by one set_fields change for the fields that share one evidence, and one update_field change for each field whose evidence differs (no from, because the fields do not exist yet). notes is rationale, never prose.\n- set_fields: Sets several fields of one element from one evidence in one change. target is model@element (no &field); to is a one-line JSON object whose keys are field names and whose values are the serialized field values update_field would write; from is optional and holds the expected current value of a subset of the keys of to (a key absent from from has no precondition). It is all or nothing: a failed from or base_hash precondition conflicts the whole change and writes no field. An empty or non-object to, a repeated key, or a from key that to does not set is INVALID_OPERATION; the key description is USE_UPDATE_ELEMENT_TEXT. to and from are sealed as written. The change log records one unit per field (model@slug&field), each with the same history hop, evidence and position. update_field stays for a single field or for fields whose evidence differs.\n- target: Canonical target address identifying the model, element, field, matrix, row, or column.\n- from: Precondition value that must match the live model state.\n- to: Proposed value.\n- add_model: Creates a new Level-3 kNNowledge document. target is the new model id; blueprint_name and blueprint_url are required; name (title) and knowledge_version are optional. It carries no from, to or base_hash and no element payload: initial elements are add_element changes that follow it in the same changeset. With concept it instantiates a distributed concept: target is then the instance\'s hierarchical id (container chain plus slug), the file is written at the concept\'s declared placement path, and the skeleton carries the instance root element (## NN &lt;Concept&gt;: &lt;name&gt; plus slug:: &lt;slug&gt;).\n- move_model: Renames or relocates an instance model, which changes its id and the ids of every descendant instance. target is the old instance model id and to is the new one (same concept). The instance root folder, the file stem and the root slug:: move together inside the same atomic persistence; only the moved model is bumped, and only when its body changed. Recorded targets are never rewritten: the fold carries them forward. Every typed reference to the old id must be retargeted by an update_field in the same changeset, or the move is rejected with MOVE_LEAVES_DANGLING_REFERENCES. A compact model is MOVE_REQUIRES_INSTANCE; an occupied id is MODEL_EXISTS; a missing container is CONTAINER_MISSING.\n- remove_model: Removes one instance model as a recorded change. target is the instance model id and the change carries nothing else: it is a sealed, reviewable change, not an unrecorded filesystem delete, and no copy is kept outside changes/. Applying it deletes the model file inside the same atomic persistence and writes the change\'s execution facts, so the removal is reversible from the model\'s earlier changes and git history; the model\'s units leave the fold and the id becomes a terminal state for MODEL_WITHOUT_FILE instead of a reported loss. A compact model is REMOVE_REQUIRES_INSTANCE; a model whose folder still holds another model is REMOVE_MODEL_HAS_DESCENDANTS (remove the children first); every typed reference to the id or a descendant must be retargeted by an update_field in the same changeset, or the removal is rejected with REMOVE_LEAVES_DANGLING_REFERENCES. An address to a removed id is REF_MODEL_NOT_FOUND, naming the changeset that recorded the removal. A removal records no version transition: a removed model has no next version.\n- freeze_slugs: Writes an explicit slug for every element of the model that lacks one. target is the bare model id; it carries no other payload.\n- extract_instance: Migrates a compact element into its own distributed instance model. target is the source element address (compact model id plus the element slug), to is the instance id it becomes (which must end in that slug), and blueprint_name with blueprint_url name the bluepriNNt that declares the concept distributed. The extracted element becomes the instance root, its descendants move with it, and both models are bumped. The change records the moved slug set as an execution fact (extracted_slugs), so the fold re-keys the units to the new id and no unit fires UNIT_WITHOUT_RECORD. A concept the bluepriNNt does not distribute is EXTRACT_NOT_DISTRIBUTED; an instance model is EXTRACT_REQUIRES_COMPACT; an existing instance or an occupied destination folder is a conflict, and every extraction of the same source then conflicts as DEPENDS_ON_CONFLICTED_CHANGE: the migration is all or nothing. Use remove_element to drop a duplicate, never extract_instance.\n- bump_version: Raises the model knowledge_version by the level named in to (patch, minor or major). target is the bare model id. The apply engine bumps each touched model exactly once: a changeset that carries bump_version applies that level instead of the default patch bump, never both. The unversioned lineage record cannot be bumped.\n- add_matrix: Adds a new matrix table to a Level-3 model. target is model@matrix:&lt;name&gt;; name is the matrix name, concept is the row-axis concept and to is the column-axis concept. seed ({columns, rows}) supplies the header elements; when omitted they default to the axis concepts\' own elements. Every seeded cell starts empty, ready for update_matrix_cell, and records no cell unit. seed is sealed and is refused on any other op. It is refused on a Level-2 bluepriNNt (declare a Matrix Definition element there instead), and rejected when the matrix already exists.\n- base_hash: Optional precondition on the target element content; a mismatch is a conflict.\n- evidence: Mandatory. One citation, a bracketed list of citations, or the literal token decision / unknown (the keywords only ever alone); written by the proposer and sealed with the proposal. The change is the only provenance of the mutation.\n\n#### Origins of a value\n\nEvidence always points outside the living knowledge graph: every value of a model ends in one of these origins.\n\n| Origin | How the change records it |\n|---|---|\n| A person\'s decision | `evidence:: decision` in a changeset with `author_kind: human` |\n| An AI agent\'s decision or proposal | `evidence:: decision` in a changeset with `author_kind: agent`; the proposed changeset is the proposal |\n| A conversation | a citation of the transcript, `conversations/<file>.md@## <heading>` |\n| An external document | a citation of the source, `sources/<path>@<unit>` |\n| A run of a procedure | a citation of the closed run, `<run id>@<event>` (the `executions` bluepriNNt) |\n| A computed value | a citation of the closed run that computed it: the computation is a run whose events record each input read (address, value, version) and the result |\n| Not known | `evidence:: unknown` |\n\nA model is cited by its id (`<model id>@<element>`), never by its file path, and only once it is closed by `close_model`: a closed model is a frozen record, so it is a source, while an open model is knowledge still changing. Citing an open model is CITATION_NOT_CLOSED; the engine stamps the closed model file\'s sha256 in evidence_sha256 like any source.\n- Execution annotations (status, resolution, resolved_slug, applied_at, batch) and the execution facts (resolved_target, evidence_sha256) record the outcome of applying the change. Every change has an applied_at (UTC), status, author and batch. The batch-wide facts are written once, in the changeset frontmatter (applied_at, batch, status, and evidence_sha256 as a map from each cited path to its sha256), and every change inherits them: a change carries a fact only when its value differs (status when it differs from the changeset status, author when it differs from the frontmatter author, resolution only when the change did not apply, resolved_target only when it differs from target, evidence_sha256 only for a cited path the map does not carry; applied_at and batch never). The change log resolves each fact as the change\'s own value, else the changeset\'s, so a changeset whose changes carry every fact themselves resolves the same way. The change chain, ordered by (applied_at, changeset stamp, filename, document index), is a unit\'s history.\n\nChangeset status is one of proposed, applied, partially_applied, rejected, conflict. A changeset is rejected when the proposal itself is invalid (a failed validation or an unresolved citation): the status and the reason (resolution) are persisted and the changeset is never re-applied. A conflict is a failed precondition of the live model and may be fixed and retried.\n\nA changeset MAY be authored by hand (for example a large agent-generated batch) and applied by path with `apply_change`; it does not require a pre-computed `proposal_sha`. When the seal is omitted the runtime computes it at intake; a present but non-matching value means the proposal was modified after it was sealed and is rejected (`PROPOSAL_TAMPERED`), so a hand-authored changeset MUST either omit the seal or carry the exact hash. The document-level `proposal_sha` is therefore optional in the template below.\n\n## Template\n\n### Level 3 Changeset Template\n\n```markdown\n---\nspec_version: "V_0-4-0"\nlevel: 3\nparent_spec:\n  name: changes\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"\nblueprint_version: "V_0-10-0"\nstatus: proposed\nproposal_sha: "<64-character-sha256-hex>"\ntitle: "<Changeset Title>"\nauthor: "<Author>"\n---\n\n# NN index\n\n* [[Change]]\n\n# NN Change\n\n## NN Change: change-1\nop:: update_field\ntarget:: model@element&field\nfrom:: "old_value"\nto:: "new_value"\nevidence:: sources/import/<file>@## <Heading>\n```\n\n## Examples\n\n### Field Update and Review Comment\n\n```markdown\n## NN Change: c-01\nop:: update_field\ntarget:: strategy@vision&statement\nfrom:: "Initial draft"\nto:: "Accelerate renewable adoption"\nauthor:: agent-1\nnotes:: Align with 2026 sustainability roadmap\n\n## NN Change: c-02\nop:: comment\ntarget:: strategy@vision&statement\nauthor:: reviewer-human\nnotes:: Verified alignment with executive briefing\n```\n';
+    CHANGES_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\nblueprint_name: "changes"\nblueprint_version: "V_0-13-0"\ntitle: "Changeset Blueprint"\ndescription: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."\nnature:\n  structure: members\n  ownership: derived\n---\n\n# NN index\n\n* [[Change]]\n\n# NN Concept Definition\n\n## NN Concept Definition: Change\nicon:: git-commit\ntype:: list\ncolor:: blue\nweight:: 100\n\n# NN Field Definition\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\ndescription:: Open vocabulary ad-hoc tags and classification labels.\n\n## NN Field Definition: op\nconcept:: Change\ntype:: select\noptions:: [update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, remove_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default, close_model]\ndescription:: Mutation or review operation.\n\n## NN Field Definition: target\nconcept:: Change\ntype:: address\ndescription:: Canonical D5 target address (model@element&field or model@matrix&row&col).\n\n## NN Field Definition: from\nconcept:: Change\ntype:: string\ndescription:: Precondition check value prior to mutation.\n\n## NN Field Definition: to\nconcept:: Change\ntype:: string\ndescription:: Proposed target value. For bump_version, the version level to bump: patch, minor or major. For add_matrix, the column-axis concept. For move_model, the new instance model id. For extract_instance, the new instance model id the extracted element becomes. For add_element, the optional initial fields, a one-line JSON object field -> serialized value. For set_fields, a one-line JSON object field -> serialized value; from is then an optional JSON object with the expected current value of some of those fields.\n\n## NN Field Definition: base_hash\nconcept:: Change\ntype:: string\ndescription:: Content hash of the target element when the change was written (the console\'s element hash). A different current hash is a precondition failure (conflict). Optional; absent means the change is not guarded by element content.\n\n## NN Field Definition: concept\nconcept:: Change\ntype:: string\ndescription:: Target concept for add_element operations, the row-axis concept for add_matrix, and the distributed concept an add_model instantiates. add_model only: naming a distributed concept makes target the instance\'s hierarchical id (container chain plus slug), and the new model is written at the concept\'s declared placement path, not under kNNowledge/. extract_instance takes the concept from the source element it cuts.\n\n## NN Field Definition: name\nconcept:: Change\ntype:: string\ndescription:: Display name for added or renamed entities; the title of a model created by add_model (defaults to the id); the matrix name for add_matrix.\n\n## NN Field Definition: slug\nconcept:: Change\ntype:: string\ndescription:: Proposed explicit slug.\n\n## NN Field Definition: seed\nconcept:: Change\ntype:: string\ndescription:: add_matrix only. Header elements the matrix is created with, as a JSON object {columns:[...],rows:[...]}. Sealed into proposal_sha. Creates empty cells and records no cell units; each non-empty cell needs its own update_matrix_cell change.\n\n## NN Field Definition: author\nconcept:: Change\ntype:: string\ndescription:: Identifier of author, reviewer, or agent.\n\n## NN Field Definition: notes\nconcept:: Change\ntype:: string\ndescription:: Rationale, commit note, or review critique.\n\n## NN Field Definition: evidence\nconcept:: Change\ntype:: citation\ndescription:: Evidence the change derives from \u2014 the ONLY provenance of the mutation \u2014 in the shared citation grammar (<path>@## <Heading>, <csv>@<row>, <json>@/<pointer>, a bare path, or the literal tokens decision / unknown). Mandatory on every change; written by the proposer at proposal time and sealed into proposal_sha; apply only verifies that it resolves.\n\n## NN Field Definition: blueprint_name\nconcept:: Change\ntype:: string\ndescription:: add_model and extract_instance. Name of the parent bluepriNNt of the model to create.\n\n## NN Field Definition: blueprint_url\nconcept:: Change\ntype:: string\ndescription:: add_model and extract_instance. Immutable URL of the parent bluepriNNt of the model to create.\n\n## NN Field Definition: knowledge_version\nconcept:: Change\ntype:: string\ndescription:: add_model only. Optional initial knowledge_version of the created model (inferred from the bluepriNNt when omitted).\n\n## NN Field Definition: status\nconcept:: Change\ntype:: select\noptions:: [proposed, applied, partially_applied, rejected, conflict]\ndescription:: Execution status annotation assigned by the apply engine. partially_applied is a changeset-level status (some changes applied, some conflicted); a change itself is applied, conflict or rejected. Written once in the changeset frontmatter; a change carries its own status only when it differs.\n\n## NN Field Definition: resolution\nconcept:: Change\ntype:: string\ndescription:: Conflict description or rejection reason, written only on a change that did not apply. A rejected changeset records why it was rejected here and is never re-applied.\n\n## NN Field Definition: resolved_slug\nconcept:: Change\ntype:: string\ndescription:: Disambiguated slug assigned upon insertion.\n\n## NN Field Definition: resolved_target\nconcept:: Change\ntype:: string\ndescription:: Execution fact stamped by the apply engine: the canonical unit address the change resolved to (model@frozen-slug&field, model@frozen-slug&#body, model@matrix-slug&row-slug&col-slug, model@concept:<Name>[&field], or the artifact path; model@frozen-slug for set_fields). Outside the seal; never accepted from a proposal. Written only when it differs from target; otherwise target is the address.\n\n## NN Field Definition: evidence_sha256\nconcept:: Change\ntype:: string\ndescription:: Execution fact stamped by the apply engine: one lowercase hex sha256 per evidence entry, in evidence order, as a positional list [a, b]. Omitted for decision and unknown. Outside the seal; a later mismatch downgrades anchor checks to EVIDENCE_SOURCE_CHANGED. The changeset frontmatter carries one evidence_sha256 map (cited path -> sha256) for the whole batch; a change carries its own list only for a cited path the map does not carry.\n\n## NN Field Definition: applied_at\nconcept:: Change\ntype:: string\ndescription:: Execution fact stamped by the apply engine: when the change was applied, UTC ISO-8601. Outside the seal. Changes of one batch share it; apply clamps it to max(now, latest + 1 ms). Written once in the changeset frontmatter and inherited by every change.\n\n## NN Field Definition: batch\nconcept:: Change\ntype:: string\ndescription:: Execution fact: the batch identity of the apply (the changeset stem). Outside the seal. Written once in the changeset frontmatter and inherited by every change.\n\n# Changeset Blueprint\n\n## A level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive\n\n## Philosophy\n\nEvery graph mutation in cogNNitive is represented as a structured changeset document. Rather than performing uncoordinated mutations or relying on informal agent chat transcript promotion, changesets serve as the single authoritative mutation and provenance medium. Changesets are sealed with a proposal hash, an integrity check verified before application that catches an accidental modification of the proposal between proposal and apply, and are recorded permanently to form the chain of provenance. The seal carries no key: anyone able to edit the file can recompute it, and it does not cover the execution facts. The seal is produced at intake when a proposer omits it (see Specification).\n\n## Objectives\n\n- Standardize graph mutation operations across models, elements, fields, and matrices.\n- Seal each proposal with a hash: an integrity check against accidental modification between proposal and apply, not an authentication of who wrote it.\n- Support atomic two-phase transactions with zero partial side-effects on validation failure.\n- The change is the only provenance: no field of a model carries a citation.\n- Enable structured human and agent review feedback as comment operations.\n\n## Specification\n\nA changeset document lives in the changes/ directory at the domain root with the filename pattern <prefix>_<author>_<stamp>_changes_NN.md. The prefix is the workspace_id for a changeset written by the MCP (propose_changeset, init_knowledge, apply_change) and the model slug for a changeset exported by the console review.\n\nEach change is declared as an element of concept Change:\n- op: One of update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, remove_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default, close_model.\n- update_element_text: Replaces the prose body of an element (ElementNode.description), named to mirror update_concept_text. target is model@element; from is the current prose and to the new prose. notes never writes the prose body, and update_field on description is rejected with USE_UPDATE_ELEMENT_TEXT.\n- rename_element: Changes one element\'s display name. target is model@element (with concept when the name is ambiguous) and to is the new display name. The element\'s slug is immutable and is preserved, so every address that uses the slug keeps resolving after the rename; that is why renaming is not a way to change identity. The cascade is part of the same atomic change, never a follow-up: taxonomy parent/child labels, matrix row and column labels, `[[...]]` wikilinks in fields and prose, declared `reference` and `knowledge` field values, and `relationships[].target` are all rewritten on apply. A sibling with the same display name inside the same concept is rejected (D3). On a model whose slugs are not frozen yet, the mutation freezes them first, so the applied change leaves explicit `slug::` declarations behind.\n- produce_artifact: Records that an artifact was produced. target is a workspace-relative artifact path; evidence lists the units or sources consumed; author is the producing procedure. A regenerable view (the console HTML, the impact report family) needs no record.\n- repin_blueprint: Moves a model\'s parent_spec (name and url) and its blueprint_version pin to a target bluepriNNt version. target is the bare model id, to is the target parent_spec.name, blueprint_url is the target url, and from is an optional precondition on the current parent_spec.name. It is the only supported way to repoint a model: patching frontmatter text is not a change and leaves no record. A stale from is MUTATION_FAILED.\n- rename_field: Renames one field key on every element of the model that carries it. target is the bare model id, from is the current field name, to is the new one, and concept optionally scopes the rename to one concept. It replaces text-level rewrites of a field a newer bluepriNNt renamed. Renaming a field no element carries is a successful no-op with a warning.\n- set_field_default: Populates a field introduced by the newer bluepriNNt on every element that lacks it, never overwriting an existing value. target is the bare model id, name is the field, to is the default value, and concept optionally scopes it. It is a successful no-op when every element already carries the field.\n- close_model: The closing event of a model. target is the bare model id; it sets `closed: true` in the model frontmatter, and the changeset that carries it records who closed the model and when. After it, every write to the model is refused with MODEL_CLOSED, in the same changeset too, and a second close_model is MODEL_CLOSED. A log that never ends is closed in segments.\n- add_element: Creates an element with its concept, name and optional explicit slug, and optionally its initial fields in to: a one-line JSON object field -> serialized value, the shape set_fields uses (an empty or non-object to or a repeated key is INVALID_OPERATION; the key description is USE_UPDATE_ELEMENT_TEXT). Every value is validated like update_field validates it, and the element is written with its fields in the one change under its one evidence, all or nothing; an append-only instance is thus written once with its values. The change log records one unit per field (model@slug&field) whose origin is the add_element. There is no fields key. A field whose evidence differs is set afterwards by its own update_field change (no from, because the field does not exist yet). notes is rationale, never prose.\n- set_fields: Sets several fields of one element from one evidence in one change. target is model@element (no &field); to is a one-line JSON object whose keys are field names and whose values are the serialized field values update_field would write; from is optional and holds the expected current value of a subset of the keys of to (a key absent from from has no precondition). It is all or nothing: a failed from or base_hash precondition conflicts the whole change and writes no field. An empty or non-object to, a repeated key, or a from key that to does not set is INVALID_OPERATION; the key description is USE_UPDATE_ELEMENT_TEXT. to and from are sealed as written. The change log records one unit per field (model@slug&field), each with the same history hop, evidence and position. update_field stays for a single field or for fields whose evidence differs.\n- target: Canonical target address identifying the model, element, field, matrix, row, or column.\n- from: Precondition value that must match the live model state.\n- to: Proposed value.\n- add_model: Creates a new Level-3 kNNowledge document. target is the new model id; blueprint_name and blueprint_url are required; name (title) and knowledge_version are optional. It carries no from, to or base_hash and no element payload: initial elements are add_element changes that follow it in the same changeset. With concept it instantiates a distributed concept: target is then the instance\'s hierarchical id (container chain plus slug), the file is written at the concept\'s declared placement path, and the skeleton carries the instance root element (## NN &lt;Concept&gt;: &lt;name&gt; plus slug:: &lt;slug&gt;).\n- move_model: Renames or relocates an instance model, which changes its id and the ids of every descendant instance. target is the old instance model id and to is the new one (same concept). The instance root folder, the file stem and the root slug:: move together inside the same atomic persistence; only the moved model is bumped, and only when its body changed. Recorded targets are never rewritten: the fold carries them forward. Every typed reference to the old id must be retargeted by an update_field in the same changeset, or the move is rejected with MOVE_LEAVES_DANGLING_REFERENCES. A compact model is MOVE_REQUIRES_INSTANCE; an occupied id is MODEL_EXISTS; a missing container is CONTAINER_MISSING.\n- remove_model: Removes one instance model as a recorded change. target is the instance model id and the change carries nothing else: it is a sealed, reviewable change, not an unrecorded filesystem delete, and no copy is kept outside changes/. Applying it deletes the model file inside the same atomic persistence and writes the change\'s execution facts, so the removal is reversible from the model\'s earlier changes and git history; the model\'s units leave the fold and the id becomes a terminal state for MODEL_WITHOUT_FILE instead of a reported loss. A compact model is REMOVE_REQUIRES_INSTANCE; a model whose folder still holds another model is REMOVE_MODEL_HAS_DESCENDANTS (remove the children first); every typed reference to the id or a descendant must be retargeted by an update_field in the same changeset, or the removal is rejected with REMOVE_LEAVES_DANGLING_REFERENCES. An address to a removed id is REF_MODEL_NOT_FOUND, naming the changeset that recorded the removal. A removal records no version transition: a removed model has no next version.\n- freeze_slugs: Writes an explicit slug for every element of the model that lacks one. target is the bare model id; it carries no other payload.\n- extract_instance: Migrates a compact element into its own distributed instance model. target is the source element address (compact model id plus the element slug), to is the instance id it becomes (which must end in that slug), and blueprint_name with blueprint_url name the bluepriNNt that declares the concept distributed. The extracted element becomes the instance root, its descendants move with it, and both models are bumped. The change records the moved slug set as an execution fact (extracted_slugs), so the fold re-keys the units to the new id and no unit fires UNIT_WITHOUT_RECORD. A concept the bluepriNNt does not distribute is EXTRACT_NOT_DISTRIBUTED; an instance model is EXTRACT_REQUIRES_COMPACT; an existing instance or an occupied destination folder is a conflict, and every extraction of the same source then conflicts as DEPENDS_ON_CONFLICTED_CHANGE: the migration is all or nothing. Use remove_element to drop a duplicate, never extract_instance.\n- bump_version: Raises the model knowledge_version by the level named in to (patch, minor or major). target is the bare model id. The apply engine bumps each touched model exactly once: a changeset that carries bump_version applies that level instead of the default patch bump, never both. The unversioned lineage record cannot be bumped.\n- add_matrix: Adds a new matrix table to a Level-3 model. target is model@matrix:&lt;name&gt;; name is the matrix name, concept is the row-axis concept and to is the column-axis concept. seed ({columns, rows}) supplies the header elements; when omitted they default to the axis concepts\' own elements. Every seeded cell starts empty, ready for update_matrix_cell, and records no cell unit. seed is sealed and is refused on any other op. It is refused on a Level-2 bluepriNNt (declare a Matrix Definition element there instead), and rejected when the matrix already exists.\n- base_hash: Optional precondition on the target element content; a mismatch is a conflict.\n- evidence: Mandatory. One citation, a bracketed list of citations, or the literal token decision / unknown (the keywords only ever alone); written by the proposer and sealed with the proposal. The change is the only provenance of the mutation.\n\n#### Origins of a value\n\nEvidence always points outside the living knowledge graph: every value of a model ends in one of these origins.\n\n| Origin | How the change records it |\n|---|---|\n| A person\'s decision | `evidence:: decision` in a changeset with `author_kind: human` |\n| An AI agent\'s decision or proposal | `evidence:: decision` in a changeset with `author_kind: agent`; the proposed changeset is the proposal |\n| A conversation | a citation of the transcript, `conversations/<file>.md@## <heading>` |\n| An external document | a citation of the source, `sources/<path>@<unit>` |\n| A run of a procedure | a citation of the closed run, `<run id>@<event>` (the `executions` bluepriNNt) |\n| A computed value | a citation of the closed run that computed it: the computation is a run whose events record each input read (address, value, version) and the result |\n| Not known | `evidence:: unknown` |\n\nA model is cited by its id (`<model id>@<element>`), never by its file path, and only once it is closed by `close_model`: a closed model is a frozen record, so it is a source, while an open model is knowledge still changing. Citing an open model is CITATION_NOT_CLOSED; the engine stamps the closed model file\'s sha256 in evidence_sha256 like any source.\n- Execution annotations (status, resolution, resolved_slug, applied_at, batch) and the execution facts (resolved_target, evidence_sha256) record the outcome of applying the change. Every change has an applied_at (UTC), status, author and batch. The batch-wide facts are written once, in the changeset frontmatter (applied_at, batch, status, and evidence_sha256 as a map from each cited path to its sha256), and every change inherits them: a change carries a fact only when its value differs (status when it differs from the changeset status, author when it differs from the frontmatter author, resolution only when the change did not apply, resolved_target only when it differs from target, evidence_sha256 only for a cited path the map does not carry; applied_at and batch never). The change log resolves each fact as the change\'s own value, else the changeset\'s, so a changeset whose changes carry every fact themselves resolves the same way. The change chain, ordered by (applied_at, changeset stamp, filename, document index), is a unit\'s history.\n\nChangeset status is one of proposed, applied, partially_applied, rejected, conflict. A changeset is rejected when the proposal itself is invalid (a failed validation or an unresolved citation): the status and the reason (resolution) are persisted and the changeset is never re-applied. A conflict is a failed precondition of the live model and may be fixed and retried.\n\nA changeset MAY be authored by hand (for example a large agent-generated batch) and applied by path with `apply_change`; it does not require a pre-computed `proposal_sha`. When the seal is omitted the runtime computes it at intake; a present but non-matching value means the proposal was modified after it was sealed and is rejected (`PROPOSAL_TAMPERED`), so a hand-authored changeset MUST either omit the seal or carry the exact hash. The document-level `proposal_sha` is therefore optional in the template below.\n\n## Template\n\n### Level 3 Changeset Template\n\n```markdown\n---\nspec_version: "V_0-4-0"\nlevel: 3\nparent_spec:\n  name: changes\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"\nblueprint_version: "V_0-10-0"\nstatus: proposed\nproposal_sha: "<64-character-sha256-hex>"\ntitle: "<Changeset Title>"\nauthor: "<Author>"\n---\n\n# NN index\n\n* [[Change]]\n\n# NN Change\n\n## NN Change: change-1\nop:: update_field\ntarget:: model@element&field\nfrom:: "old_value"\nto:: "new_value"\nevidence:: sources/import/<file>@## <Heading>\n```\n\n## Examples\n\n### Field Update and Review Comment\n\n```markdown\n## NN Change: c-01\nop:: update_field\ntarget:: strategy@vision&statement\nfrom:: "Initial draft"\nto:: "Accelerate renewable adoption"\nauthor:: agent-1\nnotes:: Align with 2026 sustainability roadmap\n\n## NN Change: c-02\nop:: comment\ntarget:: strategy@vision&statement\nauthor:: reviewer-human\nnotes:: Verified alignment with executive briefing\n```\n';
     DOMAINN_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\ntitle: "DomaiNN Blueprint"\nblueprint_name: "domaiNN"\nblueprint_version: "V_0-4-1"\nrelationship_types:\n  hierarchy:\n    enabled: true\n    via: "index block"\n  evaluable_matrix:\n    enabled: true\n  graph_edge:\n    enabled: false\n  sequence:\n    enabled: false\n---\n\n# NN index\n\n* [[domaiNN]]\n* [[kNNowledge]]\n* [[bluepriNNts]]\n\n# NN Concept Definition\n\n## NN Concept Definition: domaiNN\nicon:: layout-dashboard\ntype:: text\ncolor:: grey\nweight:: 100\n\n## NN Concept Definition: kNNowledge\nicon:: file-symlink\ntype:: knowledge\ncolor:: purple\nweight:: 95\n\n## NN Concept Definition: bluepriNNts\nicon:: copy\ntype:: model\ncolor:: grey\nweight:: 90\n\n# NN Field Definition\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\ndescription:: Open vocabulary ad-hoc tags and classification labels (e.g. verified).\n\n<!-- domaiNN fields: container conventions -->\n\n## NN Field Definition: name\nconcept:: domaiNN\ntype:: string\ndescription:: Display name or title of the domaiNN.\n\n## NN Field Definition: knowledge_dir\nconcept:: domaiNN\ntype:: string\ndescription:: Base relative path for kNNowledge documents in the domaiNN (default: kNNowledge/).\n\n## NN Field Definition: blueprints_dir\nconcept:: domaiNN\ntype:: string\ndescription:: Base relative path for local bluepriNNts in the domaiNN (default: specs/bluepriNNts/).\n\n<!-- kNNowledge fields: inventory + lineage -->\n\n## NN Field Definition: path\nconcept:: kNNowledge\ntype:: knowledge\ndescription:: domaiNN-relative path to the referenced kNNowledge document.\n\n## NN Field Definition: blueprint\nconcept:: kNNowledge\ntype:: string\ndescription:: The level-2 bluepriNNt the referenced kNNowledge document conforms to.\n\n## NN Field Definition: status\nconcept:: kNNowledge\ntype:: select\noptions:: [draft, active, archived]\ndescription:: Lifecycle status of the kNNowledge document within this domaiNN.\n\n## NN Field Definition: author\nconcept:: kNNowledge\ntype:: string\ndescription:: Author or owner of the kNNowledge document within this domaiNN.\n\n<!-- bluepriNNts fields: local blueprint inventory -->\n\n## NN Field Definition: path\nconcept:: bluepriNNts\ntype:: model\ndescription:: domaiNN-relative path to a local bluepriNNt spec (spec_NN.md).\n\n## NN Field Definition: category\nconcept:: bluepriNNts\ntype:: string\ndescription:: Domain classification or strategic focus of the local bluepriNNt.\n\n# DomaiNN Blueprint\n\n## A level-2 blueprint for a domaiNN root \u2014 linking kNNowledge documents, local bluepriNNts, and taxonomy tags\n\n## Philosophy\n\nA domaiNN is the container for a body of kNNowledge. It is itself a kNNowledge document, so a domaiNN can nest inside another domaiNN without a special case:\n* **domaiNN** sets directory conventions and the entry point (`domaiNN_NN.md`).\n* **kNNowledge** links to the Level-3 documents with metadata and blueprint binding.\n* **bluepriNNts** catalogs local bluepriNNt packages.\n\n## Objectives\n\n- Define the domaiNN root as an ordinary Level-3 kNNowledge document governed by this blueprint.\n- Standardize the directory layout: `kNNowledge/` for knowledge and `specs/bluepriNNts/` for local bluepriNNts.\n- Make every domaiNN resolvable offline through the parent chain (`domaiNN` \u2192 iNNfo V_0-5-0 \u2192 defiNNition).\n\n## Specification\n\n### Concepts\n\n| Concept | Type | Purpose |\n|---|---|---|\n| **domaiNN** | text | Prose description, entry point, and directory conventions of the container |\n| **kNNowledge** | knowledge | kNNowledge documents in the domaiNN with metadata and blueprint binding |\n| **bluepriNNts** | model | Local bluepriNNt specs the domaiNN references (path + category) |\n\n### Fields\n\n| Concept | Field | Type | Purpose |\n|---|---|---|---|\n| `*` | `tags` | select (multiple) | Open vocabulary ad-hoc tags and classification labels (e.g. `verified`) |\n| domaiNN | `name` | string | Display name or title of the domaiNN |\n| domaiNN | `knowledge_dir` | string | Base relative path for kNNowledge documents |\n| domaiNN | `blueprints_dir` | string | Base relative path for local bluepriNNts |\n| kNNowledge | `path` | knowledge | domaiNN-relative path to referenced document |\n| kNNowledge | `blueprint` | string | Level-2 bluepriNNt name |\n| kNNowledge | `status` | select | draft, active, archived |\n| kNNowledge | `author` | string | Author or owner |\n| bluepriNNts | `path` | model | domaiNN-relative path to local spec |\n| bluepriNNts | `category` | string | Strategic focus of local bluepriNNt |\n\n### Directory Conventions\n\n| Key | Default | Meaning |\n|---|---|---|\n| `knowledge_dir` | `kNNowledge/` | Base path for Level-3 kNNowledge documents |\n| `blueprints_dir` | `specs/bluepriNNts/` | Base path for local bluepriNNt packages |\n\nThe entry point of a domaiNN is a root document named exactly `domaiNN_NN.md`. Legacy entrypoint names (`workspace*.md`, `*_base_NN.md`) are detected as legacy and are never loaded by current tooling.\n\n## Template\n\n### Level 3 kNNowledge Template (Lightweight)\n\n```yaml\n---\nlevel: 3\nparent_spec:\n  name: "domaiNN"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"\nknowledge_version: "V_0-1-0"\ntitle: "<DomaiNN Name>"\n---\n\n# NN domaiNN\n\nDescription of the domaiNN: its purpose, scope, and conventions.\n\n# NN kNNowledge\n\n## NN kNNowledge: Core Knowledge\npath:: kNNowledge/core_business_NN.md\nblueprint:: business\nstatus:: active\nauthor:: Lead Architect\ntags:: [verified]\n```\n\n## Examples\n\nA domaiNN that links one business kNNowledge document uses two concepts: `domaiNN` for the container and `kNNowledge` for the linked document. No other structure is required.\n';
     BLANK_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\nblueprint_version: "V_0-4-1"\ntitle: "Blank App"\nrelationship_types:\n  hierarchy:\n    enabled: true\n    via: "index block"\n  evaluable_matrix:\n    enabled: false\n  graph_edge:\n    enabled: false\n  sequence:\n    enabled: false\n---\n\n# NN index\n\n* [[Content]]\n\n# NN Concept Definition\n\n## NN Concept Definition: Content\nicon:: file-text\ntype:: text\ncolor:: blue\nweight:: 100\n\n# NN Field Definition\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\ndescription:: Open vocabulary ad-hoc tags and classification labels.\n\n## NN Field Definition: summary\nconcept:: Content\ntype:: string\ndescription:: Free-form one-line summary or label for the content block.\n\n# NN Matrix Definition\n\n# Blank Template\n\n## A minimal starting point for defining new concepts and fields from scratch\n\n## Philosophy\n\nThe Blank Template is the empty canvas of the iNNfo ecosystem. Where the Business, Organization, Procedures, and Projects templates ship pre-built domain concepts, the Blank Template declares a single minimal `Content` concept and leaves every other Concept, Field, and Matrix Definition to the model author. Use it to model a domain that has no dedicated template yet, or to bootstrap a custom specialization without inheriting unrelated structure.\n\nBy design it keeps model creation unopinionated: you add `# NN Concept Definition`, `# NN Field Definition`, and `# NN Matrix Definition` elements to this page to shape your own schema, then author Level 3 models against them.\n\n## Objectives\n\n- Provide a minimal, valid Level 2 template that can be used as `parent_spec` for any new or exploratory model.\n- Avoid forcing any domain vocabulary onto the model author.\n- Keep the body valid against the `iNNfo_V_0-3-0` meta-template (the four root primitives instantiated in the body, no `concepts:`/`fields:` frontmatter).\n- Serve as the starting point for authoring a specialization that still follows iNNfo conventions.\n\n## Specification\n\n### Concepts\n\n| Concept | Type | Purpose |\n|---|---|---|\n| **Content** | `text` | A single free-form container for notes, prose, or unstructured content |\n\nThe `Content` concept exists so the template has a non-empty, resolvable `# NN index` and a place for the model author to put opening content. Additional Concepts are added by the author through `# NN Concept Definition` elements.\n\n### Fields\n\n| Field | Concept | Type | Purpose |\n|---|---|---|---|\n| `tags` | `*` | `select` (multiple) | Open vocabulary ad-hoc tags and classification labels |\n| `summary` | Content | `string` | Free-form one-line summary or label for the content block |\n\n### Matrices\n\nNone by default. Add `# NN Matrix Definition` elements as your schema grows.\n\n### Relationship Types\n\n| Type | Enabled | Representation |\n|---|---|---|\n| Hierarchy | \u2705 | index block (wikilinks) |\n| Evaluable matrix | \u274C | Not applicable by default |\n| Graph edge | \u274C | Not applicable |\n| Sequence | \u274C | Not applicable |\n\n## Template\n\n### Level 3 Model Template (Lightweight)\n\nTo create a blank model, create a level 3 FILE mode document with:\n\n```yaml\n---\nlevel: 3\nparent_spec:\n  name: "blank_V_0-2-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md"\nknowledge_version: "V_x-y-z"\ntitle: "<Your Model Name>"\n---\n\n# NN index\n* [[Content]]\n\n# NN Content\nYour opening content here.\n```\n\nThe application will resolve the `parent` URL, download this template, and use its Concept, Field, Marker, and Matrix Definitions to validate and render your model. To model a richer domain, extend the template (or create a specialization) with additional `# NN Concept Definition` and `# NN Field Definition` elements following the `iNNfo_V_0-3-0` meta-template.\n\n## Examples\n\n### Canonical Sample\n\nThe Blank Template intentionally ships without a domain sample, because a blank model is defined entirely by its author. For a guided example of a fully populated template, see the Business (`specs/bluepriNNts/business/`), Organization (`specs/bluepriNNts/organization/`), Procedures (`specs/bluepriNNts/procedures/`), or Projects (`specs/bluepriNNts/projects/`) templates.\n\n### Parent Chain\n\n```yaml\n# This template\'s parent:\nparent_spec:\n  name: "iNNfo_V_0-3-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-3-0_NN.md"\n```\n\nModels targeting this template set:\n\n```yaml\nparent_spec:\n  name: "blank_V_0-2-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md"\n```\n\n# Concept Guidance Documentation\n\n## Content\n\n### Summary\nA free-form container for the model author\'s opening content, notes, or prose.\n\n### Description\nThe `Content` concept is the only concept the Blank Template declares. It is a single-instance `text` block where you can place an introduction, a summary, or unstructured notes before you define your own purposeful Concepts and Fields. Extend the template as needed to model your domain.\n';
     INNFO_V_0_7_0_SPEC_CONTENT = '---\nspec_version: "V_0-7-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"\nlevel: 1\nparent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"\ntitle: "iNNfo Meta-bluepriNNt Specification"\ndescription: "Level-1 meta-bluepriNNt defining the root primitives (Concept Definition, Field Definition, Matrix Definition), multi-concept targets, multi-valued fields, widgets, concept-level inheritance, per-concept storage declaration (compact or distributed), the unified address grammar, stable element identity via immutable slugs, and the unified NN syntax: `# NN` sections, `## NN` elements, and `key:: value` properties."\nauthor: "innV0 Team"\nstatus: "Draft"\n---\n\n> [!NOTE]\n> This is an **iNNfo document** \u2014 a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).\n\n# iNNfo Meta-bluepriNNt Specification\n\n## A concrete specification for semantic modeling with concepts, elements, fields, markers, and relationships, expressed through the unified NN syntax and a self-describing meta-bluepriNNt\n\n## Philosophy\n\niNNfo is designed around five principles:\n\n1. **Rich specs, lean models**: Specification documents (levels 0\u20132) are semantically rich. kNNowledge documents (level 3) carry only data and a parent pointer. The application resolves and caches the parent chain.\n2. **Self-describing**: Every iNNfo document is valid Markdown with YAML frontmatter and the unified `NN` syntax. No proprietary tooling required to read it.\n3. **Meta-bluepriNNt**: The level-1 specification is itself a *meta-bluepriNNt*. Level-2 bluepriNNts are ordinary iNNfo documents that instantiate the root primitives \u2014 `Concept Definition`, `Field Definition`, and `Matrix Definition` \u2014 as ordinary elements in their body. There is no separate declaration format.\n4. **Relationship polymorphism**: Relationships between concepts and elements are expressed through a typed system \u2014 hierarchy, evaluable matrices, graph edges, and sequences.\n5. **Stable identity via immutable slugs**: Every entity (element, concept, matrix) possesses an explicit, immutable slug identifier (`slug::`). Display names are decoupled from identity and scoped to their concept, allowing identical display names across distinct concepts. Once assigned, a slug is permanent across renames and edits.\n\n## Objectives\n\n- Define a unified, minimal syntax: `# NN <Concept>`, `## NN <Concept>: <Element>`, immutable `slug::` declarations, and `key:: value` properties.\n- Define the **Metaplantilla Nivel 1**: the root primitives that every level-2 bluepriNNt instantiates.\n- Establish immutable slugs for elements, concepts, and matrices to preserve citations and graph stability across renames (D1).\n- Support cross-concept duplicate display names while scoping sibling display names within each concept (D3).\n- Define extension-less model identity (`model_slug`) and universal `@` addressing grammar for elements, fields, and matrix cells (D4, D5).\n- Enforce slug freezing (`freeze_slugs`) on mutation and domain-wide upgrades (D19).\n- Remove the `concepts:` / `markers:` / `matrices:` frontmatter blocks from level-2 bluepriNNts; their schema is expressed as body elements.\n- Enable machine parsing, validation, and visual rendering of kNNowledge via the parent chain resolver.\n- Maintain full human readability and Git-diffability.\n- Ensure that kNNowledge files are lightweight and never duplicate specification content.\n\n## Unified Syntax\n\niNNfo uses three structural markers. The `NN` token is required and distinguishes iNNfo structure from ordinary Markdown.\n\n| Construct | Syntax | Example |\n|---|---|---|\n| Concept section | `# NN <Concept>` (H1) | `# NN Stakeholders` |\n| Element | `## NN <Concept>: <Element>` (H2) | `## NN Stakeholders: Customer` |\n| Nested Element | `#{3,6} NN <Concept>: <Element>` (H3\u2013H6) | `### NN Layer: Title` |\n| Identity slug | `slug:: <slug>` (first property line) | `slug:: customer` |\n| Property | `key:: value` (consecutive lines) | `importance:: high` |\n\nA **Concept** is a named type declared by a bluepriNNt. A Concept section is introduced by an H1 heading `# NN <Concept>`.\n\nAn **Element** is a single instance of a Concept, declared as an H2 heading `## NN <Concept>: <Element>` within the Concept section. The `<Concept>` token names the owning concept (it MUST match the enclosing section concept for top-level H2 headings).\n\n### Hierarchical Element Headings (Level-3 Documents)\n\nLevel-3 kNNowledge documents may author child elements inline beneath their parent element using deeper Markdown headings (`### NN`, `#### NN`, up to `###### NN`), without requiring separate top-level `# NN <ChildConcept>` sections.\n\n- **Nesting Rules**: A child heading `#{3,6} NN <ChildConcept>: <Element>` attaches to the nearest shallower element heading on the heading stack. The parentage relationship (`ParentConcept -> ChildConcept`) MUST be declared as a valid direct parent-child edge in the governing bluepriNNt\'s `# NN index` (`schema.taxonomy`). Disallowed nesting is rejected by validation (`INVALID_NESTED_CONCEPT`).\n- **Parent Identity**: The child element receives `parentSlug` referencing the parent element\'s slug.\n- **Prose Separation**: Any prose body authored for the parent element belongs exclusively to the parent and concludes immediately before the child\'s heading.\n- **Backward Compatibility**: Flat H2 headings in separate `# NN <ChildConcept>` sections remain 100% valid and supported.\n\nAn **Element Slug** is declared on the line immediately following the `## NN` heading via `slug:: <slug>`. The slug MUST be lowercase kebab-case conforming to `^[a-z0-9]+(?:-[a-z0-9]+)*$`. The slug is immutable: renaming an element modifies its display name in the `## NN` heading but preserves `slug::` unchanged.\n\nA **Field** is a typed key-value property of an Element. Element properties are written on consecutive `key:: value` lines immediately after the `slug::` line (or heading), before any free-form description text.\n\n```markdown\n# NN Stakeholders\n\n## NN Stakeholders: Customer\nslug:: customer\nimportance:: high\nneeds:: [speed, accuracy]\nCustomer description text follows the properties.\n```\n\nProperty values follow a small value grammar:\n\n- Plain text \u2014 `relationship_model:: Dedicated`\n- Quoted text \u2014 `brand_name:: "Acme Inc."`\n- Numbers \u2014 `weight:: 90`\n- Booleans \u2014 `published:: true`\n- Inline arrays \u2014 `options:: [Ideation, MVP, Validation]`\n- Inline objects (JSON) \u2014 `config:: {"a": 1}`\n\nThere is exactly ONE syntax. Older documents that use the legacy `_NN` markers or\nfenced ```yaml blocks are not supported and MUST be migrated to the unified syntax.\n\n## Unified Address Grammar\n\nThere is exactly ONE grammar for pointing at a model, an element, a field, a body or a matrix cell. Every typed reference, citation, change target and tool argument uses it. A title is display text and never resolves: the title of an element can change freely without breaking a single reference.\n\n```\naddress   = model-id [ "@" unit ] / relative\nrelative  = "@" unit                      ; only inside a model document, same model\nmodel-id  = head *( "/" slug )\nhead      = 1*alnum *( ( "-" / "_" ) 1*alnum )\nslug      = 1*lower-alnum *( "-" 1*lower-alnum )\nunit      = element [ "&" ( field / "#body" ) ]\n          / slug "&" slug "&" slug        ; matrix cell: matrix & row & column\n          / "concept:" Name [ "&" field ]\n          / "matrix:" slug\n```\n\n| Target | Syntax | Resolves To |\n|---|---|---|\n| Entire model | `model-id` | The model document root |\n| Element | `model-id@element-slug` | One element instance |\n| Element field | `model-id@element-slug&field` | The value of one field |\n| Element body | `model-id@element-slug&#body` | The prose body of one element |\n| Matrix | `model-id@matrix:matrix-slug` | One matrix definition and table |\n| Matrix cell | `model-id@matrix-slug&row-slug&col-slug` | The cell at row and column |\n| Concept | `model-id@concept:Name` | One concept section; `&field` addresses a concept-level field |\n| Same model | `@element-slug` | An element of the model that contains the reference |\n\n- **Model identity.** A `model-id` is hierarchical and derived, never stored. A compact model (`kNNowledge/<stem>_NN.md`) has the stem without its `_NN` suffix as its id. An instance model (see Storage Declaration) has an id made of its container chain and its own slug, for example `villabotijos-today/intro`. The same slug under two containers is two distinct models.\n- **Reserved head.** `specs` is reserved as the head of a model id: `specs/<family>@concept:<Name>` addresses a bluepriNNt definition, not a model.\n- **Typed fields.** A field whose type is `reference`, `knowledge`, `model` or `address` holds addresses only. A relative address (`@slug`) is the canonical form inside the model that holds the element; an absolute address to the same model is not canonical.\n- **Removed forms.** A model addressed by file path, a change document addressed by heading, a title-qualified wikilink (a title, `::`, then a name inside double brackets) and a bare title are not addresses. They are rejected naming the form and the address that replaces them.\n- **Raw-file citations.** A citation of a raw file under `sources/`, and of any file that is not a model (sidecars, CSV rows, JSON pointers, plain Markdown), keeps its path grammar: `<path>.<md|csv|json>@<unit>`.\n- **Prose wikilinks.** A `[[target]]` wikilink inside Markdown prose is not a typed reference. It still resolves inside its own model by element slug first, then by display name, and a display name shared by elements of different concepts is rejected as ambiguous (`AMBIGUOUS_ELEMENT_NAME`); qualify it by using the element\'s `slug`.\n- **Resolution.** An address resolves exactly or not at all. An unresolved address reports the candidate model ids that share its last segment, and a stale address names its recorded successor when the history holds one.\n\n## Root Primitives (Metaplantilla Nivel 1)\n\nA level-2 **bluepriNNt** is an iNNfo document (level 2) that instantiates the root primitives. Each primitive is a reserved Concept name whose Elements carry the schema of the bluepriNNt.\n\n| Primitive | Reserved Concept | Purpose | Instantiation |\n|---|---|---|---|\n| `Concept Definition` | `# NN Concept Definition` | Declares one Concept of the bluepriNNt | `## NN Concept Definition: <Name>` |\n| `Field Definition` | `# NN Field Definition` | Declares one typed Field of a Concept | `## NN Field Definition: <Name>` |\n| `Matrix Definition` | `# NN Matrix Definition` | Declares one evaluable Matrix | `## NN Matrix Definition: <Name>` |\n\n### Concept Definition\n\nDeclares a Concept. The Element name is the Concept name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `type` | `text` \\| `category` \\| `weight` \\| `list` \\| `steps` \\| `sequence` \\| `knowledge` \\| `model` | Representation of the Concept (required) |\n| `icon` | string | Lucide icon identifier |\n| `color` | string | Theme color |\n| `weight` | number | Display priority (higher = more prominent) |\n| `storage` | `compact` \\| `distributed` | Where the instances of the Concept live. Absent means `compact` |\n| `container` | string | Name of the distributed Concept an instance is stored under. Only for `storage:: distributed` |\n| `placement` | string | Folder template of an instance model. Required for `storage:: distributed`, forbidden otherwise |\n\n```markdown\n# NN Concept Definition\n\n## NN Concept Definition: Stakeholders\nslug:: stakeholders\nicon:: users\ntype:: weight\ncolor:: blue\nweight:: 80\n```\n\n#### Storage Declaration\n\nA Concept declares where its instances live. The declaration is per Concept, so one bluepriNNt MAY mix both forms, and it is the only source of truth: no tool infers storage from the shape of a folder.\n\n- `storage:: compact` (the default when the property is absent): the instances are elements of one kNNowledge model.\n- `storage:: distributed`: each instance is the root of its own kNNowledge model, called an **instance model**. The child Concepts of a distributed Concept remain elements of that instance model.\n\n`placement::` is a POSIX path relative to the domaiNN root, ending in `/`. It is made of kebab-case literal segments, exactly one `{slug}` token (the instance slug) and, only when `container::` is declared, `{container}` as the first segment (it expands to the container instance\'s root folder, so containment is physical nesting). A placement MUST NOT contain `..` or a `.`-prefixed segment, MUST NOT use the literals `archive`, `staging`, `specs`, `backups` or `kNNowledge`, and MUST NOT begin with the literal `sources`. A literal after `{slug}` is allowed (`proyectos/{slug}/models/`). The container of a distributed Concept MUST itself be a distributed Concept of the same bluepriNNt, and the chain of containers MUST NOT loop. Two placements of one bluepriNNt MUST NOT be able to match the same folder.\n\n```markdown\n## NN Concept Definition: Series\nslug:: series\ntype:: list\nstorage:: distributed\nplacement:: "series/{slug}/"\n\n## NN Concept Definition: Video\nslug:: video\ntype:: list\nstorage:: distributed\ncontainer:: Series\nplacement:: "{container}/assets/{slug}/"\n```\n\nStorage composes like any other Concept property: a bluepriNNt that `includes` another inherits its declarations unchanged. The declaration changes neither the scope chain nor the way values are inherited.\n\n### Field Definition\n\nDeclares a typed Field of a Concept. The Element name is the Field name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `concept` | string or array | Name of the owning Concept Definition, list of Concepts, or `*` for all non-text concepts (required) |\n| `type` | `string` \\| `number` \\| `boolean` \\| `select` \\| `reference` \\| `markdown_inline` \\| `markdown_file` \\| `image` \\| `file` \\| `video` \\| `audio` \\| `url` \\| `knowledge` \\| `model` \\| `address` \\| `citation` | Field type (required) |\n| `multiple` | boolean | Multi-valued field flag (allowed only on `type:: select`) |\n| `widget` | `boolean` \\| `cycle` \\| `scale` \\| `set` \\| `text` | Field interaction widget |\n| `widget_config` | object | Widget configuration parameters (JSON object) |\n| `options` | array | Allowed values for `select` fields |\n| `target_concepts` | array | Target concepts for `reference` fields |\n| `description` | string | Human-readable explanation |\n| `target_blueprint` | string | Required bluepriNNt name or URL for fields of type knowledge |\n\n```markdown\n# NN Field Definition\n\n## NN Field Definition: status\nconcept:: Stakeholders\ntype:: select\noptions:: [Ideation, MVP, Validation]\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\n```\n\n**Reference Fields (`type:: reference`).** Property values for fields declared with `type:: reference` MUST be formatted using WikiLink syntax `[[Target Element]]` (e.g. `location:: [[Sal\xF3n-Comedor]]`). Bare string values without WikiLink delimiters are not parsed as active element-to-element graph references.\n\n**Knowledge Fields (`type:: knowledge` or `type:: model`).** A Field of any Concept MAY be declared `type:: knowledge` or `type:: model`. Its value is a domain-relative path, a `./`-relative path, or a WikiLink wrapping either (`[[kNNowledge/acme_business_NN.md]]`). When the Field declares `target_blueprint`, the referenced kNNowledge document\'s `parent_spec` MUST identify that bluepriNNt. Knowledge fields are followed during domaiNN traversal, so a document referenced by two parents appears once in the graph with both incoming edges \u2014 a diamond is not a cycle.\n\n**Citation Fields (`type:: citation`).** A Field declared `type:: citation` is RESERVED for the changes collection: the ONE allowed citation is `changes.evidence`, the provenance of an applied change. A kNNowledge document MUST NOT declare its own citation Field, and MUST NOT write the reserved `sources::`/`source::` property: a unit declares no provenance of its own, because its history, origin and drift are derived from the applied changes. The fields `type` may take are otherwise unchanged; `address` remains valid everywhere.\n\n**Reserved `sources::`.** `sources::` (and its singular `source::`) is reserved and banned on L3. A kNNowledge document that carries it is INVALID (`SOURCES_FIELD_BANNED`); a document that declares a `type:: citation` field is INVALID (`CITATION_FIELD_BANNED`). Evidence lives in the change that set the value, never in the model.\n\n**Address Fields (`type:: address`).** A Field declared `type:: address` holds one structural address `<target>@<unit>`: `<target>` is a workspace-relative path or a `knowledge_slug`; `<unit>` is `## Heading`, `RowID&col`, `/json/pointer`, `element-slug`, `element-slug&field`, or `matrix&row&col`. Its value MUST resolve to an existing unit; a dangling address is an **error**. `address` is the base of the address grammar: `citation` is an `address` that additionally asserts derivation (evidence), and `knowledge` is an `address` that is traversed. All three share the same parser.\n\n**Qualified Cross-Knowledge References.** A `reference` or `knowledge` Field MAY target an Element in another kNNowledge document in the same domaiNN using the qualified form `[[Document Title :: Element Name]]` or `[[model_slug@element-slug]]`.\n\n### Matrix Definition\n\nDeclares an evaluable Matrix. The Element name is the Matrix name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `source` | string | Source Concept (rows) \u2014 required |\n| `target` | string | Target Concept or reserved pseudo-Concept (columns) \u2014 required |\n| `values` | array | Allowed cell values (empty cell `-` and boolean marker `X` are always accepted) |\n| `widget` | `boolean` \\| `cycle` \\| `scale` \\| `set` \\| `text` | Cell interaction widget |\n| `widget_config` | object | Widget-specific configuration \u2014 see Widget Configuration |\n| `description` | string | Human-readable explanation |\n\n```markdown\n# NN Matrix Definition\n\n## NN Matrix Definition: problems-value propositions matrix\nslug:: problems-value-propositions\nsource:: Problems\ntarget:: Value propositions\nwidget:: set\nvalues:: [Max, Very High, High]\n```\n\n### Widget Configuration\n\n`widget_config` is an OPTIONAL inline JSON object that parameterizes the cell\ninteraction widget. It MUST be valid JSON on a single line.\n\n| Widget | Key | Type | Default | Description |\n|---|---|---|---|---|\n| `scale` | `min` | number | `0` | Minimum numeric score |\n| | `max` | number | `100` | Maximum numeric score |\n| | `step` | number | `1` | Step increment |\n| | `unit` | string | `""` | Optional display suffix (e.g. `"%"` or `"pts"`) |\n| `set` | `max_selections` | number | `undefined` | Maximum number of simultaneous selections |\n| `cycle` | (none) | | | Cycle through values in order |\n| `boolean` | `true_label` | string | `"X"` | Display text when true |\n| | `false_label` | string | `"-"` | Display text when false |\n| `text` | `max_length` | number | `200` | Character limit for cell input |\n\n### Free Matrices\n\nAn evaluable relationship between two domain Concepts (e.g. `Problems` \xD7 `Value propositions`).\n\n```markdown\n# NN matrices: problems-value propositions matrix\n\n| Problems | Solution A | Solution B |\n|---|---|---|\n| High latency | Max | High |\n| Data loss | Max | Very High |\n```\n\n### Relationship Types Block (Frontmatter)\n\nLevel-2 bluepriNNts MAY declare custom graph edge types in frontmatter under\n`relationship_types:`. A relationship type defines a typed directed connection\nbetween elements.\n\n```yaml\n---\nrelationship_types:\n  depends_on:\n    directed: true\n    label: "Depends on"\n    inverse: "Required by"\n    color: "#e06c75"\n    style: "dashed"\n  influences:\n    directed: true\n    label: "Influences"\n    color: "#61afef"\n    style: "solid"\n---\n```\n\nGraph edges are written in the kNNowledge document\'s element section using `->` syntax:\n\n```markdown\n## NN Work: Deploy\ndepends_on -> [[Build]]\ninfluences -> [[Monitoring]]\n```\n\n### Custom Guidance Headings in BluepriNNts\n\nLevel-2 bluepriNNts MAY include prose documentation sections after the schema definitions.\nThese sections provide human-readable guidance for authors and AI assistants filling out\nkNNowledge documents based on the bluepriNNt.\n\nTo prevent guidance text from being parsed as model elements, bluepriNNt authors MUST use\nregular Markdown headings (without the `NN` token) for guidance sections:\n\n```markdown\n# Concept Guidance Documentation\n\n## Stakeholders\n### Summary\nStakeholders are individuals, groups, or organizations that have an interest in or are affected by the system.\n\n### Identification Strategy\n1. Identify direct users who interact with the system daily.\n2. Identify decision makers who approve funding and strategy.\n3. Identify external parties subject to compliance or regulation.\n\n### Fields Reference\n- `importance`: Relative business impact (high, medium, low).\n- `needs`: Bulleted list of explicit operational requirements.\n```\n\n- Headings starting with `# NN` or `## NN` are **structural** (parsed as schema).\n- Headings starting with `#` or `##` (without `NN`) are **descriptive** (ignored by the schema parser).\n\n## Level 2 BluepriNNt Structure\n\nA level 2 bluepriNNt MUST follow this structure:\n\nFrontmatter:\n\n```yaml\n---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/<name>/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-5-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"\ntitle: "<BluepriNNt Title>"\nblueprint_name: "<blueprint-name>"\nblueprint_version: "V_x-y-z"\nincludes:                        # OPTIONAL \u2014 additive schema composition\n  - name: "<blueprint>"\n    url: "<immutable-URL>"\nrelationship_types:              # OPTIONAL \u2014 custom graph edges\n  ...\n---\n```\n\n### Schema Composition (`includes`)\n\nA level-2 bluepriNNt MAY declare `includes:`, an array of `{name, url}` references to\npeer level-2 bluepriNNts. `includes` composes the schemas of the included bluepriNNts into\nthe including bluepriNNt additively.\n\n#### Collision Rules\n\nWhen two included bluepriNNts (or an included bluepriNNt and the including bluepriNNt) declare a\nDefinition with the same name:\n\n1. If their canonical forms are **identical**, the collision is resolved cleanly: they\n   carry a shared Definition and still compose.\n2. If their canonical forms **differ**, it is a validation ERROR that MUST name\n   both source documents and the Definition.\n\nThe **canonical form** of a Definition is its parsed body with: property order\nnormalized, surrounding whitespace in values trimmed, and set-like arrays\n(`options`, `target_concepts`) treated as order-insensitive. Every\nactual value \u2014 `type`, `source`, `target`, `values`, `weight`,\n`description`, a Concept\'s Field set, etc. \u2014 is significant. This rule applies\nacross the whole `includes` graph (transitively, depth-first, left to right); the\n`includes` cycle check is unaffected (a diamond is not a cycle).\n\nBody:\n\n```markdown\n> [!NOTE]\n> This is an **iNNfo document**...\n\n# NN index\n* [[...]]  (the blueprint\'s root concepts)\n\n# NN Concept Definition\n## NN Concept Definition: <Concept>\nslug:: <concept-slug>\nicon:: <icon>\ntype:: <type>\ncolor:: <color>\nweight:: <n>\n\n# NN Field Definition\n## NN Field Definition: <Field>\nslug:: <field-slug>\nconcept:: <Concept>\ntype:: <type>\noptions:: [...]\ntarget_concepts:: [...]\n\n# NN Matrix Definition\n## NN Matrix Definition: <Matrix>\nslug:: <matrix-slug>\nsource:: <Concept>\ntarget:: <Concept>\nvalues:: [..]\nwidget:: set\n\n# <Blueprint Name>       (prose: Philosophy, Objectives, Specification)\n# Concept Guidance Documentation   (## <Concept> with ### Summary/Description/...)\n```\n\n## Level 3 kNNowledge Structure (Lightweight)\n\n```yaml\n---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"\nmodel_slug: "<model-slug>"\nworkspace_id: "<workspace-id>"\nlevel: 3\nparent_spec:\n  name: "<blueprint-name>"\n  url: "<immutable-url>"\nknowledge_version: "V_x-y-z"\ntitle: "..."\n---\n\n> [!NOTE]\n> ...\n# NN index\n...\n# NN Concept\ntags:: [inherited-tag]\n\n## NN Concept: Element\nslug:: <element-slug>\nkey:: value\n...\n```\n\n## DomaiNN Structure\n\nAn iNNfo DomaiNN is a workspace directory containing one or more kNNowledge documents. The entry point is a\n`domaiNN_NN.md` (or root index) file at the DomaiNN root.\n\nStandard directory conventions:\n- `knowledge_dir`: `kNNowledge/`\n- `blueprints_dir`: `specs/bluepriNNts/`\n\n## Immutable Versioning Policy\n\n- **Published specs are frozen.** Once a specification version is released, its file is\n  never modified. Corrections or improvements require a new spec version.\n- **Migrating a kNNowledge document** to a new spec version means creating a new copy of the document\n  adapted to the new version.\n- **Parent chain resolution** always resolves to the version the document was authored\n  against.\n\n## Removed Constructs\n\nThe following are NOT part of iNNfo:\n\n- **FOLDER mode / `_F` markers** \u2014 documents are single files using `NN` markers only.\n- **Hierarchy matrices** \u2014 hierarchy is expressed only through the index block.\n- **`_FORMAT.md` filenames** \u2014 the canonical suffix is `_NN.md`.\n- **`* _NN` element bullets and fenced ```yaml property blocks** \u2014 replaced by the\n  unified `## NN` headings and `key:: value` properties.\n- **Marker Definition and item-markers matrix** \u2014 replaced by typed Field Definitions and concept-level values.\n\n## Metaschema (Self-Description)\n\nThe root primitives are described by the prose tables above **and** expressed\nmechanically, in iNNfo\'s own syntax, by the metaschema below. An application MUST\nbe able to validate any level-2 bluepriNNt by resolving this metaschema and checking\nthe bluepriNNt\'s `\u2026 Definition` elements against it.\n\n### The Metaschema\n\n```markdown\n# NN Concept Definition\n\n## NN Concept Definition: Concept Definition\ntype:: list\n\n## NN Concept Definition: Field Definition\ntype:: list\n\n## NN Concept Definition: Matrix Definition\ntype:: list\n\n# NN Field Definition\n\n## NN Field Definition: type\nconcept:: Concept Definition\ntype:: select\noptions:: [text, category, weight, list, steps, sequence, knowledge, model]\ndescription:: Representation of the Concept (required).\n\n## NN Field Definition: icon\nconcept:: Concept Definition\ntype:: string\ndescription:: Lucide icon identifier.\n\n## NN Field Definition: color\nconcept:: Concept Definition\ntype:: string\ndescription:: Theme color.\n\n## NN Field Definition: weight\nconcept:: Concept Definition\ntype:: string\ndescription:: Display priority (higher = more prominent).\n\n## NN Field Definition: storage\nconcept:: Concept Definition\ntype:: select\noptions:: [compact, distributed]\ndescription:: Where the instances of the Concept live. Absent means compact.\n\n## NN Field Definition: container\nconcept:: Concept Definition\ntype:: string\ndescription:: Name of the distributed Concept an instance is stored under.\n\n## NN Field Definition: placement\nconcept:: Concept Definition\ntype:: string\ndescription:: Folder template of an instance model (required when storage is distributed).\n\n## NN Field Definition: concept\nconcept:: Field Definition\ntype:: string\ndescription:: Name of the owning Concept Definition, list of concepts, or * (required).\n\n## NN Field Definition: type\nconcept:: Field Definition\ntype:: select\noptions:: [string, number, boolean, select, reference, markdown_inline, markdown_file, image, file, video, audio, url, knowledge, model, address, citation]\ndescription:: Field type (required).\n\n## NN Field Definition: multiple\nconcept:: Field Definition\ntype:: boolean\ndescription:: Multi-valued field flag (allowed only on select fields).\n\n## NN Field Definition: widget\nconcept:: Field Definition\ntype:: select\noptions:: [boolean, cycle, scale, set, text]\ndescription:: Field interaction widget.\n\n## NN Field Definition: widget_config\nconcept:: Field Definition\ntype:: string\ndescription:: Widget-specific configuration (inline JSON object).\n\n## NN Field Definition: options\nconcept:: Field Definition\ntype:: string\ndescription:: Allowed values for select fields (inline array).\n\n## NN Field Definition: target_concepts\nconcept:: Field Definition\ntype:: string\ndescription:: Target concepts for reference fields (inline array).\n\n## NN Field Definition: target_blueprint\nconcept:: Field Definition\ntype:: string\ndescription:: Required blueprint name or URL for fields of type knowledge or model.\n\n## NN Field Definition: description\nconcept:: Field Definition\ntype:: string\ndescription:: Human-readable explanation.\n\n## NN Field Definition: source\nconcept:: Matrix Definition\ntype:: string\ndescription:: Source Concept (rows) \u2014 required.\n\n## NN Field Definition: target\nconcept:: Matrix Definition\ntype:: string\ndescription:: Target Concept or reserved pseudo-Concept (columns) \u2014 required.\n\n## NN Field Definition: values\nconcept:: Matrix Definition\ntype:: string\ndescription:: Allowed cell values (inline array). Empty cell - and boolean marker X are always accepted.\n\n## NN Field Definition: widget\nconcept:: Matrix Definition\ntype:: select\noptions:: [boolean, cycle, scale, set, text]\ndescription:: Cell interaction widget.\n\n## NN Field Definition: widget_config\nconcept:: Matrix Definition\ntype:: string\ndescription:: Widget-specific configuration (inline JSON object).\n\n## NN Field Definition: description\nconcept:: Matrix Definition\ntype:: string\ndescription:: Human-readable explanation.\n```\n\n### Bootstrap Axiom\n\nThe metaschema is written in the very syntax it constrains. Its own conformance is\nthe single irreducible axiom of the system: an application **asserts** \u2014 it does\nnot derive \u2014 that the metaschema\'s `Field Definition` elements are valid\n`Field Definition` instances. Every other conformance check in the ecosystem\n(L2 against L1, L3 against L2) is mechanical and follows from it. This mirrors MOF\nbeing defined in MOF and `Ecore.ecore` describing Ecore.\n\n## Self-Description\n\nThis document (`iNNfo_V_0-7-0_NN.md`) is itself a level 1 specification following\ndefiNNition. It declares `parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"` and defines\nthe root primitives \u2014 plus the mechanical metaschema above \u2014 that every\nlevel-2 bluepriNNt instantiates.\n';
@@ -10133,7 +10133,7 @@ var init_canonical_registry = __esm({
       },
       changes: {
         name: "changes",
-        version: "V_0-12-0",
+        version: "V_0-13-0",
         aliases: [
           "changes",
           "changes_spec_nn",
@@ -13641,30 +13641,30 @@ function jsonObjectKeys(text) {
   }
   return keys;
 }
-function parseFieldMap(raw, key) {
+function parseFieldMap(raw, key, op = "set_fields") {
   if (raw === void 0)
-    return { ok: false, reason: `set_fields requires "${key}"` };
+    return { ok: false, reason: `${op} requires "${key}"` };
   const text = String(raw).trim();
   let parsed;
   try {
     parsed = JSON.parse(text);
   } catch {
-    return { ok: false, reason: `set_fields "${key}" must be a JSON object of field -> value` };
+    return { ok: false, reason: `${op} "${key}" must be a JSON object of field -> value` };
   }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    return { ok: false, reason: `set_fields "${key}" must be a JSON object of field -> value` };
+    return { ok: false, reason: `${op} "${key}" must be a JSON object of field -> value` };
   }
   const keys = jsonObjectKeys(text);
   if (keys.length === 0)
-    return { ok: false, reason: `set_fields "${key}" must set at least one field` };
+    return { ok: false, reason: `${op} "${key}" must set at least one field` };
   const seen = /* @__PURE__ */ new Set();
   const values = /* @__PURE__ */ new Map();
   for (const field of keys) {
     if (seen.has(field))
-      return { ok: false, reason: `set_fields "${key}" repeats the field "${field}"` };
+      return { ok: false, reason: `${op} "${key}" repeats the field "${field}"` };
     seen.add(field);
     if (field.trim() === "" || field !== field.trim() || /[&@]/.test(field)) {
-      return { ok: false, reason: `set_fields "${key}" has an invalid field name "${field}"` };
+      return { ok: false, reason: `${op} "${key}" has an invalid field name "${field}"` };
     }
     const value = parsed[field];
     if (typeof value === "string")
@@ -13672,7 +13672,7 @@ function parseFieldMap(raw, key) {
     else if (typeof value === "number" || typeof value === "boolean")
       values.set(field, String(value));
     else
-      return { ok: false, reason: `set_fields "${key}".${field} must be a serialized value (a string)` };
+      return { ok: false, reason: `${op} "${key}".${field} must be a serialized value (a string)` };
   }
   return { ok: true, values };
 }
@@ -13683,7 +13683,10 @@ function setFieldsProblems(change) {
   const target = String(change.target ?? "");
   const at = target.indexOf("@");
   if (at <= 0 || target.slice(at + 1).trim() === "" || target.includes("&")) {
-    problems.push({ code: "INVALID_OPERATION", message: "set_fields target must be model@element (no &field)" });
+    problems.push({
+      code: "INVALID_OPERATION",
+      message: "set_fields target must be model@element (no &field)"
+    });
   }
   const to = parseFieldMap(change.to, "to");
   if (!to.ok) {
@@ -13697,7 +13700,10 @@ function setFieldsProblems(change) {
     else {
       for (const field of from.values.keys()) {
         if (!to.values.has(field)) {
-          problems.push({ code: "INVALID_OPERATION", message: `set_fields "from" names "${field}", which "to" does not set` });
+          problems.push({
+            code: "INVALID_OPERATION",
+            message: `set_fields "from" names "${field}", which "to" does not set`
+          });
         }
       }
     }
@@ -13726,6 +13732,23 @@ function setFieldsEntries2(change) {
     return expected === void 0 ? { field, to: value } : { field, to: value, from: expected };
   });
 }
+function addElementFieldsProblems(change) {
+  if (change.op !== "add_element" || change.to === void 0)
+    return [];
+  const to = parseFieldMap(change.to, "to", "add_element");
+  if (!to.ok)
+    return [{ code: "INVALID_OPERATION", message: to.reason }];
+  return [...to.values.keys()].filter((field) => field.toLowerCase() === "description").map(() => ({
+    code: "USE_UPDATE_ELEMENT_TEXT",
+    message: "the element prose is not a field; use update_element_text on the bare element target"
+  }));
+}
+function addElementFieldsEntries2(change) {
+  if (change.op !== "add_element" || change.to === void 0)
+    return [];
+  const to = parseFieldMap(change.to, "to", "add_element");
+  return to.ok ? [...to.values].map(([field, value]) => ({ field, to: value })) : [];
+}
 function reviewGateProblems3(change) {
   if (change.op !== "review_gate")
     return [];
@@ -13749,7 +13772,16 @@ function reviewGateProblems3(change) {
       problems.push(`change "${id}": review_gate declares undeclared key "${key}"`);
     }
   }
-  for (const key of ["from", "to", "base_hash", "fields", "slug", "concept", "name", "evidence"]) {
+  for (const key of [
+    "from",
+    "to",
+    "base_hash",
+    "fields",
+    "slug",
+    "concept",
+    "name",
+    "evidence"
+  ]) {
     if (change[key] !== void 0) {
       problems.push(`change "${id}": review_gate must not carry "${key}"`);
     }
@@ -14802,6 +14834,8 @@ function resolveChangeFacts(change, cs) {
   return facts;
 }
 function expandSetFields(change) {
+  if (change.op === "add_element")
+    return expandAddElementFields(change);
   if (change.op !== "set_fields" || !change.applied)
     return [change];
   const entries = setFieldsEntries2(change);
@@ -14820,6 +14854,27 @@ function expandSetFields(change) {
       subIndex
     };
   });
+}
+function expandAddElementFields(change) {
+  if (!change.applied)
+    return [change];
+  const entries = addElementFieldsEntries2(change);
+  if (entries.length === 0)
+    return [change];
+  const model = change.target.split("@")[0] ?? "";
+  const element = change.resolvedTarget ?? `${model}@${change.resolvedSlug ?? slugifyHeading2(change.name ?? change.slug ?? "")}`;
+  const fields = entries.map((entry, subIndex) => {
+    const { from: _from, resolvedSlug: _slug, ...rest } = change;
+    return {
+      ...rest,
+      op: "update_field",
+      target: `${element}&${entry.field}`,
+      resolvedTarget: `${element}&${entry.field}`,
+      to: entry.to,
+      subIndex
+    };
+  });
+  return [change, ...fields];
 }
 function loggedChanges(cs) {
   const changesetStatus = cs.status ?? "proposed";
@@ -14872,6 +14927,7 @@ var init_load = __esm({
     init_contract();
     init_parser3();
     init_evidence();
+    init_sourceRef();
     init_changelog();
   }
 });
@@ -15385,7 +15441,10 @@ function repinBlueprint(model, args) {
 function closeModel(model) {
   const fm = model.frontmatter;
   if (isModelClosed(fm)) {
-    return { success: false, errors: [{ path: MODEL_CLOSED_KEY, message: "MODEL_CLOSED: the model is already closed" }] };
+    return {
+      success: false,
+      errors: [{ path: MODEL_CLOSED_KEY, message: "MODEL_CLOSED: the model is already closed" }]
+    };
   }
   fm[MODEL_CLOSED_KEY] = true;
   return { success: true };
@@ -15439,7 +15498,10 @@ function setFieldDefault(model, args) {
   const value = args.value !== void 0 ? args.value : args.to;
   const scope = typeof args.conceptName === "string" ? args.conceptName.trim() : "";
   if (!fieldName) {
-    return { success: false, errors: [{ path: "name", message: 'set_field_default requires "name"' }] };
+    return {
+      success: false,
+      errors: [{ path: "name", message: 'set_field_default requires "name"' }]
+    };
   }
   if (value === void 0) {
     return { success: false, errors: [{ path: "to", message: 'set_field_default requires "to"' }] };
@@ -15459,7 +15521,9 @@ function setFieldDefault(model, args) {
   if (filled === 0) {
     return {
       success: true,
-      warnings: [{ path: "", message: `set_field_default: every element already has "${fieldName}"` }]
+      warnings: [
+        { path: "", message: `set_field_default: every element already has "${fieldName}"` }
+      ]
     };
   }
   return { success: true };
@@ -15522,15 +15586,20 @@ function addConcept(model, args) {
   if (RESERVED_CONCEPT_NAMES.has(conceptName)) {
     return {
       success: false,
-      errors: [{
-        path: "Concept Definition",
-        message: `"${conceptName}" is a reserved pseudo-concept name and MUST NOT be declared`
-      }]
+      errors: [
+        {
+          path: "Concept Definition",
+          message: `"${conceptName}" is a reserved pseudo-concept name and MUST NOT be declared`
+        }
+      ]
     };
   }
   const defs = model.elements.get(CONCEPT_DEFINITION) ?? [];
   if (defs.some((c) => c.name.toLowerCase() === conceptName.toLowerCase())) {
-    return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" already exists` }] };
+    return {
+      success: false,
+      errors: [{ path: "", message: `Concept "${conceptName}" already exists` }]
+    };
   }
   const fields = { type: args.type ?? "text" };
   if (args.icon !== void 0)
@@ -15563,12 +15632,18 @@ function addField(model, args) {
   } else if (Array.isArray(conceptVal)) {
     for (const c of conceptVal) {
       if (!declaredConceptNames.has(String(c).toLowerCase())) {
-        return { success: false, errors: [{ path: "concept", message: `Concept "${c}" not found` }] };
+        return {
+          success: false,
+          errors: [{ path: "concept", message: `Concept "${c}" not found` }]
+        };
       }
     }
   } else if (typeof conceptVal === "string") {
     if (!declaredConceptNames.has(conceptVal.toLowerCase())) {
-      return { success: false, errors: [{ path: "", message: `Concept "${conceptVal}" not found` }] };
+      return {
+        success: false,
+        errors: [{ path: "", message: `Concept "${conceptVal}" not found` }]
+      };
     }
   }
   const fds = model.elements.get(FIELD_DEFINITION) ?? [];
@@ -15576,7 +15651,12 @@ function addField(model, args) {
   if (existingField) {
     return {
       success: false,
-      errors: [{ path: "", message: `Field "${fieldName}" already exists on concept "${String(conceptVal)}"` }]
+      errors: [
+        {
+          path: "",
+          message: `Field "${fieldName}" already exists on concept "${String(conceptVal)}"`
+        }
+      ]
     };
   }
   const fieldType = args.fieldType ?? args.type ?? "string";
@@ -15589,7 +15669,12 @@ function addField(model, args) {
     if (mult && fieldType !== "select") {
       return {
         success: false,
-        errors: [{ path: "multiple", message: `Field "${fieldName}" has multiple:: true, which requires type:: select (got "${fieldType}")` }]
+        errors: [
+          {
+            path: "multiple",
+            message: `Field "${fieldName}" has multiple:: true, which requires type:: select (got "${fieldType}")`
+          }
+        ]
       };
     }
     fields["multiple"] = mult;
@@ -15599,13 +15684,20 @@ function addField(model, args) {
     if (widget === "scale" && fieldType !== "number") {
       return {
         success: false,
-        errors: [{ path: "widget", message: `widget "scale" requires type:: number (got "${fieldType}")` }]
+        errors: [
+          { path: "widget", message: `widget "scale" requires type:: number (got "${fieldType}")` }
+        ]
       };
     }
     if (widget === "boolean" && fieldType !== "boolean") {
       return {
         success: false,
-        errors: [{ path: "widget", message: `widget "boolean" requires type:: boolean (got "${fieldType}")` }]
+        errors: [
+          {
+            path: "widget",
+            message: `widget "boolean" requires type:: boolean (got "${fieldType}")`
+          }
+        ]
       };
     }
     if (widget === "cycle") {
@@ -15614,7 +15706,12 @@ function addField(model, args) {
       if (fieldType !== "select" || fields["multiple"] === true || !hasOptions) {
         return {
           success: false,
-          errors: [{ path: "widget", message: `widget "cycle" requires a single-valued select with options` }]
+          errors: [
+            {
+              path: "widget",
+              message: `widget "cycle" requires a single-valued select with options`
+            }
+          ]
         };
       }
     }
@@ -15622,14 +15719,18 @@ function addField(model, args) {
       if (fieldType !== "select" || fields["multiple"] !== true) {
         return {
           success: false,
-          errors: [{ path: "widget", message: `widget "set" requires type:: select with multiple:: true` }]
+          errors: [
+            { path: "widget", message: `widget "set" requires type:: select with multiple:: true` }
+          ]
         };
       }
     }
     if (widget === "text" && fieldType !== "string") {
       return {
         success: false,
-        errors: [{ path: "widget", message: `widget "text" requires type:: string (got "${fieldType}")` }]
+        errors: [
+          { path: "widget", message: `widget "text" requires type:: string (got "${fieldType}")` }
+        ]
       };
     }
     fields["widget"] = widget;
@@ -15640,7 +15741,9 @@ function addField(model, args) {
     if (!widget) {
       return {
         success: false,
-        errors: [{ path: "widget_config", message: `"${fieldName}" declares widget_config but no widget` }]
+        errors: [
+          { path: "widget_config", message: `"${fieldName}" declares widget_config but no widget` }
+        ]
       };
     }
     const allowed = WIDGET_CONFIG_KEYS[widget] || [];
@@ -15649,7 +15752,12 @@ function addField(model, args) {
         if (!allowed.includes(k)) {
           return {
             success: false,
-            errors: [{ path: `widget_config.${k}`, message: `"${k}" is not a widget_config key for widget "${widget}". Allowed: ${allowed.join(", ") || "(none)"}` }]
+            errors: [
+              {
+                path: `widget_config.${k}`,
+                message: `"${k}" is not a widget_config key for widget "${widget}". Allowed: ${allowed.join(", ") || "(none)"}`
+              }
+            ]
           };
         }
       }
@@ -15658,13 +15766,23 @@ function addField(model, args) {
         if (scaleCfg["min"] === void 0 || scaleCfg["max"] === void 0) {
           return {
             success: false,
-            errors: [{ path: "widget_config", message: `widget "scale" requires widget_config.min and max` }]
+            errors: [
+              {
+                path: "widget_config",
+                message: `widget "scale" requires widget_config.min and max`
+              }
+            ]
           };
         }
         if (Number(scaleCfg["min"]) >= Number(scaleCfg["max"])) {
           return {
             success: false,
-            errors: [{ path: "widget_config", message: `widget "scale" min (${scaleCfg["min"]}) must be less than max (${scaleCfg["max"]})` }]
+            errors: [
+              {
+                path: "widget_config",
+                message: `widget "scale" min (${scaleCfg["min"]}) must be less than max (${scaleCfg["max"]})`
+              }
+            ]
           };
         }
       }
@@ -15700,7 +15818,9 @@ function addElement(model, args, schema) {
       const declaredNames = schema.concepts.map((c) => c.name);
       return {
         success: false,
-        errors: [{ path: "conceptName", message: unknownConceptMessage(conceptName, declaredNames) }]
+        errors: [
+          { path: "conceptName", message: unknownConceptMessage(conceptName, declaredNames) }
+        ]
       };
     }
   }
@@ -15708,7 +15828,12 @@ function addElement(model, args, schema) {
   if (existingElements.some((e) => e.name.toLowerCase() === elementName.toLowerCase())) {
     return {
       success: false,
-      errors: [{ path: "", message: `Element "${elementName}" already exists in concept "${conceptName}"` }]
+      errors: [
+        {
+          path: "",
+          message: `Element "${elementName}" already exists in concept "${conceptName}"`
+        }
+      ]
     };
   }
   const requestedSlug = typeof args.slug === "string" && args.slug.trim() ? args.slug.trim() : void 0;
@@ -15718,7 +15843,12 @@ function addElement(model, args, schema) {
         if (el.slug?.toLowerCase() === requestedSlug.toLowerCase()) {
           return {
             success: false,
-            errors: [{ path: "slug", message: `Slug "${requestedSlug}" already exists in this model \u2014 element slugs must be unique model-wide` }]
+            errors: [
+              {
+                path: "slug",
+                message: `Slug "${requestedSlug}" already exists in this model \u2014 element slugs must be unique model-wide`
+              }
+            ]
           };
         }
       }
@@ -15730,9 +15860,17 @@ function addElement(model, args, schema) {
       errors: [
         {
           path: "fields",
-          message: "INVALID_OPERATION: add_element must not carry inline fields; emit one set_fields change (target model@element) for the fields that share one evidence, or one update_field per field (target model@element&field)"
+          message: 'INVALID_OPERATION: add_element carries its initial fields in "to" (a JSON object of field -> value, the shape set_fields uses), never in "fields"'
         }
       ]
+    };
+  }
+  const initialTo = args.to === void 0 || args.to === null ? void 0 : typeof args.to === "string" ? args.to : JSON.stringify(args.to);
+  const toProblem = addElementFieldsProblems({ op: "add_element", to: initialTo })[0];
+  if (toProblem) {
+    return {
+      success: false,
+      errors: [{ path: "to", message: `${toProblem.code}: ${toProblem.message}` }]
     };
   }
   const reservedArgsKeys = /* @__PURE__ */ new Set([
@@ -15741,6 +15879,7 @@ function addElement(model, args, schema) {
     "slug",
     "description",
     "fields",
+    "to",
     // Not a field: a change derives from `evidence`. Accepted here only so the
     // generic copy below does not smuggle it into the element's fields.
     "sources",
@@ -15757,10 +15896,6 @@ function addElement(model, args, schema) {
     if (!reservedArgsKeys.has(k) && v !== void 0) {
       fields[k] = v;
     }
-  }
-  if (existingElements.length > 0) {
-    const prevLast = existingElements[existingElements.length - 1];
-    prevLast.trailingBlankLine = true;
   }
   let elementSlug;
   if (requestedSlug) {
@@ -15791,6 +15926,15 @@ function addElement(model, args, schema) {
     slugExplicit: true,
     trailingBlankLine: true
   };
+  for (const entry of addElementFieldsEntries2({ op: "add_element", to: initialTo })) {
+    const written = writeFieldValue(newElement, conceptName, entry.field, entry.to, schema);
+    if (!written.success)
+      return written;
+  }
+  if (existingElements.length > 0) {
+    const prevLast = existingElements[existingElements.length - 1];
+    prevLast.trailingBlankLine = true;
+  }
   existingElements.push(newElement);
   model.elements.set(conceptName, existingElements);
   return { success: true };
@@ -15862,7 +16006,12 @@ function updateField(model, args, schema) {
       missing.push("fieldName");
     return {
       success: false,
-      errors: [{ path: "", message: `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} required` }]
+      errors: [
+        {
+          path: "",
+          message: `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} required`
+        }
+      ]
     };
   }
   if (fieldName.trim().toLowerCase() === "description") {
@@ -15884,7 +16033,10 @@ function updateField(model, args, schema) {
   if (conceptName) {
     const existingElements = model.elements.get(conceptName);
     if (!existingElements) {
-      return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found` }] };
+      return {
+        success: false,
+        errors: [{ path: "", message: `Concept "${conceptName}" not found` }]
+      };
     }
     foundElement = existingElements.find((e) => matchesElement(e, elementName));
     foundConcept = conceptName;
@@ -15909,6 +16061,9 @@ function updateField(model, args, schema) {
       ]
     };
   }
+  return writeFieldValue(foundElement, foundConcept, fieldName, val, schema);
+}
+function writeFieldValue(foundElement, foundConcept, fieldName, val, schema) {
   if (val === "") {
     delete foundElement.fields[fieldName];
     if (foundElement.rawFields) {
@@ -16062,7 +16217,12 @@ function removeElement(model, args) {
   const targetEl = existingElements.find((e) => e.name.toLowerCase() === elementName.toLowerCase() || e.slug && e.slug.toLowerCase() === elementName.toLowerCase() || slugifyHeading2(e.name).toLowerCase() === elementName.toLowerCase());
   const filtered = existingElements.filter((e) => e.name.toLowerCase() !== elementName.toLowerCase() && (!e.slug || e.slug.toLowerCase() !== elementName.toLowerCase()) && slugifyHeading2(e.name).toLowerCase() !== elementName.toLowerCase());
   if (filtered.length === existingElements.length) {
-    return { success: false, errors: [{ path: "", message: `Element "${elementName}" not found in concept "${conceptName}"` }] };
+    return {
+      success: false,
+      errors: [
+        { path: "", message: `Element "${elementName}" not found in concept "${conceptName}"` }
+      ]
+    };
   }
   model.elements.set(conceptName, filtered);
   let cascadedCells = 0;
@@ -16186,7 +16346,10 @@ function updateElementText(model, args) {
   if (conceptName) {
     const existingElements = model.elements.get(conceptName);
     if (!existingElements) {
-      return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found` }] };
+      return {
+        success: false,
+        errors: [{ path: "", message: `Concept "${conceptName}" not found` }]
+      };
     }
     foundElement = existingElements.find((e) => matchesElement(e, elementName));
   } else {
@@ -16267,7 +16430,12 @@ function updateConceptField(model, args, schema) {
       missing.push("fieldName");
     return {
       success: false,
-      errors: [{ path: "", message: `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} required` }]
+      errors: [
+        {
+          path: "",
+          message: `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} required`
+        }
+      ]
     };
   }
   if (val === void 0) {
@@ -16361,7 +16529,10 @@ function addMatrix(model, args) {
     return matrixIdentMatches(ident, matrixName);
   });
   if (exists) {
-    return { success: false, errors: [{ path: "", message: `Matrix "${matrixName}" already exists` }] };
+    return {
+      success: false,
+      errors: [{ path: "", message: `Matrix "${matrixName}" already exists` }]
+    };
   }
   const source = args.source || args.conceptName || "";
   const targetConcept = args.targetConcept || args.axisTarget || args.to || "";
@@ -16457,20 +16628,35 @@ function renameConcept(model, args) {
   if (RESERVED_CONCEPT_NAMES.has(newName)) {
     return {
       success: false,
-      errors: [{ path: "Concept Definition", message: `"${newName}" is a reserved pseudo-concept name` }]
+      errors: [
+        { path: "Concept Definition", message: `"${newName}" is a reserved pseudo-concept name` }
+      ]
     };
   }
   const lowerOld = conceptName.toLowerCase();
   const lowerNew = newName.toLowerCase();
   if (lowerOld === lowerNew)
-    return { success: false, errors: [{ path: "", message: "newName must differ from conceptName" }] };
+    return {
+      success: false,
+      errors: [{ path: "", message: "newName must differ from conceptName" }]
+    };
   const defs = model.elements.get(CONCEPT_DEFINITION) ?? [];
   const def = defs.find((c) => c.name.toLowerCase() === lowerOld);
   if (!def) {
-    return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found in Concept Definition elements` }] };
+    return {
+      success: false,
+      errors: [
+        { path: "", message: `Concept "${conceptName}" not found in Concept Definition elements` }
+      ]
+    };
   }
   if (defs.some((c) => c.name.toLowerCase() === lowerNew && c !== def)) {
-    return { success: false, errors: [{ path: "", message: `Concept "${newName}" already exists in Concept Definition elements` }] };
+    return {
+      success: false,
+      errors: [
+        { path: "", message: `Concept "${newName}" already exists in Concept Definition elements` }
+      ]
+    };
   }
   def.name = newName;
   const fds = model.elements.get(FIELD_DEFINITION) ?? [];
@@ -16537,20 +16723,30 @@ function renameElement(model, args, schema) {
   let lowerOld = elementName.toLowerCase();
   const lowerNew = newName.toLowerCase();
   if (lowerOld === lowerNew)
-    return { success: false, errors: [{ path: "", message: "newName must differ from elementName" }] };
+    return {
+      success: false,
+      errors: [{ path: "", message: "newName must differ from elementName" }]
+    };
   const existingElements = model.elements.get(conceptName);
   if (!existingElements)
     return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found` }] };
   const element = existingElements.find((e) => matchesElement(e, elementName));
   if (!element)
-    return { success: false, errors: [{ path: "", message: `Element "${elementName}" not found in concept "${conceptName}"` }] };
+    return {
+      success: false,
+      errors: [
+        { path: "", message: `Element "${elementName}" not found in concept "${conceptName}"` }
+      ]
+    };
   const oldDisplayName = element.name;
   lowerOld = oldDisplayName.toLowerCase();
   const duplicateSibling = existingElements.find((e) => e !== element && e.name.toLowerCase() === lowerNew);
   if (duplicateSibling) {
     return {
       success: false,
-      errors: [{ path: "", message: `Element "${newName}" already exists in concept "${conceptName}"` }]
+      errors: [
+        { path: "", message: `Element "${newName}" already exists in concept "${conceptName}"` }
+      ]
     };
   }
   element.name = newName;
@@ -16657,6 +16853,7 @@ var init_mutate = __esm({
     init_sourceRef();
     init_references2();
     init_field_values();
+    init_types2();
     init_references2();
     MUTATION_HANDLERS = {
       add_concept: (model, args) => addConcept(model, args),
@@ -17468,7 +17665,7 @@ function formatChangeItem2(item) {
   lines.push(`## NN Change: ${item.id}`);
   lines.push(`op:: ${item.op}`);
   lines.push(`target:: ${item.target}`);
-  const payload = (val) => item.op === "set_fields" && !val.includes("\n") && val.trim().startsWith("{") ? val : formatPropertyValue2(val);
+  const payload = (val) => (item.op === "set_fields" || item.op === "add_element") && !val.includes("\n") && val.trim().startsWith("{") ? val : formatPropertyValue2(val);
   if (item.from !== void 0) {
     lines.push(`from:: ${payload(item.from)}`);
   }
@@ -17633,7 +17830,13 @@ var init_serializer2 = __esm({
     "use strict";
     import_yaml16 = __toESM(require_dist(), 1);
     init_hasher();
-    ANNOTATION_KEYS2 = ["status", "resolution", "applied_at", "batch", ...EXECUTION_FACT_KEYS2];
+    ANNOTATION_KEYS2 = [
+      "status",
+      "resolution",
+      "applied_at",
+      "batch",
+      ...EXECUTION_FACT_KEYS2
+    ];
     ANNOTATION_RE2 = new RegExp(`^(${ANNOTATION_KEYS2.join("|")})::`);
     CHANGE_HEADING_RE2 = /^##\s+NN\s+Change:\s*(.+)$/i;
   }
@@ -22153,8 +22356,10 @@ function extractInstanceProblems(change) {
   if (change.fields !== void 0 || change.slug !== void 0) {
     problems.push(`change "${id}": extract_instance must not carry element payload (slug, fields)`);
   }
-  if (!change.blueprint_name) problems.push(`change "${id}": extract_instance requires "blueprint_name"`);
-  if (!change.blueprint_url) problems.push(`change "${id}": extract_instance requires "blueprint_url"`);
+  if (!change.blueprint_name)
+    problems.push(`change "${id}": extract_instance requires "blueprint_name"`);
+  if (!change.blueprint_url)
+    problems.push(`change "${id}": extract_instance requires "blueprint_url"`);
   const target = String(change.target ?? "").trim();
   const at = target.indexOf("@");
   const modelPart = at === -1 ? target : target.slice(0, at);
@@ -22166,7 +22371,8 @@ function extractInstanceProblems(change) {
     );
   }
   const to = String(change.to ?? "").trim();
-  if (!to) problems.push(`change "${id}": extract_instance requires "to" (the new instance model id)`);
+  if (!to)
+    problems.push(`change "${id}": extract_instance requires "to" (the new instance model id)`);
   else if (unsafe(to) || to.startsWith("/") || to.endsWith("/") || to.includes("//")) {
     problems.push(`change "${id}": extract_instance "to" must be a valid instance model id`);
   }
@@ -22593,7 +22799,13 @@ function parseChangeset(rawContent) {
 
 // iNNfo/packages/nn-core/src/changeset/serializer.ts
 var import_yaml7 = __toESM(require_dist(), 1);
-var ANNOTATION_KEYS = ["status", "resolution", "applied_at", "batch", ...EXECUTION_FACT_KEYS];
+var ANNOTATION_KEYS = [
+  "status",
+  "resolution",
+  "applied_at",
+  "batch",
+  ...EXECUTION_FACT_KEYS
+];
 var ANNOTATION_RE = new RegExp(`^(${ANNOTATION_KEYS.join("|")})::`);
 var CHANGE_HEADING_RE = /^##\s+NN\s+Change:\s*(.+)$/i;
 function formatShaList(shas) {
@@ -22641,7 +22853,7 @@ function formatChangeItem(item) {
   lines.push(`## NN Change: ${item.id}`);
   lines.push(`op:: ${item.op}`);
   lines.push(`target:: ${item.target}`);
-  const payload = (val) => item.op === "set_fields" && !val.includes("\n") && val.trim().startsWith("{") ? val : formatPropertyValue(val);
+  const payload = (val) => (item.op === "set_fields" || item.op === "add_element") && !val.includes("\n") && val.trim().startsWith("{") ? val : formatPropertyValue(val);
   if (item.from !== void 0) {
     lines.push(`from:: ${payload(item.from)}`);
   }
@@ -22716,10 +22928,7 @@ function rewriteFrontmatter(yamlText, fm, eol) {
     "resolution",
     fm.resolution !== void 0 ? [`resolution: ${JSON.stringify(fm.resolution)}`] : null
   );
-  upsert(
-    "applied_at",
-    fm.applied_at !== void 0 ? [`applied_at: ${fm.applied_at}`] : null
-  );
+  upsert("applied_at", fm.applied_at !== void 0 ? [`applied_at: ${fm.applied_at}`] : null);
   upsert("batch", fm.batch !== void 0 ? [`batch: ${fm.batch}`] : null);
   upsert(
     "evidence_sha256",
@@ -23204,7 +23413,11 @@ function buildProposedChangeset(changes, meta) {
 async function writeProposedChangeset(rootDir, input) {
   const author = input.author?.trim() || "agent";
   const workspaceId = input.workspaceId?.trim() || await resolveWorkspaceId(rootDir);
-  const document = buildProposedChangeset(input.changes, { title: input.title, author, workspaceId });
+  const document = buildProposedChangeset(input.changes, {
+    title: input.title,
+    author,
+    workspaceId
+  });
   const text = serializeChangeset2(document);
   const changesDir = (0, import_node_path19.join)(rootDir, "changes");
   await (0, import_promises10.mkdir)(changesDir, { recursive: true });
@@ -23304,13 +23517,15 @@ async function findAllWorkspaceModelFiles(dir, ignore, rootDir) {
   for (const entry of entries) {
     if (entry.isDirectory()) {
       const lowerDir = entry.name.toLowerCase();
-      if (entry.name.startsWith(".") || ignore.has(lowerDir) || lowerDir === "changes" || lowerDir === "archive") continue;
+      if (entry.name.startsWith(".") || ignore.has(lowerDir) || lowerDir === "changes" || lowerDir === "archive")
+        continue;
       const sub = await findAllWorkspaceModelFiles((0, import_node_path20.join)(dir, entry.name), ignore, rootDir);
       results.push(...sub);
     } else if (entry.isFile() && isNNName2(entry.name) && entry.name.toLowerCase() !== "index.md" && !entry.name.endsWith("_changes_NN.md")) {
       const filePath = (0, import_node_path20.join)(dir, entry.name);
       const relPath = (0, import_node_path20.relative)(rootDir, filePath).split("\\").join("/");
-      if (isExcludedPath(relPath) || relPath.startsWith("changes/") || relPath.includes("/archive/") || relPath.startsWith("archive/")) continue;
+      if (isExcludedPath(relPath) || relPath.startsWith("changes/") || relPath.includes("/archive/") || relPath.startsWith("archive/"))
+        continue;
       results.push(filePath);
     }
   }
@@ -23452,7 +23667,8 @@ async function artifactAlreadyRecorded(rootDir, rel) {
     }
     const changeset = changesetLikeOf2(`changes/${name}`, doc);
     for (const change of doc.changes) {
-      if (change.op !== "produce_artifact" || resolveChangeFacts(change, changeset).status !== "applied") continue;
+      if (change.op !== "produce_artifact" || resolveChangeFacts(change, changeset).status !== "applied")
+        continue;
       if (change.target.replace(/\\/g, "/") === rel) return true;
     }
   }
@@ -23577,7 +23793,12 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       status: "rejected",
       models: {},
       appliedCount: 0,
-      errors: [{ path: changesetPathInput, message: "Changeset path must resolve inside the workspace root" }]
+      errors: [
+        {
+          path: changesetPathInput,
+          message: "Changeset path must resolve inside the workspace root"
+        }
+      ]
     };
   }
   const changesetStem = displayStem2((0, import_node_path20.basename)(resolvedChangesetPath));
@@ -23615,7 +23836,9 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
     const parentOf3 = /* @__PURE__ */ new Map();
     const recordedIdOf = (id) => parentOf3.get(id) ?? id;
     const recordRejection = async (errors, changeId, warnings, persist = true) => {
-      const reason = errors.map((e) => e.code && !e.message.startsWith(e.code) ? `${e.code}: ${e.message}` : e.message).join("; ");
+      const reason = errors.map(
+        (e) => e.code && !e.message.startsWith(e.code) ? `${e.code}: ${e.message}` : e.message
+      ).join("; ");
       try {
         if (!persist) throw new Error("not persisted");
         const fresh = parseChangeset2(rawChangeset);
@@ -23633,7 +23856,10 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           await (0, import_promises12.writeFile)(resolvedChangesetPath, text, "utf-8");
         }
       } catch (err) {
-        if (persist) console.warn(`[apply-change] Could not persist the rejection of ${relChangesetPath}: ${err}`);
+        if (persist)
+          console.warn(
+            `[apply-change] Could not persist the rejection of ${relChangesetPath}: ${err}`
+          );
       }
       return {
         success: false,
@@ -23655,7 +23881,13 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         status: "rejected",
         models: {},
         appliedCount: 0,
-        errors: [{ path: relChangesetPath, message: `CHANGESET_REJECTED: ${recorded}`, code: "CHANGESET_REJECTED" }]
+        errors: [
+          {
+            path: relChangesetPath,
+            message: `CHANGESET_REJECTED: ${recorded}`,
+            code: "CHANGESET_REJECTED"
+          }
+        ]
       };
     }
     const gateShapeProblems = csDoc.changes.flatMap(reviewGateProblems3);
@@ -23751,7 +23983,12 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           models: recordedModels,
           appliedCount: 0,
           conflictedCount: csDoc.changes.filter((c) => c.status === "conflict").length,
-          warnings: [{ path: "", message: "Idempotent replay: changeset already applied with matching model versions" }]
+          warnings: [
+            {
+              path: "",
+              message: "Idempotent replay: changeset already applied with matching model versions"
+            }
+          ]
         };
       } else {
         return {
@@ -23862,10 +24099,20 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       const key = change.target.toLowerCase();
       const hierarchical = typeof change.concept === "string" && change.concept.trim() !== "";
       if (!isSafeRelativeId(change.target) || (hierarchical ? change.target.includes("\\") : /[\\/]/.test(change.target))) {
-        return rejectProposal("ADD_MODEL_INVALID_TARGET", change.target, `change "${change.id}" has an unsafe model id "${change.target}"`, change.id);
+        return rejectProposal(
+          "ADD_MODEL_INVALID_TARGET",
+          change.target,
+          `change "${change.id}" has an unsafe model id "${change.target}"`,
+          change.id
+        );
       }
       if (addModelIndex.has(key)) {
-        return rejectProposal("ADD_MODEL_DUPLICATE", change.target, `more than one add_model change targets "${change.target}"`, change.id);
+        return rejectProposal(
+          "ADD_MODEL_DUPLICATE",
+          change.target,
+          `more than one add_model change targets "${change.target}"`,
+          change.id
+        );
       }
       addModelIndex.set(key, index);
     }
@@ -23899,12 +24146,22 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
             change.id
           );
         }
-        return rejectProposal("ADD_MODEL_INVALID_TARGET", change.target, `change "${change.id}": ${placed.message}`, change.id);
+        return rejectProposal(
+          "ADD_MODEL_INVALID_TARGET",
+          change.target,
+          `change "${change.id}": ${placed.message}`,
+          change.id
+        );
       }
       if (placed.folder === "kNNowledge/") continue;
       const filePath = (0, import_node_path20.join)(rootDir, placed.folder, placed.file);
       if (!isInsideRoot(rootDir, filePath)) {
-        return rejectProposal("ADD_MODEL_INVALID_TARGET", change.target, `model id "${change.target}" resolves outside the domain`, change.id);
+        return rejectProposal(
+          "ADD_MODEL_INVALID_TARGET",
+          change.target,
+          `model id "${change.target}" resolves outside the domain`,
+          change.id
+        );
       }
       const segments = change.target.split("/");
       const slug = segments[segments.length - 1];
@@ -23968,7 +24225,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       const { index: domainIndex, pathOf: pathOf2 } = await nodeIndex();
       const source = domainIndex.byId(sourceId);
       if (!source) {
-        return rejectPhase1("MODEL_NOT_FOUND", sourceId, `extract_instance source "${sourceId}" does not exist`);
+        return rejectPhase1(
+          "MODEL_NOT_FOUND",
+          sourceId,
+          `extract_instance source "${sourceId}" does not exist`
+        );
       }
       if (source.storage.kind !== "compact") {
         return rejectProposal(
@@ -23980,7 +24241,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
       const sourcePath = pathOf2(sourceId);
       if (!sourcePath) {
-        return rejectPhase1("MODEL_NOT_FOUND", sourceId, `extract_instance source "${sourceId}" has no file`);
+        return rejectPhase1(
+          "MODEL_NOT_FOUND",
+          sourceId,
+          `extract_instance source "${sourceId}" has no file`
+        );
       }
       const sourceModel = await loadKnowledge(sourcePath);
       const subtree = subtreeOf(sourceModel, slug);
@@ -24039,14 +24304,30 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
       const placed = domainIndex.placementFor(subtree.concept, toId, blueprintName);
       if (!("folder" in placed)) {
-        return rejectProposal("EXTRACT_INVALID_TARGET", toId, `change "${change.id}": ${placed.message}`, change.id);
+        return rejectProposal(
+          "EXTRACT_INVALID_TARGET",
+          toId,
+          `change "${change.id}": ${placed.message}`,
+          change.id
+        );
       }
       const path = (0, import_node_path20.join)(rootDir, placed.folder, placed.file);
       if (!isInsideRoot(rootDir, path)) {
-        return rejectProposal("EXTRACT_INVALID_TARGET", toId, `model id "${toId}" resolves outside the domain`, change.id);
+        return rejectProposal(
+          "EXTRACT_INVALID_TARGET",
+          toId,
+          `model id "${toId}" resolves outside the domain`,
+          change.id
+        );
       }
-      const occupiedById = domainIndex.byId(toId) !== void 0 || await (0, import_promises12.stat)(path).then((s) => s.isFile(), () => false);
-      const occupiedFolder = await (0, import_promises12.stat)((0, import_node_path20.dirname)(path)).then((s) => s.isDirectory(), () => false);
+      const occupiedById = domainIndex.byId(toId) !== void 0 || await (0, import_promises12.stat)(path).then(
+        (s) => s.isFile(),
+        () => false
+      );
+      const occupiedFolder = await (0, import_promises12.stat)((0, import_node_path20.dirname)(path)).then(
+        (s) => s.isDirectory(),
+        () => false
+      );
       if (occupiedById || occupiedFolder) {
         const where = occupiedById ? `instance "${toId}" already exists` : `"${(0, import_node_path20.relative)(rootDir, (0, import_node_path20.dirname)(path)).replace(/\\/g, "/")}/" already exists`;
         blockedChanges.set(change.id, {
@@ -24077,7 +24358,8 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       plannedConcepts.set(toId.toLowerCase(), subtree.concept);
     }
     for (const [index, change] of csDoc.changes.entries()) {
-      if (isNonMutating(change.op) || change.op === "add_model" || change.op === "produce_artifact") continue;
+      if (isNonMutating(change.op) || change.op === "add_model" || change.op === "produce_artifact")
+        continue;
       const targetModel = parseTargetAddress(change.target).modelSlug;
       const createdAt = addModelIndex.get(targetModel.toLowerCase());
       if (createdAt !== void 0 && createdAt > index) {
@@ -24104,7 +24386,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         return rejectProposal(
           "INVALID_OPERATION",
           change.target,
-          `change "${change.id}": a change must not carry inline fields; set them with one set_fields change for the fields that share one evidence, or one update_field change per field whose evidence differs`,
+          `change "${change.id}": fields is not a change key; an add_element carries its initial fields in "to" (a JSON object of field -> value), an existing element takes one set_fields change for the fields that share one evidence, or one update_field change per field whose evidence differs`,
           change.id
         );
       }
@@ -24122,9 +24404,14 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
     }
     for (const change of csDoc.changes) {
-      const problem = setFieldsProblems(change)[0];
+      const problem = setFieldsProblems(change)[0] ?? addElementFieldsProblems(change)[0];
       if (problem) {
-        return rejectProposal(problem.code, change.target, `change "${change.id}": ${problem.message}`, change.id);
+        return rejectProposal(
+          problem.code,
+          change.target,
+          `change "${change.id}": ${problem.message}`,
+          change.id
+        );
       }
     }
     for (const change of csDoc.changes) {
@@ -24150,7 +24437,10 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           evidence: change.evidence
         };
       });
-      setFieldsParts.set(change.id, subs.map((sub) => sub.id));
+      setFieldsParts.set(
+        change.id,
+        subs.map((sub) => sub.id)
+      );
       return subs;
     });
     const recordedDocument = () => {
@@ -24160,7 +24450,14 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         if (!subIds) return current.get(recorded.id) ?? recorded;
         const subs = subIds.map((id) => current.get(id)).filter((c) => c !== void 0);
         const folded = { ...recorded };
-        for (const key of ["status", "resolution", "resolved_target", "evidence_sha256", "applied_at", "batch"]) {
+        for (const key of [
+          "status",
+          "resolution",
+          "resolved_target",
+          "evidence_sha256",
+          "applied_at",
+          "batch"
+        ]) {
           delete folded[key];
         }
         const failed3 = subs.find((c) => c.status !== void 0 && c.status !== "applied");
@@ -24204,7 +24501,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
       const artifactProblem = await artifactTargetProblem(rootDir, rel);
       if (artifactProblem) {
-        return rejectPhase1(artifactProblem.code, rel, `change "${change.id}": ${artifactProblem.message}`);
+        return rejectPhase1(
+          artifactProblem.code,
+          rel,
+          `change "${change.id}": ${artifactProblem.message}`
+        );
       }
       if (await artifactAlreadyRecorded(rootDir, rel)) {
         blockedChanges.set(change.id, {
@@ -24226,7 +24527,10 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         else throw err;
       }
       if (!exists && plan) {
-        exists = await (0, import_promises12.stat)(plan.path).then((s) => s.isFile(), () => false);
+        exists = await (0, import_promises12.stat)(plan.path).then(
+          (s) => s.isFile(),
+          () => false
+        );
       }
       if (exists) {
         existingAddModelIds.add(key);
@@ -24235,7 +24539,8 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           message: `MODEL_EXISTS: model "${change.target}" already exists; add_model never overwrites or repairs a model`
         });
         for (const other of csDoc.changes) {
-          if (other.id === change.id || isNonMutating(other.op) || other.op === "produce_artifact") continue;
+          if (other.id === change.id || isNonMutating(other.op) || other.op === "produce_artifact")
+            continue;
           if (parseTargetAddress(other.target).modelSlug.toLowerCase() !== key) continue;
           blockedChanges.set(other.id, {
             code: "DEPENDS_ON_CONFLICTED_CHANGE",
@@ -24249,7 +24554,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
     if (needsKnowledgeDir) {
       const kDir = await (0, import_promises12.stat)((0, import_node_path20.join)(rootDir, "kNNowledge")).catch(() => null);
       if (!kDir || !kDir.isDirectory()) {
-        return rejectPhase1("DOMAIN_LAYOUT_INVALID", "kNNowledge", "the domain has no kNNowledge/ directory to create models in");
+        return rejectPhase1(
+          "DOMAIN_LAYOUT_INVALID",
+          "kNNowledge",
+          "the domain has no kNNowledge/ directory to create models in"
+        );
       }
     }
     const movePlans = /* @__PURE__ */ new Map();
@@ -24268,7 +24577,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       const { index: domainIndex, pathOf: pathOf2 } = await nodeIndex();
       const from = domainIndex.byId(fromId);
       if (!from) {
-        return rejectPhase1("MODEL_NOT_FOUND", fromId, `move_model target "${fromId}" does not exist`);
+        return rejectPhase1(
+          "MODEL_NOT_FOUND",
+          fromId,
+          `move_model target "${fromId}" does not exist`
+        );
       }
       const fromStorage = from.storage;
       if (fromStorage.kind !== "instance") {
@@ -24310,23 +24623,39 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       const blueprintName = parent?.name ?? from.blueprint.name;
       const placed = domainIndex.placementFor(concept, toId, blueprintName);
       if (!("folder" in placed)) {
-        return rejectProposal("MOVE_INVALID_TARGET", toId, `change "${change.id}": ${placed.message}`, change.id);
+        return rejectProposal(
+          "MOVE_INVALID_TARGET",
+          toId,
+          `change "${change.id}": ${placed.message}`,
+          change.id
+        );
       }
       const toPath = (0, import_node_path20.join)(rootDir, placed.folder, placed.file);
       if (!isInsideRoot(rootDir, toPath)) {
-        return rejectProposal("MOVE_INVALID_TARGET", toId, `model id "${toId}" resolves outside the domain`, change.id);
+        return rejectProposal(
+          "MOVE_INVALID_TARGET",
+          toId,
+          `model id "${toId}" resolves outside the domain`,
+          change.id
+        );
       }
       const fromDir = (0, import_node_path20.dirname)(fromPath);
       const toDir = (0, import_node_path20.dirname)(toPath);
       if (toDir !== fromDir) {
-        if (await (0, import_promises12.stat)(toDir).then(() => true, () => false)) {
+        if (await (0, import_promises12.stat)(toDir).then(
+          () => true,
+          () => false
+        )) {
           return rejectPhase1(
             "MOVE_DESTINATION_OCCUPIED",
             toId,
             `moving "${fromId}" to "${toId}" would write into "${(0, import_node_path20.relative)(rootDir, toDir)}", which already exists`
           );
         }
-      } else if (toPath !== fromPath && await (0, import_promises12.stat)(toPath).then(() => true, () => false)) {
+      } else if (toPath !== fromPath && await (0, import_promises12.stat)(toPath).then(
+        () => true,
+        () => false
+      )) {
         return rejectPhase1("MODEL_EXISTS", toId, `MODEL_EXISTS: "${toId}" already has a file`);
       }
       movePlans.set(change.id, {
@@ -24420,9 +24749,16 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           concept: declared2?.writePolicy,
           scopes: scopes.scopes
         });
-        const violation = writePolicyViolation(effective.policy, change.op, declared2?.name ?? (conceptName || modelSlug));
+        const violation = writePolicyViolation(
+          effective.policy,
+          change.op,
+          declared2?.name ?? (conceptName || modelSlug)
+        );
         if (violation) {
-          return recordRejection([{ path: change.target, message: violation.message, code: violation.code }], change.id);
+          return recordRejection(
+            [{ path: change.target, message: violation.message, code: violation.code }],
+            change.id
+          );
         }
       }
       return null;
@@ -24452,7 +24788,10 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
             `change "${change.id}": bluepriNNt "${blueprintName}" could not be resolved from "${blueprintUrl}"${detail}`
           );
         }
-        const composed = resolveBlueprintSchema(resolvedBlueprint.template.rawContent, resolvedBlueprint.resolveInclude);
+        const composed = resolveBlueprintSchema(
+          resolvedBlueprint.template.rawContent,
+          resolvedBlueprint.resolveInclude
+        );
         if (composed.errors.length > 0) {
           const detail = composed.errors.map((e) => `${e.path}: ${e.message}`).join("; ");
           return rejectPhase1(
@@ -24484,7 +24823,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         });
         const filePath = plan ? plan.path : (0, import_node_path20.join)(rootDir, "kNNowledge", `${cleanId}_NN.md`);
         if (!isInsideRoot(rootDir, filePath)) {
-          return rejectPhase1("ADD_MODEL_INVALID_TARGET", change.target, `model id "${change.target}" resolves outside the domain`);
+          return rejectPhase1(
+            "ADD_MODEL_INVALID_TARGET",
+            change.target,
+            `model id "${change.target}" resolves outside the domain`
+          );
         }
         const created = parseKnowledge2(content);
         const initialVersion = String(created.frontmatter.knowledge_version ?? "V_0-1-0");
@@ -24823,7 +25166,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       if (change.op === "move_model") {
         const plan = movePlans.get(change.id);
         if (!plan) {
-          return rejectPhase1("MOVE_INVALID_TARGET", change.target, `change "${change.id}" has no move plan`);
+          return rejectPhase1(
+            "MOVE_INVALID_TARGET",
+            change.target,
+            `change "${change.id}" has no move plan`
+          );
         }
         change.status = "applied";
         change.resolution = `Moved model "${plan.fromId}" to "${plan.toId}"`;
@@ -24832,7 +25179,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       if (change.op === "remove_model") {
         const plan = removePlans.get(change.id);
         if (!plan) {
-          return rejectPhase1("REMOVE_INVALID_TARGET", change.target, `change "${change.id}" has no removal plan`);
+          return rejectPhase1(
+            "REMOVE_INVALID_TARGET",
+            change.target,
+            `change "${change.id}" has no removal plan`
+          );
         }
         entry.removed = true;
         change.status = "applied";
@@ -24842,7 +25193,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       if (change.op === "extract_instance") {
         const plan = extractPlans.get(change.id);
         if (!plan) {
-          return rejectPhase1("EXTRACT_INVALID_TARGET", change.target, `change "${change.id}" has no extract plan`);
+          return rejectPhase1(
+            "EXTRACT_INVALID_TARGET",
+            change.target,
+            `change "${change.id}" has no extract plan`
+          );
         }
         const mutRes2 = applyMutation(entry.model, "extract_instance", {
           elementName: plan.slug,
@@ -24861,7 +25216,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         }
         let extractedBlueprint = null;
         try {
-          extractedBlueprint = await resolveBlueprintWithCache(rootDir, plan.blueprintUrl, plan.blueprintName);
+          extractedBlueprint = await resolveBlueprintWithCache(
+            rootDir,
+            plan.blueprintUrl,
+            plan.blueprintName
+          );
         } catch {
           extractedBlueprint = null;
         }
@@ -24919,7 +25278,13 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
       if (change.op === "bump_version" || change.op === "freeze_slugs" || change.op === "close_model") {
         const problem = maintenanceChangeProblem(change, entry.model, entry.created);
-        if (problem) return rejectProposal(problem.code, change.target, `change "${change.id}": ${problem.message}`, change.id);
+        if (problem)
+          return rejectProposal(
+            problem.code,
+            change.target,
+            `change "${change.id}": ${problem.message}`,
+            change.id
+          );
       }
       if (change.op === "freeze_slugs" && !hasUnfrozenElements(entry.model)) {
         change.status = "applied";
@@ -24952,11 +25317,16 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         }
       }
       const mutationArgs = mutationArgsForChange(change, entry.model, renameSchema);
+      if (change.op === "add_element" && change.to !== void 0) mutationArgs.to = change.to;
       const writeOperation = writeOperationOf(change.op);
       if (writeOperation !== null) {
         const policySchema = renameSchema ?? await schemaFor(entry);
         const elementIdent = String(mutationArgs.elementName ?? "") || parseTargetAddress(change.target).remainder.split("&")[0].trim();
-        const found = findElementInModel(entry.model, String(mutationArgs.conceptName ?? "") || void 0, elementIdent);
+        const found = findElementInModel(
+          entry.model,
+          String(mutationArgs.conceptName ?? "") || void 0,
+          elementIdent
+        );
         const conceptName = String(mutationArgs.conceptName ?? "") || found?.concept || "";
         const fillsEmpty = writeOperation === "update" && found !== null && writesOnlyEmptyValues(change, found.element);
         const rejected = await writePolicyRejection({
@@ -24979,7 +25349,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
       change.status = "applied";
       if (change.op === "remove_element") {
-        const cascadedCount = mutRes.cascadedMatrixCells ?? (matrixCascades.get(change.id)?.length ?? 0);
+        const cascadedCount = mutRes.cascadedMatrixCells ?? matrixCascades.get(change.id)?.length ?? 0;
         change.resolution = cascadedCount > 0 ? `Removed element and cascaded ${cascadedCount} matrix cell(s)` : "Removed element successfully";
       } else {
         change.resolution = "Applied successfully";
@@ -25002,15 +25372,13 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         if (entry.bumpLevel) {
           const requested = computeNewVersion(entry.baseVersion, { bump: entry.bumpLevel });
           if (!requested) {
-            return recordRejection(
-              [
-                {
-                  path: entry.modelSlug,
-                  code: "INVALID_VERSION",
-                  message: `INVALID_VERSION: cannot bump "${entry.baseVersion}" of model "${entry.modelSlug}" by ${entry.bumpLevel}`
-                }
-              ]
-            );
+            return recordRejection([
+              {
+                path: entry.modelSlug,
+                code: "INVALID_VERSION",
+                message: `INVALID_VERSION: cannot bump "${entry.baseVersion}" of model "${entry.modelSlug}" by ${entry.bumpLevel}`
+              }
+            ]);
           }
           entry.nextVersion = requested.version;
         }
@@ -25088,8 +25456,15 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
     const modelsTransitionMap = {};
     for (const [, entry] of loadedModels) {
       if (!entry.created) continue;
-      if (await (0, import_promises12.stat)(entry.filePath).then(() => true, () => false)) {
-        return rejectPhase1("MODEL_EXISTS", entry.modelSlug, `model "${entry.modelSlug}" appeared while the changeset was being applied`);
+      if (await (0, import_promises12.stat)(entry.filePath).then(
+        () => true,
+        () => false
+      )) {
+        return rejectPhase1(
+          "MODEL_EXISTS",
+          entry.modelSlug,
+          `model "${entry.modelSlug}" appeared while the changeset was being applied`
+        );
       }
     }
     const originalModelsBackup = /* @__PURE__ */ new Map();
@@ -25099,7 +25474,10 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       const missing = [];
       let current = dir;
       for (; ; ) {
-        const present = await (0, import_promises12.stat)(current).then((s) => s.isDirectory(), () => false);
+        const present = await (0, import_promises12.stat)(current).then(
+          (s) => s.isDirectory(),
+          () => false
+        );
         if (present) break;
         missing.push(current);
         const parent = (0, import_node_path20.dirname)(current);
@@ -25130,7 +25508,9 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           const movedFile = oldDir === newDir ? move.toPath : (0, import_node_path20.join)(oldDir, (0, import_node_path20.basename)(move.toPath));
           if (movedFile !== move.fromPath) await (0, import_promises12.rename)(movedFile, move.fromPath);
         } catch (rollbackErr) {
-          console.warn(`[apply-change] Failed to reverse the move of "${move.fromPath}": ${rollbackErr}`);
+          console.warn(
+            `[apply-change] Failed to reverse the move of "${move.fromPath}": ${rollbackErr}`
+          );
         }
       }
       for (const [, entry] of loadedModels) {
@@ -25206,7 +25586,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         while (dir !== rootDir && dir !== knowledgeRoot && isInsideRoot(rootDir, dir)) {
           const left = await (0, import_promises12.readdir)(dir).catch(() => null);
           if (!left || left.length > 0) break;
-          if (!await (0, import_promises12.rmdir)(dir).then(() => true, () => false)) break;
+          if (!await (0, import_promises12.rmdir)(dir).then(
+            () => true,
+            () => false
+          ))
+            break;
           dir = (0, import_node_path20.dirname)(dir);
         }
       }
@@ -25245,7 +25629,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
       const entry = loadedModels.get(modelSlug.toLowerCase());
       if (entry) {
-        const target = resolvedTargetForChange(change, entry.model, canonicalUnitModelId(entry.modelSlug || modelSlug));
+        const target = resolvedTargetForChange(
+          change,
+          entry.model,
+          canonicalUnitModelId(entry.modelSlug || modelSlug)
+        );
         if (target) change.resolved_target = target;
         else delete change.resolved_target;
       }
@@ -25261,7 +25649,10 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
     else delete csDoc.frontmatter.evidence_sha256;
     const serializedCs = writeBack(recordedDocument());
     try {
-      const csStaging = (0, import_node_path20.join)((0, import_node_path20.dirname)(resolvedChangesetPath), `${(0, import_node_path20.basename)(resolvedChangesetPath)}.tmp`);
+      const csStaging = (0, import_node_path20.join)(
+        (0, import_node_path20.dirname)(resolvedChangesetPath),
+        `${(0, import_node_path20.basename)(resolvedChangesetPath)}.tmp`
+      );
       await writeAndSync(csStaging, serializedCs);
       await persistAtomic(csStaging, resolvedChangesetPath);
     } catch (err) {
