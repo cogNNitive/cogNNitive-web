@@ -798,11 +798,24 @@ export function resolveSizeBudget(frontmatter, defaults = CONSOLE_SIZE_BUDGET) {
  * what the export had to drop to fit, so the gate always says which answer it
  * applied instead of only how big the file is.
  */
-export function evaluateSizeBudget({ bundle, models, views, total, budget = null, strategy = 'none' }) {
-  const breakdown = `size: total ${total} B (bundle ${bundle} B, models ${models} B, views ${views} B)`
+export function evaluateSizeBudget({
+  bundle,
+  models,
+  views,
+  total,
+  modelsRawBytes = 0,
+  budget = null,
+  strategy = 'none',
+}) {
   const warnBytes = budget && Number.isFinite(budget.warnBytes) ? budget.warnBytes : CONSOLE_SIZE_BUDGET.warnBytes
   const failBytes = budget && Number.isFinite(budget.failBytes) ? budget.failBytes : CONSOLE_SIZE_BUDGET.failBytes
-  const status = total > failBytes ? 'fail' : total > warnBytes ? 'warn' : 'ok'
+  // The page ships its model deflate-raw + base64, so the bytes on disk say nothing about
+  // what the browser holds once it inflates them. Gate on the larger of the two: a payload
+  // that compresses to 40 MB and inflates to 400 MB is a dead tab, not a passing export.
+  const effective = Math.max(total, modelsRawBytes)
+  const rawNote = modelsRawBytes > total ? `, model ${modelsRawBytes} B uncompressed` : ''
+  const breakdown = `size: total ${total} B (bundle ${bundle} B, models ${models} B, views ${views} B)${rawNote}`
+  const status = effective > failBytes ? 'fail' : effective > warnBytes ? 'warn' : 'ok'
   const limit = status === 'fail' ? failBytes : warnBytes
   const strategyNote = strategy === 'none' ? '' : ` [strategy: ${strategy}]`
   const message =
@@ -810,5 +823,5 @@ export function evaluateSizeBudget({ bundle, models, views, total, budget = null
       ? `${breakdown}${strategyNote}`
       : `console is larger than ${limit} B; ${breakdown}${strategyNote}` +
         (status === 'fail' ? '. Views are not split lazily: remove or slim what is inlined.' : '')
-  return { status, total, limit, warnBytes, failBytes, strategy, breakdown, message }
+  return { status, total, effective, modelsRawBytes, limit, warnBytes, failBytes, strategy, breakdown, message }
 }

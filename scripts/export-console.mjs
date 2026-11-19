@@ -2447,6 +2447,10 @@ export async function writeConsole(opts = {}) {
       bundle: bytes(preparedAssets.bundleScript) + bytes(preparedAssets.css),
       // What the payload costs in the page: the schema slot plus the compressed model slot.
       models: slotBytes(rendered, 'nn-schema') + slotBytes(rendered, 'nn-model'),
+      // What it costs once the browser inflates it. The model slot is deflate-raw +
+      // base64, so the file size alone cannot see a payload that compresses well and
+      // explodes in memory; the gate takes the larger of the two.
+      modelsRawBytes: bytes(JSON.stringify(domainPayload.model)),
       views: preparedAssets.viewScripts.reduce((sum, script) => sum + bytes(script), 0),
       total: bytes(rendered),
       budget: sizeBudget,

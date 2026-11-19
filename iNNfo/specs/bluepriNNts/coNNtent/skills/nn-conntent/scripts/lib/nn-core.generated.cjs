@@ -19174,6 +19174,29 @@ var init_scope = __esm({
   }
 });
 
+// iNNfo/packages/nn-core/dist/procedure/graph.js
+var init_graph2 = __esm({
+  "iNNfo/packages/nn-core/dist/procedure/graph.js"() {
+    "use strict";
+  }
+});
+
+// iNNfo/packages/nn-core/dist/procedure/fold.js
+var init_fold2 = __esm({
+  "iNNfo/packages/nn-core/dist/procedure/fold.js"() {
+    "use strict";
+  }
+});
+
+// iNNfo/packages/nn-core/dist/procedure/index.js
+var init_procedure = __esm({
+  "iNNfo/packages/nn-core/dist/procedure/index.js"() {
+    "use strict";
+    init_graph2();
+    init_fold2();
+  }
+});
+
 // iNNfo/packages/nn-core/dist/sync/refresh.js
 var init_refresh = __esm({
   "iNNfo/packages/nn-core/dist/sync/refresh.js"() {
@@ -19247,6 +19270,7 @@ var init_dist = __esm({
     init_changeset();
     init_scaffold();
     init_scope();
+    init_procedure();
     init_sync();
   }
 });
