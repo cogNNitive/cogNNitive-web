@@ -10610,6 +10610,22 @@ function resolveUnitPath(rawPath) {
   const result = resolveUnitPathResult(rawPath);
   return result.ok ? result.value : null;
 }
+function parseMirrorElementRef(clean, at) {
+  const mirror = parseMirrorAddress(clean);
+  if (!mirror) return null;
+  if (mirror.unit.kind !== "element" && mirror.unit.kind !== "body") return null;
+  const location = clean.slice(0, at);
+  const base = {
+    filePath: location,
+    fileName: basename(location),
+    kind: "model",
+    raw: clean,
+    slug: mirror.unit.slug,
+    unit: { kind: "element", slug: mirror.unit.slug }
+  };
+  if (mirror.unit.kind === "body") return { ...base, subunits: ["#body"] };
+  return { ...base, subunits: mirror.unit.field === void 0 ? [] : [mirror.unit.field] };
+}
 function parseModelUnitRef(raw) {
   if (RAW_AREA_RE.test(raw)) return null;
   const address = parseAddress(raw);
@@ -10674,6 +10690,8 @@ function parseKnowledgeUnitRef(input) {
   const clean = input.trim();
   const at = clean.indexOf("@");
   if (at === -1) return null;
+  const mirror = parseMirrorElementRef(clean, at);
+  if (mirror) return mirror;
   if (!SOURCE_FILE_RE.test(clean.slice(0, at))) return parseModelUnitRef(clean);
   const resolved = resolveUnitPath(clean.slice(0, at));
   if (!resolved) return null;

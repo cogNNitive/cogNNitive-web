@@ -11150,7 +11150,7 @@ var init_address = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/sync/address.js
-function parseMirrorAddress(raw) {
+function parseMirrorAddress2(raw) {
   const value = String(raw ?? "").trim();
   const at = value.indexOf("@");
   if (at === -1)
@@ -11393,7 +11393,7 @@ function validateElementFieldReferences(model, templateConcepts, options) {
             });
             continue;
           }
-          if (parsed.kind === "source" && fieldDef?.type === "reference" && parseMirrorAddress(rawValue))
+          if (parsed.kind === "source" && fieldDef?.type === "reference" && parseMirrorAddress2(rawValue))
             continue;
           if (parsed.kind === "blueprint" || parsed.kind === "source") {
             diagnostics.push({
@@ -13052,6 +13052,25 @@ function resolveUnitPath(rawPath) {
   const result = resolveUnitPathResult(rawPath);
   return result.ok ? result.value : null;
 }
+function parseMirrorElementRef(clean, at) {
+  const mirror = parseMirrorAddress2(clean);
+  if (!mirror)
+    return null;
+  if (mirror.unit.kind !== "element" && mirror.unit.kind !== "body")
+    return null;
+  const location = clean.slice(0, at);
+  const base = {
+    filePath: location,
+    fileName: basename2(location),
+    kind: "model",
+    raw: clean,
+    slug: mirror.unit.slug,
+    unit: { kind: "element", slug: mirror.unit.slug }
+  };
+  if (mirror.unit.kind === "body")
+    return { ...base, subunits: ["#body"] };
+  return { ...base, subunits: mirror.unit.field === void 0 ? [] : [mirror.unit.field] };
+}
 function parseModelUnitRef(raw) {
   if (RAW_AREA_RE.test(raw))
     return null;
@@ -13121,6 +13140,9 @@ function parseKnowledgeUnitRef(input) {
   const at = clean.indexOf("@");
   if (at === -1)
     return null;
+  const mirror = parseMirrorElementRef(clean, at);
+  if (mirror)
+    return mirror;
   if (!SOURCE_FILE_RE.test(clean.slice(0, at)))
     return parseModelUnitRef(clean);
   const resolved = resolveUnitPath(clean.slice(0, at));
@@ -13183,6 +13205,7 @@ var init_sourceRef = __esm({
     init_jsonPointer();
     init_naming();
     init_address();
+    init_address2();
     SLUG3 = "[a-z0-9]+(?:-[a-z0-9]+)*";
     RETIRED_PREFIX_RE = /^(?:sources\/(?:nn|original|export)|export|models)\//;
     SOURCE_FILE_RE = /\.(md|csv|json)$/i;

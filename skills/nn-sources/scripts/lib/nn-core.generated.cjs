@@ -7932,6 +7932,25 @@ function isAddressError(value) {
   return value.kind === "error";
 }
 
+// iNNfo/packages/nn-core/src/sync/address.ts
+var SYNC_DIR = "sources/sync";
+function parseMirrorAddress(raw) {
+  const value = String(raw ?? "").trim();
+  const at = value.indexOf("@");
+  if (at === -1) return null;
+  const location = value.slice(0, at);
+  if (location.includes("\\") || !location.startsWith(`${SYNC_DIR}/`)) return null;
+  const segments = location.slice(SYNC_DIR.length + 1).split("/");
+  if (segments.length < 2) return null;
+  if (segments.some((s) => s === "" || s === "." || s === "..")) return null;
+  const path5 = segments.slice(1).join("/");
+  if (!isNNName(path5) || !/\.md$/i.test(path5)) return null;
+  const unit = parseUnit(value.slice(at + 1));
+  if ("code" in unit) return null;
+  if (unit.kind !== "element" && unit.kind !== "body") return null;
+  return { alias: segments[0], path: path5, unit };
+}
+
 // iNNfo/packages/nn-core/src/sourceRef.ts
 var SLUG2 = "[a-z0-9]+(?:-[a-z0-9]+)*";
 var RETIRED_PREFIX_RE = /^(?:sources\/(?:nn|original|export)|export|models)\//;
@@ -8198,6 +8217,22 @@ function resolveUnitPath(rawPath) {
   const result = resolveUnitPathResult(rawPath);
   return result.ok ? result.value : null;
 }
+function parseMirrorElementRef(clean, at) {
+  const mirror = parseMirrorAddress(clean);
+  if (!mirror) return null;
+  if (mirror.unit.kind !== "element" && mirror.unit.kind !== "body") return null;
+  const location = clean.slice(0, at);
+  const base = {
+    filePath: location,
+    fileName: basename(location),
+    kind: "model",
+    raw: clean,
+    slug: mirror.unit.slug,
+    unit: { kind: "element", slug: mirror.unit.slug }
+  };
+  if (mirror.unit.kind === "body") return { ...base, subunits: ["#body"] };
+  return { ...base, subunits: mirror.unit.field === void 0 ? [] : [mirror.unit.field] };
+}
 function parseModelUnitRef(raw) {
   if (RAW_AREA_RE.test(raw)) return null;
   const address = parseAddress(raw);
@@ -8262,6 +8297,8 @@ function parseKnowledgeUnitRef(input) {
   const clean = input.trim();
   const at = clean.indexOf("@");
   if (at === -1) return null;
+  const mirror = parseMirrorElementRef(clean, at);
+  if (mirror) return mirror;
   if (!SOURCE_FILE_RE.test(clean.slice(0, at))) return parseModelUnitRef(clean);
   const resolved = resolveUnitPath(clean.slice(0, at));
   if (!resolved) return null;
@@ -11316,11 +11353,6 @@ function listSectionFieldsFor(content, heading) {
 // iNNfo/packages/nn-core/src/lineage/fs-snapshot.ts
 var fs = __toESM(require("node:fs"), 1);
 var path = __toESM(require("node:path"), 1);
-
-// iNNfo/packages/nn-core/src/sync/address.ts
-var SYNC_DIR = "sources/sync";
-
-// iNNfo/packages/nn-core/src/lineage/fs-snapshot.ts
 var TEXT_EXTENSIONS = /* @__PURE__ */ new Set([".md", ".csv", ".json", ".html", ".htm"]);
 function walkDir(dir, baseDir, out) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
