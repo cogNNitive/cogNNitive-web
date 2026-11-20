@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-11-20T07:31:15.041Z",
-  "head": "f4acf089e45f0f493877e5f636440be5ba73c86a",
+  "generatedAt": "2026-11-20T07:37:11.889Z",
+  "head": "60197c437eb143407226e4d61eb554b4e4c8257f",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
@@ -27,8 +27,11 @@
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.49.2",
       "pinnedTagDate": "2026-11-19T21:43:41+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 1,
+      "filesTouched": [
+        "iNNfo/packages/nn-mcp/src/tools/procedure-lock.ts",
+        "iNNfo/packages/nn-mcp/test/procedure-runner.test.ts"
+      ]
     },
     "nn-console": {
       "subsystem": "nn-console",
