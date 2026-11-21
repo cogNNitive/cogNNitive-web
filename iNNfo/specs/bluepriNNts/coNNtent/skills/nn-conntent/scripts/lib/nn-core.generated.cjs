@@ -1694,7 +1694,7 @@ var require_log = __commonJS({
       if (logLevel === "debug")
         console.log(...messages);
     }
-    function warn(logLevel, warning) {
+    function warn2(logLevel, warning) {
       if (logLevel === "debug" || logLevel === "warn") {
         if (typeof node_process.emitWarning === "function")
           node_process.emitWarning(warning);
@@ -1703,7 +1703,7 @@ var require_log = __commonJS({
       }
     }
     exports2.debug = debug;
-    exports2.warn = warn;
+    exports2.warn = warn2;
   }
 });
 
@@ -12628,12 +12628,12 @@ ${url ?? ""}`;
       element = { concept: found.concept, slug: found.slug };
     }
     const warnings = [];
-    const warn = (code, message) => warnings.push({ code, severity: "warning", message: `${code}: ${text} - ${message}` });
+    const warn2 = (code, message) => warnings.push({ code, severity: "warning", message: `${code}: ${text} - ${message}` });
     if (element && expect?.concepts && !expect.concepts.some((c) => c.toLowerCase() === element.concept.toLowerCase())) {
-      warn("REF_CONCEPT_MISMATCH", `the target is a ${element.concept} but the field accepts ${expect.concepts.join(", ")}; point it at one of those`);
+      warn2("REF_CONCEPT_MISMATCH", `the target is a ${element.concept} but the field accepts ${expect.concepts.join(", ")}; point it at one of those`);
     }
     if (expect?.blueprint && expect.blueprint.toLowerCase() !== model.blueprint.name.toLowerCase()) {
-      warn("REF_BLUEPRINT_MISMATCH", `the target model pins "${model.blueprint.name}" but the field expects "${expect.blueprint}"; point it at a model of that bluepriNNt`);
+      warn2("REF_BLUEPRINT_MISMATCH", `the target model pins "${model.blueprint.name}" but the field expects "${expect.blueprint}"; point it at a model of that bluepriNNt`);
     }
     return { ok: true, model, element, unit, warnings };
   };
@@ -17898,86 +17898,104 @@ var init_serializer2 = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/changeset/lock.js
+function warn(message) {
+  console.warn(`[ChangesetLock] ${message}`);
+}
 async function acquireLock(rootDir, changesetName, timeoutMs = 6e4) {
   const lockDir = (0, import_node_path10.join)(rootDir, "changes");
   await (0, import_promises2.mkdir)(lockDir, { recursive: true });
   const lockPath = (0, import_node_path10.join)(lockDir, ".lock");
+  const nonce = (0, import_node_crypto3.randomUUID)();
   const payload = {
     pid: process.pid,
     timestamp: Date.now(),
-    changeset: changesetName
+    changeset: changesetName,
+    nonce
   };
   const payloadStr = JSON.stringify(payload);
+  const handle = () => ({ lockPath, payload, release: releaseOwned(lockPath, nonce) });
   const tryCreate = async () => {
     try {
       await (0, import_promises2.writeFile)(lockPath, payloadStr, { flag: "wx" });
       return true;
-    } catch (err2) {
-      if (err2?.code === "EEXIST") {
+    } catch (err) {
+      if (err?.code === "EEXIST")
         return false;
-      }
-      throw err2;
+      throw err;
     }
   };
-  if (await tryCreate()) {
-    return {
-      lockPath,
-      payload,
-      release: async () => {
-        try {
-          await (0, import_promises2.unlink)(lockPath);
-        } catch {
-        }
-      }
-    };
+  if (await tryCreate())
+    return handle();
+  let stored = await readStored(lockPath);
+  if (stored.kind === "missing") {
+    if (await tryCreate())
+      return handle();
+    stored = await readStored(lockPath);
   }
-  let existing = null;
-  let corrupt = false;
-  try {
-    const raw = await (0, import_promises2.readFile)(lockPath, "utf8");
-    existing = JSON.parse(raw);
-  } catch (readErr) {
-    if (readErr?.code === "ENOENT") {
-      if (await tryCreate()) {
-        return {
-          lockPath,
-          payload,
-          release: async () => {
-            await (0, import_promises2.unlink)(lockPath).catch(() => void 0);
-          }
-        };
-      }
-    } else {
-      corrupt = true;
-    }
+  if (stored.kind === "missing")
+    throw busy(lockPath);
+  const value = stored.kind === "ok" ? stored.value : null;
+  const age = value && typeof value.timestamp === "number" ? Date.now() - value.timestamp : Number.POSITIVE_INFINITY;
+  const alive = value !== null && holderAlive(value.pid);
+  const breakable = value === null || // unreadable or non-object payload: a writer died mid-write
+  typeof value.timestamp !== "number" || // parseable but nameless: cannot be reasoned about
+  !alive || // the holder is gone
+  age > timeoutMs * ORPHAN_MULTIPLIER;
+  if (breakable) {
+    warn(alive ? `Breaking orphaned lock at ${lockPath} held by pid ${String(value?.pid)} for changeset ${String(value?.changeset)} (age: ${Math.round(age)}ms)` : `Breaking lock at ${lockPath} whose holder is gone (pid ${String(value?.pid)}, age: ${Math.round(age)}ms)`);
+    await (0, import_promises2.unlink)(lockPath).catch(() => void 0);
+    if (await tryCreate())
+      return handle();
   }
-  const age = existing ? Date.now() - existing.timestamp : 0;
-  if (corrupt || age > timeoutMs) {
-    console.warn(corrupt ? `[ChangesetLock] Breaking corrupt lock at ${lockPath} (unreadable payload)` : `[ChangesetLock] Breaking stale lock at ${lockPath} held by pid ${existing.pid} for changeset ${existing.changeset} (age: ${age}ms > ${timeoutMs}ms)`);
-    try {
-      await (0, import_promises2.unlink)(lockPath);
-    } catch {
-    }
-    if (await tryCreate()) {
-      return {
-        lockPath,
-        payload,
-        release: async () => {
-          await (0, import_promises2.unlink)(lockPath).catch(() => void 0);
-        }
-      };
-    }
-  }
-  const err = new Error(`CONCURRENT_APPLY_ACTIVE: Changeset apply lock is currently held at ${lockPath}`);
-  err.code = "CONCURRENT_APPLY_ACTIVE";
-  throw err;
+  throw busy(lockPath);
 }
-var import_promises2, import_node_path10;
+var import_node_crypto3, import_promises2, import_node_path10, ORPHAN_MULTIPLIER, holderAlive, releaseOwned, readStored, busy;
 var init_lock = __esm({
   "iNNfo/packages/nn-core/dist/changeset/lock.js"() {
     "use strict";
+    import_node_crypto3 = require("node:crypto");
     import_promises2 = require("node:fs/promises");
     import_node_path10 = require("node:path");
+    ORPHAN_MULTIPLIER = 10;
+    holderAlive = (pid) => {
+      if (typeof pid !== "number" || !Number.isInteger(pid) || pid <= 0)
+        return false;
+      try {
+        process.kill(pid, 0);
+        return true;
+      } catch (err) {
+        return err?.code === "EPERM";
+      }
+    };
+    releaseOwned = (lockPath, nonce) => {
+      let released = false;
+      return async () => {
+        if (released)
+          return;
+        released = true;
+        try {
+          const current = JSON.parse(await (0, import_promises2.readFile)(lockPath, "utf8"));
+          if (current?.nonce !== nonce)
+            return;
+        } catch {
+          return;
+        }
+        await (0, import_promises2.unlink)(lockPath).catch(() => void 0);
+      };
+    };
+    readStored = async (lockPath) => {
+      try {
+        const parsed = JSON.parse(await (0, import_promises2.readFile)(lockPath, "utf8"));
+        return parsed !== null && typeof parsed === "object" ? { kind: "ok", value: parsed } : { kind: "ok", value: {} };
+      } catch (err) {
+        return err?.code === "ENOENT" ? { kind: "missing" } : { kind: "unreadable" };
+      }
+    };
+    busy = (lockPath) => {
+      const err = new Error(`CONCURRENT_APPLY_ACTIVE: Changeset apply lock is currently held at ${lockPath}`);
+      err.code = "CONCURRENT_APPLY_ACTIVE";
+      return err;
+    };
   }
 });
 
@@ -19447,7 +19465,7 @@ async function download(url, timeout, headers) {
   }
 }
 function sha256(content) {
-  return (0, import_node_crypto3.createHash)("sha256").update(content, "utf-8").digest("hex");
+  return (0, import_node_crypto4.createHash)("sha256").update(content, "utf-8").digest("hex");
 }
 async function freshnessVerdict(url, localContent, timeout) {
   try {
@@ -19823,11 +19841,11 @@ async function resolveIncludesInto(specs, specsDir, timeout, seen = /* @__PURE__
     }
   }
 }
-var import_node_crypto3, import_promises4, import_node_fs10, import_node_path15, import_node_url, import_node_os, MAX_DEPTH_DEFAULT, BlueprintAuthError, stagingCounter, IncompleteSkillsTreeError;
+var import_node_crypto4, import_promises4, import_node_fs10, import_node_path15, import_node_url, import_node_os, MAX_DEPTH_DEFAULT, BlueprintAuthError, stagingCounter, IncompleteSkillsTreeError;
 var init_resolver_node = __esm({
   "iNNfo/packages/nn-mcp/src/tools/resolver-node.ts"() {
     "use strict";
-    import_node_crypto3 = require("node:crypto");
+    import_node_crypto4 = require("node:crypto");
     import_promises4 = require("node:fs/promises");
     import_node_fs10 = require("node:fs");
     import_node_path15 = require("node:path");
@@ -23078,7 +23096,7 @@ function serializeChangeset(doc) {
 
 // iNNfo/packages/nn-mcp/src/tools/apply-change.ts
 var import_promises12 = require("node:fs/promises");
-var import_node_crypto4 = require("node:crypto");
+var import_node_crypto5 = require("node:crypto");
 var import_node_path20 = require("node:path");
 init_dist();
 init_spec();
@@ -23815,7 +23833,7 @@ async function evidenceShas(rootDir, evidence, modelFiles = /* @__PURE__ */ new 
     const filePath = evidencePath(item) ?? item;
     try {
       const bytes = await (0, import_promises12.readFile)(modelFile ?? (0, import_node_path20.join)(rootDir, filePath));
-      shas.push((0, import_node_crypto4.createHash)("sha256").update(bytes).digest("hex"));
+      shas.push((0, import_node_crypto5.createHash)("sha256").update(bytes).digest("hex"));
     } catch {
       return void 0;
     }
