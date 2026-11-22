@@ -962,7 +962,7 @@
       <div class="modal-tabs">
         <button class="modal-tab active" onclick="filterModalTab('all', this)">All Files</button>
         <button class="modal-tab" onclick="filterModalTab('sources-import', this)">Sources: Import (.docx, .pptx, .pdf)</button>
-        <button class="modal-tab" onclick="filterModalTab('sources-nn', this)">Sources: Normalized (.md)</button>
+        <button class="modal-tab" onclick="filterModalTab('sources-nn', this)">Sources: Sidecars</button>
         <button class="modal-tab" onclick="filterModalTab('models', this)">kNNowledge (_NN.md)</button>
         <button class="modal-tab" onclick="filterModalTab('procedures', this)">Procedures (_NN.md)</button>
         <button class="modal-tab" onclick="filterModalTab('artifacts', this)">Deliverables &amp; Artifacts</button>
@@ -1001,7 +1001,7 @@
           { name: 'sources/import/founder_pitch_deck_v1.pptx', category: 'sources-import', format: 'PPTX (PowerPoint)', size: '2.4 MB', icon: '📊' },
           { name: 'sources/import/user_interviews_notes.docx', category: 'sources-import', format: 'DOCX (Word)', size: '148 KB', icon: '📝' },
           { name: 'sources/import/customer_discovery.md', category: 'sources-import', format: 'MD (Transcripts)', size: '18 KB', icon: '📄' },
-          { name: 'sources/nn/customer_discovery.md', category: 'sources-nn', format: 'iNNfo Normalized MD', size: '14 KB', icon: '🧠' },
+          { name: 'sources/import/customer_discovery.md_sidecar_NN.md', category: 'sources-nn', format: 'iNNfo Sidecar', size: '14 KB', icon: '🧠' },
           { name: 'kNNowledge/SaaS_Founder_business_NN.md', category: 'models', format: 'iNNfo Business kNNowledge', size: '32 KB', icon: '🧠' },
           { name: 'artifacts/pitch_deck_summary.md', category: 'artifacts', format: 'Pitch Deck Deliverable', size: '12 KB', icon: '📈' }
         ]
@@ -1017,9 +1017,9 @@
           { name: 'sources/import/enterprise_rfp_fintech.pdf', category: 'sources-import', format: 'PDF Document', size: '3.8 MB', icon: '📕' },
           { name: 'sources/import/master_rate_card_2026.xlsx', category: 'sources-import', format: 'XLSX Spreadsheet', size: '512 KB', icon: '📈' },
           { name: 'sources/import/enterprise_rfp_fintech.md', category: 'sources-import', format: 'MD Text', size: '24 KB', icon: '📄' },
-          { name: 'sources/nn/enterprise_rfp_fintech.md', category: 'sources-nn', format: 'iNNfo Normalized MD', size: '22 KB', icon: '🧠' },
-          { name: 'sources/nn/fintech_case_study.md', category: 'sources-nn', format: 'iNNfo Normalized MD', size: '16 KB', icon: '🧠' },
-          { name: 'sources/nn/master_rate_card_2026.md', category: 'sources-nn', format: 'iNNfo Normalized MD', size: '12 KB', icon: '🧠' },
+          { name: 'sources/import/enterprise_rfp_fintech.pdf_sidecar_NN.md', category: 'sources-nn', format: 'iNNfo Sidecar', size: '22 KB', icon: '🧠' },
+          { name: 'sources/import/fintech_case_study.pdf_sidecar_NN.md', category: 'sources-nn', format: 'iNNfo Sidecar', size: '16 KB', icon: '🧠' },
+          { name: 'sources/import/master_rate_card_2026.xlsx_sidecar_NN.md', category: 'sources-nn', format: 'iNNfo Sidecar', size: '12 KB', icon: '🧠' },
           { name: 'kNNowledge/Fintech_RFP_Response_commercial_NN.md', category: 'models', format: 'Commercial Bid kNNowledge', size: '48 KB', icon: '🧠' },
           { name: 'kNNowledge/Consulting_Team_Matrix_organization_NN.md', category: 'models', format: 'Staffing Matrix kNNowledge', size: '28 KB', icon: '👥' },
           { name: 'artifacts/commercial_proposal_executive.md', category: 'artifacts', format: 'Executive Proposal MD', size: '18 KB', icon: '📊' },
@@ -1037,8 +1037,8 @@
           { name: 'sources/import/brand_style_guide.pdf', category: 'sources-import', format: 'PDF Brand Guide', size: '5.2 MB', icon: '📕' },
           { name: 'sources/import/client_kickoff_brief.docx', category: 'sources-import', format: 'DOCX Meeting Notes', size: '95 KB', icon: '📝' },
           { name: 'sources/import/client_kickoff_brief.md', category: 'sources-import', format: 'MD Brief', size: '16 KB', icon: '📄' },
-          { name: 'sources/nn/client_kickoff_brief.md', category: 'sources-nn', format: 'iNNfo Normalized MD', size: '14 KB', icon: '🧠' },
-          { name: 'sources/nn/brand_style_guide.md', category: 'sources-nn', format: 'iNNfo Normalized MD', size: '18 KB', icon: '🧠' },
+          { name: 'sources/import/client_kickoff_brief.docx_sidecar_NN.md', category: 'sources-nn', format: 'iNNfo Sidecar', size: '14 KB', icon: '🧠' },
+          { name: 'sources/import/brand_style_guide.pdf_sidecar_NN.md', category: 'sources-nn', format: 'iNNfo Sidecar', size: '18 KB', icon: '🧠' },
           { name: 'kNNowledge/Client_Website_site_spec_NN.md', category: 'models', format: 'Site Architecture kNNowledge', size: '42 KB', icon: '🧠' },
           { name: 'artifacts/interactive_spec_dashboard.html', category: 'artifacts', format: 'Interactive HTML Blueprint', size: '64 KB', icon: '🌐' }
         ]
@@ -1055,10 +1055,10 @@
           { name: 'sources/import/battery_thermal_research_2026.md', category: 'sources-import', format: 'MD Research Notes', size: '24 KB', icon: '📄' },
           { name: 'sources/import/benchmark_metrics_raw.csv', category: 'sources-import', format: 'CSV Data Metrics', size: '128 KB', icon: '📈' },
           { name: 'sources/import/audience_feedback_episode_41.md', category: 'sources-import', format: 'MD Feedback', size: '12 KB', icon: '📄' },
-          { name: 'sources/nn/battery_thermal_research_2026.md', category: 'sources-nn', format: 'iNNfo Normalized MD', size: '26 KB', icon: '🧠' },
-          { name: 'sources/nn/audience_feedback_episode_41.md', category: 'sources-nn', format: 'iNNfo Normalized MD', size: '10 KB', icon: '🧠' },
-          { name: 'sources/nn/audience_survey_data.csv', category: 'sources-nn', format: 'Audience Polling CSV', size: '34 KB', icon: '📈' },
-          { name: 'sources/nn/competitor_benchmark_transcript.md', category: 'sources-nn', format: 'iNNfo Normalized MD', size: '18 KB', icon: '🧠' },
+          { name: 'sources/import/battery_thermal_research_2026.pdf_sidecar_NN.md', category: 'sources-nn', format: 'iNNfo Sidecar', size: '26 KB', icon: '🧠' },
+          { name: 'sources/import/audience_feedback_episode_41.md_sidecar_NN.md', category: 'sources-nn', format: 'iNNfo Sidecar', size: '10 KB', icon: '🧠' },
+          { name: 'sources/import/audience_survey_data.csv_sidecar_NN.md', category: 'sources-nn', format: 'iNNfo Sidecar', size: '34 KB', icon: '📈' },
+          { name: 'sources/import/competitor_benchmark_transcript.md_sidecar_NN.md', category: 'sources-nn', format: 'iNNfo Sidecar', size: '18 KB', icon: '🧠' },
           { name: 'kNNowledge/Episode_42_Battery_Tech_video_script_NN.md', category: 'models', format: 'Video Script kNNowledge', size: '52 KB', icon: '🧠' },
           { name: 'procedures/Episode_42_Production_procedures_NN.md', category: 'procedures', format: 'Production Workflow kNNowledge', size: '36 KB', icon: '📋' },
           { name: 'artifacts/production_teleprompter_cue_sheet.md', category: 'artifacts', format: 'Teleprompter Cue Sheet', size: '20 KB', icon: '🎬' },
