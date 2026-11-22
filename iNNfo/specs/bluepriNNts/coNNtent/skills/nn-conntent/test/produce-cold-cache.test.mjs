@@ -132,9 +132,16 @@ function createWorkspace() {
     path.join(BLUEPRINT, 'spec_NN.md'),
     path.join(root, 'specs', 'bluepriNNts', 'coNNtent', BLUEPRINT_VERSION, 'spec_NN.md'),
   )
-  fs.copyFileSync(
-    path.join(BLUEPRINT, 'defaults', 'video-defaults_NN.md'),
+  // Adopt the package defaults and tune the copy: the domain plugs in its vendor models.
+  fs.writeFileSync(
     path.join(root, 'video-defaults_NN.md'),
+    fs
+      .readFileSync(path.join(BLUEPRINT, 'defaults', 'video-defaults_NN.md'), 'utf8')
+      .replace(
+        /^slug:: defaults$/m,
+        ['slug:: defaults', 'image_model:: wavespeed-ai/z-image/turbo', 'avatar_model:: wavespeed-ai/infinitetalk-fast'].join('\n'),
+      ),
+    'utf8',
   )
   fs.mkdirSync(path.join(root, 'changes'), { recursive: true })
   fs.writeFileSync(

@@ -65,7 +65,7 @@ export function nearestImageSize(sizes, target) {
  *   formats then consume the asset through `fit`.
  * - A Model without the `size` control, without declared `sizes`, or unknown to the
  *   catalog derives no size: nothing is sent and the key carries none, so a derived size
- *   never breaks a size-less Model (`adapters/_intent.mjs`).
+ *   never breaks a size-less Model (`lib/intent.mjs`).
  * @param {{ value?: unknown, imageModel?: string, catalog?: object|null,
  *   primary?: { width: number, height: number } | null }} o
  * @returns {{ size: string | undefined, source: 'explicit'|'derived'|'none',

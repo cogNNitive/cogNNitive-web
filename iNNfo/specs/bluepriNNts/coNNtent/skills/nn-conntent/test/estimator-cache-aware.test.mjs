@@ -77,8 +77,23 @@ type:: presenter
 asset:: media/face.jpeg
 `;
 
+/** The domain plug point: the blueprint pins no vendor model, the domain defaults do. */
+const DOMAIN_DEFAULTS = `---
+level: 3
+title: "Video Defaults"
+---
+
+# NN Video Defaults
+
+## NN Video Defaults: Defaults
+slug:: defaults
+image_model:: wavespeed-ai/z-image/turbo
+avatar_model:: wavespeed-ai/infinitetalk-fast
+`;
+
 function setup(source) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'est-cache-'));
+  fs.writeFileSync(path.join(dir, 'video-defaults_NN.md'), DOMAIN_DEFAULTS, 'utf8');
   fs.mkdirSync(path.join(dir, 'media'));
   fs.writeFileSync(path.join(dir, 'media', 'face.jpeg'), Buffer.from('face'));
   const scriptPath = path.join(dir, 'script_NN.md');

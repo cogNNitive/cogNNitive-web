@@ -5,10 +5,12 @@
  *
  * Two separate facts live here, and they are not the same kind of fact:
  *
- * - The BODY SHAPE (data URIs under `image` / `audio`, plus `resolution`) is still
- *   UNVERIFIED against WaveSpeed's published schema; it comes from the earlier
- *   asset-synthesizer code. If it turns out to be different (uploaded media URLs instead
- *   of data URIs, other field names), only this function changes.
+ * - The BODY SHAPE is the Model's own, declared as data: a catalog Model's `request_map`
+ *   (`[image=<field>, audio=<field>, resolution=<field>]`) renames the engine's inputs to
+ *   the field names its provider expects, and only the mapped inputs are sent. A Model with
+ *   no `request_map` gets the default shape (data URIs under `image` / `audio`, plus
+ *   `resolution`), which is still UNVERIFIED against WaveSpeed's published schema; it comes
+ *   from the earlier asset-synthesizer code.
  * - `resolution` IS OBSERVED TO BE ADVISORY. Measured A/B on the default InfiniTalk
  *   model, both requesting `avatar_resolution: 720p`: a 1920x1920 still came back
  *   480x480, and a 2848x1600 still came back 640x352. The
@@ -27,6 +29,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { CatalogError, parseKeyedList } from './catalog.mjs';
 
 export const MAX_AVATAR_IMAGE_BYTES = 10 * 1024 * 1024;
 export const MAX_AVATAR_AUDIO_BYTES = 25 * 1024 * 1024;
@@ -47,14 +50,31 @@ function inline(file, table, maxBytes, what) {
   return 'data:' + mime + ';base64,' + bytes.toString('base64');
 }
 
+/** The inputs the engine produces for an avatar request, in the default body's key order. */
+export const AVATAR_REQUEST_INPUTS = ['image', 'audio', 'resolution'];
+
 /**
- * @param {{ imagePath: string, audioPath: string, resolution?: string, limits?: { imageBytes?: number, audioBytes?: number } }} o
- * @returns {{ image: string, audio: string, resolution: string }}
+ * @param {{ imagePath: string, audioPath: string, resolution?: string, limits?: { imageBytes?: number, audioBytes?: number },
+ *   requestMap?: string[] | string }} o `requestMap` is the Model's `request_map` keyed list (absent: the default shape).
+ * @returns {Record<string, string>}
  */
-export function buildAvatarRequest({ imagePath, audioPath, resolution = '480p', limits = {} }) {
-  return {
+export function buildAvatarRequest({ imagePath, audioPath, resolution = '480p', limits = {}, requestMap }) {
+  const map = parseKeyedList(requestMap, 'request_map');
+  for (const input of Object.keys(map)) {
+    if (!AVATAR_REQUEST_INPUTS.includes(input)) {
+      throw new CatalogError(
+        'unknown-request-input',
+        'request_map names "' + input + '", which is not an avatar input (inputs: ' + AVATAR_REQUEST_INPUTS.join(', ') + '). Nothing was spent.',
+      );
+    }
+  }
+  const inputs = {
     image: inline(imagePath, AVATAR_IMAGE_MIME, limits.imageBytes ?? MAX_AVATAR_IMAGE_BYTES, 'image'),
     audio: inline(audioPath, AVATAR_AUDIO_MIME, limits.audioBytes ?? MAX_AVATAR_AUDIO_BYTES, 'audio'),
     resolution,
   };
+  if (Object.keys(map).length === 0) return inputs;
+  const body = {};
+  for (const input of AVATAR_REQUEST_INPUTS) if (map[input]) body[map[input]] = inputs[input];
+  return body;
 }

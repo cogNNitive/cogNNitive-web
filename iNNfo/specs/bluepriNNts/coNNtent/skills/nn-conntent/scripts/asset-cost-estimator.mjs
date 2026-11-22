@@ -68,14 +68,15 @@ function mergedCatalog() {
 }
 
 /**
- * The models in this plan whose catalog `price_date` is past the staleness threshold.
- * A stale price does not change the estimate; the plan just has to say so.
+ * The models in this plan whose catalog `price_date` is past the staleness threshold: the
+ * Model's own `stale_after_days`, else DEFAULT_STALE_AFTER_DAYS. A stale price does not
+ * change the estimate; the plan just has to say so.
  * @param {string[]} modelIds
  * @param {Date} now
+ * @param {{ models: object }} [catalog]
  * @returns {Array<{ model: string, priceDate: string }>}
  */
-function stalePricesOf(modelIds, now) {
-  const catalog = mergedCatalog();
+export function stalePricesOf(modelIds, now, catalog = mergedCatalog()) {
   const stale = [];
   for (const id of modelIds) {
     const entry = Object.values(catalog.models || {}).find(
@@ -85,7 +86,9 @@ function stalePricesOf(modelIds, now) {
         id.endsWith('/' + String(model.api_id)),
     );
     if (!entry || !entry.price_date) continue;
-    if (isPriceStale(entry.price_date, { now })) {
+    const days = Number(entry.stale_after_days);
+    const staleAfterDays = Number.isFinite(days) && days > 0 ? days : DEFAULT_STALE_AFTER_DAYS;
+    if (isPriceStale(entry.price_date, { now, staleAfterDays })) {
       stale.push({ model: id, priceDate: String(entry.price_date) });
     }
   }
@@ -200,7 +203,7 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
   const cachedAvatarLayers = new Set();
   if (cache && scriptDir) {
     try {
-      const { jobs } = collectAvatarJobs({ parsed, scriptDir, cacheManager: cache, config, models, bags: bags });
+      const { jobs } = collectAvatarJobs({ parsed, scriptDir, cacheManager: cache, config, models, bags: bags, catalog });
       for (const j of jobs) if (cache.getSync(j.cacheKey, AVATAR_CACHE_EXT, AVATAR_CACHE_CATEGORY)) cachedAvatarLayers.add(j.layer);
     } catch {
       // An input that cannot be resolved leaves the avatar priced: never under-estimate.

@@ -15,12 +15,30 @@ import {
   DEFAULT_GUARD,
   readLedger,
 } from '../scripts/lib/video-guard.mjs';
+import { loadMergedCatalog } from '../scripts/lib/catalog.mjs';
 
 const TTS = 'minimax/speech-2.8-hd';
 const FAST = 'wavespeed-ai/infinitetalk-fast';
 const SLOW = 'wavespeed-ai/infinitetalk';
 const IMG = 'wavespeed-ai/z-image/turbo';
 const approvedOk = () => ({ ok: true });
+
+/**
+ * The reference catalog plus test-only Models: a call is routed by its Model's Provider, so a
+ * model the reference catalog does not declare is declared here (never in the shipped catalog).
+ */
+function catalogWith(extra) {
+  const base = loadMergedCatalog({ overlay: null });
+  const models = { ...base.models };
+  for (const [apiId, capability] of Object.entries(extra)) {
+    const slug = apiId.replace(/[^a-z0-9]+/gi, '-');
+    models[slug] = {
+      slug, provider: 'wavespeed', api_id: apiId, capability, adapter: 'test',
+      price: 0.01, price_unit: capability === 'tts' ? 'per_1k_chars' : 'per_second', price_date: '2026-11-02', status: 'active',
+    };
+  }
+  return { ...base, models };
+}
 
 function setup(configOverrides = {}, guardOpts = {}) {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'synth-guard-')));
@@ -142,7 +160,7 @@ describe('billable TTS through the guard', () => {
     await synth.synthesizeTTS('linea sin modelo', { model: 'local' });
     assert.ok(provider.state.posts[0].endsWith('/' + TTS));
     const other = setup({ allowedModels: [...DEFAULT_GUARD.allowedModels, 'custom/tts'] });
-    const synth2 = makeSynth(other, provider, { defaultModels: { tts: 'custom/tts' } });
+    const synth2 = makeSynth(other, provider, { defaultModels: { tts: 'custom/tts' }, catalog: catalogWith({ 'custom/tts': 'tts' }) });
     await synth2.synthesizeTTS('linea sin modelo', { model: 'local' });
     assert.ok(provider.state.posts[1].endsWith('/custom/tts'));
   });
@@ -352,7 +370,7 @@ describe('avatar jobs', () => {
     await assert.rejects(synth.resolveTalkingAvatar(P('img.png'), P('a.mp3'), opts), ModelBlockedError);
     assert.equal(provider.state.posts.length, 0);
     const allowed = setup({}, { allowModels: [SLOW] });
-    const res = await makeSynth(allowed, provider).resolveTalkingAvatar(P('img.png'), P('a.mp3'), opts);
+    const res = await makeSynth(allowed, provider, { catalog: catalogWith({ [SLOW]: 'avatar' }) }).resolveTalkingAvatar(P('img.png'), P('a.mp3'), opts);
     assert.equal(res.fromCache, false);
     assert.equal(provider.state.posts.length, 1);
   });
@@ -443,8 +461,9 @@ describe('Replicate image path', () => {
     const ctx = setup({}, {});
     const provider = fakeProvider({ never: true });
     const synth = makeSynth(ctx, provider, { env: { REPLICATE_API_TOKEN: 'fake-token-not-real' } });
-    await assert.rejects(synth.resolveMedia('a diagram', {}), BillingFailureError);
+    await assert.rejects(synth.resolveMedia('a diagram', { model: 'black-forest-labs/flux-schnell' }), BillingFailureError);
     assert.equal(started(ctx.root)[0].model, 'black-forest-labs/flux-schnell');
+    assert.equal(provider.state.bodies[0].version, 'black-forest-labs/flux-schnell', 'the catalog api_id is the one called');
     assert.equal(fs.readdirSync(path.join(ctx.cacheManager.baseDir, 'images')).length, 0);
   });
 });

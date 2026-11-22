@@ -28,8 +28,12 @@ import { fileURLToPath } from 'node:url';
 import { withFileLock } from './lib/file-lock.mjs';
 import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
 import { DEFAULT_GUARD, GUARD_FILENAME, LOCKS_RELATIVE_DIR, SpendGuard, loadGuard } from './lib/video-guard.mjs';
+import { loadMergedCatalog } from './lib/catalog.mjs';
+import { transportOf } from './lib/provider-transport.mjs';
 
 export const VOICE_CLONE_MODEL = 'minimax/voice-clone';
+/** The catalog Provider (slug) the clone model is called through; its transport is catalog data. */
+export const VOICE_CLONE_PROVIDER = 'wavespeed';
 export const VOICE_CLONE_EST_USD = 1.6;
 
 /** Error code when a clone run omits the required catalog `language` (D-K6). */
@@ -105,12 +109,13 @@ function slugOfHeader(header, _name) {
 const RESERVED_NAMES = new Set([...Object.getOwnPropertyNames(Object.prototype), 'prototype']);
 
 /**
- * Default provider client (WaveSpeed MiniMax voice clone). The request/response schema
- * follows the other WaveSpeed v3 calls in this skill but has NOT been verified against
- * the live API: the voice id is read from the response when present (`voice_id`), and
+ * Default provider client (MiniMax voice clone on the `wavespeed` catalog Provider, whose
+ * base URL, credential variable and auth scheme are catalog data). The request/response
+ * schema follows the other calls of that provider but has NOT been verified against the
+ * live API: the voice id is read from the response when present (`voice_id`), and
  * otherwise falls back to the id this client requested. Inject a client to use another
  * provider or to test.
- * @param {{ env?: Record<string, string | undefined>, fetch?: typeof fetch }} [deps]
+ * @param {{ env?: Record<string, string | undefined>, fetch?: typeof fetch, catalog?: object }} [deps]
  * @returns {{ cloneVoice: (args: { name: string, samplePath: string }) => Promise<{ voiceId: string }> }}
  */
 export function createWaveSpeedVoiceClient(deps = {}) {
@@ -118,15 +123,16 @@ export function createWaveSpeedVoiceClient(deps = {}) {
   const doFetch = deps.fetch || ((...a) => globalThis.fetch(...a));
   return {
     async cloneVoice({ name, samplePath }) {
-      const key = env.WAVESPEED_API_KEY;
-      if (!key) throw new Error('WAVESPEED_API_KEY is not set; cannot clone a voice.');
+      const transport = transportOf(deps.catalog || loadMergedCatalog({ overlay: null }), VOICE_CLONE_PROVIDER);
+      const key = env[transport.envKey];
+      if (!key) throw new Error(transport.envKey + ' is not set; cannot clone a voice.');
       const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'voice';
       const requestedId = 'voice_' + slug + '_' + crypto.randomBytes(3).toString('hex');
       const audio = 'data:audio/mpeg;base64,' + fs.readFileSync(samplePath).toString('base64');
-      const res = await doFetch('https://api.wavespeed.ai/api/v3/' + VOICE_CLONE_MODEL, {
+      const res = await doFetch(transport.submitUrl(VOICE_CLONE_MODEL), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
-        body: JSON.stringify({ audio, voice_id: requestedId }),
+        headers: { 'Content-Type': 'application/json', Authorization: transport.authorization(key) },
+        body: JSON.stringify(transport.wrap(VOICE_CLONE_MODEL, { audio, voice_id: requestedId })),
       });
       if (!res.ok) throw new Error('Voice clone request failed with HTTP ' + res.status);
       const data = await res.json();

@@ -11,10 +11,10 @@ depends_on:
       agent_skills: true
   env:
     - name: WAVESPEED_API_KEY
-      purpose: TTS and image/video media synthesis
+      purpose: Credential of the catalog `wavespeed` Provider (its `env_key`)
       required: true
     - name: REPLICATE_API_TOKEN
-      purpose: Fallback media synthesis
+      purpose: Credential of the catalog `replicate` Provider (its `env_key`), for models declared on it
       required: false
   binaries:
     - ffmpeg
@@ -139,7 +139,7 @@ regenerates the domaiNN console, and opens it only when the exit needs a human (
    ```bash
    node scripts/asset-cost-estimator.mjs <script_NN.md> --out <episode-dir>/asset_plan.md
    ```
-   *Model ids come from the documents (layer, scene, video, Scene Kind presets, Series, domain, blueprint): no flag supplies one, so the estimator and `compile` cannot disagree. Present provider options (WaveSpeed AI, Replicate, OpenAI, Local/Free), quality tiers, and itemized per-scene cost estimates to the user before proceeding. Items already in the cache are priced $0 (marked `cached`), so the total is what the run will charge. The plan is stamped with a `plan_hash`, and it warns when a model price is older than the staleness threshold. Spend is authorized only by applied human console verdicts: the `script` and `preview` gates per scene, and an inserted episode-level `budget` gate when the plan exceeds `budget::` without a preview verdict. There is no `--approve` flag and no approval file: a price or model change produces a different hash, so a stale verdict cannot be replayed. A domain-level `daily_budget::` is a rolling 24h ceiling that no verdict bypasses. NEVER self-approve: the human decides in the console, and the agent never invents a hash. Talking avatars (InfiniteTalk lip-sync, the costliest call) MUST be produced with `scripts/synthesize-avatar.mjs`, never with ad-hoc API or MCP calls: only that script puts them under the budget, daily cap and ledger. Preview uncached billable work with `produce --dry-run`. Budget, the 24h cap, model allow/block lists and prices live in the catalog and cascade fields — see `references/cost-guardrails.md`.*
+   *Model ids come from the documents (layer, scene, video, Scene Kind presets, Series, domain): no flag supplies one, so the estimator and `compile` cannot disagree. The blueprint pins no vendor model: a domain plugs `image_model:: <api_id>` and `avatar_model:: <api_id>` (Models of the merged catalog) into its own `video-defaults_NN.md`, and an avatar job with no resolved model is refused before any spend. Present provider options (WaveSpeed AI, Replicate, OpenAI, Local/Free), quality tiers, and itemized per-scene cost estimates to the user before proceeding. Items already in the cache are priced $0 (marked `cached`), so the total is what the run will charge. The plan is stamped with a `plan_hash`, and it warns when a model price is older than the staleness threshold. Spend is authorized only by applied human console verdicts: the `script` and `preview` gates per scene, and an inserted episode-level `budget` gate when the plan exceeds `budget::` without a preview verdict. There is no `--approve` flag and no approval file: a price or model change produces a different hash, so a stale verdict cannot be replayed. A domain-level `daily_budget::` is a rolling 24h ceiling that no verdict bypasses. NEVER self-approve: the human decides in the console, and the agent never invents a hash. Talking avatars (InfiniteTalk lip-sync, the costliest call) MUST be produced with `scripts/synthesize-avatar.mjs`, never with ad-hoc API or MCP calls: only that script puts them under the budget, daily cap and ledger. Preview uncached billable work with `produce --dry-run`. Budget, the 24h cap, model allow/block lists and prices live in the catalog and cascade fields — see `references/cost-guardrails.md`.*
 4. **Ensure the Render Runtime (consent-gated, idempotent)**:
    ```bash
    node scripts/ensure-hyperframes.mjs

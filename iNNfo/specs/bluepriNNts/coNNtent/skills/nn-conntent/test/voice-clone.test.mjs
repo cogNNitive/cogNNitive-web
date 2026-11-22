@@ -88,9 +88,20 @@ describe('cloneVoice', () => {
 
   it('uses the voice id returned by the provider', async () => {
     const ws = workspace({ version: 1 });
-    const fetch = async () => ({ ok: true, status: 200, json: async () => ({ data: { voice_id: 'real_id_9' } }) });
-    const client = createWaveSpeedVoiceClient({ env: { WAVESPEED_API_KEY: 'fake' }, fetch });
+    const seen = [];
+    const fetch = async (url, init) => {
+      seen.push({ url: String(url), auth: init.headers.Authorization });
+      return { ok: true, status: 200, json: async () => ({ data: { voice_id: 'real_id_9' } }) };
+    };
+    // A test-only provider transport: the URL and auth come from the catalog Provider, not the engine.
+    const catalog = {
+      providers: {
+        wavespeed: { slug: 'wavespeed', api_base: 'https://clone.fake/v9', env_key: 'FAKE_CLONE_KEY', auth_scheme: 'Bearer', submit_path: '/{api_id}', poll_path: '/p/{id}' },
+      },
+    };
+    const client = createWaveSpeedVoiceClient({ env: { FAKE_CLONE_KEY: 'fake' }, fetch, catalog });
     const res = await cloneVoice({ name: 'Ana', samplePath: ws.sample, startDir: ws.root, language: 'es', client });
+    assert.deepEqual(seen, [{ url: 'https://clone.fake/v9/minimax/voice-clone', auth: 'Bearer fake' }]);
     assert.equal(res.voiceId, 'real_id_9');
     assert.equal(readGuard(ws).voices.Ana.voice_id, 'real_id_9');
   });

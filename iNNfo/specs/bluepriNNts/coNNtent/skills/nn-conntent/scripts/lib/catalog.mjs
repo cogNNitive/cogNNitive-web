@@ -3,7 +3,7 @@
  *
  * The merged model catalog: the blueprint's dated reference catalog plus the domaiNN overlay
  * (`<root>/model-catalog_NN.md`), merged per Model slug with the overlay winning. One merged
- * catalog feeds the guard, the estimator, the picklists and the adapters (design A9/A14,
+ * catalog feeds the guard, the estimator, the picklists and the provider routes (design A9/A14,
  * capability video-model-catalog).
  *
  * Parsing goes through the core mirror (`parseKnowledge`); no private reader.
@@ -37,6 +37,19 @@ export class CatalogError extends Error {
   }
 }
 
+/** Parses a catalog keyed list (`[a=b, c=d]`) into an object; an entry without `=` is an error. */
+export function parseKeyedList(value, what) {
+  const out = {};
+  const items = Array.isArray(value) ? value : value === undefined || value === null || String(value).trim() === '' ? [] : [value];
+  for (const item of items) {
+    const text = String(item).trim();
+    const eq = text.indexOf('=');
+    if (eq <= 0) throw new CatalogError('invalid-keyed-list', `${what} entry "${text}" is not a key=value pair.`);
+    out[text.slice(0, eq).trim()] = text.slice(eq + 1).trim();
+  }
+  return out;
+}
+
 const asList = (value) => (Array.isArray(value) ? value.map(String) : value === undefined ? [] : [String(value)]);
 
 /** Parses a catalog document into `{ providers, models, voices }`, keyed by slug. */
@@ -53,6 +66,7 @@ export function parseCatalog(text) {
         ...fields,
         ...(Array.isArray(fields.controls) ? { controls: fields.controls.map(String) } : {}),
         ...(Array.isArray(fields.sizes) ? { sizes: fields.sizes.map(String) } : {}),
+        ...(Array.isArray(fields.resolutions) ? { resolutions: fields.resolutions.map(String) } : {}),
       };
     }
     return out;
@@ -90,7 +104,7 @@ export function validateCatalogVoices(parsed) {
 }
 
 /** A Model must be complete enough to be priced, allowed and called. */
-const REQUIRED_MODEL_FIELDS = ['provider', 'api_id', 'capability', 'adapter', 'price', 'price_unit', 'price_date'];
+const REQUIRED_MODEL_FIELDS = ['provider', 'api_id', 'capability', 'price', 'price_unit', 'price_date'];
 
 /**
  * Merges reference and overlay per Model slug; the overlay wins and an overlay-only Model must
@@ -300,4 +314,12 @@ export function buildMergedCatalog({ reference = [], overlay = [] } = {}) {
 /** The catalog's `sizes` for an image model, used to validate `image_size`. */
 export function sizesOf(model) {
   return asList(model?.sizes);
+}
+
+/**
+ * The catalog's `resolutions` for an avatar model, used to validate `avatar_resolution`.
+ * The first declared value is the model's default.
+ */
+export function resolutionsOf(model) {
+  return asList(model?.resolutions);
 }

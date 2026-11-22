@@ -18,12 +18,23 @@ title: "Model Catalog"
 ## NN Provider: WaveSpeed
 slug:: wavespeed
 name:: WaveSpeed
-api_base:: https://api.wavespeed.ai
+api_base:: https://api.wavespeed.ai/api/v3
+env_key:: WAVESPEED_API_KEY
+auth_scheme:: Bearer
+submit_path:: /{api_id}
+poll_path:: /predictions/{id}/result
+size_format:: star
 
 ## NN Provider: Replicate
 slug:: replicate
 name:: Replicate
 api_base:: https://api.replicate.com
+env_key:: REPLICATE_API_TOKEN
+auth_scheme:: Token
+submit_path:: /v1/predictions
+poll_path:: /v1/predictions/{id}
+envelope:: [model=version, input=input]
+size_format:: aspect_ratio
 
 ## NN Provider: Local
 slug:: local
@@ -38,7 +49,6 @@ provider:: wavespeed
 api_id:: minimax/speech-2.8-hd
 capability:: tts
 controls:: [speed, emotion]
-adapter:: minimax-speech
 price:: 0.02
 price_unit:: per_1k_chars
 price_date:: 2026-11-02
@@ -50,7 +60,6 @@ provider:: wavespeed
 api_id:: minimax/speech-2.8-turbo
 capability:: tts
 controls:: [speed, emotion]
-adapter:: minimax-speech
 price:: 0.015
 price_unit:: per_1k_chars
 price_date:: 2026-11-02
@@ -62,7 +71,7 @@ provider:: wavespeed
 api_id:: wavespeed-ai/infinitetalk-fast
 capability:: avatar
 controls:: [resolution]
-adapter:: infinitetalk
+resolutions:: [720p, 480p, 768p]
 price:: 0.015
 price_unit:: per_second
 price_date:: 2026-11-02
@@ -75,7 +84,6 @@ api_id:: wavespeed-ai/z-image/turbo
 capability:: image
 controls:: [size]
 sizes:: [1024x1024]
-adapter:: wavespeed-image
 price:: 0.005
 price_unit:: per_image
 price_date:: 2026-11-02
@@ -88,7 +96,6 @@ api_id:: black-forest-labs/flux-schnell
 capability:: image
 controls:: [size]
 sizes:: [1024x1024]
-adapter:: replicate-image
 price:: 0.003
 price_unit:: per_image
 price_date:: 2026-11-02
@@ -101,7 +108,6 @@ api_id:: luma/uni-v1/text-to-image
 capability:: image
 controls:: [size]
 sizes:: [1024x1024]
-adapter:: wavespeed-image
 price:: 0.043
 price_unit:: per_image
 price_date:: 2026-11-02
@@ -114,7 +120,6 @@ api_id:: black-forest-labs/flux-3/text-to-image
 capability:: image
 controls:: [size]
 sizes:: [1024x1024]
-adapter:: wavespeed-image
 price:: 0.05
 price_unit:: per_image
 price_date:: 2026-11-02
@@ -127,7 +132,6 @@ api_id:: wavespeed-ai/minimax-h3/image-edit
 capability:: image
 controls:: [size]
 sizes:: [1024x1024]
-adapter:: wavespeed-image
 price:: 0.035
 price_unit:: per_image
 price_date:: 2026-11-02

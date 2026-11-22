@@ -1,20 +1,8 @@
 {
   "blueprint": "coNNtent",
-  "blueprint_version": "V_0-31-0",
+  "blueprint_version": "V_0-32-0",
   "generated_from": "spec_NN.md",
   "fields": {
-    "adapter": {
-      "concepts": [
-        "Model"
-      ],
-      "scope": "record",
-      "levels": [],
-      "type": "string",
-      "options": [],
-      "multiple": false,
-      "cascade": false,
-      "description": "Adapter id that translates intent fields into this provider's request parameters (`scripts/adapters/<id>.mjs`)."
-    },
     "allowed": {
       "concepts": [
         "Model"
@@ -37,7 +25,7 @@
       "options": [],
       "multiple": false,
       "cascade": false,
-      "description": "Base URL the provider's API is called at."
+      "description": "Base URL the provider's API is called at; `submit_path` and `poll_path` are appended to it."
     },
     "api_id": {
       "concepts": [
@@ -63,6 +51,18 @@
       "multiple": false,
       "cascade": false,
       "description": "Source media file for a Layer (image or video), the directory of an authored HyperFrames project for an `animation` Layer, or the media of a fixed Scene Kind. An `animation` Layer may instead write `component:<name>` to mount the HyperFrames component `components/<name>` (library walk: episode, series, domain, skill), resolved before anything is spent; a missing one fails. One of `asset` or `prompt` is required for `avatar` and `media` Layers."
+    },
+    "auth_scheme": {
+      "concepts": [
+        "Provider"
+      ],
+      "scope": "record",
+      "levels": [],
+      "type": "string",
+      "options": [],
+      "multiple": false,
+      "cascade": false,
+      "description": "Scheme word of the `Authorization` header sent with the credential (for example `Bearer` or `Token`)."
     },
     "avatar": {
       "concepts": [
@@ -116,15 +116,11 @@
       "levels": [
         "layer"
       ],
-      "type": "select",
-      "options": [
-        "480p",
-        "720p",
-        "768p"
-      ],
+      "type": "string",
+      "options": [],
       "multiple": false,
       "cascade": true,
-      "description": "Optional output resolution for an `avatar` clip. The engine validates it against the model's declared `controls` and falls back to a model-appropriate default. Ignored by other Layer types."
+      "description": "Optional output resolution label for an `avatar` clip (for example `720p`). It has no global enum: its values are the resolved avatar Model's declared `resolutions`, it requires the Model to declare the `resolution` control, and when absent the Model's first declared resolution applies. Validated before any spend. Ignored by other Layer types."
     },
     "background": {
       "concepts": [
@@ -412,6 +408,30 @@
       "cascade": false,
       "description": "Enter motion of the Layer overlay. Optional."
     },
+    "env_key": {
+      "concepts": [
+        "Provider"
+      ],
+      "scope": "record",
+      "levels": [],
+      "type": "string",
+      "options": [],
+      "multiple": false,
+      "cascade": false,
+      "description": "Name of the environment variable that holds the provider credential (for example `WAVESPEED_API_KEY`). Never the credential itself. A Model of this Provider is billable only when the variable is set; otherwise the engine produces a free offline placeholder."
+    },
+    "envelope": {
+      "concepts": [
+        "Provider"
+      ],
+      "scope": "record",
+      "levels": [],
+      "type": "select",
+      "options": [],
+      "multiple": true,
+      "cascade": false,
+      "description": "Optional keyed list `[model=<key>, input=<key>]`. When set, the request body is wrapped as `{<model key>: api_id, <input key>: body}`; when absent the body is sent bare."
+    },
     "exit_animation": {
       "concepts": [
         "Layer"
@@ -668,6 +688,18 @@
       "cascade": false,
       "description": "For a `media` Layer: `full` covers the whole canvas; `inset` places it inside the safe area of each output canvas: its title-safe area (10% of each side, the 80% title-safe of HyperFrames' safe areas), and on a vertical canvas (height greater than width) also clear of the platform interface bands, 14% of the height at the top and 35% at the bottom (the Instagram Reels safe box, the strictest of the HyperFrames safe-area presets). Each output format computes its own box, and `fit` classifies the asset against that box. Required on `media`."
     },
+    "poll_path": {
+      "concepts": [
+        "Provider"
+      ],
+      "scope": "record",
+      "levels": [],
+      "type": "string",
+      "options": [],
+      "multiple": false,
+      "cascade": false,
+      "description": "Path a submitted job is polled at, appended to `api_base`. `{id}` is replaced by the task id the submit returned."
+    },
     "pose": {
       "concepts": [
         "Video",
@@ -808,6 +840,30 @@
       "cascade": false,
       "description": "Slug of the `Provider` element this Model belongs to."
     },
+    "request_map": {
+      "concepts": [
+        "Model"
+      ],
+      "scope": "record",
+      "levels": [],
+      "type": "select",
+      "options": [],
+      "multiple": true,
+      "cascade": false,
+      "description": "Optional keyed list that renames the engine's avatar inputs to the Model's own request fields (`[image=<field>, audio=<field>, resolution=<field>]`); only the mapped inputs are sent. A Model with no `request_map` gets the default body `{image, audio, resolution}`. An input the engine does not produce fails before any spend."
+    },
+    "resolutions": {
+      "concepts": [
+        "Model"
+      ],
+      "scope": "record",
+      "levels": [],
+      "type": "select",
+      "options": [],
+      "multiple": true,
+      "cascade": false,
+      "description": "Output resolution labels an avatar Model accepts (for example `[720p, 1080p]`); the first is the Model's default. `avatar_resolution` must be one of them. A Model that declares none is not constrained."
+    },
     "review": {
       "concepts": [
         "Scene"
@@ -867,6 +923,21 @@
       "multiple": false,
       "cascade": false,
       "description": "The episode's script document, resolved under the owning model's directory."
+    },
+    "size_format": {
+      "concepts": [
+        "Provider"
+      ],
+      "scope": "record",
+      "levels": [],
+      "type": "select",
+      "options": [
+        "star",
+        "aspect_ratio"
+      ],
+      "multiple": false,
+      "cascade": false,
+      "description": "How an image Model of this Provider receives the requested size: `star` sends `size` as `W*H`, `aspect_ratio` sends the nearest supported `aspect_ratio`. Defaults to `star`."
     },
     "sizes": {
       "concepts": [
@@ -948,6 +1019,18 @@
       "multiple": false,
       "cascade": false,
       "description": "For a `text` Layer: the visual component to render. The component implementation resolves by name (`components/<style>`, a folder `library/components/<style>/` or `media/components/<style>/`, episode → series → domain → skill fallback), so a Series can restyle it without a new type."
+    },
+    "submit_path": {
+      "concepts": [
+        "Provider"
+      ],
+      "scope": "record",
+      "levels": [],
+      "type": "string",
+      "options": [],
+      "multiple": false,
+      "cascade": false,
+      "description": "Path a job is submitted to with POST, appended to `api_base`. `{api_id}` is replaced by the called Model's own `api_id`."
     },
     "tags": {
       "concepts": [

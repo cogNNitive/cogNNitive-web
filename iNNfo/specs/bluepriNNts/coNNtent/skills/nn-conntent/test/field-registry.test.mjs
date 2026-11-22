@@ -59,6 +59,24 @@ test('every field has a consumer: a module, a named later slice, or a design rea
   }
 });
 
+test('a catalog field (Provider, Model) names only modules that really read it (#752)', () => {
+  // The consumer map is a test-enforced claim; for the catalog concepts it must be true:
+  // every module listed for a Provider or Model field mentions that field in its source.
+  const scripts = path.resolve(HERE, '..', 'scripts');
+  const lies = [];
+  for (const [field, def] of Object.entries(registry.fields)) {
+    if (!def.concepts.some((c) => c === 'Provider' || c === 'Model')) continue;
+    const consumer = consumerOf(field);
+    if (!consumer || consumer.kind !== 'module') continue;
+    for (const module of consumer.modules) {
+      const file = path.join(scripts, module);
+      const text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+      if (!new RegExp(String.raw`\b${field}\b`).test(text)) lies.push(`${field} -> ${module}`);
+    }
+  }
+  assert.deepEqual(lies, [], 'the consumer map names a module that never reads the field');
+});
+
 test('--check is green on the committed artifact', () => {
   const res = spawnSync(process.execPath, [SCRIPT, '--check'], { encoding: 'utf8' });
   assert.equal(res.status, 0, res.stderr || res.stdout);

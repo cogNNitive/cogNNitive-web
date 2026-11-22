@@ -95,38 +95,6 @@ export const DEFAULT_GUARD = Object.freeze({
 })
 
 /**
- * Output resolutions each avatar model accepts, keyed by its exact `api_id`, with the
- * fallback used when nothing declares `avatar_resolution`.
- *
- * This is model capability carried as DATA, beside `allowedModels` and for the same
- * reason: engine code must not re-derive it by matching a vendor name (the rule
- * `no-phantom-providers.test.mjs` enforces). `p-video/avatar` accepts 720p or 1080p while
- * its sibling `p-video-2-pro/avatar` accepts 480p or 768p, which is exactly what an
- * `includes('pruna')` test got wrong for one of them.
- *
- * 1080p is deliberately absent from the p-video list: the blueprint's
- * `avatar_resolution` select offers only 480p, 720p and 768p, so 1080p is unreachable
- * from a model today. Widening that select is a separate change with its own delta spec.
- */
-export const AVATAR_RESOLUTION_PROFILES = Object.freeze({
-  'pruna-ai/p-video/avatar': { resolutions: ['720p'], fallback: '720p' },
-  'pruna-ai/p-video-2-pro/avatar': { resolutions: ['480p', '768p'], fallback: '480p' },
-  'wavespeed-ai/infinitetalk': { resolutions: ['480p', '720p', '768p'], fallback: '720p' },
-  'wavespeed-ai/infinitetalk-fast': { resolutions: ['480p', '720p', '768p'], fallback: '720p' },
-})
-
-/** An avatar model with no profile: the schema's own list, and the existing default. */
-export const UNKNOWN_AVATAR_RESOLUTION_PROFILE = Object.freeze({
-  resolutions: ['480p', '720p', '768p'],
-  fallback: '720p',
-})
-
-/** Resolutions and fallback for an avatar model id, matched by its exact `api_id`. */
-export function avatarResolutionProfileFor(model) {
-  return AVATAR_RESOLUTION_PROFILES[normalizeModelId(model)] ?? UNKNOWN_AVATAR_RESOLUTION_PROFILE
-}
-
-/**
  * Model-alias normalization. A Template instance names models with a `replicate/` route prefix
  * (`replicate/minimax/speech-2.8-hd`), but calls go to WaveSpeed, whose id is the remainder
  * (`minimax/speech-2.8-hd`). A leading `replicate/` is stripped only when the remainder is a

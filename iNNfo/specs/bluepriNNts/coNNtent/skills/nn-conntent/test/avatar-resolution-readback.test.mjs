@@ -16,16 +16,12 @@ import {
   declaredHeightOf,
   checkAvatarClip,
   checkAvatarAssetAspect,
-  validResolutionsFor,
-  normalizeAvatarResolution,
 } from '../scripts/lib/avatar-jobs.mjs';
 import { probeVideoSize, FFPROBE_SIZE_ARGS } from '../scripts/lib/media-duration.mjs';
 import { buildAvatarRequest } from '../scripts/lib/avatar-request.mjs';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-
-const INF = 'wavespeed-ai/infinitetalk-fast';
 
 test('the declared label maps to a nominal short side', () => {
   assert.equal(declaredHeightOf('480p'), 480);
@@ -129,9 +125,4 @@ test('probeVideoSize returns null when ffprobe fails or prints nothing usable', 
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
-});
-
-test('the model still validates its own allowed resolution set', () => {
-  assert.deepEqual(validResolutionsFor(INF), ['480p', '720p', '768p']);
-  assert.throws(() => normalizeAvatarResolution('1080p', INF), /not supported/);
 });

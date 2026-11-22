@@ -158,7 +158,7 @@ test('an output format that is not <W>x<H> fails before anything is written', as
 test('narration is synthesized once: the format passes never call a provider', async () => {
   // Every provider entry point of the synthesizer is counted; the cache starts cold, so a
   // second synthesis of the same narration would show up as more calls.
-  const counted = ['synthesizeTTS', 'resolveMedia', '_runWaveSpeedJob', '_runReplicateImageJob', '_resolveTalkingAvatar'];
+  const counted = ['synthesizeTTS', 'resolveMedia', '_runProviderJob', '_resolveTalkingAvatar'];
   const calls = {};
   const originals = Object.fromEntries(counted.map((name) => [name, AssetSynthesizer.prototype[name]]));
   for (const name of counted) {

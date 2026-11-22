@@ -639,7 +639,7 @@ export async function synthesizeEpisodeAssets(options = {}) {
   const dailyBudgetRaw = resolve('daily_budget', bags).value;
   const dailyBudgetUsd =
     dailyBudgetRaw === null || dailyBudgetRaw === undefined || dailyBudgetRaw === '' ? null : Number(dailyBudgetRaw);
-  const synthOptions = { defaultModels: models, bags, ...(options.synthesizerOptions || {}) };
+  const synthOptions = { defaultModels: models, bags, catalog, ...(options.synthesizerOptions || {}) };
   // `loaded.config` already carries the merged catalog's voices (loadGuardWithVoices), the
   // one registry every consumer shares.
   const makeGuard = (dryRun) =>
@@ -830,6 +830,7 @@ export async function compileVideo(options) {
     const planSynth = new AssetSynthesizer({
       cacheManager: new CacheManager({ baseDir: cacheDir, readOnly: true }),
       guard: planGuard,
+      catalog,
       ...synthOptions,
     });
     const planned = await synthesizeScriptAssets(structuredClone(parsed), planSynth, models, () => {}, new Map(), bags, catalog);
@@ -890,6 +891,7 @@ export async function compileVideo(options) {
     const synthesizer = new AssetSynthesizer({
       cacheManager: new CacheManager({ baseDir: cacheDir }),
       guard: makeGuard(false),
+      catalog,
       ...synthOptions,
     });
     let synthesisStages = null;
@@ -921,6 +923,7 @@ export async function compileVideo(options) {
     config,
     models,
     bags,
+    catalog,
   });
   // The avatar stage of this run: the cache pickup. Counting it keeps the fixed stage order
   // even when the episode has no avatar Layer (and records the clips still missing).

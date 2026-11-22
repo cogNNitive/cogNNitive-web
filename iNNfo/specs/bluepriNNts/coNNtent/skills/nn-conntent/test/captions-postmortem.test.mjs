@@ -11,7 +11,7 @@
  * - transcription runs the pinned HyperFrames CLI (never `npx`) through `spawnTool`;
  * - the whisper model is an installed one when none is declared.
  *
- * Synthesis runs offline (no WAVESPEED_API_KEY): the synthesizer writes silent
+ * Synthesis runs offline (no provider credential): the synthesizer writes silent
  * placeholder audio into a scratch cache, and the transcriber is a fake.
  */
 
@@ -33,7 +33,8 @@ import {
 import { compileVideo, synthesizeEpisodeAssets } from '../scripts/lib/compile.mjs';
 import { buildProject } from '../scripts/scene-project.mjs';
 
-delete process.env.WAVESPEED_API_KEY;
+// Every declared provider credential is cleared, so a machine key never makes a call billable.
+for (const k of ['WAVESPEED_API_KEY', 'REPLICATE_API_TOKEN']) delete process.env[k];
 
 const BAGS = { blueprint: { output_formats: ['1920x1920'], transition: 'none' } };
 

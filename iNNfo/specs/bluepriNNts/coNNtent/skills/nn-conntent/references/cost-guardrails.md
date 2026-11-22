@@ -5,9 +5,13 @@ by prose. One day of unguarded runs once spent about $21: six non-fast
 `infinitetalk` avatar jobs fired in seven seconds, a voice cloned three times,
 and identical TTS lines regenerated.
 
-A call is **billable** only when it would actually reach a provider (a
-`WAVESPEED_API_KEY` / `REPLICATE_API_TOKEN` is configured and the call is a cache
-miss). Cache hits and keyless local/offline synthesis are free and never gated.
+A call is **billable** only when it would actually reach a provider (the credential
+variable its Model's catalog `Provider` names in `env_key`, such as `WAVESPEED_API_KEY`
+or `REPLICATE_API_TOKEN`, is set, and the call is a cache miss). Cache hits and
+keyless local/offline synthesis are free and never gated. Each call is routed by its
+Model: the Provider's declared transport (`api_base`, `submit_path`, `poll_path`,
+`auth_scheme`) is the only place a provider URL lives, and a model or provider the
+merged catalog does not declare is refused before any request.
 
 ## 1. `video-guard.json` (workspace root)
 

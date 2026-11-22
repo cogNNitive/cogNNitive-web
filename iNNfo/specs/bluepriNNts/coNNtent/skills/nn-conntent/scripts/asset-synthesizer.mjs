@@ -4,7 +4,9 @@
  * nn-conntent/scripts/asset-synthesizer.mjs
  *
  * Deterministic TTS and media asset synthesis with content-addressed caching.
- * Adapts the WaveSpeed and Replicate media providers with graceful local fallbacks.
+ * Every billable call is routed by its Model: the catalog names the Model's Provider and the
+ * Provider declares its transport (lib/provider-transport.mjs). A model whose provider has no
+ * credential in the environment gets a free local placeholder instead.
  * Measures audio duration via ffprobe (with a provider-reported duration fallback).
  *
  * Zero external mandatory runtime dependencies. ESM module.
@@ -14,7 +16,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { CacheManager } from './cache-manager.mjs';
-import { SpendGuard, loadGuard, isSystemVoice } from './lib/video-guard.mjs';
+import { SpendGuard, loadGuard, isSystemVoice, assertModelAllowed } from './lib/video-guard.mjs';
+import { loadMergedCatalog, resolveModel } from './lib/catalog.mjs';
+import {
+  providerRoute,
+  envKeyFor,
+  declaredEnvKeys,
+  taskIdOf,
+  jobStateOf,
+  statusOf,
+  outputUrlOf,
+} from './lib/provider-transport.mjs';
 import { resolveRegisteredVoice, mapTtsLanguage } from './lib/tts-options.mjs';
 import { resolve } from './lib/cascade.mjs';
 import { buildAvatarRequest } from './lib/avatar-request.mjs';
@@ -66,8 +78,6 @@ export async function probeAudioDuration(filePath, deps = {}) {
   return seconds;
 }
 
-const WAVESPEED_BASE = 'https://api.wavespeed.ai/api/v3/';
-
 /**
  * Raised when a provider call fails AFTER it may have been billed (HTTP error, failed task,
  * poll timeout, empty output). The task id is kept so the user can look the job up instead of
@@ -103,8 +113,7 @@ export class AssetSynthesizer {
   /**
    * @param {Object} [options]
    * @param {CacheManager} [options.cacheManager]
-   * @param {string} [options.ttsProvider="local"] TTS provider hint.
-   * @param {string} [options.mediaProvider="local"] "replicate" | "local" | "mock"
+   * @param {{ models: object, providers: object }} [options.catalog] Merged model catalog (defaults to the guard root's).
    * @param {SpendGuard} [options.guard] Spend guard. Without one the synthesizer FAILS CLOSED: billable calls are refused.
    * @param {{ image?: string, tts?: string, avatar?: string }} [options.defaultModels] Models used when a call names no provider model.
    * @param {Record<string, Record<string, unknown>>} [options.bags] Cascade bags supplying the fallback model ids (design D10).
@@ -121,8 +130,7 @@ export class AssetSynthesizer {
     /** Duration-probe seams (parseMedia, nodeReader, loadModules); tests only. */
     this.probeDeps = options.probeDeps || {};
     this.cacheManager = options.cacheManager || new CacheManager();
-    this.ttsProvider = options.ttsProvider || this.env.TTS_PROVIDER || 'local';
-    this.mediaProvider = options.mediaProvider || this.env.MEDIA_PROVIDER || 'local';
+    this._catalogValue = options.catalog || null;
     const chosen = Object.fromEntries(Object.entries(options.defaultModels || {}).filter(([, v]) => v));
     // Fallback defaults come from the cascade (design D10), never a constant:
     // the caller passes resolved bags, and an explicit `defaultModels` wins.
@@ -168,12 +176,45 @@ export class AssetSynthesizer {
     return { assetPath: null, sha256, fromCache: false, dryRun: true, fileSizeBytes: 0 };
   }
 
-  /** True when TTS would go to the MiniMax provider path (otherwise: local synthetic audio). @private */
-  _useMiniMax() {
-    return (
-      this.ttsProvider.includes('minimax') ||
-      Boolean(this.env.WAVESPEED_API_KEY || this.env.REPLICATE_API_TOKEN)
-    );
+  /** The merged catalog every call is routed through (loaded once, from the guard root). @private */
+  _catalog() {
+    if (!this._catalogValue) this._catalogValue = loadMergedCatalog({ domainRoot: this.guard.root });
+    return this._catalogValue;
+  }
+
+  /**
+   * The credential a call to `model` would use: its Provider's `env_key` and value. A model
+   * the catalog does not declare is billable as soon as ANY declared provider has a credential,
+   * so it reaches the fail-closed refusal in `_routeFor` instead of a silent placeholder.
+   * @private
+   */
+  _credentialFor(model) {
+    const envKey = envKeyFor(this._catalog(), model);
+    if (envKey) return { envKey, value: this.env[envKey] };
+    const any = declaredEnvKeys(this._catalog()).find((k) => this.env[k]);
+    return { envKey: null, value: any ? this.env[any] : undefined };
+  }
+
+  /** The catalog Model a call names, or null when the catalog does not declare it. @private */
+  _declaredModel(model) {
+    try {
+      return resolveModel(this._catalog(), model);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * The provider route of a billable call, resolved BEFORE any spend. The guard's own model
+   * check runs first so a blocked or unlisted model keeps its ModelBlockedError; then a model
+   * or provider the catalog does not declare is refused (CatalogError). Dry-run plans only:
+   * the guard records the call and nothing is routed.
+   * @private
+   */
+  _routeFor(model, { checkGuard = true } = {}) {
+    if (this.guard.dryRun) return null;
+    if (checkGuard) assertModelAllowed(model, { config: this.guard.config, allowBlocked: this.guard.allowModels || [] });
+    return providerRoute(this._catalog(), model);
   }
 
   /** @private */
@@ -228,7 +269,7 @@ export class AssetSynthesizer {
   }
 
   /**
-   * Submits a WaveSpeed job (or, with `resumeTaskId`, only polls an existing one) and polls it
+   * Submits a provider job along its `route` (or, with `resumeTaskId`, only polls an existing one) and polls it
    * to completion. EVERYTHING after the submit rethrows as a BillingFailureError that carries the
    * task id, so a billed task is never lost:
    *   - `timedOut`: the window ended (resumable);
@@ -240,8 +281,10 @@ export class AssetSynthesizer {
    * (`backoff`); transient poll exceptions are tolerated until the window ends.
    * @private
    */
-  async _runWaveSpeedJob({ model, body, maxPolls, intervalMs, what, windowMs, backoff, resumeTaskId, onSubmitting, onSubmitted, track = {} }) {
-    const key = this.env.WAVESPEED_API_KEY;
+  async _runProviderJob({ route, body, maxPolls, intervalMs, what, windowMs, backoff, resumeTaskId, onSubmitting, onSubmitted, track = {} }) {
+    const model = route.apiId;
+    const key = this.env[route.envKey];
+    const authorization = route.authorization(key);
     const snippet = async (res) => {
       try {
         return typeof res.text === 'function' ? ' Response: ' + String(await res.text()).slice(0, 300) : '';
@@ -263,10 +306,10 @@ export class AssetSynthesizer {
       }
       let res;
       try {
-        res = await this._fetch(WAVESPEED_BASE + model, {
+        res = await this._fetch(route.submitUrl(model), {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },
-          body: JSON.stringify(body),
+          headers: { 'Content-Type': 'application/json', Authorization: authorization },
+          body: JSON.stringify(route.wrap(model, body)),
         });
       } catch (e) {
         throw new BillingFailureError(
@@ -287,7 +330,7 @@ export class AssetSynthesizer {
       } catch (e) {
         throw new BillingFailureError(what + ' response could not be read (' + e.message + '); the job MAY HAVE BEEN BILLED.', { mayHaveBeenBilled: true, retryable: true });
       }
-      const rawId = data.data?.id || data.id || data.task_id;
+      const rawId = taskIdOf(data);
       if (!rawId) {
         throw new BillingFailureError(what + ' request to ' + model + ' returned no task id; it MAY HAVE BEEN BILLED. Check the provider dashboard.', { mayHaveBeenBilled: true, retryable: true });
       }
@@ -307,17 +350,18 @@ export class AssetSynthesizer {
       if (backoff) delay = Math.min(Math.round(delay * backoff.factor), backoff.maxMs);
       let pollData;
       try {
-        const pollRes = await this._fetch(WAVESPEED_BASE + 'predictions/' + taskId + '/result', {
-          headers: { Authorization: 'Bearer ' + key },
+        const pollRes = await this._fetch(route.pollUrl(taskId), {
+          headers: { Authorization: authorization },
         });
         if (!pollRes.ok) continue;
         pollData = await pollRes.json();
       } catch {
         continue; // transient network/parse error: keep polling until the window ends
       }
-      const status = pollData.data?.status || pollData.status;
-      if (status === 'completed' || status === 'succeeded') {
-        const url = pollData.data?.outputs?.[0] || pollData.outputs?.[0];
+      const status = statusOf(pollData);
+      const state = jobStateOf(pollData);
+      if (state === 'done') {
+        const url = outputUrlOf(pollData);
         if (!url) throw new BillingFailureError(what + ' task ' + taskId + ' completed without an output.', { taskId, retryable: true });
         try {
           const dl = await this._fetch(url);
@@ -329,7 +373,7 @@ export class AssetSynthesizer {
           throw new BillingFailureError(what + ' task ' + taskId + ' output download failed (' + e.message + '); resume to download it again.', { taskId, retryable: true });
         }
       }
-      if (status === 'failed' || status === 'canceled' || status === 'cancelled' || status === 'error') {
+      if (state === 'failed') {
         const why = pollData.data?.error || pollData.error;
         throw new BillingFailureError(what + ' task ' + taskId + ' ended with status "' + status + '".' + (why ? ' ' + String(why).slice(0, 300) : ''), { taskId });
       }
@@ -338,42 +382,6 @@ export class AssetSynthesizer {
       'Timed out waiting for ' + what + ' task ' + taskId + ' (' + model + '); it may still be running or billed. Check the provider dashboard before retrying.',
       { taskId, timedOut: true, retryable: true },
     );
-  }
-
-  /**
-   * Replicate image prediction with the same fail-loud contract. `aspectRatio` is the
-   * resolved size's aspect (spec S4); without one the provider default applies. @private
-   */
-  async _runReplicateImageJob(prompt, aspectRatio) {
-    const token = this.env.REPLICATE_API_TOKEN;
-    const input = aspectRatio ? { prompt, aspect_ratio: aspectRatio } : { prompt };
-    const res = await this._fetch('https://api.replicate.com/v1/predictions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Token ' + token },
-      body: JSON.stringify({ version: 'black-forest-labs/flux-schnell', input }),
-    });
-    if (!res.ok) throw new BillingFailureError('Replicate image request failed (HTTP ' + res.status + ').');
-    const prediction = await res.json();
-    const pollUrl = prediction.urls?.get;
-    if (!pollUrl) throw new BillingFailureError('Replicate returned no poll URL; the prediction may still have been billed.');
-    for (let i = 0; i < 15; i++) {
-      await this._sleep(2000);
-      const pollRes = await this._fetch(pollUrl, { headers: { Authorization: 'Token ' + token } });
-      if (!pollRes.ok) continue;
-      const pollData = await pollRes.json();
-      if (pollData.status === 'succeeded' && pollData.output) {
-        const url = Array.isArray(pollData.output) ? pollData.output[0] : pollData.output;
-        const dl = await this._fetch(url);
-        if (!dl.ok) throw new BillingFailureError('Replicate output download failed (HTTP ' + dl.status + ').');
-        const buf = Buffer.from(await dl.arrayBuffer());
-        if (buf.length === 0) throw new BillingFailureError('Replicate returned an empty file.');
-        return buf;
-      }
-      if (pollData.status === 'failed' || pollData.status === 'canceled') {
-        throw new BillingFailureError('Replicate prediction ended with status "' + pollData.status + '".');
-      }
-    }
-    throw new BillingFailureError('Timed out waiting for the Replicate prediction; it may still be billed. Check the dashboard before retrying.');
   }
 
   /**
@@ -407,7 +415,9 @@ export class AssetSynthesizer {
     const sha256 = this.cacheManager.computeHash(cleanText, options);
     // A keyless run keeps its silence under `<key>-offline`, mirroring avatars: the
     // real key can never be poisoned, and an offline re-run is still a cache hit.
-    const billable = this._useMiniMax() && Boolean(this.env.WAVESPEED_API_KEY);
+    const model = this._resolveTtsModel(options, meta);
+    const credential = this._credentialFor(model);
+    const billable = Boolean(credential.value);
     const cacheKey = billable ? sha256 : sha256 + '-offline';
     const cachedPath = await this.cacheManager.get(cacheKey, 'mp3', 'tts');
 
@@ -419,10 +429,7 @@ export class AssetSynthesizer {
     }
     if (!billable) {
       if (this.guard.dryRun) return this._skipped(sha256);
-      if (this.env.WAVESPEED_API_KEY) {
-        throw new Error('TTS synthesis failed: WAVESPEED_API_KEY is present but MiniMax provider is not configured or unsupported');
-      }
-      console.warn(`[asset-synthesizer] WARNING: WAVESPEED_API_KEY is not set. Generating silent synthetic audio placeholder for TTS (offline/test mode: zero voice content).`);
+      console.warn(`[asset-synthesizer] WARNING: ${credential.envKey || 'no provider credential'} is not set for ${model}. Generating silent synthetic audio placeholder for TTS (offline/test mode: zero voice content).`);
       // Stored under its own key, so a later keyed run never gets a hit on silence.
       // The logical hash stays the real one: callers key other artifacts by it.
       const stored = await this._storeTts(cacheKey, this._generateSyntheticAudio(cleanText, options));
@@ -432,7 +439,7 @@ export class AssetSynthesizer {
     return this._singleFlight('tts:' + sha256, async () => {
       if (this._alreadyPlanned('tts:' + sha256)) return this._skipped(sha256);
       const voiceId = this._voiceIdToSend(options);
-      const model = this._resolveTtsModel(options, meta);
+      const route = this._routeFor(model);
       const ticket = await this.guard.authorize({
         kind: 'tts',
         model,
@@ -441,8 +448,8 @@ export class AssetSynthesizer {
       });
       if (!ticket) return this._skipped(sha256);
       const audioBuffer = await this._billed(ticket, () =>
-        this._runWaveSpeedJob({
-          model,
+        this._runProviderJob({
+          route,
           what: 'TTS',
           maxPolls: 20,
           intervalMs: 1500,
@@ -496,8 +503,12 @@ export class AssetSynthesizer {
       return { assetPath: cachedPath, sha256, fromCache: true, fileSizeBytes: fs.statSync(cachedPath).size };
     }
 
-    if (!this.env.WAVESPEED_API_KEY) {
-      if (meta.cacheKey) throw new Error('WAVESPEED_API_KEY is not set: refusing to produce a placeholder avatar.');
+    const model = resolveModelId(avatarOptions.model, this.defaultModels.avatar);
+    const credential = this._credentialFor(model);
+    if (!credential.value) {
+      if (meta.cacheKey) {
+        throw new Error((credential.envKey ? credential.envKey + ' is not set' : 'No provider credential is set') + ': refusing to produce a placeholder avatar.');
+      }
       if (this.guard.dryRun) return this._skipped(sha256);
       // Offline placeholder: stored under its own key so it can never be served once a real key exists.
       const stub = Buffer.from([0x00, 0x00, 0x00, 0x18, 0x66, 0x74, 0x79, 0x70]);
@@ -506,15 +517,16 @@ export class AssetSynthesizer {
     }
 
     if (this._alreadyPlanned('avatar:' + sha256)) return this._skipped(sha256);
-    const model = resolveModelId(avatarOptions.model, this.defaultModels.avatar);
     const resumeId = meta.resumeTaskId;
-    const resolution = avatarOptions.resolution || defaultResolutionFor(model);
+    const resolution = avatarOptions.resolution || defaultResolutionFor(this._declaredModel(model));
     let ticket = null;
     let estUsd = 0;
     let request = null;
+    // A resumed task was authorized when it was submitted: it is only polled, never re-checked.
+    let route = resumeId ? this._routeFor(model, { checkGuard: false }) : null;
     if (!resumeId) {
       // Everything that can be checked is checked BEFORE any spend: inputs (fail closed), duration, cap.
-      request = buildAvatarRequest({ imagePath, audioPath, resolution });
+      request = buildAvatarRequest({ imagePath, audioPath, resolution, requestMap: this._declaredModel(model)?.request_map });
       const seconds =
         Number(meta.durationSeconds) || Number(avatarOptions.durationSeconds) || (await probeAudioDuration(audioPath, this.probeDeps)) || 0;
       if (!(seconds > 0)) {
@@ -525,6 +537,7 @@ export class AssetSynthesizer {
         throw new Error('The avatar audio is ' + seconds + 's, over maxAvatarSeconds (' + maxSeconds + 's) in video-guard.json: refusing to bill it.');
       }
       estUsd = estimateCallUsd('avatar', model, { seconds });
+      route = this._routeFor(model);
       ticket = await this.guard.authorize({ kind: 'avatar', model, estUsd, ref: meta.ref });
       if (!ticket) return this._skipped(sha256);
     }
@@ -539,8 +552,8 @@ export class AssetSynthesizer {
     let assetPath;
     let raw;
     try {
-      raw = await this._runWaveSpeedJob({
-        model,
+      raw = await this._runProviderJob({
+        route,
         what: 'Avatar',
         maxPolls: 30,
         intervalMs: meta.intervalMs ?? 2000,
@@ -594,7 +607,15 @@ export class AssetSynthesizer {
   async resolveMedia(prompt, options = {}, meta = {}) {
     const cleanPrompt = (prompt || '').trim();
     const sha256 = this.cacheManager.computeHash(cleanPrompt, options);
-    const billable = Boolean(this.env.WAVESPEED_API_KEY || this.env.REPLICATE_API_TOKEN);
+    const imageModel = this._resolveMediaModel(options, meta);
+    const billable = Boolean(this._credentialFor(imageModel).value);
+    if (billable && !imageModel) {
+      // The blueprint pins no vendor model: the domain plugs one in (refused before any spend or plan line).
+      throw new Error(
+        'No image_model resolved for this prompted layer. The blueprint pins no vendor model: declare `image_model:: <api_id>` ' +
+          '(a merged-catalog image Model) in the domain video-defaults_NN.md, or on the Series, Preset, Video or Scene. Nothing was spent.',
+      );
+    }
     const cacheKey = billable ? sha256 : sha256 + '-offline';
     const cachedPath = await this.cacheManager.get(cacheKey, 'png', 'images');
     if (cachedPath) {
@@ -638,16 +659,17 @@ export class AssetSynthesizer {
 
   /**
    * Generates a visual asset at the resolved `options.size` (spec S4, derived from the
-   * primary format unless set): a billable provider image when a key is configured
-   * (WaveSpeed first, otherwise Replicate; one provider only, never both), or a free local
-   * placeholder when no key exists, drawn at that size or else at `meta.canvas` (the
-   * primary canvas). Returns null in dry-run.
+   * primary format unless set): a billable image from the resolved model's own Provider when
+   * that Provider's credential is set (one provider only, never a second one), or a free
+   * local placeholder otherwise, drawn at that size or else at `meta.canvas` (the primary
+   * canvas). Returns null in dry-run.
    * @private
    */
   async _generateMediaFromPrompt(prompt, options = {}, meta = {}) {
     const size = parseImageSize(options.size);
-    if (this.env.WAVESPEED_API_KEY) {
-      const model = this._resolveMediaModel(options, meta);
+    const model = this._resolveMediaModel(options, meta);
+    if (this._credentialFor(model).value) {
+      const route = this._routeFor(model);
       const ticket = await this.guard.authorize({
         kind: 'image',
         model,
@@ -656,27 +678,15 @@ export class AssetSynthesizer {
       });
       if (!ticket) return null;
       return this._billed(ticket, () =>
-        this._runWaveSpeedJob({
-          model,
+        this._runProviderJob({
+          route,
           what: 'Image',
           maxPolls: 30,
           intervalMs: 2000,
-          // WaveSpeed takes `W*H`; without a resolved size the provider default applies.
-          body: size ? { prompt, size: size.width + '*' + size.height } : { prompt },
+          // Without a resolved size the provider default applies.
+          body: imageRequestBody(prompt, size, route.sizeFormat),
         }),
       );
-    }
-
-    if (this.env.REPLICATE_API_TOKEN) {
-      const model = 'black-forest-labs/flux-schnell';
-      const ticket = await this.guard.authorize({
-        kind: 'image',
-        model,
-        estUsd: estimateCallUsd('image', model),
-        ref: meta.ref,
-      });
-      if (!ticket) return null;
-      return this._billed(ticket, () => this._runReplicateImageJob(prompt, size ? replicateAspectRatio(size) : undefined));
     }
 
     // 3. High-quality artistic visual scene composition
@@ -688,8 +698,8 @@ export class AssetSynthesizer {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&apos;');
 
-    const provider = escapeXml(options.provider || 'WaveSpeed');
-    const model = escapeXml(options.model || 'wavespeed-v1-flux');
+    const provider = escapeXml(options.provider || 'Offline');
+    const modelLabel = escapeXml(options.model || 'placeholder');
     const title = escapeXml(options.title || options.layer_name || 'SCENE LAYER');
     const cleanPrompt = escapeXml(prompt);
     const accent = options.accentColor || '#e11d48';
@@ -742,7 +752,7 @@ export class AssetSynthesizer {
       <!-- Top Badge -->
       <rect x="80" y="70" width="380" height="54" rx="27" fill="${themeHighlight}" fill-opacity="0.2" stroke="${themeHighlight}" stroke-width="2"/>
       <text x="270" y="105" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="${themeHighlight}" text-anchor="middle" letter-spacing="2">${provider.toUpperCase()} AI ENGINE</text>
-      <text x="1840" y="108" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="bold" fill="#94a3b8" text-anchor="end">${model}</text>
+      <text x="1840" y="108" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="bold" fill="#94a3b8" text-anchor="end">${modelLabel}</text>
 
       <!-- Main Visual Subject Card -->
       <g filter="url(#cardShadow)">
@@ -807,6 +817,16 @@ function offlineCanvas(size, canvas) {
   if (size) return size;
   if (canvas && Number(canvas.width) > 0 && Number(canvas.height) > 0) return { width: Number(canvas.width), height: Number(canvas.height) };
   return OFFLINE_DEFAULT_CANVAS;
+}
+
+/**
+ * The image request body for a Provider's `size_format`: `star` sends `size: "W*H"`,
+ * `aspect_ratio` sends the nearest supported `aspect_ratio`. Without a size, the prompt only.
+ */
+export function imageRequestBody(prompt, size, sizeFormat = 'star') {
+  if (!size) return { prompt };
+  if (sizeFormat === 'aspect_ratio') return { prompt, aspect_ratio: replicateAspectRatio(size) };
+  return { prompt, size: size.width + '*' + size.height };
 }
 
 /**

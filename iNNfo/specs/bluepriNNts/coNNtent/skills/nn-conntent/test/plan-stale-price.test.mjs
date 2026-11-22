@@ -78,3 +78,15 @@ test('a stale price never changes the plan hash or the total', () => {
   assert.match(stale, /total_usd: 0\.02/, 'the total is still reported');
   assert.match(fresh, /plan_hash: f{64}/);
 });
+
+test('a Model\'s own stale_after_days sets its staleness threshold (default 90 days)', async () => {
+  const { stalePricesOf } = await import('../scripts/asset-cost-estimator.mjs');
+  const catalog = {
+    models: {
+      strict: { slug: 'strict', api_id: 'acme/strict', price_date: '2026-11-01', stale_after_days: 10 },
+      lenient: { slug: 'lenient', api_id: 'acme/lenient', price_date: '2026-11-01' },
+    },
+  };
+  const now = new Date('2026-11-20T00:00:00Z');
+  assert.deepEqual(stalePricesOf(['acme/strict', 'acme/lenient'], now, catalog), [{ model: 'acme/strict', priceDate: '2026-11-01' }]);
+});

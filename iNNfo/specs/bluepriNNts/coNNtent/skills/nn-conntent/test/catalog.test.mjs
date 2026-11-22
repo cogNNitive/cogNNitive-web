@@ -5,15 +5,15 @@
  *
  * The merged model catalog (capability video-model-catalog): reference + domaiNN overlay
  * merged per Model slug with the overlay winning, the allowlist, loud failures for unknown,
- * disallowed, blocked and unpriced models, price staleness, and adapter ↔ catalog control
- * parity with intent translation.
+ * disallowed, blocked and unpriced models, price staleness, and intent translation against
+ * the catalog's declared controls (the catalog is authoritative; no adapter files).
  */
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 
 import {
   CatalogError,
@@ -24,6 +24,7 @@ import {
   parseCatalog,
   resolveModel,
 } from '../scripts/lib/catalog.mjs';
+import { translateIntent } from '../scripts/lib/intent.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ADAPTERS = path.resolve(HERE, '..', 'scripts', 'adapters');
@@ -41,7 +42,6 @@ provider:: wavespeed
 api_id:: vendor/alpha
 capability:: tts
 controls:: [speed, emotion]
-adapter:: minimax-speech
 price:: 0.02
 price_unit:: per_1k_chars
 price_date:: 2026-11-02
@@ -54,7 +54,6 @@ api_id:: vendor/beta
 capability:: image
 controls:: [size]
 sizes:: [1024x1024]
-adapter:: wavespeed-image
 price:: 0.005
 price_unit:: per_image
 price_date:: 2026-11-02
@@ -148,34 +147,29 @@ test('a price older than the threshold is stale, a fresh one is not', () => {
   assert.equal(isPriceStale('not-a-date', { now }), true);
 });
 
-test('the shipped catalog is complete and every model names a real adapter with the same controls', async () => {
+test('the shipped catalog is complete and declares the values of every control it names', () => {
   const catalog = loadMergedCatalog({ overlay: null });
   assert.ok(Object.keys(catalog.models).length >= 8, 'the reference catalog ships the allowed models');
   assert.ok(catalog.allowed.includes('infinitetalk-fast'), 'infinitetalk is an active, allowed avatar model');
   for (const model of Object.values(catalog.models)) {
-    assert.ok(model.adapter, `${model.slug} names an adapter`);
-    const file = path.join(ADAPTERS, `${model.adapter}.mjs`);
-    assert.ok(fs.existsSync(file), `adapter file for ${model.slug} exists`);
-    const { default: adapter } = await import(pathToFileURL(file).href);
-    assert.equal(adapter.capability, String(model.capability), `${model.slug}: capability matches`);
-    assert.deepEqual(
-      [...adapter.controls].sort(),
-      [...(model.controls || [])].map(String).sort(),
-      `${model.slug}: adapter controls equal the catalog controls`,
-    );
+    const controls = (model.controls || []).map(String);
+    if (controls.includes('size')) assert.ok(model.sizes?.length > 0, `${model.slug} declares its sizes`);
+    if (controls.includes('resolution')) assert.ok(model.resolutions?.length > 0, `${model.slug} declares its resolutions`);
+    assert.equal(model.adapter, undefined, `${model.slug} names no adapter file (the catalog is authoritative)`);
   }
+  assert.equal(fs.existsSync(ADAPTERS), false, 'no per-model adapter files remain');
 });
 
-test('intent translation maps declared controls and refuses an undeclared one', async () => {  const catalog = loadMergedCatalog({ overlay: null });
+test('intent translation maps declared controls and refuses an undeclared one', () => {
+  const catalog = loadMergedCatalog({ overlay: null });
   const tts = catalog.models['minimax-speech-2-8-hd'];
-  const { default: speech } = await import(pathToFileURL(path.join(ADAPTERS, 'minimax-speech.mjs')).href);
-  assert.deepEqual(speech.translate({ voice_speed: '1.1', voice_emotion: 'calm' }, tts), { speed: 1.1, emotion: 'calm' });
+  assert.deepEqual(translateIntent({ voice_speed: '1.1', voice_emotion: 'calm' }, tts), { speed: 1.1, emotion: 'calm' });
   assert.throws(
-    () => speech.translate({ image_size: '1024x1024' }, tts),
+    () => translateIntent({ image_size: '1024x1024' }, tts),
     /unsupported-control/,
     'an image size is not a control of a TTS model',
   );
-  assert.throws(() => speech.translate({ scene_duration: '5' }, tts), /unsupported-intent/);
+  assert.throws(() => translateIntent({ scene_duration: '5' }, tts), /unsupported-intent/);
 });
 
 test('an image size the model does not offer is refused before spend', async () => {

@@ -21,7 +21,7 @@
  * overrides). A per-job lock stops two processes submitting the same job. A timeout exits 3
  * with the exact `--resume <task-id>` command; resume never re-submits or re-charges.
  *
- * Unverified: the WaveSpeed infinitetalk-fast request/response schema (see lib/avatar-request.mjs).
+ * Unverified: the default avatar model's request/response schema (see lib/avatar-request.mjs).
  *
  * Zero external dependencies. ESM module.
  */
@@ -41,6 +41,8 @@ import { withScriptPresets } from './lib/video-scope.mjs';
 import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
 import { LOCKS_RELATIVE_DIR, SpendGuard, normalizeModelId, resolveDefaultCacheDir } from './lib/video-guard.mjs';
 import { loadGuardWithVoices } from './lib/guard-config.mjs';
+import { loadMergedCatalog } from './lib/catalog.mjs';
+import { envKeyFor } from './lib/provider-transport.mjs';
 import { collectAvatarJobs, checkAvatarAssetAspect, checkAvatarUpscale } from './lib/avatar-jobs.mjs';
 import { probeVideoSize } from './lib/media-duration.mjs';
 import { appendPending, findOutstanding, latestPending } from './lib/pending-predictions.mjs';
@@ -146,6 +148,7 @@ export async function synthesizeAvatars(o) {
 
   // 1. Collect and validate every job BEFORE any spend: image, audio (fresh), measurable, not too long.
   const readCache = new CacheManager({ baseDir: cacheDir, readOnly: true });
+  const catalog = o.catalog || loadMergedCatalog({ domainRoot: loaded.root });
   const { jobs: raw, problems, skipped } = collectAvatarJobs({
     parsed,
     scriptDir,
@@ -154,6 +157,7 @@ export async function synthesizeAvatars(o) {
     config: loaded.config,
     models,
     bags,
+    catalog,
   });
   if (problems.length) throw new Error(problems.join('\n'));
 
@@ -272,8 +276,12 @@ export async function synthesizeAvatars(o) {
     const blocked = todo.map((j) => ({ job: j, rec: outstandingOf(j) })).filter((x) => x.rec);
     if (blocked.length > 0) throw new OutstandingJobError(outstandingMessage(blocked), blocked);
   }
-  if (todo.length > 0 && !env.WAVESPEED_API_KEY) {
-    throw new Error('WAVESPEED_API_KEY is not set: avatar synthesis needs a provider key (no placeholder clip is ever produced).');
+  for (const j of todo) {
+    const envKey = envKeyFor(catalog, j.model);
+    if (!envKey) continue; // an undeclared model is refused by the synthesizer, before any spend
+    if (!env[envKey]) {
+      throw new Error(envKey + ' is not set: avatar synthesis with ' + j.model + ' needs its provider key (no placeholder clip is ever produced).');
+    }
   }
   if (!o.resume) planGuard.assertPlanAffordable(); // refuses the WHOLE batch before the first charge
   await o.onPreflightPassed?.();
@@ -288,6 +296,7 @@ export async function synthesizeAvatars(o) {
     sleep: o.sleep,
     now: o.now,
     defaultModels: models,
+    catalog,
   });
 
   function outstandingMessage(blocked) {
@@ -388,7 +397,7 @@ export const USAGE = [
   '  --poll-window <minutes>  bounded polling window per job (default 20)',
   '  --allow-model <name>     unlock a blocked model (repeatable)',
   '  --cache-dir <dir>        cache dir (default <workspace>/.cognnitive/cache/video)',
-  'Run compile first (it populates the TTS cache this reads; no staged audio file; an entry for older narration is not served). Needs WAVESPEED_API_KEY.',
+  'Run compile first (it populates the TTS cache this reads; no staged audio file; an entry for older narration is not served). Needs the credential variable (env_key) of the catalog Provider of the avatar model.',
   'Billed seconds = ceil(measured audio seconds); audio over maxAvatarSeconds is refused.',
   'Exit codes: 0 ok, 1 refused or failed, 3 resumable (timeout or recoverable failure; the exact command is printed).',
 ].join('\n');

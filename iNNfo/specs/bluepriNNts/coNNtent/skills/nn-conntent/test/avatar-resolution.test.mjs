@@ -5,52 +5,71 @@ import os from 'node:os'
 import path from 'node:path'
 import {
   defaultResolutionFor,
-  validResolutionsFor,
   normalizeAvatarResolution,
   collectAvatarJobs,
 } from '../scripts/lib/avatar-jobs.mjs'
+import * as avatarJobs from '../scripts/lib/avatar-jobs.mjs'
+import * as videoGuard from '../scripts/lib/video-guard.mjs'
+import { loadMergedCatalog } from '../scripts/lib/catalog.mjs'
 import { SceneCompiler } from '../scripts/scene-compiler.mjs'
 
 for (const k of ['WAVESPEED_API_KEY', 'REPLICATE_API_TOKEN', 'TTS_PROVIDER', 'MEDIA_PROVIDER'])
   delete process.env[k]
 
 const PRUNA = 'pruna-ai/p-video-2-pro/avatar'
-const INF = 'wavespeed-ai/infinitetalk-fast'
-
-test('pruna accepts 480p/768p and defaults to 480p', () => {
-  assert.deepEqual(validResolutionsFor(PRUNA), ['480p', '768p'])
-  assert.equal(defaultResolutionFor(PRUNA), '480p')
-  assert.equal(normalizeAvatarResolution('768p', PRUNA), '768p')
-  assert.equal(normalizeAvatarResolution(undefined, PRUNA), '480p')
-  assert.throws(() => normalizeAvatarResolution('720p', PRUNA), /not supported/)
+const PRUNA_PVIDEO = 'pruna-ai/p-video/avatar'
+const avatarModel = (slug, apiId, resolutions, controls = ['resolution']) => ({
+  slug,
+  provider: 'wavespeed',
+  api_id: apiId,
+  capability: 'avatar',
+  controls,
+  resolutions,
+  price: 0.02,
+  price_unit: 'per_second',
+  price_date: '2026-11-02',
+  status: 'active',
 })
+// Two models of the same provider and family, declared as catalog data only (#752 step 3).
+const reference = loadMergedCatalog({ overlay: null })
+const catalog = {
+  ...reference,
+  models: {
+    ...reference.models,
+    'p-video-2-pro-avatar': avatarModel('p-video-2-pro-avatar', PRUNA, ['480p', '768p']),
+    'p-video-avatar': avatarModel('p-video-avatar', PRUNA_PVIDEO, ['720p', '1080p']),
+  },
+}
+const INF = reference.models['infinitetalk-fast']
 
-test('infinitetalk keeps 720p', () => {
+test('the shipped infinitetalk model declares its resolutions and defaults to 720p', () => {
   assert.equal(defaultResolutionFor(INF), '720p')
   assert.equal(normalizeAvatarResolution(undefined, INF), '720p')
-  assert.doesNotThrow(() => normalizeAvatarResolution('720p', INF))
+  for (const r of ['480p', '720p', '768p']) assert.equal(normalizeAvatarResolution(r, INF), r)
+  assert.throws(() => normalizeAvatarResolution('1080p', INF), /not supported/)
 })
 
-const PRUNA_PVIDEO = 'pruna-ai/p-video/avatar'
-
-test('pruna p-video avatar takes 720p only, not the 480p default of its sibling', () => {
-  assert.deepEqual(validResolutionsFor(PRUNA_PVIDEO), ['720p'])
-  assert.equal(defaultResolutionFor(PRUNA_PVIDEO), '720p')
-  assert.equal(normalizeAvatarResolution(undefined, PRUNA_PVIDEO), '720p')
-  // The provider rejects 480p for this model, so the request must fail here, before
-  // any audio has been paid for, instead of after the upload.
-  assert.throws(() => normalizeAvatarResolution('480p', PRUNA_PVIDEO), /not supported/)
+test('p-video-2-pro and p-video are validated from their own declarations, with no vendor code', () => {
+  const pro = catalog.models['p-video-2-pro-avatar']
+  assert.equal(defaultResolutionFor(pro), '480p')
+  assert.equal(normalizeAvatarResolution('768p', pro), '768p')
+  assert.throws(() => normalizeAvatarResolution('720p', pro), /not supported/)
+  const pvideo = catalog.models['p-video-avatar']
+  assert.equal(defaultResolutionFor(pvideo), '720p')
+  // 1080p is reachable: the select no longer has a global enum, the model decides.
+  assert.equal(normalizeAvatarResolution('1080p', pvideo), '1080p')
+  assert.throws(() => normalizeAvatarResolution('768p', pvideo), /not supported/)
 })
 
-test('resolution profiles are keyed by api_id, not by vendor substring', () => {
-  assert.notDeepEqual(validResolutionsFor(PRUNA), validResolutionsFor(PRUNA_PVIDEO))
-  // The replicate/ prefix is normalized away and the profile still matches.
-  assert.deepEqual(validResolutionsFor(`replicate/${PRUNA_PVIDEO}`), ['720p'])
+test('a resolution for a model that does not declare the resolution control is refused', () => {
+  const fixed = avatarModel('fixed', 'acme/fixed', [], [])
+  assert.throws(() => normalizeAvatarResolution('720p', fixed), /unsupported-control/)
 })
 
-test('an unknown avatar model keeps the schema list and the existing default', () => {
-  assert.deepEqual(validResolutionsFor('acme/unknown-avatar'), ['480p', '720p', '768p'])
-  assert.equal(defaultResolutionFor('acme/unknown-avatar'), '720p')
+test('the engine holds no resolution table: validResolutionsFor and the profiles are gone', () => {
+  assert.equal(avatarJobs.validResolutionsFor, undefined)
+  assert.equal(videoGuard.AVATAR_RESOLUTION_PROFILES, undefined)
+  assert.equal(videoGuard.avatarResolutionProfileFor, undefined)
 })
 
 test('the compiler lowers avatar_resolution onto the layer', () => {
@@ -128,6 +147,7 @@ test('collectAvatarJobs honors the layer resolution and keys differ by resolutio
       config: {},
       models: {},
       bags: {},
+      catalog,
     })
     assert.equal(jobs.length, 2)
     assert.equal(jobs[0].resolution, '768p')
@@ -143,6 +163,12 @@ test('episode whose Series declares kind Gancho resolves without unknown-kind in
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'av-gancho-'))
   try {
     fs.writeFileSync(path.join(dir, 'domaiNN_NN.md'), '# NN DomaiNN\n', 'utf8')
+    // The blueprint pins no vendor model: the domain defaults plug the avatar model in.
+    fs.writeFileSync(
+      path.join(dir, 'video-defaults_NN.md'),
+      '---\nlevel: 3\ntitle: "Video Defaults"\n---\n\n# NN Video Defaults\n\n## NN Video Defaults: Defaults\nslug:: defaults\navatar_model:: wavespeed-ai/infinitetalk-fast\n',
+      'utf8',
+    )
     const seriesDir = path.join(dir, 'series', 's')
     const episodeDir = path.join(seriesDir, 'assets', 'e')
     fs.mkdirSync(episodeDir, { recursive: true })
@@ -215,4 +241,15 @@ asset:: media/face.png
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })
   }
+})
+
+test('a model with the resolution control but no declared resolutions is refused before spend (B1)', () => {
+  // An overlay written before resolutions existed: the control is declared, its values are not.
+  const legacy = avatarModel('p-video-avatar', PRUNA_PVIDEO, undefined)
+  const refusal = (err) =>
+    /p-video\/avatar/.test(err.message) && /resolutions:: \[/.test(err.message)
+  assert.throws(() => normalizeAvatarResolution(undefined, legacy), refusal)
+  assert.throws(() => normalizeAvatarResolution('480p', legacy), refusal)
+  assert.throws(() => normalizeAvatarResolution('1080p', legacy), refusal)
+  assert.throws(() => defaultResolutionFor(legacy), refusal)
 })

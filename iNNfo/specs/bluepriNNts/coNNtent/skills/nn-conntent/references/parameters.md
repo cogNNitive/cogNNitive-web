@@ -70,7 +70,7 @@ Legend: ● can be written at this scope, · cannot.
 | `exit_animation` | string | — | · | · | · | · | · | · | ● | · | · | · | · | · |
 | `z_index` | string | — | · | · | · | · | · | · | ● | · | · | · | · | · |
 | `avatar_model` | string | — | ● | ● | · | ● | ● | ● | ● | · | · | · | · | · |
-| `avatar_resolution` | select | `480p`, `720p`, `768p` | · | · | · | · | · | · | ● | · | · | · | · | · |
+| `avatar_resolution` | string | — | · | · | · | · | · | · | ● | · | · | · | · | · |
 | `fit` | select (multi) | — | ● | ● | · | ● | ● | ● | ● | · | · | · | · | · |
 | `voice` | string | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
 | `voice_model` | string | — | ● | ● | · | ● | ● | ● | · | · | · | · | · | · |
@@ -91,12 +91,19 @@ Legend: ● can be written at this scope, · cannot.
 | `thumbnail_badge` | string | — | ● | ● | · | · | ● | · | · | · | · | · | · | · |
 | `name` | string | — | · | · | · | · | · | · | · | · | · | ● | · | · |
 | `api_base` | url | — | · | · | · | · | · | · | · | · | · | ● | · | · |
+| `env_key` | string | — | · | · | · | · | · | · | · | · | · | ● | · | · |
+| `auth_scheme` | string | — | · | · | · | · | · | · | · | · | · | ● | · | · |
+| `submit_path` | string | — | · | · | · | · | · | · | · | · | · | ● | · | · |
+| `poll_path` | string | — | · | · | · | · | · | · | · | · | · | ● | · | · |
+| `envelope` | select (multi) | — | · | · | · | · | · | · | · | · | · | ● | · | · |
+| `size_format` | select | `star`, `aspect_ratio` | · | · | · | · | · | · | · | · | · | ● | · | · |
 | `provider` | string | — | · | · | · | · | · | · | · | · | · | · | ● | · |
 | `api_id` | string | — | · | · | · | · | · | · | · | · | · | · | ● | · |
 | `capability` | select | `tts`, `image`, `avatar`, `video` | · | · | · | · | · | · | · | · | · | · | ● | · |
 | `controls` | select (multi) | `speed`, `emotion`, `size`, `resolution` | · | · | · | · | · | · | · | · | · | · | ● | · |
 | `sizes` | select (multi) | — | · | · | · | · | · | · | · | · | · | · | ● | · |
-| `adapter` | string | — | · | · | · | · | · | · | · | · | · | · | ● | · |
+| `request_map` | select (multi) | — | · | · | · | · | · | · | · | · | · | · | ● | · |
+| `resolutions` | select (multi) | — | · | · | · | · | · | · | · | · | · | · | ● | · |
 | `price` | number | — | · | · | · | · | · | · | · | · | · | · | ● | · |
 | `price_unit` | select | `per_1k_chars`, `per_image`, `per_second` | · | · | · | · | · | · | · | · | · | · | ● | · |
 | `price_date` | string | — | · | · | · | · | · | · | · | · | · | · | ● | · |
@@ -390,7 +397,7 @@ Settable at: `Layer`, `Scene`, `Video`, `Preset`, `Series`, `Video Defaults`.
 
 ### `avatar_resolution`
 
-Optional output resolution for an `avatar` clip. The engine validates it against the model's declared `controls` and falls back to a model-appropriate default. Ignored by other Layer types.
+Optional output resolution label for an `avatar` clip (for example `720p`). It has no global enum: its values are the resolved avatar Model's declared `resolutions`, it requires the Model to declare the `resolution` control, and when absent the Model's first declared resolution applies. Validated before any spend. Ignored by other Layer types.
 
 Settable at: `Layer`.
 
@@ -510,7 +517,43 @@ Settable at: `Provider`.
 
 ### `api_base`
 
-Base URL the provider's API is called at.
+Base URL the provider's API is called at; `submit_path` and `poll_path` are appended to it.
+
+Settable at: `Provider`.
+
+### `env_key`
+
+Name of the environment variable that holds the provider credential (for example `WAVESPEED_API_KEY`). Never the credential itself. A Model of this Provider is billable only when the variable is set; otherwise the engine produces a free offline placeholder.
+
+Settable at: `Provider`.
+
+### `auth_scheme`
+
+Scheme word of the `Authorization` header sent with the credential (for example `Bearer` or `Token`).
+
+Settable at: `Provider`.
+
+### `submit_path`
+
+Path a job is submitted to with POST, appended to `api_base`. `{api_id}` is replaced by the called Model's own `api_id`.
+
+Settable at: `Provider`.
+
+### `poll_path`
+
+Path a submitted job is polled at, appended to `api_base`. `{id}` is replaced by the task id the submit returned.
+
+Settable at: `Provider`.
+
+### `envelope`
+
+Optional keyed list `[model=<key>, input=<key>]`. When set, the request body is wrapped as `{<model key>: api_id, <input key>: body}`; when absent the body is sent bare.
+
+Settable at: `Provider`.
+
+### `size_format`
+
+How an image Model of this Provider receives the requested size: `star` sends `size` as `W*H`, `aspect_ratio` sends the nearest supported `aspect_ratio`. Defaults to `star`.
 
 Settable at: `Provider`.
 
@@ -544,9 +587,15 @@ Image sizes the Model accepts, as `<W>x<H>` entries. `image_size` must be one of
 
 Settable at: `Model`.
 
-### `adapter`
+### `request_map`
 
-Adapter id that translates intent fields into this provider's request parameters (`scripts/adapters/<id>.mjs`).
+Optional keyed list that renames the engine's avatar inputs to the Model's own request fields (`[image=<field>, audio=<field>, resolution=<field>]`); only the mapped inputs are sent. A Model with no `request_map` gets the default body `{image, audio, resolution}`. An input the engine does not produce fails before any spend.
+
+Settable at: `Model`.
+
+### `resolutions`
+
+Output resolution labels an avatar Model accepts (for example `[720p, 1080p]`); the first is the Model's default. `avatar_resolution` must be one of them. A Model that declares none is not constrained.
 
 Settable at: `Model`.
 

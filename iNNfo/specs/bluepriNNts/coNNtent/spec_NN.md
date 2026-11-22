@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-7-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"
 blueprint_name: "coNNtent"
-blueprint_version: "V_0-31-0"
+blueprint_version: "V_0-32-0"
 title: "coNNtent App"
 catalog: catalog/model-catalog_coNNtent_NN.md
 procedures:
@@ -413,9 +413,8 @@ description:: Avatar/lip-sync model id for an `avatar` Layer, or a cascade defau
 ## NN Field Definition: avatar_resolution
 concept:: Layer
   scope:: render
-type:: select
-options:: [480p, 720p, 768p]
-description:: Optional output resolution for an `avatar` clip. The engine validates it against the model's declared `controls` and falls back to a model-appropriate default. Ignored by other Layer types.
+type:: string
+description:: Optional output resolution label for an `avatar` clip (for example `720p`). It has no global enum: its values are the resolved avatar Model's declared `resolutions`, it requires the Model to declare the `resolution` control, and when absent the Model's first declared resolution applies. Validated before any spend. Ignored by other Layer types.
 
 ## NN Field Definition: fit
 concept:: [Layer, Scene, Video, Preset, Series, Video Defaults]
@@ -542,7 +541,39 @@ description:: Provider display name (for example `WaveSpeed`).
 ## NN Field Definition: api_base
 concept:: Provider
 type:: url
-description:: Base URL the provider's API is called at.
+description:: Base URL the provider's API is called at; `submit_path` and `poll_path` are appended to it.
+
+## NN Field Definition: env_key
+concept:: Provider
+type:: string
+description:: Name of the environment variable that holds the provider credential (for example `WAVESPEED_API_KEY`). Never the credential itself. A Model of this Provider is billable only when the variable is set; otherwise the engine produces a free offline placeholder.
+
+## NN Field Definition: auth_scheme
+concept:: Provider
+type:: string
+description:: Scheme word of the `Authorization` header sent with the credential (for example `Bearer` or `Token`).
+
+## NN Field Definition: submit_path
+concept:: Provider
+type:: string
+description:: Path a job is submitted to with POST, appended to `api_base`. `{api_id}` is replaced by the called Model's own `api_id`.
+
+## NN Field Definition: poll_path
+concept:: Provider
+type:: string
+description:: Path a submitted job is polled at, appended to `api_base`. `{id}` is replaced by the task id the submit returned.
+
+## NN Field Definition: envelope
+concept:: Provider
+type:: select
+multiple:: true
+description:: Optional keyed list `[model=<key>, input=<key>]`. When set, the request body is wrapped as `{<model key>: api_id, <input key>: body}`; when absent the body is sent bare.
+
+## NN Field Definition: size_format
+concept:: Provider
+type:: select
+options:: [star, aspect_ratio]
+description:: How an image Model of this Provider receives the requested size: `star` sends `size` as `W*H`, `aspect_ratio` sends the nearest supported `aspect_ratio`. Defaults to `star`.
 
 ## NN Field Definition: provider
 concept:: Model
@@ -573,10 +604,17 @@ type:: select
 multiple:: true
 description:: Image sizes the Model accepts, as `<W>x<H>` entries. `image_size` must be one of them.
 
-## NN Field Definition: adapter
+## NN Field Definition: request_map
 concept:: Model
-type:: string
-description:: Adapter id that translates intent fields into this provider's request parameters (`scripts/adapters/<id>.mjs`).
+type:: select
+multiple:: true
+description:: Optional keyed list that renames the engine's avatar inputs to the Model's own request fields (`[image=<field>, audio=<field>, resolution=<field>]`); only the mapped inputs are sent. A Model with no `request_map` gets the default body `{image, audio, resolution}`. An input the engine does not produce fails before any spend.
+
+## NN Field Definition: resolutions
+concept:: Model
+type:: select
+multiple:: true
+description:: Output resolution labels an avatar Model accepts (for example `[720p, 1080p]`); the first is the Model's default. `avatar_resolution` must be one of them. A Model that declares none is not constrained.
 
 ## NN Field Definition: price
 concept:: Model
@@ -753,7 +791,9 @@ resolved value through the Universal Parameter Cascade.
 | `text` | `text` or `text_from` |
 | `animation` | `asset` |
 
-`avatar_model` is never required: it has a blueprint default. `style` is required on `text`
+`avatar_model` is not a Layer requirement, and it has no blueprint default: the package pins
+no vendor model, so a domain plugs one in at its `video-defaults_NN.md` (or a nearer cascade
+level), and an avatar job with none resolved is refused before any spend. `style` is required on `text`
 and `placement`/`timing` on `media` through their Field Definitions, not through this table.
 
 ## Objectives
@@ -1018,7 +1058,11 @@ One `## NN Video Defaults:` element carries every cascade parameter's baseline. 
 ships one at `defaults/video-defaults_NN.md` (the `blueprint` level). A domain MAY hold one
 at its root as `video-defaults_NN.md` (the `domain` level); when absent the `domain` level is
 skipped. The package instance declares no `budget` and no `language`: an unset budget always
-asks at the budget gate and an unset language is a validation error. `daily_budget` is
+asks at the budget gate and an unset language is a validation error. It pins no vendor
+model id either: `image_model` (the model of every generated image Layer, including the
+still of an `avatar` Layer) and `avatar_model` (the lip-sync clip of an `avatar` Layer) are the
+domain's plug point, declared in the domain copy as a merged-catalog `api_id`; a prompted
+Layer or an avatar job with no model resolved is refused before any spend. `daily_budget` is
 settable only here. Changing the package instance MUST bump `blueprint_version`. A domain
 copy MAY define Presets after its `Video Defaults` section.
 
@@ -1027,51 +1071,65 @@ copy MAY define Presets after its `Video Defaults` section.
 - Adopt the domain copy by copying the package document unchanged, then tune the copy.
 - Never hardcode a default in engine code; it lives here.
 - Never add a `budget` or `language` default to the package instance.
+- Never pin a vendor model id in the package instance; declare `image_model` and `avatar_model` in the domain copy.
 
 ### Prompts
 
 - "Copy the package `defaults/video-defaults_NN.md` to the domain root and tune it."
 - "Declare `language:: es` and `budget:: 1.5` in the domaiNN copy."
+- "Plug `avatar_model:: <api_id>` and `image_model:: <api_id>` from the merged catalog into the domaiNN copy."
 
 ## Provider
 
 ### Summary
 
-A provider the catalog can call, with the base URL of its API.
+A provider the catalog can call, with the call contract of its API.
 
 ### Description
 
-One `## NN Provider: <name>` element declares `name` and `api_base`. Providers exist so a
-`Model` names the service it belongs to without repeating a URL per model.
+One `## NN Provider: <name>` element declares `name`, `api_base` and its transport:
+`env_key`, `auth_scheme`, `submit_path`, `poll_path`, and optionally `envelope` and
+`size_format`. Every billable call is routed by its `Model`: the Model names its Provider and
+the engine submits and polls along that Provider's declared transport, so two Models of two
+Providers can serve the same episode. The engine owns no provider URL, credential variable or
+model id. A Model whose Provider is not declared, or declares no complete transport, is
+refused before any call; a Model whose Provider credential is not set gets an offline
+placeholder instead of a call.
 
 ### Methodologies
 
 - Declare each provider once in the catalog, or in the domaiNN overlay when the provider is new.
-- Never put credentials in the catalog; they live in the environment.
+- Never put credentials in the catalog; `env_key` names the environment variable that holds them.
+- Add a provider by declaring its transport, never by editing engine code.
 
 ### Prompts
 
-- "Add a `Provider` named `WaveSpeed` with `api_base:: https://api.wavespeed.ai`."
+- "Add a `Provider` named `WaveSpeed` with `api_base:: https://api.wavespeed.ai/api/v3`, `env_key:: WAVESPEED_API_KEY`, `auth_scheme:: Bearer`, `submit_path:: /{api_id}` and `poll_path:: /predictions/{id}/result`."
 
 ## Model
 
 ### Summary
 
-One callable model: capability, declared controls, adapter and price.
+One callable model: capability, declared controls with their values, request shape and price.
 
 ### Description
 
 One `## NN Model: <slug>` element declares `provider`, `api_id`, `capability`
-(`tts`/`image`/`avatar`/`video`), `controls`, `sizes` (image models), `adapter`, `price`,
-`price_unit`, `price_date` and `status`. The domaiNN overlay declares the same element with
-`allowed`, an invoice `price`, `price_date` and `price_source:: invoice`; merging is per
-Model slug and the overlay wins. A Model defined only in the overlay must declare every
-field and name an existing adapter. Capability is declared, never inferred from the id.
+(`tts`/`image`/`avatar`/`video`), `controls`, the values of those controls (`sizes` for
+image models, `resolutions` for avatar models), `request_map` (avatar models whose request
+fields differ from the default body), `price`, `price_unit`, `price_date` and `status`. The
+catalog is the only place a Model's controls and their values are declared: there is no
+per-model adapter file and no engine table keyed by vendor, so adding a model of an existing
+Provider is a catalog edit. The domaiNN overlay declares the same element with `allowed`, an
+invoice `price`, `price_date` and `price_source:: invoice`; merging is per Model slug and the
+overlay wins. A Model defined only in the overlay must declare `provider`, `api_id`,
+`capability`, `price`, `price_unit` and `price_date`. Capability is declared, never inferred
+from the id.
 
 ### Methodologies
 
 - Ship reference prices with their date; never hide a price in code.
-- Declare the controls the model really supports; an undeclared control fails at estimate.
+- Declare the controls the model really supports and their values; an undeclared control or value fails before any spend.
 - Override prices in the domaiNN overlay with invoice values, not in the reference catalog.
 
 ### Prompts

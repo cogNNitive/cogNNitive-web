@@ -20,22 +20,15 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import crypto from 'node:crypto'
-import { avatarResolutionProfileFor, normalizeModelId } from './video-guard.mjs'
+import { normalizeModelId } from './video-guard.mjs'
+import { loadMergedCatalog, resolveModel, resolutionsOf } from './catalog.mjs'
+import { translateIntent } from './intent.mjs'
 import { AVATAR_IMAGE_MIME } from './avatar-request.mjs'
 import { buildTtsVoiceOptions, resolveRegisteredVoice } from './tts-options.mjs'
 
 export const AVATAR_CACHE_CATEGORY = 'temp'
 export const AVATAR_CACHE_EXT = 'mp4'
 export const DEFAULT_AVATAR_RESOLUTION = '480p'
-
-/**
- * The resolution profile of an avatar model comes from the guard module: model ids are
- * data there, never re-derived from a vendor name in engine code (the rule
- * `no-phantom-providers.test.mjs` enforces).
- */
-export function validResolutionsFor(model) {
-  return [...avatarResolutionProfileFor(model).resolutions]
-}
 
 /**
  * The nominal pixel height a `480p` / `720p` / `768p` label declares. The label is a
@@ -166,26 +159,67 @@ export function checkAvatarUpscale({
   return warnings
 }
 
+/**
+ * The default resolution of a catalog avatar Model: the first of its declared `resolutions`
+ * (#752 step 3: the values are catalog data, never an engine table keyed by vendor). A model
+ * the catalog does not declare, or one that declares no values, falls back to
+ * DEFAULT_AVATAR_RESOLUTION; it cannot be called anyway until it is declared.
+ * @param {{ resolutions?: string[] } | null} model the resolved catalog Model
+ */
 export function defaultResolutionFor(model) {
-  return avatarResolutionProfileFor(model).fallback
+  return declaredResolutions(model)[0] || DEFAULT_AVATAR_RESOLUTION
 }
 
-/** Validates a requested resolution against the model's allowed set (fail closed). */
+/**
+ * The Model's declared `resolutions`. A Model that declares the `resolution` control but no
+ * values (an overlay written before `resolutions` existed) is refused before any spend: no
+ * value can be requested or defaulted safely for it.
+ */
+function declaredResolutions(model) {
+  const list = resolutionsOf(model)
+  if (list.length === 0 && (model?.controls || []).map(String).includes('resolution')) {
+    throw new Error(
+      'Avatar model ' +
+        (model.api_id || model.slug) +
+        ' declares the resolution control but no resolutions: declare `resolutions:: [...]` on it in the catalog ' +
+        '(the first value is its default). Nothing was spent.',
+    )
+  }
+  return list
+}
+
+/**
+ * Validates a requested resolution against the catalog Model's declared `resolutions` (fail
+ * closed, before any spend). A requested value needs the `resolution` control; a Model that
+ * declares no values is not constrained beyond that.
+ * @param {string | undefined} requested the Layer's `avatar_resolution`
+ * @param {{ slug?: string, api_id?: string, controls?: string[], resolutions?: string[] } | null} model
+ */
 export function normalizeAvatarResolution(requested, model) {
-  const allowed = validResolutionsFor(model)
+  if (requested && model) translateIntent({ avatar_resolution: requested }, model)
+  const allowed = declaredResolutions(model)
   const r = requested ? String(requested) : defaultResolutionFor(model)
-  if (!allowed.includes(r)) {
+  if (allowed.length > 0 && !allowed.includes(r)) {
     throw new Error(
       'Avatar resolution "' +
         r +
         '" is not supported by ' +
-        model +
-        ' (allowed: ' +
+        (model?.api_id || model?.slug) +
+        ' (declared resolutions: ' +
         allowed.join(', ') +
         ').',
     )
   }
   return r
+}
+
+/** The catalog Model an avatar model id names, or null when the catalog does not declare it. */
+function declaredAvatarModel(catalog, id) {
+  try {
+    return resolveModel(catalog, id)
+  } catch {
+    return null
+  }
 }
 
 /**
@@ -259,8 +293,10 @@ export function ttsCachePathFor(sc, opts) {
  * @param {{ voices?: object }} o.config Guard config (registered voices are part of the TTS key).
  * @param {{ tts?: string }} [o.models]
  * @param {object} [o.bags]
+ * @param {{ models: object }} [o.catalog] Merged catalog whose avatar Models declare `resolutions` (default: the reference catalog).
  * @returns {{ jobs: any[], problems: string[], skipped: Array<{ sceneId: string, layerName: string }> }}
- *   `problems` lists missing images/audio (no job is created for them); `skipped` lists avatar
+ *   `problems` lists missing images/audio (no job is created for them) and an unresolved
+ *   `avatar_model` (its job is still listed, so the pickup reports it missing); `skipped` lists avatar
  *   Layers whose Scene carries no narration, which render as their still image.
  */
 export function collectAvatarJobs({
@@ -271,6 +307,7 @@ export function collectAvatarJobs({
   config,
   models = {},
   bags = {},
+  catalog = loadMergedCatalog({ overlay: null }),
 }) {
   const jobs = []
   const problems = []
@@ -323,7 +360,21 @@ export function collectAvatarJobs({
         continue
       }
       const model = normalizeModelId(layer.properties?.layer_avatar_model)
-      const resolution = normalizeAvatarResolution(layer.properties?.layer_avatar_resolution, model)
+      if (!model) {
+        // The blueprint pins no vendor model: the domain plugs one in. synthesize-avatar refuses
+        // on any problem (before any spend); the job itself is still listed, so the compile
+        // pickup reports its clip as missing and render refuses instead of drawing a still.
+        problems.push(
+          'Scene ' +
+            sc.id +
+            ': no avatar_model resolved for the avatar layer. The blueprint pins no vendor model: declare `avatar_model:: <api_id>` ' +
+            '(a merged-catalog avatar Model) in the domain video-defaults_NN.md, or on the Series, Character, Scene or Layer.',
+        )
+      }
+      const resolution = normalizeAvatarResolution(
+        layer.properties?.layer_avatar_resolution,
+        declaredAvatarModel(catalog, model),
+      )
       jobs.push({
         sceneId: sc.id,
         layerName: layer.name,
@@ -344,8 +395,24 @@ export function collectAvatarJobs({
  * only: it never synthesizes or spends.
  * @returns {{ applied: number, missing: number, clips: string[] }} `clips` are the cached clip paths that were applied.
  */
-export function applyCachedAvatars({ parsed, scriptDir, cacheManager, config, models, bags }) {
-  const { jobs } = collectAvatarJobs({ parsed, scriptDir, cacheManager, config, models, bags })
+export function applyCachedAvatars({
+  parsed,
+  scriptDir,
+  cacheManager,
+  config,
+  models,
+  bags,
+  catalog,
+}) {
+  const { jobs } = collectAvatarJobs({
+    parsed,
+    scriptDir,
+    cacheManager,
+    config,
+    models,
+    bags,
+    catalog,
+  })
   let applied = 0
   let missing = 0
   const missingLayers = []

@@ -17,7 +17,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { resolveImageSize, nearestImageSize, imageModelsFor, buildImageOptions } from '../scripts/lib/image-options.mjs';
-import { translateIntent } from '../scripts/adapters/_intent.mjs';
+import { translateIntent } from '../scripts/lib/intent.mjs';
 import { AssetSynthesizer } from '../scripts/asset-synthesizer.mjs';
 import { CacheManager } from '../scripts/cache-manager.mjs';
 import { SpendGuard, DEFAULT_GUARD } from '../scripts/lib/video-guard.mjs';
@@ -73,7 +73,7 @@ test('a derived size never breaks a Model without the size control', () => {
   const r = resolveImageSize({ imageModel: 'v/sizeless', catalog, primary: WIDE });
   assert.equal(r.size, undefined);
   assert.equal(r.reason, 'no-size-control');
-  // The adapter translation of the resolved intent does not throw, and nothing is sent.
+  // The intent translation of the resolved intent does not throw, and nothing is sent.
   assert.deepEqual(translateIntent({ image_size: r.size }, catalog.models.sizeless), {});
   assert.equal('size' in buildImageOptions({}, {}, { image: 'v/sizeless', imageSize: r.size }), false);
 });
@@ -195,6 +195,22 @@ prompt:: a red barn at dawn
 
 function estimate(source) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'img-size-est-'));
+  // The blueprint pins no vendor model: the domain defaults plug the image model in.
+  fs.writeFileSync(
+    path.join(dir, 'video-defaults_NN.md'),
+    `---
+level: 3
+title: "Video Defaults"
+---
+
+# NN Video Defaults
+
+## NN Video Defaults: Defaults
+slug:: defaults
+image_model:: wavespeed-ai/z-image/turbo
+`,
+    'utf8',
+  );
   const scriptPath = path.join(dir, 'script_NN.md');
   fs.writeFileSync(scriptPath, source, 'utf8');
   try {
