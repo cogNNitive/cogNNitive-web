@@ -737,10 +737,20 @@ async function domainConsoleStaleness(models, rootDir) {
   }
   if (!assetsMatch) return 'assets'
 
-  const embedded = extractModelMetaFromHtml(html)?.models
+  const embeddedMeta = extractModelMetaFromHtml(html)
+  const embedded = embeddedMeta?.models
   if (!Array.isArray(embedded)) return 'models'
-  // The synthetic changes summary is not a model document: excluding it keeps a domain
-  // with changesets fresh, while every real entry (and the count itself) stays compared.
+  // The synthetic changes summary is not a model document: it is compared by the hash of
+  // the changeset records it was built from, so a changeset that touches no model still
+  // makes the page stale. A page that omitted its changes (--no-changes or over budget)
+  // never carried them, so there is nothing to compare.
+  if (!embeddedMeta.changesOmitted) {
+    const summary = embedded.find((e) => e && e.filePath === CHANGES_SUMMARY_FILE_PATH)
+    const records = payloadHelper.loadChangesetRecords
+      ? await payloadHelper.loadChangesetRecords(rootDir)
+      : []
+    if ((summary?.sha256 ?? null) !== changesSummarySha256(records)) return 'models'
+  }
   const embeddedModels = embedded.filter((e) => e && e.filePath !== CHANGES_SUMMARY_FILE_PATH)
   if (embeddedModels.length !== models.length) return 'models'
   for (const m of models) {
@@ -757,9 +767,20 @@ async function domainConsoleStaleness(models, rootDir) {
 /**
  * The one `meta.models` entry that is not a model document: the exporter summarizes the
  * domain's changesets as a synthetic `<changes>` collection for the console's Changes
- * view. Freshness compares real models, so it skips this sentinel by name.
+ * view. Its `sha256` is {@link changesSummarySha256} of the records it was built from.
  */
 const CHANGES_SUMMARY_FILE_PATH = '<changes>'
+
+/**
+ * Content identity of the `<changes>` summary: the sha256 of the changeset records
+ * (`loadChangesetRecords`, read in sorted file order and carrying no volatile field), or
+ * null when they hold no change, which is when the export adds no summary entry.
+ */
+function changesSummarySha256(records) {
+  const list = Array.isArray(records) ? records : []
+  const count = list.reduce((n, cs) => n + (Array.isArray(cs.changes) ? cs.changes.length : 0), 0)
+  return count > 0 ? computeSha256(JSON.stringify(list)) : null
+}
 
 /**
  * Freshness of the domain console: `uncompiled` when the file is absent, `fresh` when every
@@ -2368,7 +2389,7 @@ export async function writeConsole(opts = {}) {
         blueprint: 'changes',
         family: 'changes',
         version: changesBlueprintVersion || null,
-        sha256: null,
+        sha256: changesSummarySha256(payloadChangesets),
         citationsResolvedAt: null,
         sources: [],
         changeCount: changeUnitCount,
