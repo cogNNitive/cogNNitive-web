@@ -109,16 +109,34 @@
     return text || DEFAULT_REVIEWER_NAME
   }
 
+  /**
+   * Web storage access that survives a sandboxed document.
+   *
+   * In an iframe without `allow-same-origin` (IDE side panels, preview panes)
+   * reading `localStorage` THROWS instead of returning undefined, so a
+   * `typeof` guard on it never reaches its fallback: `typeof` still evaluates
+   * the getter. Callers treat null as "unavailable", which keeps the console
+   * working with an in-memory store.
+   */
+  function safeLocalStorage() {
+    try {
+      return localStorage || null
+    } catch {
+      return null
+    }
+  }
+
   function getReviewerName() {
     try {
-      if (typeof localStorage !== 'undefined') {
-        var stored = localStorage.getItem(REVIEWER_STORAGE_KEY)
+      var store = safeLocalStorage()
+      if (store) {
+        var stored = store.getItem(REVIEWER_STORAGE_KEY)
         if (stored && typeof stored === 'string' && stored.trim()) {
           return stored.trim()
         }
       }
     } catch {
-      /* localStorage unavailable (private mode / file://) - fall through to default */
+      /* storage read failed (private mode / file:// / sandboxed) - fall through to default */
     }
     return DEFAULT_REVIEWER_NAME
   }
@@ -126,11 +144,12 @@
   function setReviewerName(name) {
     var val = String(name || '').trim() || DEFAULT_REVIEWER_NAME
     try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(REVIEWER_STORAGE_KEY, val)
+      var store = safeLocalStorage()
+      if (store) {
+        store.setItem(REVIEWER_STORAGE_KEY, val)
       }
     } catch {
-      /* localStorage unavailable (private mode / file://) - name stays in-memory */
+      /* storage write failed (private mode / file:// / sandboxed) - name stays in-memory */
     }
     return val
   }
@@ -7585,7 +7604,7 @@
       schema: schema,
       concepts: concepts,
       store: Review.createDraftStore(
-        typeof localStorage !== 'undefined' ? localStorage : null,
+        safeLocalStorage(),
         // A domain console keys its drafts by the stable domain id, never by content.
         String(meta.domainId || baseId) + (scopedView ? '::view:' + scopedView : '') + (consoleScope.models.length > 0 ? '::models:' + consoleScope.models.join(',') : ''),
         {
