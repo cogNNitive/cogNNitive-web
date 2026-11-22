@@ -9855,3 +9855,95 @@ pre.nn-file-preview-code {
 .nn-hierarchy-contents { padding: 0 16px 12px; min-width: 0; }
 .nn-hierarchy-episode > .nn-hierarchy-contents > .nn-episode-card { margin: 0; }
 @media (max-width: 640px) { .nn-hierarchy-contents { padding: 0 8px 8px; } .nn-hierarchy-card > summary { padding: 12px; } }
+
+
+/* ---- Step Request queue (procedure runner, executions spec "Requests, not writes") ---- */
+.proc-run-requests {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+.request-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border-left: 3px solid currentColor;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 12px;
+  line-height: 1.45;
+}
+.request-item .request-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.request-kind,
+.proc-request-action {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.request-status,
+.proc-request-status {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.request-detail,
+.proc-request-detail {
+  display: block;
+  color: rgba(230, 232, 238, 0.72);
+  font-size: 11px;
+}
+.request-reason {
+  font-size: 11px;
+  font-style: italic;
+  color: rgba(230, 232, 238, 0.6);
+}
+.request-item.status-pending { color: #e0b341; }
+.request-item.status-done { color: #4caf7d; }
+.request-item.status-stale { color: #8b93a5; }
+.request-item.status-rejected { color: #d1584f; }
+.proc-request-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.proc-request-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.proc-request {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+.proc-action-waiting {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(224, 179, 65, 0.12);
+  color: #e0b341;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.proc-action-value {
+  width: 100%;
+  margin: 6px 0 2px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font-size: 12px;
+}

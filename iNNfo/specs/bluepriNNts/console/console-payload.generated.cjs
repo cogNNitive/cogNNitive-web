@@ -12842,6 +12842,12 @@ var ARTIFACT_STATES = /* @__PURE__ */ new Set([
   "validated",
   "rejected"
 ]);
+var REQUEST_STATES = /* @__PURE__ */ new Set(["pending", "done", "stale", "rejected"]);
+var REQUEST_ACTIONS = /* @__PURE__ */ new Set(["wait", "complete", "fail"]);
+function isTemplatePlaceholder(v) {
+  const text2 = str3(v);
+  return text2 !== void 0 && /^<[^>]+>(@<[^>]+>)?$/.test(text2);
+}
 function runStateOf(v) {
   const text2 = str3(v);
   return text2 !== void 0 && RUN_STATES.has(text2) ? text2 : "open";
@@ -12853,6 +12859,22 @@ function stepStatusOf(v) {
 function artifactStatusOf(v) {
   const text2 = str3(v);
   return text2 !== void 0 && ARTIFACT_STATES.has(text2) ? text2 : "expected";
+}
+function requestRowOf(fields) {
+  const action = str3(fields["action"]);
+  const status = str3(fields["request_status"]);
+  if (action === void 0 || !REQUEST_ACTIONS.has(action)) return null;
+  if (isTemplatePlaceholder(fields["step"])) return null;
+  return {
+    action,
+    status: status !== void 0 && REQUEST_STATES.has(status) ? status : "pending",
+    ...num(fields["base_seq"]) !== void 0 ? { baseSeq: num(fields["base_seq"]) } : {},
+    ...str3(fields["step"]) !== void 0 ? { step: str3(fields["step"]) } : {},
+    ...str3(fields["requested_outcome"]) !== void 0 ? { outcome: str3(fields["requested_outcome"]) } : {},
+    ...str3(fields["requested_value"]) !== void 0 ? { value: str3(fields["requested_value"]) } : {},
+    ...str3(fields["reason"]) !== void 0 ? { reason: str3(fields["reason"]) } : {},
+    ...str3(fields["at"]) !== void 0 ? { at: str3(fields["at"]) } : {}
+  };
 }
 function stepRowOf(fields) {
   const row = {
@@ -12900,6 +12922,12 @@ function runModelOf(model) {
       ...str3(el.fields["rev"]) !== void 0 ? { rev: str3(el.fields["rev"]) } : {}
     };
   }
+  const requests = {};
+  for (const el of model.elements.get("Step Request") ?? []) {
+    if (!el.slug) continue;
+    const row = requestRowOf(el.fields);
+    if (row) requests[el.slug] = row;
+  }
   return {
     state: runStateOf(header.fields["state"]),
     seq: num(header.fields["seq"]) ?? 0,
@@ -12909,6 +12937,7 @@ function runModelOf(model) {
     steps,
     artifacts,
     inputs,
+    requests,
     attempts: {}
   };
 }

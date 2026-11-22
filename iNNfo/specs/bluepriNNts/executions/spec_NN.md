@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-9-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-9-0_NN.md"
-blueprint_version: "V_0-3-1"
+blueprint_version: "V_0-4-0"
 title: "Executions App"
 description: "Level-2 blueprint recording runs of procedures as models with state: one instance model per run, holding its header, one row per step and one row per artifact; the history of the run is the change log of that model."
 relationship_types:
@@ -26,6 +26,7 @@ relationship_types:
   * [[Step Run]]
   * [[Run Artifact]]
   * [[Input]]
+  * [[Step Request]]
 
 # NN Concept Definition
 
@@ -57,6 +58,13 @@ type:: list
 color:: grey
 weight:: 70
 description:: A computed or entered input the run recorded, with its revision. One row per input name.
+
+## NN Concept Definition: Step Request
+icon:: inbox
+type:: list
+color:: yellow
+weight:: 60
+description:: One row per human request that an action be recorded on a step. Intent, never state: only the runner consumes it, and it never moves a Step Run row by itself.
 
 # NN Field Definition
 
@@ -144,6 +152,44 @@ concept:: Step Run
 type:: string
 description:: The applied change ids a human step observed, such as the verdicts it waited on.
 
+## NN Field Definition: action
+concept:: Step Request
+type:: select
+options:: [wait, complete, fail]
+description:: The action the person asked the runner to record on the step.
+
+## NN Field Definition: step
+concept:: Step Request
+type:: string
+description:: The slug of the step the request names.
+
+## NN Field Definition: base_seq
+concept:: Step Request
+type:: number
+description:: The run's header seq when the request was made. A consumer refuses the request when the run has advanced past it.
+
+## NN Field Definition: reason
+concept:: Step Request
+type:: string
+description:: Why the request was rejected or found stale, as the runner reported it.
+
+## NN Field Definition: request_status
+concept:: Step Request
+type:: select
+options:: [pending, done, stale, rejected]
+transitions:: {"": ["pending"], "pending": ["done", "stale", "rejected"], "done": [], "stale": [], "rejected": []}
+description:: The life of a request: pending while nobody consumed it, then done, stale or rejected. A resolved request never returns to pending.
+
+## NN Field Definition: requested_outcome
+concept:: Step Request
+type:: string
+description:: The outcome the person asked for when the request names a branching step.
+
+## NN Field Definition: requested_value
+concept:: Step Request
+type:: string
+description:: The value the person attached to the request, such as who a step waits on or why it failed.
+
 ## NN Field Definition: kind
 concept:: Run Artifact
 type:: select
@@ -180,6 +226,7 @@ A run stores state, not a second ledger. Its history is the change log of its ow
 | **Step Run** | `list` | One row per step, slug = step slug. Mutable |
 | **Run Artifact** | `list` | One row per artifact, slug = artifact slug. Mutable |
 | **Input** | `list` | One row per recorded input, with its value and revision |
+| **Step Request** | `list` | One row per human request that an action be recorded on a step. Append-only in practice: a resolved request is marked, never removed |
 
 ### Run Header
 
@@ -190,6 +237,14 @@ The root element of a run carries `procedure` (the address of what runs), `def_r
 A step's status, attempt, outcome, chosen `next` and frozen `inputs` live on its `Step Run` row; an artifact's `kind`, `value`, `rev` and `status` live on its `Run Artifact` row. There is no event concept: everything the runner would have logged as an event is either a row field (state) or a change (history).
 
 `procedure_start` writes one atomic changeset: `add_model`, the header, and one `add_element` per step and per artifact. Either the whole run exists or none of it does.
+
+### Requests, not writes
+
+A person driving a run from the console cannot write the run: only the runner does. What a person records is a `Step Request` — one row named with a slug, carrying the `action` it asks for, the `base_seq` it asked at, and the outcome or value the action needs. A request moves nothing by itself; a run's derived status is identical with or without one.
+
+`procedure_record` consumes a request by id: it plans exactly the action it names, then records the action and marks the request `done` in the same atomic changeset. A request whose `base_seq` no longer matches the run's `seq` is `stale`, one the planner refuses is `rejected` with the planner's reason, and neither is ever deleted. The queue is therefore both the human's intent and the record of what happened to it.
+
+`procedure_pending` lists that queue. Closing a run stays out of reach of a request on purpose: `finish` and `cancel` need `close_model`, which is a runner decision and not a requested action.
 
 ### Concurrency
 
@@ -218,7 +273,7 @@ level: 3
 parent_spec:
   name: executions
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/executions/spec_NN.md"
-blueprint_version: "V_0-3-1"
+blueprint_version: "V_0-4-0"
 status: active
 ---
 

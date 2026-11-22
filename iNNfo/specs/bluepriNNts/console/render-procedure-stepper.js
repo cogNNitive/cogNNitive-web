@@ -46,7 +46,8 @@
     }
     // `document` is shadowed with the container's own document, so every element below
     // stays inside this view's DOM tree.
-    var document = container.ownerDocument || (typeof globalThis !== 'undefined' ? globalThis.document : null)
+    var document =
+      container.ownerDocument || (typeof globalThis !== 'undefined' ? globalThis.document : null)
     var schema = (payload && payload.schema) || {}
     var model = (payload && payload.model) || {}
     var elements = Array.isArray(model.elements) ? model.elements : []
@@ -61,11 +62,13 @@
 
     // The console hands an editable view a `store` facade when a human may propose. A
     // console without it is read-only: the view renders, and offers no write.
-    var store = viewCtx && viewCtx.store && typeof viewCtx.store.propose === 'function' ? viewCtx.store : null
+    var store =
+      viewCtx && viewCtx.store && typeof viewCtx.store.propose === 'function' ? viewCtx.store : null
     var draftNote = null
 
     if (!GLOBAL.nnConsole) {
-      container.innerHTML = '<div class="nn-empty-state"><p>Procedure runtime is not available.</p></div>'
+      container.innerHTML =
+        '<div class="nn-empty-state"><p>Procedure runtime is not available.</p></div>'
       return {
         ok: false,
         unmount: function () {
@@ -91,7 +94,9 @@
       return n + (Array.isArray(e.runs) ? e.runs.length : 0)
     }, 0)
     var strip = make('div', 'proc-structure-strip')
-    strip.appendChild(make('div', 'proc-structure-summary', entries.length + ' procedures · ' + runCount + ' runs'))
+    strip.appendChild(
+      make('div', 'proc-structure-summary', entries.length + ' procedures · ' + runCount + ' runs'),
+    )
     root.appendChild(strip)
     var defectsEl = make('div', 'proc-structure-defects')
     strip.appendChild(defectsEl)
@@ -131,51 +136,39 @@
       return entry && entry.graph && entry.graph.steps ? entry.graph.steps : {}
     }
 
-    // ---- Pending drafts of a run, as events the fold can consume ----
-    //
-    // A draft the console holds is not applied, but it is a fact the person recorded. The
-    // projection answers "what would this run look like" by folding the recorded events plus
-    // these pending ones. It never decides what a draft means: the draft already says it, and
-    // the fold reads it exactly as it reads a recorded event.
-    var PENDING_EVENT_CONCEPT = 'Execution Event'
-
-    function pendingEventsOf(run) {
-      if (!store || !run) return []
-      var list = store.drafts()
-      var out = []
-      ;(Array.isArray(list) ? list : []).forEach(function (d) {
-        if (!d || d.concept !== PENDING_EVENT_CONCEPT) return
-        if (String(d.knowledge_id) !== String(run.id)) return
-        var fields = d.proposed
-        if (typeof fields === 'string') {
-          try {
-            fields = JSON.parse(fields)
-          } catch {
-            return
+    // ---- Step Requests: what a person asked the runner to record ----
+    // A request is intent, never state (executions spec, "Requests, not writes"). This view
+    // reads the `Step Request` rows the run model already holds and shows what happened to
+    // each one; it never writes. Only procedure_record consumes a request.
+    function requestsOf(run) {
+      if (!run || !run.requests || typeof run.requests !== 'object') return []
+      // The runner reads the rows as a map (slug -> row); the view lists them in slug order.
+      return Object.keys(run.requests)
+        .sort()
+        .map(function (id) {
+          var row = run.requests[id] || {}
+          return {
+            id: id,
+            action: row.action,
+            status: row.status,
+            step: row.step,
+            baseSeq: row.baseSeq,
+            outcome: row.outcome,
+            value: row.value,
+            reason: row.reason,
+            at: row.at,
           }
-        }
-        if (!fields || typeof fields !== 'object' || !fields.kind) return
-        out.push(fields)
-      })
-      return out
+        })
+        .filter(function (r) {
+          return r && r.action && r.status
+        })
     }
 
-    /** The state this run would reach with its pending drafts applied, or null. */
-    function projectedStateOf(run) {
-      var core = GLOBAL.nnProcedureCore
-      if (!core || typeof core.stateOf !== 'function' || !core.available()) return null
-      if (!run || !active || !active.graph) return null
-      var pending = pendingEventsOf(run)
-      if (!pending.length) return null
-      var recorded = Array.isArray(run.events) ? run.events : []
-      try {
-        return core.stateOf(active.graph, recorded.concat(pending), {
-          defRev: run.defRev,
-          lockFree: true,
-        })
-      } catch {
-        return null
-      }
+    /** The pending request for one step, if a person already asked for something there. */
+    function pendingRequestFor(step) {
+      return requestsOf(activeRun).filter(function (r) {
+        return r.status === 'pending' && r.step === step
+      })[0]
     }
 
     function stepName(slug) {
@@ -234,7 +227,13 @@
         })
         var pill = UI.Ku(
           'element',
-          { model: meta.modelId || '', id: target.id, label: target.name || label, concept: target.concept, color: cMeta && cMeta.color },
+          {
+            model: meta.modelId || '',
+            id: target.id,
+            label: target.name || label,
+            concept: target.concept,
+            color: cMeta && cMeta.color,
+          },
           { doc: document },
         )
         var badge = pill.querySelector('[data-nn-component="ku-unit"]')
@@ -282,7 +281,8 @@
       var last = 0
       var match
       while ((match = re.exec(text)) !== null) {
-        if (match.index > last) hostEl.appendChild(document.createTextNode(text.slice(last, match.index)))
+        if (match.index > last)
+          hostEl.appendChild(document.createTextNode(text.slice(last, match.index)))
         hostEl.appendChild(refPill(byName[match[0]], match[0]))
         last = re.lastIndex
       }
@@ -314,7 +314,11 @@
     function renderTabs() {
       tabsHost.innerHTML = ''
       entries.forEach(function (entry) {
-        var b = make('button', 'proc-tab' + (entry === active ? ' active' : ''), entry.title || entry.file)
+        var b = make(
+          'button',
+          'proc-tab' + (entry === active ? ' active' : ''),
+          entry.title || entry.file,
+        )
         b.setAttribute('type', 'button')
         b.addEventListener('click', function () {
           selectEntry(entry)
@@ -326,7 +330,8 @@
 
     function renderDiagnostics() {
       defectsEl.innerHTML = ''
-      var list = active.graph && Array.isArray(active.graph.diagnostics) ? active.graph.diagnostics : []
+      var list =
+        active.graph && Array.isArray(active.graph.diagnostics) ? active.graph.diagnostics : []
       list.forEach(function (d) {
         var item = make('div', 'proc-defect-item', d.code + ': ' + d.detail)
         item.setAttribute('data-defect-kind', d.code)
@@ -339,7 +344,13 @@
     function renderFicha(host) {
       var linked = null
       elements.forEach(function (el) {
-        if (el && el.concept === 'Procedure' && el.fields && el.fields.procedure_model === active.file) linked = linked || el
+        if (
+          el &&
+          el.concept === 'Procedure' &&
+          el.fields &&
+          el.fields.procedure_model === active.file
+        )
+          linked = linked || el
       })
       var ficha = make('div', 'proc-ficha')
       if (!linked) {
@@ -355,7 +366,8 @@
         ['inputs_required', 'Inputs required'],
         ['outputs_expected', 'Outputs expected'],
       ].forEach(function (pair) {
-        if (f[pair[0]]) ficha.appendChild(make('div', 'proc-ficha-' + pair[0], pair[1] + ': ' + f[pair[0]]))
+        if (f[pair[0]])
+          ficha.appendChild(make('div', 'proc-ficha-' + pair[0], pair[1] + ': ' + f[pair[0]]))
       })
       host.appendChild(ficha)
     }
@@ -369,7 +381,11 @@
       var runs = Array.isArray(active.runs) ? active.runs : []
       var bar = make('div', 'proc-runs')
       bar.appendChild(make('span', 'proc-runs-label', 'Runs'))
-      var def = make('button', 'proc-run proc-run-definition' + (activeRun ? '' : ' active'), 'Definition')
+      var def = make(
+        'button',
+        'proc-run proc-run-definition' + (activeRun ? '' : ' active'),
+        'Definition',
+      )
       def.setAttribute('type', 'button')
       def.addEventListener('click', function () {
         activeRun = null
@@ -378,7 +394,11 @@
       })
       bar.appendChild(def)
       runs.forEach(function (run) {
-        var b = make('button', 'proc-run' + (run === activeRun ? ' active' : ''), run.id + ' · ' + runStatus(run))
+        var b = make(
+          'button',
+          'proc-run' + (run === activeRun ? ' active' : ''),
+          run.id + ' · ' + runStatus(run),
+        )
         b.setAttribute('type', 'button')
         b.setAttribute('data-run-id', run.id)
         b.setAttribute('data-status', runStatus(run))
@@ -432,15 +452,7 @@
       return st ? st.status : 'pending'
     }
 
-    // The same step under the pending drafts. A step whose status differs is the one the
-    // hold moves, and the graph marks it apart from everything that is already applied.
-    function projectedStatus(slug, projection) {
-      if (!projection || !projection.steps || !projection.steps[slug]) return null
-      var next = projection.steps[slug].status
-      return next === stepStatus(slug) ? null : next
-    }
-
-    function renderGraph(host, projection) {
+    function renderGraph(host) {
       var graph = active.graph
       var svgNS = 'http://www.w3.org/2000/svg'
       var nodeW = 200
@@ -491,7 +503,6 @@
         var step = graph.steps[slug]
         var p = pos[slug]
         var status = stepStatus(slug)
-        var ahead = projectedStatus(slug, projection)
         var g = document.createElementNS(svgNS, 'g')
         g.setAttribute(
           'class',
@@ -499,12 +510,10 @@
             status +
             (step.stepType === 'decision' ? ' decision' : '') +
             (slug === current ? ' current' : '') +
-            (slug === selectedStep ? ' selected' : '') +
-            (ahead ? ' projected' : ''),
+            (slug === selectedStep ? ' selected' : ''),
         )
         g.setAttribute('data-step', slug)
         g.setAttribute('data-status', status)
-        if (ahead) g.setAttribute('data-projected-status', ahead)
         g.setAttribute('data-layer', String(p.layer))
         g.addEventListener('click', function () {
           selectedStep = slug
@@ -530,8 +539,7 @@
         sub.textContent =
           (step.stepType || 'task').toUpperCase() +
           (step.executor ? ' · ' + step.executor : '') +
-          (status !== 'definition' ? ' · ' + status : '') +
-          (ahead ? ' → ' + ahead : '')
+          (status !== 'definition' ? ' · ' + status : '')
         g.appendChild(sub)
         var title = document.createElementNS(svgNS, 'text')
         title.setAttribute('x', p.x + 30)
@@ -557,7 +565,8 @@
     function guardText(guard) {
       if (!guard || guard.kind === 'none') return 'always'
       if (guard.kind === 'outcome') return 'outcome == ' + guard.token
-      if (guard.kind === 'artifact') return guard.artifact + ' validated (' + (guard.holds ? 'holds' : 'not yet') + ')'
+      if (guard.kind === 'artifact')
+        return guard.artifact + ' validated (' + (guard.holds ? 'holds' : 'not yet') + ')'
       return guard.text
     }
 
@@ -664,7 +673,8 @@
     /** The artifact definition the chip that owns this button was built for. */
     function defOfArtifact(button) {
       var chip = button.parentNode
-      while (chip && chip.getAttribute && !chip.getAttribute('data-proc-artifact')) chip = chip.parentNode
+      while (chip && chip.getAttribute && !chip.getAttribute('data-proc-artifact'))
+        chip = chip.parentNode
       var slug = chip && chip.getAttribute('data-proc-artifact')
       return slug && active.graph.artifacts ? active.graph.artifacts[slug] : null
     }
@@ -736,9 +746,13 @@
       host.appendChild(row)
     }
 
-    function renderStepCard(host, projection) {
+    function renderStepCard(host) {
       var graph = active.graph
-      var slug = selectedStep || (activeRun && activeRun.state && activeRun.state.currentStep) || graph.start || Object.keys(graph.steps)[0]
+      var slug =
+        selectedStep ||
+        (activeRun && activeRun.state && activeRun.state.currentStep) ||
+        graph.start ||
+        Object.keys(graph.steps)[0]
       var col = make('div', 'exec-active-col')
       host.appendChild(col)
       if (!slug || !graph.steps[slug]) {
@@ -756,9 +770,16 @@
       type.innerHTML = vIcon(step.stepType || 'task', 14) + ' '
       type.appendChild(document.createTextNode((step.stepType || 'task').toUpperCase()))
       head.appendChild(type)
-      if (step.executor) head.appendChild(make('span', 'step-executor-pill', 'Executor: ' + step.executor))
+      if (step.executor)
+        head.appendChild(make('span', 'step-executor-pill', 'Executor: ' + step.executor))
       if (step.condition) head.appendChild(make('span', 'step-cond-pill', 'IF: ' + step.condition))
-      head.appendChild(make('span', 'step-state-badge state-' + status, status === 'definition' ? 'Definition' : status))
+      head.appendChild(
+        make(
+          'span',
+          'step-state-badge state-' + status,
+          status === 'definition' ? 'Definition' : status,
+        ),
+      )
       card.appendChild(head)
       card.appendChild(make('h2', 'exec-step-title', step.name || slug))
       var el = elementOf(slug)
@@ -781,15 +802,22 @@
         fact('Attempt', st.attempt ? String(st.attempt) : '')
         fact('Waiting on', st.waitingOn)
         fact('Failure', st.failure)
-        if (st.outcome || st.next) fact('Outcome', (st.outcome || '—') + (st.next ? ' → ' + stepName(st.next) : ''))
+        if (st.outcome || st.next)
+          fact('Outcome', (st.outcome || '—') + (st.next ? ' → ' + stepName(st.next) : ''))
       }
       if (facts.children.length) card.appendChild(facts)
-      renderProjection(card, slug, projection)
+      renderRequestBox(card, slug)
       if (step.next.length > 1) {
         var branches = make('div', 'branch-outcomes')
         step.next.forEach(function (t) {
           var target = graph.steps[t]
-          branches.appendChild(make('div', 'branch-outcome', stepName(t) + ' — ' + ((target && target.condition) || 'no guard')))
+          branches.appendChild(
+            make(
+              'div',
+              'branch-outcome',
+              stepName(t) + ' — ' + ((target && target.condition) || 'no guard'),
+            ),
+          )
         })
         card.appendChild(branches)
       }
@@ -806,52 +834,32 @@
     }
 
     /**
-     * The pending change on this step, shown the way every other console view shows one:
-     * the value it has now, then the value it would have. A step with nothing pending on it
-     * prints nothing, so the card never claims a change that is not queued.
+     * The request a person made on this step, and what became of it. A step with no request
+     * prints nothing. The badge is the answer the runner gave: pending means nobody consumed
+     * it, done means the action landed, stale and rejected carry the reason.
      */
-    function renderProjection(card, slug, projection) {
-      if (!projection) return
-      var now = activeRun && activeRun.state ? activeRun.state.steps[slug] : null
-      var next = projection.steps ? projection.steps[slug] : null
-      if (!next) return
-      var from = now ? now.status : 'pending'
-      var to = next.status
-      if (from === to) return
-
-      var box = make('div', 'proc-projection')
-      box.setAttribute('data-proc-projection', slug)
-      var head = make('div', 'proc-projection-title', 'Pending change')
-      box.appendChild(head)
-      var row = make('div', 'proc-projection-row')
-      row.appendChild(make('span', 'proc-projection-from', from))
-      row.appendChild(make('span', 'proc-projection-arrow', '→'))
-      row.appendChild(make('span', 'proc-projection-to', to))
-      box.appendChild(row)
-      // Every fact the pending events assert, listed exactly as the event carries it.
-      var facts = []
-      pendingEventsOf(activeRun).forEach(function (e) {
-        if (e.step !== slug) return
-        var bits = [e.kind]
-        ;['outcome', 'next', 'value', 'field'].forEach(function (k) {
-          if (e[k] !== undefined && e[k] !== '') bits.push(k + ': ' + e[k])
-        })
-        facts.push(bits.join(' · '))
+    function renderRequestBox(card, slug) {
+      var mine = requestsOf(activeRun).filter(function (r) {
+        return r.step === slug
       })
-      if (facts.length) {
-        var list = make('div', 'proc-projection-facts')
-        facts.forEach(function (f) {
-          list.appendChild(make('div', 'proc-projection-fact', f))
-        })
-        box.appendChild(list)
-      }
-      box.appendChild(
-        make(
-          'div',
-          'proc-projection-note',
-          'Not applied yet: this view shows the run with your pending drafts. The changeset applies them.',
-        ),
-      )
+      if (!mine.length) return
+      var box = make('div', 'proc-request-box')
+      box.setAttribute('data-proc-request', slug)
+      mine.forEach(function (r) {
+        var row = make('div', 'proc-request')
+        row.setAttribute('data-proc-request-status', r.status)
+        var head = make('div', 'proc-request-head')
+        head.appendChild(make('span', 'proc-request-action', r.action))
+        head.appendChild(make('span', 'proc-request-status status-' + r.status, r.status))
+        row.appendChild(head)
+        var bits = []
+        if (r.value) bits.push(r.value)
+        if (r.outcome) bits.push('outcome ' + r.outcome)
+        if (r.baseSeq !== undefined) bits.push('seq ' + r.baseSeq)
+        if (r.reason) bits.push(r.reason)
+        if (bits.length) row.appendChild(make('div', 'proc-request-detail', bits.join(' · ')))
+        box.appendChild(row)
+      })
       card.appendChild(box)
     }
 
@@ -906,26 +914,17 @@
     }
 
     /** The event fields for one action, matching the facts `procedure_record` records. */
-    function eventFor(action, state) {
-      var step = state.currentStep
-      var st = step && state.steps ? state.steps[step] : null
-      // Run-level facts: `procedure_record` records these with no `step` (`plan()`).
-      if (action === 'pause') return { kind: 'interrupted' }
-      if (action === 'resume') return { kind: 'resumed' }
-      if (action === 'rebase') return { kind: 'rebased', value: state.drift ? state.drift.current : '' }
-      if (action === 'start') return { kind: 'step_started', step: step, attempt: String((st ? st.attempt : 0) + 1) }
-      if (action === 'wait') return { kind: 'step_waiting', step: step }
-      if (action === 'fail') return { kind: 'step_failed', step: step }
-      return { kind: 'step_completed', step: step }
-    }
-
-    function runDraft(run, fields) {
-      var n = (Array.isArray(run.events) ? run.events.length : 0) + 1
-      var name = 'e-' + String(n).padStart(3, '0')
+    /**
+     * Records a `Step Request` for the runner to consume. This is a proposal, not a write to
+     * the run: the row is intent, and only `procedure_record` acts on it. The `base_seq` pins
+     * the state the person saw, so a request that arrives late is marked stale, not applied.
+     */
+    function runRequest(run, fields) {
+      var name = 'q-' + String(requestsOf(run).length + 1).padStart(3, '0')
       return store.propose({
         kind: 'new',
         knowledge_id: run.id,
-        concept: 'Execution Event',
+        concept: 'Step Request',
         element: name,
         proposed: JSON.stringify(fields),
         element_slug: name,
@@ -944,43 +943,77 @@
       return choices
     }
 
-    function recordAction(action, state, errorEl, pickedOutcome) {
+    /** The run's write counter: the seq a request pins, 0 when the export carried none. */
+    function runSeq() {
+      return activeRun && typeof activeRun.seq === 'number' ? activeRun.seq : 0
+    }
+
+    function recordAction(action, state, errorEl, pickedOutcome, host) {
       if (errorEl) errorEl.textContent = ''
-      var fields = eventFor(action, state)
+      var step = state.currentStep
+      var fields = {
+        request_status: 'pending',
+        action: action,
+        step: step,
+        base_seq: runSeq(),
+      }
+      if (action === 'fail' || action === 'wait') {
+        // The value the runner needs (who it waits on, why it failed) comes from the field the
+        // action row renders. A missing one refuses the request instead of sending a blank one.
+        var field = host && host.querySelector ? host.querySelector('[data-proc-request-value]') : null
+        var given = field && field.value ? String(field.value).trim() : ''
+        if (!given) {
+          if (errorEl)
+            errorEl.textContent =
+              action === 'wait'
+                ? 'A waiting step names who or what it waits on.'
+                : 'A failed step names why it failed.'
+          return
+        }
+        fields.requested_value = given
+      }
       if (action === 'complete') {
         var targets = Array.isArray(state.allowedNext) ? state.allowedNext : []
-        if (targets.length === 1) {
-          fields.next = targets[0].to
-        } else if (pickedOutcome) {
+        if (targets.length > 1) {
+          if (!pickedOutcome) {
+            if (errorEl)
+              errorEl.textContent =
+                'This step branches: choose which branch the outcome takes before completing it.'
+            return
+          }
           var chosen = outcomeChoices(state).filter(function (c) {
             return c.outcome === pickedOutcome
           })[0]
           if (!chosen) {
-            if (errorEl) errorEl.textContent = '"' + pickedOutcome + '" does not select a known branch of this step.'
+            if (errorEl)
+              errorEl.textContent =
+                '"' + pickedOutcome + '" does not select a known branch of this step.'
             return
           }
-          fields.outcome = chosen.outcome
-          fields.next = chosen.next
-        } else {
-          if (errorEl) errorEl.textContent = 'This step branches: choose which branch the outcome takes before completing it.'
-          return
+          fields.requested_outcome = chosen.outcome
         }
       }
       var saved
       try {
-        saved = runDraft(activeRun, fields)
+        saved = runRequest(activeRun, fields)
       } catch (err) {
         // The console refuses the proposal (a read-only export, a malformed draft). Say
         // so here: an exception thrown under a click is invisible otherwise, and the
         // person is left wondering why nothing happened.
-        if (errorEl) errorEl.textContent = 'The console refused this draft: ' + String(err && err.message ? err.message : err)
+        if (errorEl)
+          errorEl.textContent =
+            'The console refused this request: ' + String(err && err.message ? err.message : err)
         return
       }
       if (!saved) {
-        if (errorEl) errorEl.textContent = 'The console did not accept this draft.'
+        if (errorEl) errorEl.textContent = 'The console did not accept this request.'
         return
       }
-      draftNote = { run: activeRun.id, kind: fields.kind, name: 'e-' + String((activeRun.events || []).length + 1).padStart(3, '0') }
+      draftNote = {
+        run: activeRun.id,
+        kind: 'request',
+        name: 'q-' + String(requestsOf(activeRun).length + 1).padStart(3, '0'),
+      }
       render()
     }
 
@@ -989,18 +1022,51 @@
       var list = allowedActionsOf(state, activeRun)
       if (!list.length) return
       var box = make('div', 'proc-actions')
-      box.appendChild(make('div', 'proc-actions-title', 'Record an event'))
+      box.appendChild(make('div', 'proc-actions-title', 'Ask the runner'))
       var err = make('div', 'proc-action-error')
       box.appendChild(err)
+
+      // A step a person already asked about shows the ask and stays disabled: a second
+      // request on the same step would be a second intent for one decision.
+      var waiting = state.currentStep ? pendingRequestFor(state.currentStep) : null
+      if (waiting) {
+        var note = make(
+          'div',
+          'proc-action-waiting',
+          'Waiting for the agent: a "' +
+            waiting.action +
+            '" request on this step is pending. It acts on procedure_record.',
+        )
+        note.setAttribute('data-proc-waiting', waiting.action)
+        box.appendChild(note)
+        host.appendChild(box)
+        return
+      }
+
+      // Only the actions a request can carry: the queue never closes a run.
+      var askable = list.filter(function (a) {
+        return a === 'wait' || a === 'complete' || a === 'fail'
+      })
+      if (!askable.length) {
+        box.appendChild(
+          make(
+            'div',
+            'proc-action-note',
+            'This step is recorded by the runner; the console has nothing to ask here.',
+          ),
+        )
+        host.appendChild(box)
+        return
+      }
 
       // A branching step needs the human to name the branch: completing it without one
       // would be the AMBIGUOUS_TRANSITION the runner refuses.
       var choices = outcomeChoices(state)
       var select = null
-      if (choices.length > 1 && list.indexOf('complete') !== -1) {
+      if (choices.length > 1 && askable.indexOf('complete') !== -1) {
         select = make('select', 'proc-action-outcome')
         select.setAttribute('data-proc-outcome', '')
-        var blank = make('option', null, 'Choose the branch…')
+        var blank = make('option', null, 'Choose the branch.')
         blank.setAttribute('value', '')
         select.appendChild(blank)
         choices.forEach(function (c) {
@@ -1011,12 +1077,22 @@
         box.appendChild(select)
       }
 
-      list.forEach(function (action) {
+      // A wait or a fail needs a value: the field is rendered here, so the click reads it
+      // instead of opening a blocking dialog.
+      if (askable.indexOf('wait') !== -1 || askable.indexOf('fail') !== -1) {
+        var valueField = make('input', 'proc-action-value')
+        valueField.setAttribute('type', 'text')
+        valueField.setAttribute('data-proc-request-value', '')
+        valueField.setAttribute('placeholder', 'who it waits on, or why it failed')
+        box.appendChild(valueField)
+      }
+
+      askable.forEach(function (action) {
         var b = make('button', 'proc-action', ACTION_LABEL[action] || action)
         b.setAttribute('type', 'button')
         b.setAttribute('data-proc-action', action)
         b.addEventListener('click', function () {
-          recordAction(action, state, err, select ? select.value : '')
+          recordAction(action, state, err, select ? select.value : '', box)
         })
         box.appendChild(b)
       })
@@ -1029,54 +1105,106 @@
         make(
           'div',
           'proc-draft-pending',
-          'Draft created: ' + draftNote.name + ' (' + draftNote.kind + '). It is pending until apply_change runs; ' +
+          'Draft created: ' +
+            draftNote.name +
+            ' (' +
+            draftNote.kind +
+            '). It is pending until apply_change runs; ' +
             'this view keeps showing the exported state until then.',
         ),
       )
     }
 
     // ---- Run panel ----
-    function renderRunPanel(host, projection) {
+    function renderRunPanel(host) {
       var col = make('div', 'exec-log-col')
       host.appendChild(col)
       var panel = make('div', 'proc-run-state')
       col.appendChild(panel)
       if (!activeRun) {
-        panel.appendChild(make('p', null, 'No run selected: the procedure definition. An agent starts a run with procedure_start.'))
+        panel.appendChild(
+          make(
+            'p',
+            null,
+            'No run selected: the procedure definition. An agent starts a run with procedure_start.',
+          ),
+        )
         return
       }
       var state = activeRun.state
-      panel.appendChild(make('div', 'proc-run-title', 'Run ' + activeRun.id + (activeRun.closed ? ' (closed)' : '')))
+      panel.appendChild(
+        make(
+          'div',
+          'proc-run-title',
+          'Run ' + activeRun.id + (activeRun.closed ? ' (closed)' : ''),
+        ),
+      )
       if (!state) {
-        panel.appendChild(make('p', null, 'The definition of this procedure is not in this export; its state cannot be folded here.'))
-        renderEvents(col)
+        panel.appendChild(
+          make(
+            'p',
+            null,
+            'The definition of this procedure is not in this export; its state cannot be folded here.',
+          ),
+        )
+        renderRequestQueue(col)
         return
       }
       panel.appendChild(make('div', 'proc-run-status', 'Status: ' + state.status))
-      if (projection && projection.status !== state.status) {
-        var moved = make('div', 'proc-run-projected', 'With pending drafts: ' + projection.status)
-        moved.setAttribute('data-proc-projected-status', projection.status)
-        panel.appendChild(moved)
-      }
-      panel.appendChild(make('div', 'proc-run-current', 'Current step: ' + (state.currentStep ? stepName(state.currentStep) : 'none')))
-      panel.appendChild(make('div', 'proc-run-path', 'Path: ' + state.path.map(stepName).join(' → ')))
-      if (state.blockedBy) panel.appendChild(make('div', 'proc-run-blocked', 'Blocked: ' + state.blockedBy))
-      if (state.crashed) panel.appendChild(make('div', 'proc-run-crashed', 'An engine step started and never reported: the run crashed.'))
+      panel.appendChild(
+        make(
+          'div',
+          'proc-run-current',
+          'Current step: ' + (state.currentStep ? stepName(state.currentStep) : 'none'),
+        ),
+      )
+      panel.appendChild(
+        make('div', 'proc-run-path', 'Path: ' + state.path.map(stepName).join(' → ')),
+      )
+      if (state.blockedBy)
+        panel.appendChild(make('div', 'proc-run-blocked', 'Blocked: ' + state.blockedBy))
+      if (state.crashed)
+        panel.appendChild(
+          make(
+            'div',
+            'proc-run-crashed',
+            'An engine step started and never reported: the run crashed.',
+          ),
+        )
       if (state.paused) panel.appendChild(make('div', 'proc-run-paused', 'Paused.'))
       if (state.drift) {
         panel.appendChild(
           make(
             'div',
             'proc-run-drift',
-            'Definition changed: the run is pinned to ' + state.drift.pinned + ', the procedure is now ' + state.drift.current + '.',
+            'Definition changed: the run is pinned to ' +
+              state.drift.pinned +
+              ', the procedure is now ' +
+              state.drift.current +
+              '.',
           ),
         )
       }
-      if (state.stale.length) panel.appendChild(make('div', 'proc-run-stale', 'Stale artifacts: ' + state.stale.join(', ')))
-      if (state.reopened.length) panel.appendChild(make('div', 'proc-run-reopened', 'Reopened steps: ' + state.reopened.map(stepName).join(', ')))
+      if (state.stale.length)
+        panel.appendChild(
+          make('div', 'proc-run-stale', 'Stale artifacts: ' + state.stale.join(', ')),
+        )
+      if (state.reopened.length)
+        panel.appendChild(
+          make(
+            'div',
+            'proc-run-reopened',
+            'Reopened steps: ' + state.reopened.map(stepName).join(', '),
+          ),
+        )
       // "Allowed next" is what the step's guards permit, which is meaningless when the fold
       // says the run cannot advance. A blocked step would read as if its branches were open.
-      if (state.allowedNext.length && !state.blockedBy && !state.drift && !TERMINAL_RUN[state.status]) {
+      if (
+        state.allowedNext.length &&
+        !state.blockedBy &&
+        !state.drift &&
+        !TERMINAL_RUN[state.status]
+      ) {
         panel.appendChild(
           make(
             'div',
@@ -1107,33 +1235,49 @@
           make(
             'div',
             'proc-run-next',
-            'Next action (agent): procedure_state ' + ref + ' lists the allowed actions; procedure_record ' + ref.slice(0, -1) + ', "action": …} records ' +
-              (state.drift ? 'the rebase onto the new definition.' : state.currentStep ? 'the next fact of step ' + stepName(state.currentStep) + '.' : 'the terminal event.'),
+            'Next action (agent): procedure_state ' +
+              ref +
+              ' lists the allowed actions; procedure_record ' +
+              ref.slice(0, -1) +
+              ', "action": …} records ' +
+              (state.drift
+                ? 'the rebase onto the new definition.'
+                : state.currentStep
+                  ? 'the next fact of step ' + stepName(state.currentStep) + '.'
+                  : 'the terminal event.'),
           ),
         )
       }
       renderActions(col, state)
       renderDraftNote(col)
-      renderEvents(col)
+      renderRequestQueue(col)
     }
 
-    function renderEvents(host) {
-      var box = make('div', 'proc-run-events exec-log-view')
-      host.appendChild(make('div', 'exec-col-header', 'Events'))
-      ;(activeRun.events || []).forEach(function (e) {
-        var item = make('div', 'audit-item status-' + e.kind)
-        var top = make('div', 'audit-time', (e.at || '') + (e.actor ? ' • ' + e.actor : ''))
-        item.appendChild(top)
-        var text = make('div', 'audit-text')
-        text.appendChild(make('span', 'audit-kind', e.kind))
-        var bits = []
-        if (e.step) bits.push(stepName(e.step))
-        if (e.outcome) bits.push('outcome ' + e.outcome)
-        if (e.next) bits.push('→ ' + stepName(e.next))
-        if (e.field) bits.push(e.field)
-        if (e.value) bits.push(e.value)
-        if (bits.length) text.appendChild(document.createTextNode(' ' + bits.join(' · ')))
+    /**
+     * The queue of requests on this run, oldest first, with the status the runner gave each
+     * one. It is the same list `procedure_pending` returns: an agent drains it, a person reads
+     * what happened to what they asked for.
+     */
+    function renderRequestQueue(host) {
+      var all = requestsOf(activeRun)
+      if (!all.length) return
+      var box = make('div', 'proc-run-requests')
+      host.appendChild(make('div', 'exec-col-header', 'Requests'))
+      all.forEach(function (r) {
+        var item = make('div', 'request-item status-' + r.status)
+        item.setAttribute('data-proc-request-id', r.id)
+        item.setAttribute('data-proc-request-status', r.status)
+        var text = make('div', 'request-text')
+        text.appendChild(make('span', 'request-kind', r.action))
         item.appendChild(text)
+        item.appendChild(make('span', 'request-status status-' + r.status, r.status))
+        var bits = []
+        if (r.step) bits.push(stepName(r.step))
+        if (r.value) bits.push(r.value)
+        if (r.outcome) bits.push('outcome ' + r.outcome)
+        if (r.baseSeq !== undefined) bits.push('seq ' + r.baseSeq)
+        if (bits.length) item.appendChild(make('div', 'request-detail', bits.join(' · ')))
+        if (r.reason) item.appendChild(make('div', 'request-reason', r.reason))
         box.appendChild(item)
       })
       host.appendChild(box)
@@ -1147,7 +1291,13 @@
       renderFicha(body)
       renderRunList(body)
       if (!active.graph) {
-        body.appendChild(make('div', 'empty-state', 'The definition of ' + active.file + ' is not in this export.'))
+        body.appendChild(
+          make(
+            'div',
+            'empty-state',
+            'The definition of ' + active.file + ' is not in this export.',
+          ),
+        )
         var ws0 = make('div', 'exec-workspace')
         body.appendChild(ws0)
         if (activeRun) renderRunPanel(ws0)
@@ -1155,11 +1305,11 @@
       }
       var ws = make('div', 'exec-workspace')
       body.appendChild(ws)
-      // One projection per render: the graph, the step card and the panel must agree.
-      var projection = projectedStateOf(activeRun)
-      renderGraph(ws, projection)
-      renderStepCard(ws, projection)
-      renderRunPanel(ws, projection)
+      // The model is the state: the fold already ran when the run was read, so the graph, the
+      // step card and the panel all read the same rows. Nothing is projected from drafts.
+      renderGraph(ws)
+      renderStepCard(ws)
+      renderRunPanel(ws)
     }
 
     selectEntry(active)
