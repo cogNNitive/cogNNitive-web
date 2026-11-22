@@ -25921,7 +25921,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         try {
           const content = await (0, import_promises12.readFile)(entry.filePath, "utf-8");
           originalModelsBackup.set(entry.filePath, content);
-        } catch {
+        } catch (err) {
+          if (err?.code === "ENOENT") continue;
+          throw new Error(
+            `[apply-change] cannot read the rollback backup of "${entry.filePath}" (${err}); nothing was written`
+          );
         }
       }
     }
