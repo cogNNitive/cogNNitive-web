@@ -59,7 +59,7 @@ for installed locations):
 
 | Command | Behavior |
 |---|---|
-| `status` | Compares installed vs. pinned commits; prints a table, plus a file-count diff preview (via the GitHub compare API) for anything outdated. |
+| `status` | Compares installed vs. pinned commits; prints a table, plus a file-count diff preview (via the GitHub compare API) for anything outdated. An installed bluepriNNt the catalog no longer lists reads `retired` (no update touches it and nothing deletes it; remove it by hand if no domaiNN uses it); `catalog-unavailable` means the catalog could not be read. Stray copies and flat `.md` files are listed under their on-disk name. |
 | `install` | Installs skills missing from the skills directory, at their pinned commit. |
 | `install-external --name <n> --repo <owner/repo> --path <skills/x> --commit <40-hex> [--sha256 <64-hex>]` | **Opt-in.** Installs a *referenced* external (third-party) skill from its upstream repo at the pinned commit, verifying the `sha256` tree digest when given. Never invoked by `install`/`update`/`sync`. |
 | `update [skill ...]` | Updates outdated skills — or a given subset, auto-pulling in any outdated `requires` — at their pinned commit. |

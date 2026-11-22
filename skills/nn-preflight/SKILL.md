@@ -1,6 +1,6 @@
 ---
 name: nn-preflight
-description: Environment readiness and integrity gate for cogNNitive workflows. Runs Tier 1 checks (Node.js >= 18, nn-mcp availability, workspace layout, source integrity audit across sources/import/ and sources/conversations/ against their co-located sidecars) and optional Tier 2 checks (iNNfo output workspace structure, semantic link validation), plus a Tier 3 workspace template upgrade scan (catalog-backed, read-only, non-blocking). Then reports blockers/warnings/ok. Also provides the canonical skill-location reference used by nn-skills-lifecycle. Triggers: preflight, readiness, environment check, "run Tier 1".
+description: Environment readiness and integrity gate for cogNNitive workflows. Runs Tier 1 checks (Node.js >= 18, nn-mcp availability, workspace layout, source integrity audit across sources/import/ and sources/conversations/ against their co-located sidecars) and optional Tier 2 checks (iNNfo output workspace structure, semantic link validation), plus a Tier 3 workspace template upgrade scan (catalog-backed, read-only, non-blocking). Then reports blockers/warnings/ok. Also provides the canonical skill-location reference used by nn-skills-lifecycle. A request to update or install the cogNNitive profile installation follows https://cognnitive.com/use/manifest.md (see the nn skill: skills-manager.js status first, bootstrap only on consent). Triggers: preflight, readiness, environment check, "run Tier 1".
 version: "V_0-2-5"
 last_updated: 2026-10-04
 metadata:

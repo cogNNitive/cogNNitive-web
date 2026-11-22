@@ -1,6 +1,6 @@
 ---
 name: nn
-description: Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [m] Models, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Triggers: /nn, NN, nn, cognnitive, cognitive, start, router.
+description: Primary Front Controller, ecosystem entry point, job loop menu ([s] Sources, [m] Models, [r] Review/Artifacts, [p] Procedures, [h] Help, [x] Cancel), system governance, and preflight readiness gate. Also the entry point for updating or installing the cogNNitive installation itself (profile install, skills-manager.js status first). Triggers: /nn, NN, nn, cognnitive, cognitive, start, router, update cognnitive, install cognnitive.
 disable-model-invocation: false
 version: "V_3-4-3"
 last_updated: 2026-10-09
@@ -86,6 +86,25 @@ Each option displays its origin badge (e.g. `[p1] Extract Key Risks [blueprint:b
 Once a procedure is selected, execution follows the canonical Procedure
 Execution Protocol in `nn-innfo` §16-bis; `nn` routes the intent to that owner
 and does not execute steps from its own text. Do not restate the protocol here.
+
+---
+
+## Updating the cogNNitive installation
+
+When the user asks to update or install cogNNitive itself (skills, bluepriNNts, nn-mcp,
+console assets), the target is the profile installation under `~/.agents/`, and the
+manifest `https://cognnitive.com/use/manifest.md` is the source of truth for what it should
+hold. A git clone of the cogNNitive repository is a development checkout, not the installation:
+updating it changes nothing the agent runs.
+
+1. Run `node ~/.agents/skills/nn-skills-lifecycle/scripts/skills-manager.js status` (read-only)
+   and report pinned vs installed.
+2. Only after the user gives consent, run
+   `node ~/.agents/skills/nn-skills-lifecycle/scripts/skills-manager.js bootstrap --yes`.
+3. Re-run `status` to confirm.
+
+The full flow (install, update, external skills) lives in `/nn-skills-lifecycle`, which the user
+invokes; it is not model-invocable.
 
 ---
 

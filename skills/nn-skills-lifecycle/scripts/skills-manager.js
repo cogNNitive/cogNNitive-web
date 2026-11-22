@@ -1874,7 +1874,7 @@ ${RETIRED_REPO_NOTICE}`);
         const catalogEntry = findCatalogEntry(catalog, name);
         const installedTag = entry && entry.commit;
         let status;
-        if (!catalogEntry) status = "unknown";
+        if (!catalogEntry) status = unmatchedCatalogStatus(catalog);
         else if (!catalogEntry.release_tag) status = "unreleased";
         else if (installedTag === catalogEntry.release_tag) status = "up-to-date";
         else status = "outdated";
@@ -1887,16 +1887,18 @@ ${RETIRED_REPO_NOTICE}`);
         });
       }
       const behindBlueprints = [];
-      for (const { name, version } of untrackedInstalledBlueprints(args.blueprintsDir, state, manifestNames)) {
-        const catalogEntry = findCatalogEntry(catalog, name);
+      for (const item of untrackedInstalledBlueprints(args.blueprintsDir, state, manifestNames)) {
+        const { name, version } = item;
+        const catalogEntry = item.kind === "dir" ? findCatalogEntry(catalog, name) : null;
         let status;
-        if (!catalogEntry || !catalogEntry.adopted) status = "unknown";
+        if (!catalogEntry) status = unmatchedCatalogStatus(catalog);
+        else if (!catalogEntry.adopted) status = "unreleased";
         else if (compareBlueprintVersions(version, catalogEntry.adopted) < 0) status = "outdated";
         else status = "up-to-date";
-        if (status === "outdated") behindBlueprints.push({ name: catalogEntry && catalogEntry.name || name, version, adopted: catalogEntry.adopted });
+        if (status === "outdated") behindBlueprints.push({ name: catalogEntry.name || name, version, adopted: catalogEntry.adopted });
         rows.push({
           type: "catalog",
-          name,
+          name: untrackedDisplayName(item),
           pinned: catalogEntry && catalogEntry.adopted ? String(catalogEntry.adopted) : "-",
           installed: version || "-",
           status
@@ -1906,6 +1908,14 @@ ${RETIRED_REPO_NOTICE}`);
       for (const bp of behindBlueprints) {
         console.log(`
 bluepriNNt ${bp.name} ${bp.version || "(unknown version)"} is older than the catalog (${bp.adopted}). Run: ${blueprintInstallCommand(bp.name)}`);
+      }
+      const retired = rows.filter((r) => r.type === "catalog" && r.status === "retired");
+      if (retired.length > 0) {
+        console.log(`
+${retired.length} installed bluepriNNt(s) are not in the catalog (retired). No update will ever touch them; nothing deletes them either. Remove them by hand from ${args.blueprintsDir} if no domaiNN uses them: ${retired.map((r) => r.name).join(", ")}`);
+      }
+      if (!catalog) {
+        console.log("\nThe bluepriNNt catalog could not be read, so catalog bluepriNNts were not compared (catalog-unavailable). Re-run status when the catalog is reachable.");
       }
       if (outdatedSkills.length > 0 || outdatedBlueprints.length > 0 || outdatedConsoleAssets.length > 0 || outdatedMcp.length > 0) {
         console.log("\nDiff previews for outdated items:");
@@ -2128,9 +2138,15 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
       for (let i = 0; i < 3; i++) if (pa[i] !== pb[i]) return pa[i] - pb[i];
       return 0;
     }
+    function unmatchedCatalogStatus(catalog) {
+      return catalog ? "retired" : "catalog-unavailable";
+    }
     function untrackedInstalledBlueprints(blueprintsDir, state, manifestNames) {
+      const trackedPaths = Object.values(state.blueprints || {}).map((entry) => entry && entry.path ? path2.basename(String(entry.path)) : null).filter(Boolean);
       const known = new Set(
-        [...manifestNames, ...Object.keys(state.blueprints || {})].map((n) => String(n).toLowerCase())
+        [...manifestNames, ...Object.keys(state.blueprints || {}), ...trackedPaths].map(
+          (n) => String(n).toLowerCase()
+        )
       );
       let entries;
       try {
@@ -2140,7 +2156,14 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
       }
       const found = [];
       for (const entry of entries) {
-        if (!entry.isDirectory() || known.has(entry.name.toLowerCase())) continue;
+        const lower = entry.name.toLowerCase();
+        if (known.has(lower)) continue;
+        if (entry.isFile() && lower.endsWith(".md")) {
+          if (known.has(lower.slice(0, -3))) continue;
+          found.push({ name: entry.name, declared: null, version: null, kind: "file" });
+          continue;
+        }
+        if (!entry.isDirectory()) continue;
         let text;
         try {
           text = fs.readFileSync(path2.join(blueprintsDir, entry.name, "spec_NN.md"), "utf-8");
@@ -2151,11 +2174,18 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
           const m = new RegExp(`^${key}:\\s*["']?([^"'\\r\\n]+?)["']?\\s*$`, "m").exec(text);
           return m ? m[1] : null;
         };
-        const name = field("blueprint_name") || entry.name;
-        if (known.has(name.toLowerCase())) continue;
-        found.push({ name, version: field("blueprint_version") });
+        found.push({
+          name: entry.name,
+          declared: field("blueprint_name"),
+          version: field("blueprint_version"),
+          kind: "dir"
+        });
       }
       return found.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    function untrackedDisplayName(item) {
+      if (!item.declared || item.declared.toLowerCase() === item.name.toLowerCase()) return item.name;
+      return `${item.name} (declares ${item.declared})`;
     }
     async function describeBlueprintPackage(template) {
       const tmpRoot = fs.mkdtempSync(path2.join(os.tmpdir(), "actioNN-bp-menu-"));
@@ -2320,7 +2350,8 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
         if (entry && entry.commit === catalogEntry.release_tag) continue;
         selectedCatalog.push({ name, catalogEntry });
       }
-      for (const { name, version } of untrackedInstalledBlueprints(args.blueprintsDir, state, manifestNames)) {
+      for (const { name, version, kind } of untrackedInstalledBlueprints(args.blueprintsDir, state, manifestNames)) {
+        if (kind !== "dir") continue;
         if (args.positional.length > 0 && !args.positional.includes(name)) continue;
         const catalogEntry = findCatalogEntry(catalog, name);
         if (!catalogEntry || !catalogEntry.adopted) continue;
@@ -2874,6 +2905,7 @@ Projected skills to agent directories:`);
       loadBlueprintCatalog,
       findCatalogEntry,
       untrackedInstalledBlueprints,
+      unmatchedCatalogStatus,
       blueprintInstallCommand,
       DEFAULT_BLUEPRINT_REPO,
       DEFAULT_CATALOG_PATH,
