@@ -62,6 +62,7 @@ Legend: ● can be written at this scope, · cannot.
 | `style` | select | `title`, `lower-third`, `caption`, `watermark`, `quote` | · | · | · | · | · | · | ● | · | · | · | · | · |
 | `text_from` | select | `narration` | · | · | · | · | · | · | ● | · | · | · | · | · |
 | `asset` | file | — | · | · | ● | · | · | · | ● | · | · | · | · | · |
+| `inputs` | select (multi) | — | · | · | · | · | · | · | ● | · | · | · | · | · |
 | `prompt` | string | — | · | · | · | · | · | · | ● | · | · | · | · | · |
 | `text` | markdown_inline | — | · | · | · | · | · | · | ● | · | · | · | · | · |
 | `position` | select | `top`, `center`, `bottom`, `bottom-left`, `bottom-right` | · | · | · | · | · | · | ● | · | · | · | · | · |
@@ -335,9 +336,15 @@ Settable at: `Layer`.
 
 ### `asset`
 
-Source media file for a Layer (image or video), the directory of an authored HyperFrames project for an `animation` Layer, or the media of a fixed Scene Kind. One of `asset` or `prompt` is required for `avatar` and `media` Layers.
+Source media file for a Layer (image or video), the directory of an authored HyperFrames project for an `animation` Layer, or the media of a fixed Scene Kind. An `animation` Layer may instead write `component:<name>` to mount the HyperFrames component `components/<name>` (library walk: episode, series, domain, skill), resolved before anything is spent; a missing one fails. One of `asset` or `prompt` is required for `avatar` and `media` Layers.
 
 Settable at: `Layer`, `Scene Kind`.
+
+### `inputs`
+
+Data inputs of an `animation` Layer, a keyed list `inputs:: [name=value, ...]` (e.g. `[cues=file:media/visemes.json, mood=calm]`); any other Layer type declaring it is an error. Each name must be a variable the mounted project or component declares in the `data-composition-variables` of its root `index.html`; a declared variable with no `default` is required, a `number` value must be numeric, a `boolean` `true` or `false`, and an `enum` one of its options. A value written `file:<path>` is the text of that file, read relative to the episode document. The inputs are checked before anything is spent, reach the project as the mount host's `data-variable-values`, and are part of the scene's review subject, so changing one reopens that scene only. A value cannot contain a comma; put structured data in a file. An authored project mounted without `inputs` is not checked against its variables; a component is always checked. Optional.
+
+Settable at: `Layer`.
 
 ### `prompt`
 

@@ -1,6 +1,6 @@
 {
   "blueprint": "coNNtent",
-  "blueprint_version": "V_0-29-0",
+  "blueprint_version": "V_0-30-0",
   "generated_from": "spec_NN.md",
   "fields": {
     "adapter": {
@@ -62,7 +62,7 @@
       "options": [],
       "multiple": false,
       "cascade": false,
-      "description": "Source media file for a Layer (image or video), the directory of an authored HyperFrames project for an `animation` Layer, or the media of a fixed Scene Kind. One of `asset` or `prompt` is required for `avatar` and `media` Layers."
+      "description": "Source media file for a Layer (image or video), the directory of an authored HyperFrames project for an `animation` Layer, or the media of a fixed Scene Kind. An `animation` Layer may instead write `component:<name>` to mount the HyperFrames component `components/<name>` (library walk: episode, series, domain, skill), resolved before anything is spent; a missing one fails. One of `asset` or `prompt` is required for `avatar` and `media` Layers."
     },
     "avatar": {
       "concepts": [
@@ -521,6 +521,18 @@
       "multiple": false,
       "cascade": true,
       "description": "Requested image size as `<W>x<H>`, validated against the resolved image Model's `sizes`. Part of the image cache key. Defaults to `1024x1024` in the blueprint Video Defaults."
+    },
+    "inputs": {
+      "concepts": [
+        "Layer"
+      ],
+      "scope": "record",
+      "levels": [],
+      "type": "select",
+      "options": [],
+      "multiple": true,
+      "cascade": false,
+      "description": "Data inputs of an `animation` Layer, a keyed list `inputs:: [name=value, ...]` (e.g. `[cues=file:media/visemes.json, mood=calm]`); any other Layer type declaring it is an error. Each name must be a variable the mounted project or component declares in the `data-composition-variables` of its root `index.html`; a declared variable with no `default` is required, a `number` value must be numeric, a `boolean` `true` or `false`, and an `enum` one of its options. A value written `file:<path>` is the text of that file, read relative to the episode document. The inputs are checked before anything is spent, reach the project as the mount host's `data-variable-values`, and are part of the scene's review subject, so changing one reopens that scene only. A value cannot contain a comma; put structured data in a file. An authored project mounted without `inputs` is not checked against its variables; a component is always checked. Optional."
     },
     "intro": {
       "concepts": [

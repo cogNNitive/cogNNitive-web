@@ -55,6 +55,7 @@ export const FIELD_CONSUMERS = {
   fit: ['lib/cascade.mjs', 'scene-compiler.mjs', 'scene-project.mjs', 'lib/compile.mjs', 'overlay-blocks.mjs'],
   type: ['scene-compiler.mjs'],
   asset: ['scene-compiler.mjs'],
+  inputs: ['scene-compiler.mjs', 'lib/animations.mjs'],
   prompt: ['scene-compiler.mjs', 'lib/image-options.mjs'],
   text: ['scene-compiler.mjs'],
   position: ['scene-compiler.mjs'],

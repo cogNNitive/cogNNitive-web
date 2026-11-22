@@ -793,7 +793,12 @@ export async function compileVideo(options) {
   // a missing project fails loudly with nothing spent, and an id that would
   // collide with a scene slug, the root composition id, a component id or another
   // animation fails naming both.
-  const animations = resolveAnimations({ scenes: parsed.scenes, scriptDir });
+  const animations = resolveAnimations({
+    scenes: parsed.scenes,
+    scriptDir,
+    workspaceRoot: loaded.root,
+    packageFloor: path.join(PACKAGE_FLOOR, 'library', 'components'),
+  });
   assertAnimationIds({
     animations,
     sceneSlugs: parsed.scenes.map((sc) => sc.slug),

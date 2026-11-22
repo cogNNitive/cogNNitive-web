@@ -17,8 +17,10 @@ A Series ships these artifacts:
   only file that anchors the Series, it is the series' scope document, and its Fields supply the `series` level of
   the parameter cascade.
 - Optional **`Preset` elements** in that same document, after its `Series` section.
-  A Preset is a named bundle of cascade parameters with no fields of its own and no
-  Layers.
+  A Preset is a named bundle of cascade parameters with no fields of its own. A
+  `### NN Layer:` nested under a Preset or a `Scene Kind` is contributed to every scene
+  that uses it, and a scene Layer with the same slug overrides it (spec "Layer
+  Inheritance").
 
 A script references Presets by bare name in an ordered list:
 

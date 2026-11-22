@@ -16,17 +16,37 @@
  * slug, the root composition id, a component id or a DIFFERENT project's id is an
  * error naming both (design D8). One project mounted by several scenes is allowed.
  *
+ * Data inputs (issue #612 item 4): an `animation` Layer's `inputs` are checked against the
+ * variables the project root declares in `data-composition-variables` (the HyperFrames
+ * variable contract: `{ id, type, default, options }`) and typed for the mount host's
+ * `data-variable-values`. `asset:: component:<name>` names a library component
+ * (`components/<name>`, the library walk `fit:: component:<name>` uses) in place of an
+ * authored project directory; a component is always checked, so its required inputs must be
+ * given. An authored project without `inputs` is mounted as before, unchecked.
+ *
  * Pure filesystem module: imports no provider and no HyperFrames module.
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { resolveLibrary } from './library.mjs';
+import { readVariables } from '../overlay-blocks.mjs';
+
 /** Raised when an `animation` Layer's project directory has no readable project. */
 export class AnimationProjectError extends Error {
   constructor(message) {
     super(message);
     this.name = 'AnimationProjectError';
+  }
+}
+
+/** Raised when an `animation` Layer's inputs do not match what its project declares. */
+export class AnimationInputError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AnimationInputError';
+    this.code = 'animation-input';
   }
 }
 
@@ -69,13 +89,92 @@ export function readAuthoredProject(projectDir) {
   return { id: idMatch[1], durationSeconds, indexPath, projectDir };
 }
 
+const COMPONENT_RE = /^component:([A-Za-z0-9][A-Za-z0-9._-]*)$/;
+
 /**
- * Resolves every `animation` Layer to its authored project, keyed by scene id.
- * A project directory with no readable `index.html` fails loudly.
- * @param {{ scenes: Array<{ id: string, layers?: object[] }>, scriptDir: string }} params
- * @returns {Record<string, Array<{ id: string, durationSeconds: number, sourceDir: string, layerSlug: string }>>}
+ * Checks a Layer's inputs against the declared variables and types them for the mount.
+ * Every given input must be declared; a declared variable with no `default` is required; a
+ * `number` must be finite, a `boolean` `true` or `false`, an `enum` one of its option values.
+ * The result holds every declared variable that has a value (given, else its default).
+ * @param {Record<string, string>} inputs
+ * @param {Array<{ id: string, type?: string, default?: unknown, options?: Array<{ value: unknown }> }>} declared
+ * @param {string} where names the Layer and its project in every error
+ * @returns {Record<string, unknown>}
  */
-export function resolveAnimations({ scenes, scriptDir }) {
+export function checkAnimationInputs(inputs, declared, where) {
+  const byId = new Map(declared.map((v) => [v.id, v]));
+  for (const name of Object.keys(inputs)) {
+    if (!byId.has(name)) {
+      throw new AnimationInputError(
+        `${where}: input "${name}" is not declared (declared: ${declared.map((v) => v.id).join(', ') || 'none'})`,
+      );
+    }
+  }
+  const values = {};
+  for (const variable of declared) {
+    if (!Object.hasOwn(inputs, variable.id)) {
+      if (!Object.hasOwn(variable, 'default')) throw new AnimationInputError(`${where}: required input "${variable.id}" is not given`);
+      values[variable.id] = variable.default;
+      continue;
+    }
+    const raw = inputs[variable.id];
+    if (variable.type === 'number') {
+      const n = Number(raw);
+      if (raw.trim() === '' || !Number.isFinite(n)) {
+        throw new AnimationInputError(`${where}: input "${variable.id}" must be a number, got "${raw}"`);
+      }
+      values[variable.id] = n;
+    } else if (variable.type === 'boolean') {
+      if (raw !== 'true' && raw !== 'false') {
+        throw new AnimationInputError(`${where}: input "${variable.id}" must be true or false, got "${raw}"`);
+      }
+      values[variable.id] = raw === 'true';
+    } else if (variable.type === 'enum') {
+      const allowed = (variable.options || []).map((o) => String(o?.value));
+      if (!allowed.includes(raw)) {
+        throw new AnimationInputError(`${where}: input "${variable.id}" must be one of ${allowed.join(', ')}, got "${raw}"`);
+      }
+      values[variable.id] = raw;
+    } else {
+      values[variable.id] = raw;
+    }
+  }
+  return values;
+}
+
+/**
+ * The project directory an `animation` Layer mounts: an authored directory relative to the
+ * script, or the folder of the library component `component:<name>` names.
+ */
+function projectDirOf(layer, asset, { scriptDir, workspaceRoot, packageFloor }) {
+  const component = COMPONENT_RE.exec(String(asset).trim());
+  if (!component) return { projectDir: path.isAbsolute(asset) ? asset : path.resolve(scriptDir, asset), component: null };
+  const name = component[1];
+  const { file, searched } = resolveLibrary({
+    kind: 'components',
+    ref: `components/${name}`,
+    fromDir: scriptDir,
+    root: workspaceRoot,
+    packageFloor,
+    throwOnMiss: false,
+  });
+  if (!file) {
+    throw new AnimationProjectError(
+      `animation Layer "${layer.name}": component "${name}" not found; searched:\n${(searched || []).map((p) => `  - ${p}`).join('\n')}`,
+    );
+  }
+  return { projectDir: fs.statSync(file).isDirectory() ? file : path.dirname(file), component: name };
+}
+
+/**
+ * Resolves every `animation` Layer to its authored project or library component, keyed by
+ * scene id, and checks its inputs. A project directory with no readable `index.html` fails
+ * loudly, and so does a component the library walk does not find.
+ * @param {{ scenes: Array<{ id: string, layers?: object[] }>, scriptDir: string, workspaceRoot?: string, packageFloor?: string }} params
+ *   `packageFloor` is the blueprint's `library/components` folder, the last library level.
+ * @returns {Record<string, Array<{ id: string, durationSeconds: number, sourceDir: string, layerSlug: string, values?: Record<string, unknown> }>>}
+ */
+export function resolveAnimations({ scenes, scriptDir, workspaceRoot, packageFloor }) {
   /** @type {Record<string, Array<{ id: string, durationSeconds: number, sourceDir: string, layerSlug: string }>>} */
   const byScene = {};
   for (const sc of scenes || []) {
@@ -87,18 +186,30 @@ export function resolveAnimations({ scenes, scriptDir }) {
       if (!asset) {
         throw new AnimationProjectError(`animation Layer "${layer.name}" has no asset::`);
       }
-      const projectDir = path.isAbsolute(asset) ? asset : path.resolve(scriptDir, asset);
+      const { projectDir, component } = projectDirOf(layer, asset, { scriptDir, workspaceRoot, packageFloor });
       const project = readAuthoredProject(projectDir);
       if (!project) {
         throw new AnimationProjectError(
           `animation project not found for Layer "${layer.name}": expected ${path.join(projectDir, 'index.html')}`,
         );
       }
+      const inputs = layer.properties?.layer_inputs;
+      // A component is always checked; an authored project only when the Layer gives inputs,
+      // so a Layer without inputs mounts its project exactly as before.
+      const values =
+        inputs || component
+          ? checkAnimationInputs(
+              inputs || {},
+              readVariables(fs.readFileSync(project.indexPath, 'utf8')),
+              `animation Layer "${layer.name}" (${project.indexPath})`,
+            )
+          : null;
       entries.push({
         id: project.id,
         durationSeconds: project.durationSeconds,
         sourceDir: projectDir,
         layerSlug: layer.slug,
+        ...(values ? { values } : {}),
       });
     }
     byScene[sc.id] = entries;

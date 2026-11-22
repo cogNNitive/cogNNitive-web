@@ -99,7 +99,8 @@ step_type:: task
 tool:: agent
 produces:: zero or more `## NN Preset: <name>` elements after the Series section, each carrying only fields whose `concept::` lists `Preset` (for example `voice_model`, `transition`, `frame`, `fit`, `components`, `sounds`, `background_audio`)
 scope:: internal
-A Preset has no fields of its own and owns no Layers. Reference it by bare name in an ordered
+A Preset has no fields of its own; it may nest `### NN Layer:` elements that every scene using it
+inherits (a scene layer with the same slug replaces the inherited one). Reference it by bare name in an ordered
 list (`presets:: [Studio Warm]`); the last Preset of a list wins and an element's explicit
 fields beat its own Presets.
 

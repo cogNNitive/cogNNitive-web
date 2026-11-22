@@ -4,8 +4,10 @@
  * The series grammar: `Scene Kind` and `Chrome` elements declared by the Series document,
  * and the two rules the engine derives from them (capability video-scene-kinds):
  *   - a scene states a kind declared by its Series, or the reserved `Libre`;
- *   - a kind's `presets` are its only cascade contribution, and its `chrome` list resolves
- *     against the `Chrome` element for the cascaded language.
+ *   - a kind's `presets` are its only parameter contribution, and its `chrome` list resolves
+ *     against the `Chrome` element for the cascaded language;
+ *   - the Layer elements nested under a kind are contributed to every scene of that kind
+ *     (issue #612 item 3); the scene compiler folds them with the Preset layers.
  */
 
 import fs from 'node:fs';
@@ -13,6 +15,7 @@ import path from 'node:path';
 
 import { findSeriesRoot } from './video-scope.mjs';
 import { parseKnowledgeDocument } from './knowledge-model.mjs';
+import { nestedLayers } from './presets.mjs';
 
 export const LIBRE = 'Libre';
 
@@ -51,7 +54,12 @@ export function loadSeriesGrammar(scriptDir) {
   const model = parseKnowledgeDocument(fs.readFileSync(doc, 'utf8'));
   const kinds = {};
   for (const element of model.elements['Scene Kind'] || []) {
-    kinds[element.name] = { name: element.name, slug: element.slug, fields: element.fields || {} };
+    kinds[element.name] = {
+      name: element.name,
+      slug: element.slug,
+      fields: element.fields || {},
+      layers: nestedLayers(model.elements.Layer, 'Scene Kind', element),
+    };
   }
   const chrome = {};
   for (const element of model.elements.Chrome || []) {
@@ -59,6 +67,13 @@ export function loadSeriesGrammar(scriptDir) {
     if (language) chrome[language] = { name: element.name, slug: element.slug, fields: element.fields || {} };
   }
   return { kinds, chrome, doc };
+}
+
+/** The Layer elements a kind contributes to each of its scenes. `Libre` contributes none. */
+export function kindLayersOf(grammar, kindName) {
+  const name = String(kindName ?? '').trim();
+  if (!name || name === LIBRE) return [];
+  return (grammar?.kinds || {})[name]?.layers || [];
 }
 
 /** A kind's only cascade contribution: its expanded `presets` list. `Libre` contributes nothing. */

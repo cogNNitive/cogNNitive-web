@@ -316,13 +316,17 @@ ${tween}
           const animFrames = Math.max(0, Number(a.durationInFrames) || 0);
           const loops = animFrames > 0 && animFrames < sceneFrames - 1 ? Math.ceil(sceneFrames / animFrames) : 1;
           const step = loops > 1 ? animFrames : sceneFrames;
+          // The Layer's checked inputs reach the project as this mount's variable values.
+          const values = a.values
+            ? ` data-variable-values='${JSON.stringify(a.values).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/'/g, '&#39;')}'`
+            : '';
           const hosts = [];
           for (let k = 0; k < loops; k++) {
             const from = (Number(scene.fromFrame) || 0) + k * step;
             const frames = Math.min(step, sceneFrames - k * step);
             const id = `animation-${slug}-${a.id}${loops > 1 ? `-${k + 1}` : ''}`;
             hosts.push(
-              `  <div id="${esc(id)}" class="clip" data-composition-id="${esc(a.id)}" data-composition-src="authored/${esc(a.id)}/index.html" data-start="${frameSeconds(from, fps)}" data-duration="${frameSeconds(frames, fps)}" data-track-index="${animationTrackIndex++}" data-track-kind="graphics"></div>`,
+              `  <div id="${esc(id)}" class="clip" data-composition-id="${esc(a.id)}" data-composition-src="authored/${esc(a.id)}/index.html" data-start="${frameSeconds(from, fps)}" data-duration="${frameSeconds(frames, fps)}" data-track-index="${animationTrackIndex++}" data-track-kind="graphics"${values}></div>`,
             );
           }
           return hosts.join('\n');

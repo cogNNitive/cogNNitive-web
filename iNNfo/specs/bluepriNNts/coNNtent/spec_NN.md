@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-7-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"
 blueprint_name: "coNNtent"
-blueprint_version: "V_0-29-0"
+blueprint_version: "V_0-30-0"
 title: "coNNtent App"
 catalog: catalog/model-catalog_coNNtent_NN.md
 procedures:
@@ -48,9 +48,11 @@ gates:
     * [[Layer]]
 * [[Series]]
   * [[Scene Kind]]
+    * [[Layer]]
   * [[Chrome]]
 * [[Video Defaults]]
 * [[Preset]]
+  * [[Layer]]
 * [[Provider]]
   * [[Model]]
 * [[Voice]]
@@ -356,7 +358,13 @@ description:: For a `text` Layer: the reserved value `narration` renders the own
 ## NN Field Definition: asset
 concept:: [Layer, Scene Kind]
 type:: file
-description:: Source media file for a Layer (image or video), the directory of an authored HyperFrames project for an `animation` Layer, or the media of a fixed Scene Kind. One of `asset` or `prompt` is required for `avatar` and `media` Layers.
+description:: Source media file for a Layer (image or video), the directory of an authored HyperFrames project for an `animation` Layer, or the media of a fixed Scene Kind. An `animation` Layer may instead write `component:<name>` to mount the HyperFrames component `components/<name>` (library walk: episode, series, domain, skill), resolved before anything is spent; a missing one fails. One of `asset` or `prompt` is required for `avatar` and `media` Layers.
+
+## NN Field Definition: inputs
+concept:: Layer
+type:: select
+multiple:: true
+description:: Data inputs of an `animation` Layer, a keyed list `inputs:: [name=value, ...]` (e.g. `[cues=file:media/visemes.json, mood=calm]`); any other Layer type declaring it is an error. Each name must be a variable the mounted project or component declares in the `data-composition-variables` of its root `index.html`; a declared variable with no `default` is required, a `number` value must be numeric, a `boolean` `true` or `false`, and an `enum` one of its options. A value written `file:<path>` is the text of that file, read relative to the episode document. The inputs are checked before anything is spent, reach the project as the mount host's `data-variable-values`, and are part of the scene's review subject, so changing one reopens that scene only. A value cannot contain a comma; put structured data in a file. An authored project mounted without `inputs` is not checked against its variables; a component is always checked. Optional.
 
 ## NN Field Definition: prompt
 concept:: Layer
@@ -664,8 +672,30 @@ package), domain (`video-defaults_NN.md` at the domaiNN root), series (the Serie
 kind (the `Scene Kind` element named by the scene's `kind::`), video, scene. A layer holds
 explicit fields only. There is no `cli` level: no command-line flag supplies a parameter.
 Each of domain, series, kind, video and scene MAY list `presets`, expanded directly before
-that level's explicit node; a Scene Kind contributes only its expanded `presets`. A `Libre`
+that level's explicit node; a Scene Kind contributes no parameter of its own beyond its expanded `presets`. A `Libre`
 scene contributes no kind node.
+
+### Layer Inheritance
+
+A Layer element nested under a Scene Kind (`### NN Layer:` inside `## NN Scene Kind:`) or
+under a Preset (`### NN Layer:` inside `## NN Preset:`) is contributed to every scene that
+uses that kind or that Preset. A scene uses a Preset when any level of its cascade lists it.
+The contributions resolve in the same order as the parameters, most specific first:
+
+```
+scene > scene presets > video > video presets > kind > kind presets > series > series presets > domain > domain presets
+```
+
+A nearer contribution replaces an outer one with the same Layer slug; `kind` is the Layers
+nested under the Scene Kind, which beat the Layers of the kind's own `presets`. Only the
+`kind` level and the Presets carry Layers today; the other levels are listed for their Presets. A Layer the scene declares itself replaces an inherited one with the same slug
+whole: no inherited field leaks into it. The scene's Layers are the inherited ones it does not
+override, outermost contribution first, followed by its own in document order; paint order is still
+`z_index`. An inherited Layer is validated like a scene Layer, in every scene that receives it.
+A Layer nested under a Preset is never a child of the scene that follows it in the document.
+A fixed Scene Kind's `asset::` is a special case kept apart from this rule: it becomes the one
+media Layer of the scene the engine inserts, and the Layers nested under a fixed kind are not
+inserted with it.
 
 ## Narration and Scene Duration
 
@@ -827,7 +857,10 @@ The required `type::` selects `avatar`, `media`, `text` or `animation`; any othe
 rejected with the four accepted types named and no alias. The fields a Layer accepts are
 conditional on `type::`. A `media` Layer declares `placement::` and `timing::`. A `text`
 Layer declares `style::` and exactly one of `text::` or `text_from:: narration`. An `animation`
-Layer carries an `asset::` pointing at an authored HyperFrames project. Appearance — colour,
+Layer carries an `asset::` pointing at an authored HyperFrames project, or `asset::
+component:<name>` naming a library component, and may pass it data with `inputs::`. A Layer
+nested under a Scene Kind or a Preset is inherited by the scenes that use it (see Layer
+Inheritance). Appearance — colour,
 typography, motion, shadow — comes from a Preset or from the named component, never from the
 type.
 
@@ -857,7 +890,8 @@ One `## NN Preset: <name>` element carries only cascade parameters — `voice`, 
 `voice_speed`, `voice_emotion`, `avatar`, `avatar_model`, `intro`, `image_model`,
 `image_size`, `background_audio`, `background_audio_volume`, `transition`, `frame`, `fit`,
 `components` and `sounds` — plus the global `tags` and its reserved `slug`. A Preset has no
-fields of its own and owns no Layers. Presets are also how appearance reaches a `text` or
+fields of its own; the Layer elements nested under it are contributed to every scene that uses
+it (see Layer Inheritance). Presets are also how appearance reaches a `text` or
 `media` Layer. An element references Presets with an ordered list of bare names,
 `presets:: [Lucas, Studio Warm]`.
 
@@ -917,7 +951,9 @@ An element of the Series that states what one kind of scene is and which rules a
 One `## NN Scene Kind: <name>` element declares `role`, `narration` (`on`/`off`),
 `max_duration`, `fixed` (`none`, `first`, `last` or `after:<kind>`), the fixed
 scene's `asset`, a `chrome` list and `presets`. A Scene Kind carries no other cascade
-parameter: its only cascade contribution is its expanded `presets`. The series structure is
+parameter: its only parameter contribution is its expanded `presets`. The Layer elements
+nested under it are contributed to every scene of the kind (see Layer Inheritance), so a
+presenter picture-in-picture shared by a kind is declared once. The series structure is
 orientative — an episode may reorder, remove or repeat scenes of any kind. A kind whose
 `fixed` is not `none` describes a scene the engine inserts; the episode does not declare it.
 The reserved name `Libre` is not a kind element: it inherits no kind rules, no kind presets
@@ -938,6 +974,7 @@ an episode never invents one, and `Libre` is the only escape hatch.
 
 - "Declare a `Scene Kind` named `Intro` with `narration:: off`, `fixed:: first` and an `asset::`."
 - "Cap the `Gancho` kind at twelve seconds."
+- "Nest a `### NN Layer: PiP` under the `Noticia` kind so every news scene shows the presenter inset."
 
 ## Chrome
 

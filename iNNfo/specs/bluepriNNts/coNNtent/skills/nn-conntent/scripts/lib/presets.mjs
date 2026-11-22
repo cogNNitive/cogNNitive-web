@@ -43,6 +43,24 @@ export const RESERVED_PRESET_KEYS = new Set(['slug']);
  */
 export const GLOBAL_PRESET_KEYS = new Set(['tags']);
 
+/**
+ * The Layer elements nested directly under `owner` (an element of `concept`), in document
+ * order. One rule for the Preset index and the Scene Kind grammar: a Layer belongs to the
+ * element its nested heading sits under, matched by slug, else by name.
+ * @param {any[]|undefined} layers every Layer element of the document
+ * @param {string} concept
+ * @param {{ name?: string, slug?: string }} owner
+ */
+export function nestedLayers(layers, concept, owner) {
+  const lower = (v) => String(v ?? '').trim().toLowerCase();
+  return (layers || []).filter((layer) => {
+    const parent = layer?.parentElement;
+    if (!parent || parent.concept !== concept) return false;
+    if (parent.slug && owner?.slug) return lower(parent.slug) === lower(owner.slug);
+    return lower(parent.name) === lower(owner?.name);
+  });
+}
+
 /** A Preset error carries a stable `code` so callers can aggregate it before spend. */
 export class PresetError extends Error {
   constructor(code, message) {
@@ -112,7 +130,7 @@ export function assertPresetFields(element) {
     if (RESERVED_PRESET_KEYS.has(String(key).toLowerCase())) continue;
     throw new PresetError(
       'preset-field',
-      `Preset "${name}" declares "${key}", which is not a preset parameter; a Preset carries cascade parameters only (no presets, type, asset, title or Layers)`,
+      `Preset "${name}" declares "${key}", which is not a preset parameter; a Preset carries cascade parameters only (no presets, type, asset or title); a Layer nests under it as a \`### NN Layer:\` element`,
     );
   }
 }
@@ -133,6 +151,8 @@ export function loadPresetIndex(sources = []) {
     for (const element of source?.elements?.Preset || []) {
       assertPresetFields(element);
       const values = { ...(element.fields || {}) };
+      // The Layer elements nested under the Preset, contributed to every scene that uses it.
+      const layers = nestedLayers(source?.elements?.Layer, 'Preset', element);
       const keys = [
         ...new Set(
           [element.name, element.slug]
@@ -154,7 +174,7 @@ export function loadPresetIndex(sources = []) {
       }
       for (const lower of keys) {
         seen.set(lower, element.name || lower);
-        if (!byKey.has(lower)) byKey.set(lower, { name: element.name || lower, doc, values });
+        if (!byKey.has(lower)) byKey.set(lower, { name: element.name || lower, doc, values, layers });
       }
     }
   }

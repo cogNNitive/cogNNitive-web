@@ -49,12 +49,23 @@ const roundMs = (seconds) => Math.round(seconds * 1000) / 1000;
  * @returns {string[]}
  */
 export function readVariableIds(html) {
+  return readVariables(html).map((v) => v.id);
+}
+
+/**
+ * Reads the variable declarations (`{ id, type, default, options }`) a component or an
+ * authored project declares in its first `data-composition-variables`. Returns `[]` when
+ * absent or malformed; an entry without a string id is dropped.
+ * @param {string} html
+ * @returns {Array<{ id: string, type?: string, default?: unknown, options?: Array<{ value: unknown }> }>}
+ */
+export function readVariables(html) {
   const m = String(html ?? '').match(/data-composition-variables\s*=\s*(['"])([\s\S]*?)\1/);
   if (!m) return [];
   try {
     const parsed = JSON.parse(m[2]);
     if (!Array.isArray(parsed)) return [];
-    return parsed.map((v) => v && v.id).filter((id) => typeof id === 'string' && id.length > 0);
+    return parsed.filter((v) => v && typeof v.id === 'string' && v.id.length > 0);
   } catch {
     return [];
   }
