@@ -137,7 +137,7 @@ Settable at: `Video`.
 
 ### `status`
 
-Lifecycle position of the episode, written by the engine or the user through a changeset. `idea` carries a title and linked Sources only.
+Lifecycle position of the episode, written by the engine or the user through a changeset. `idea` carries a title and linked Sources only. The declared transitions are derived from the writers: `"" -> idea` when the agent creates the episode, `idea -> draft` at intake, any state to `approved` when the pipeline or `reconcileStatus` approves, back to `draft` when a gate is unsatisfied, `approved -> failed_qa` at QA, `approved -> delivered` at delivery, and any non-terminal state to `archived` from the console. `produced` has no writer and keeps its outgoing edges so a model holding it stays movable.
 
 Settable at: `Video`.
 

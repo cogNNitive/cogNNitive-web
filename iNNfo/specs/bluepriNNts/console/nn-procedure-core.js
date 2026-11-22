@@ -12,16 +12,20 @@
    * The procedure fold, in the browser.
    *
    * `foldRun` is the same pure function nn-core runs at export time: given a graph and a
-   * list of events it returns the run's state, deriving nothing else. The console needs it
-   * live so a view can answer "what would this run look like if the drafts I am holding
-   * were applied?", which is a projection over the events it already has, not new truth.
+   * run model it returns the run's state, deriving nothing else. The console needs it live
+   * so a view can answer "what would this run look like if the drafts I am holding were
+   * applied?", which is a projection over the state it already has, not new truth.
+   *
+   * The widget stages its pending work as events (design §2.4 keeps its vocabulary until
+   * it migrates to the row model); `modelOf` is the one translation between the two, the
+   * inverse of the exporter's `eventsOfRunModel`.
    *
    * The implementation is injected, never re-implemented: `scripts/lib/console-bundle.js`
    * wires the nn-core build in, and a console that boots without it leaves `foldRun` null so
    * a view degrades to the exported state instead of guessing.
    */
 
-  var CORE_VERSION = '0.1.0'
+  var CORE_VERSION = '0.2.0'
 
   var fold = null
   var wired = false
@@ -59,24 +63,112 @@
     return typeof fold === 'function'
   }
 
+  function rowOf(row) {
+    var out = {
+      status: row.status || 'pending',
+      attempt: row.attempt || 0,
+      inputs: row.inputs || {},
+    }
+    if (row.outcome !== undefined) out.outcome = row.outcome
+    if (row.next !== undefined) out.next = row.next
+    if (row.waitingOn !== undefined) out.waitingOn = row.waitingOn
+    if (row.failure !== undefined) out.failure = row.failure
+    return out
+  }
+
+  /**
+   * The run model a list of events describes, applied on top of a base model's rows. The
+   * recorded rows are the truth; the events are what a caller is holding as drafts.
+   */
+  function modelOf(events, base) {
+    var model = {
+      state: (base && base.state) || 'open',
+      seq: (base && base.seq) || 0,
+      procedure: (base && base.procedure) || '',
+      defRev: (base && base.defRev) || null,
+      params: (base && base.params) || {},
+      steps: {},
+      artifacts: {},
+      inputs: {},
+      attempts: {},
+    }
+    if (base && base.steps) {
+      Object.keys(base.steps).forEach(function (slug) {
+        model.steps[slug] = rowOf(base.steps[slug])
+      })
+    }
+    if (base && base.artifacts) {
+      Object.keys(base.artifacts).forEach(function (slug) {
+        model.artifacts[slug] = Object.assign({}, base.artifacts[slug])
+      })
+    }
+    if (base && base.inputs) model.inputs = Object.assign({}, base.inputs)
+    ;(Array.isArray(events) ? events : []).forEach(function (e) {
+      if (e.kind === 'step_started') {
+        model.steps[e.step] = { status: 'active', attempt: e.attempt || 1, inputs: e.inputs || {} }
+      } else if (e.kind === 'step_waiting' && model.steps[e.step]) {
+        model.steps[e.step] = Object.assign({}, model.steps[e.step], {
+          status: 'waiting',
+          waitingOn: e.value,
+        })
+      } else if (e.kind === 'step_completed' && model.steps[e.step]) {
+        var done = Object.assign({}, model.steps[e.step], { status: 'done' })
+        if (e.outcome !== undefined) done.outcome = e.outcome
+        if (e.next !== undefined) done.next = e.next
+        model.steps[e.step] = done
+      } else if (e.kind === 'step_failed' && model.steps[e.step]) {
+        model.steps[e.step] = Object.assign({}, model.steps[e.step], {
+          status: 'failed',
+          failure: e.value,
+        })
+      } else if (
+        (e.kind === 'artifact_validated' ||
+          e.kind === 'artifact_rejected' ||
+          e.kind === 'artifact_produced') &&
+        e.field
+      ) {
+        var prior = model.artifacts[e.field] || {}
+        var art = { kind: prior.kind || 'file', status: e.kind.slice('artifact_'.length) }
+        if (e.value !== undefined) art.value = e.value
+        if (e.rev !== undefined) art.rev = e.rev
+        if (e.step !== undefined) art.step = e.step
+        model.artifacts[e.field] = art
+      } else if (e.kind === 'input_recorded' && e.field) {
+        var input = {}
+        if (e.value !== undefined) input.value = e.value
+        if (e.rev !== undefined) input.rev = e.rev
+        model.inputs[e.field] = input
+      } else if (e.kind === 'interrupted') {
+        model.state = 'paused'
+      } else if (e.kind === 'resumed') {
+        model.state = 'open'
+      } else if (e.kind === 'rebased') {
+        model.defRev = e.value || model.defRev
+      } else if (e.kind === 'completed' || e.kind === 'failed' || e.kind === 'cancelled') {
+        model.state = e.kind
+      }
+    })
+    return model
+  }
+
   /**
    * The run state these events would produce. `null` when no fold is wired, so a caller
    * can tell "no projection" from "projected the same state".
    */
   function stateOf(graph, events, opts) {
     if (!available() || !graph) return null
-    return fold(graph, Array.isArray(events) ? events : [], opts || {})
+    return fold(graph, modelOf(events, null), opts || {})
   }
 
   /**
    * The state a run would have if its pending events were applied on top of what it
-   * already recorded. Same fold, more events: nothing here decides what an event means.
+   * already recorded. Same fold, over the recorded rows plus the pending events.
    */
   function project(run, pendingEvents, opts) {
-    if (!run || !run.graph) return null
-    var recorded = Array.isArray(run.events) ? run.events : []
+    if (!run || !run.graph || !available()) return null
     var extra = Array.isArray(pendingEvents) ? pendingEvents : []
-    return stateOf(run.graph, recorded.concat(extra), opts)
+    var base = run.model || modelOf(Array.isArray(run.events) ? run.events : [], null)
+    return fold(run.graph, modelOf(extra, base), opts || {})
   }
 
   return {
@@ -85,6 +177,7 @@
     use: use,
     useFromDocument: useFromDocument,
     available: available,
+    modelOf: modelOf,
     stateOf: stateOf,
     project: project,
   }

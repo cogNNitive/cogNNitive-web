@@ -1,47 +1,83 @@
 {
-  "generatedAt": "2026-11-21T20:34:43.597Z",
-  "head": "36b615af5a6139dd807ac0f487177a299864dd41",
+  "generatedAt": "2026-11-22T01:39:17.412Z",
+  "head": "209a7904fdc26d5a2efc8f0ff3423a556ebdec3f",
   "subsystems": {
     "skills": {
       "subsystem": "skills",
       "pinnedTag": "skills-v4.3.0",
       "pinnedTagDate": "2026-11-20T08:57:18+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 2,
+      "filesTouched": [
+        "skills/nn-sources/scripts/lib/nn-core.generated.cjs"
+      ]
     },
     "blueprints": {
       "subsystem": "blueprints",
       "pinnedTag": "blueprints-v0.85.1",
       "pinnedTagDate": "2026-11-21T11:03:10+01:00",
-      "commitsSincePin": 3,
+      "commitsSincePin": 11,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs"
+        "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/references/parameters.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-procedure-core.js",
+        "iNNfo/specs/bluepriNNts/executions/spec_NN.md"
       ]
     },
     "templates": {
       "subsystem": "templates",
       "pinnedTag": "blueprints-v0.85.1",
       "pinnedTagDate": "2026-11-21T11:03:10+01:00",
-      "commitsSincePin": 3,
+      "commitsSincePin": 11,
       "filesTouched": [
         "iNNfo/specs/bluepriNNts/catalog.json",
-        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs"
+        "iNNfo/specs/bluepriNNts/changes/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/procedures/usage_procedures_NN.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/references/parameters.md",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/field-registry.generated.json",
+        "iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/nn-core.generated.cjs",
+        "iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md",
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-procedure-core.js",
+        "iNNfo/specs/bluepriNNts/executions/spec_NN.md"
       ]
     },
     "nn-mcp": {
       "subsystem": "nn-mcp",
       "pinnedTag": "nn-mcp-v0.49.5",
       "pinnedTagDate": "2026-11-21T18:23:55+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 5,
+      "filesTouched": [
+        "iNNfo/packages/nn-mcp/bin/nn-mcp.bundle.js",
+        "iNNfo/packages/nn-mcp/src/tools/apply-change.ts",
+        "iNNfo/packages/nn-mcp/src/tools/procedure-lock.ts",
+        "iNNfo/packages/nn-mcp/src/tools/procedure-record.ts",
+        "iNNfo/packages/nn-mcp/src/tools/procedure-state.ts",
+        "iNNfo/packages/nn-mcp/src/tools/propose-changeset.ts",
+        "iNNfo/packages/nn-mcp/test/apply-change-transitions.test.ts",
+        "iNNfo/packages/nn-mcp/test/apply-change.test.ts",
+        "iNNfo/packages/nn-mcp/test/procedure-execution.test.ts",
+        "iNNfo/packages/nn-mcp/test/procedure-runner.test.ts"
+      ]
     },
     "nn-console": {
       "subsystem": "nn-console",
       "pinnedTag": "nn-console-v0.47.1",
       "pinnedTagDate": "2026-11-20T08:57:18+01:00",
-      "commitsSincePin": 0,
-      "filesTouched": []
+      "commitsSincePin": 6,
+      "filesTouched": [
+        "iNNfo/specs/bluepriNNts/console/console-payload.generated.cjs",
+        "iNNfo/specs/bluepriNNts/console/nn-console.bundle.js",
+        "iNNfo/specs/bluepriNNts/console/nn-procedure-core.js",
+        "scripts/export-console.mjs"
+      ]
     }
   }
 }

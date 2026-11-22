@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-7-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"
 blueprint_name: "coNNtent"
-blueprint_version: "V_0-28-0"
+blueprint_version: "V_0-29-0"
 title: "coNNtent App"
 catalog: catalog/model-catalog_coNNtent_NN.md
 procedures:
@@ -164,7 +164,8 @@ description:: What the episode is about, in one or two sentences. The agent writ
 concept:: Video
 type:: select
 options:: [idea, draft, approved, produced, failed_qa, delivered, archived]
-description:: Lifecycle position of the episode, written by the engine or the user through a changeset. `idea` carries a title and linked Sources only.
+transitions:: {"": ["idea"], "idea": ["draft", "archived"], "draft": ["approved", "archived"], "approved": ["draft", "failed_qa", "delivered", "archived"], "failed_qa": ["draft", "approved", "archived"], "delivered": ["draft", "approved", "archived"], "produced": ["draft", "approved", "failed_qa", "delivered", "archived"], "archived": []}
+description:: Lifecycle position of the episode, written by the engine or the user through a changeset. `idea` carries a title and linked Sources only. The declared transitions are derived from the writers: `"" -> idea` when the agent creates the episode, `idea -> draft` at intake, any state to `approved` when the pipeline or `reconcileStatus` approves, back to `draft` when a gate is unsatisfied, `approved -> failed_qa` at QA, `approved -> delivered` at delivery, and any non-terminal state to `archived` from the console. `produced` has no writer and keeps its outgoing edges so a model holding it stays movable.
 
 ## NN Field Definition: script
 concept:: Video

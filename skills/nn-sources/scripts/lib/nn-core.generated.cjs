@@ -9869,14 +9869,20 @@ function validateFrontmatter(fm) {
     invalidFrontmatter("missing blueprint_version");
   }
   if (!isChangeStatus(fm.status)) {
-    invalidFrontmatter(
-      "status must be one of proposed|applied|partially_applied|rejected|conflict"
-    );
+    invalidFrontmatter("status must be one of proposed|applied|partially_applied|rejected|conflict");
+  }
+  if (fm.atomic !== void 0 && typeof fm.atomic !== "boolean") {
+    invalidFrontmatter("atomic must be true or false when present");
+  }
+  if (fm.run !== void 0 && (typeof fm.run !== "string" || fm.run.trim() === "")) {
+    invalidFrontmatter('run must be a non-empty "<run-id>@<step-slug>" when present');
   }
   return fm;
 }
 function parseChangeset(rawContent) {
-  const frontmatterMatch = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(rawContent.trimStart());
+  const frontmatterMatch = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(
+    rawContent.trimStart()
+  );
   if (!frontmatterMatch) {
     invalidFrontmatter("missing frontmatter block");
   }
@@ -10050,7 +10056,9 @@ function parseChangeset(rawContent) {
   if (hasGate) {
     for (const key of ["author_kind", "origin", "reviewer"]) {
       if (frontmatter[key] === void 0 || frontmatter[key] === null) {
-        throw new Error(`Invalid review_gate changeset: missing frontmatter "${key}" (required for verdicts)`);
+        throw new Error(
+          `Invalid review_gate changeset: missing frontmatter "${key}" (required for verdicts)`
+        );
       }
     }
   }
@@ -10439,7 +10447,8 @@ var ChangeLogImpl = class {
     for (const rekey of this.fold.rekeys) {
       if (rekey.kind === "extract") continue;
       if (current === rekey.from) current = rekey.to;
-      else if (current.startsWith(`${rekey.from}/`)) current = `${rekey.to}${current.slice(rekey.from.length)}`;
+      else if (current.startsWith(`${rekey.from}/`))
+        current = `${rekey.to}${current.slice(rekey.from.length)}`;
       else continue;
       moved = true;
     }
@@ -10462,6 +10471,15 @@ var ChangeLogImpl = class {
     if (!this.fold.units.has(unit)) return void 0;
     const bucket = this.history(unit);
     return bucket.length > 0 ? bucket[bucket.length - 1] : void 0;
+  }
+  runChanges(runId, stepSlug) {
+    const wanted = stepSlug !== void 0 ? `${runId}@${stepSlug}` : runId;
+    const matches = (change) => {
+      if (!change.run) return false;
+      if (stepSlug !== void 0) return change.run === wanted;
+      return change.run === runId || change.run.startsWith(`${runId}@`);
+    };
+    return this.all.filter((change) => change.applied && matches(change));
   }
   units(model) {
     return unitsFromFold(this.fold, model);
@@ -10567,6 +10585,7 @@ function changesetLikeOf(path5, doc) {
     author: fm.author,
     appliedAt: fm.applied_at,
     ...typeof fm.batch === "string" ? { batch: fm.batch } : {},
+    ...typeof fm.run === "string" && fm.run !== "" ? { run: fm.run } : {},
     ...fm.evidence_sha256 && typeof fm.evidence_sha256 === "object" ? { evidenceSha256: fm.evidence_sha256 } : {},
     changes: doc.changes
   };
@@ -10638,6 +10657,7 @@ function loggedChanges(cs) {
       changesetStatus,
       appliedAt: facts.appliedAt,
       batch: facts.batch,
+      ...cs.run !== void 0 ? { run: cs.run } : {},
       author: facts.author,
       op: change.op,
       target: change.target,

@@ -5,6 +5,7 @@ parent_spec:
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 knowledge_version: "V_0-1-0"
 title: "Using the coNNtent Blueprint"
+slots:: [episode]
 ---
 
 # NN Work
@@ -93,7 +94,7 @@ parent:: @set-up-the-domain
 next:: @clone-the-chosen-voices
 step_type:: decision
 tool:: human
-decision:: the voice for each language the domaiNN will produce in — clone a sample, or pick an existing Voice whose `language` matches
+decision:: the voice for each language the domaiNN will produce in â€” clone a sample, or pick an existing Voice whose `language` matches
 scope:: internal
 At least one voice per chosen language. A Voice whose `language` differs from the slot it is offered for is refused and another is asked for. The wizard does not move to the proposal until every chosen language has a voice, or the person records the choice to defer.
 
@@ -103,7 +104,7 @@ parent:: @set-up-the-domain
 next:: @check-whispercpp
 step_type:: task
 tool:: engine
-command:: ~/.agents/skills/nn-conntent/scripts/voice-clone.mjs <name> <sample-audio> --language <code>
+command:: ~/.agents/skills/nn-conntent/scripts/voice-clone.mjs {name} {sample-audio} --language {code}
 scope:: internal
 Each clone writes a catalog Voice carrying its `language`. A re-clone of an existing name needs the explicit force flag, which the agent never assumes.
 
@@ -171,7 +172,7 @@ parent:: @define-a-frame
 next:: @build-the-frame
 step_type:: decision
 tool:: human
-decision:: the level (domaiNN or series) and the starting point — one of the thirteen HyperFrames frame presets, `hyperframes capture <url>`, or scratch
+decision:: the level (domaiNN or series) and the starting point â€” one of the thirteen HyperFrames frame presets, `hyperframes capture <url>`, or scratch
 scope:: internal
 A series-level frame lives in `series/<s>/library/frames/`; a domaiNN-level frame serves every series.
 
@@ -249,7 +250,7 @@ parent:: @define-a-character
 next:: @choose-the-appearance-defaults
 step_type:: task
 tool:: engine
-command:: ~/.agents/skills/nn-conntent/scripts/voice-clone.mjs <name> <sample-audio> --language <code>
+command:: ~/.agents/skills/nn-conntent/scripts/voice-clone.mjs {name} {sample-audio} --language {code}
 scope:: internal
 Each clone writes a catalog Voice carrying its `language`. One voice at a time, with its own sample, so each Voice is traceable to its recording.
 
@@ -327,7 +328,7 @@ parent:: @create-a-series
 next:: @write-the-chrome-for-each-language
 step_type:: decision
 tool:: human
-decision:: one Scene Kind at a time — its role, maximum duration, narration on or off, Chrome slots, presets and direct fields
+decision:: one Scene Kind at a time â€” its role, maximum duration, narration on or off, Chrome slots, presets and direct fields
 scope:: internal
 Every episode declares a Kind per scene, or the reserved `Libre`.
 
@@ -387,7 +388,7 @@ parent:: @create-a-series
 next:: @keep-or-discard-the-test-episode
 step_type:: task
 tool:: engine
-command:: ~/.agents/skills/nn-conntent/scripts/produce.mjs <episode> --dry-run
+command:: ~/.agents/skills/nn-conntent/scripts/produce.mjs {episode} --dry-run
 scope:: internal
 Validation and the persisted plan only: no synthesis, no render, no spend, no ledger record. It reports every resolved value with its source trace, the library names and the files they resolved to, the Chrome and the voice found for the series language, and the plan estimate. A missing item fails and is named, and the procedure does not complete while the dry run fails.
 
@@ -447,7 +448,7 @@ step_type:: task
 tool:: agent
 produces:: the speaking and narrative rules the narration must follow
 scope:: internal
-Read `CHARACTER.md` for the active character — the host set by the series, plus any guest the scene brings. Its prose (speaking and narrative style, things never said, examples) is binding: the narration never uses a phrase the prose forbids.
+Read `CHARACTER.md` for the active character â€” the host set by the series, plus any guest the scene brings. Its prose (speaking and narrative style, things never said, examples) is binding: the narration never uses a phrase the prose forbids.
 
 ## NN Work: Draft the scenes
 slug:: draft-the-scenes
@@ -483,7 +484,8 @@ parent:: @produce-an-episode
 next:: @review-the-script
 step_type:: task
 tool:: engine
-command:: ~/.agents/skills/nn-conntent/scripts/produce.mjs <episode>
+command:: ~/.agents/skills/nn-conntent/scripts/produce.mjs {episode}
+exit_codes:: {"10": "waiting", "11": "waiting", "12": "failed"}
 scope:: internal
 `produce` is the only engine command this procedure runs. It applies pending human changesets, validates, plans, and stops at the first open gate. Exit `0` done, `10` an unsatisfied gate, `11` a spend stop no verdict can satisfy, `12` `failed_qa`, `1` any other named error. It regenerates the console data at every exit.
 
@@ -513,7 +515,7 @@ parent:: @produce-an-episode
 next:: @review-the-animatic
 step_type:: task
 tool:: engine
-command:: ~/.agents/skills/nn-conntent/scripts/produce.mjs <episode>
+command:: ~/.agents/skills/nn-conntent/scripts/produce.mjs {episode}
 scope:: internal
 `produce` synthesizes TTS and images in parallel, aligns captions, builds the animatic, and stops at the `preview` gate. No avatar call is made before it.
 
@@ -543,7 +545,7 @@ parent:: @produce-an-episode
 next:: @read-the-result
 step_type:: task
 tool:: engine
-command:: ~/.agents/skills/nn-conntent/scripts/produce.mjs <episode>
+command:: ~/.agents/skills/nn-conntent/scripts/produce.mjs {episode}
 scope:: internal
 `produce` synthesizes the avatars, compiles once, links assets, renders every output format natively, runs `hyperframes check` and QA on each format and a cross-format timeline check, writes the thumbnails and the description, delivers under `deliveries/v<N>/`, and sets `status:: delivered`. Delivery is automatic once QA passes and is the final outcome of this run, not a step of its own.
 

@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
 blueprint_name: "changes"
-blueprint_version: "V_0-13-0"
+blueprint_version: "V_0-15-0"
 title: "Changeset Blueprint"
 description: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."
 nature:
@@ -146,6 +146,16 @@ concept:: Change
 type:: string
 description:: Execution fact: the batch identity of the apply (the changeset stem). Outside the seal. Written once in the changeset frontmatter and inherited by every change.
 
+## NN Field Definition: atomic
+concept:: Change
+type:: boolean
+description:: Atomicity of the proposal, in the changeset frontmatter. When true, any conflicted change conflicts every change of the changeset and nothing is written: the batch applies wholly or the changeset is recorded as conflict. Sealed into proposal_sha, because atomicity is part of what was proposed. Absent or false keeps the partial-apply behavior.
+
+## NN Field Definition: run
+concept:: Change
+type:: string
+description:: Run context, in the changeset frontmatter: <run-id>@<step-slug> when the changeset was written inside a procedure step. Sealed into proposal_sha, because it is part of what was proposed. It is a frontmatter fact rather than evidence because an open run is not citable. A human gate verdict carries none and links to its step through that step's evidence.
+
 # Changeset Blueprint
 
 ## A level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive
@@ -209,6 +219,10 @@ A model is cited by its id (`<model id>@<element>`), never by its file path, and
 
 Changeset status is one of proposed, applied, partially_applied, rejected, conflict. A changeset is rejected when the proposal itself is invalid (a failed validation or an unresolved citation): the status and the reason (resolution) are persisted and the changeset is never re-applied. A conflict is a failed precondition of the live model and may be fixed and retried.
 
+A changeset MAY declare `run` in its frontmatter as `<run-id>@<step-slug>`, naming the procedure step that wrote it. It is sealed into `proposal_sha` and is a frontmatter fact rather than `evidence`, because an open run is not citable: "what did this step produce" is the set of applied changes carrying that `run`, and "which run produced this element" is the `run` of the element's origin change. A human `review_gate` carries no run context and links to its step through that step's evidence.
+
+A changeset MAY declare `atomic: true` in its frontmatter. An atomic changeset is all or nothing: when any change conflicts — a failed `from` or `base_hash`, a missing target, a stale target, a reference conflict — every change of the changeset is conflicted, nothing is written, and the changeset is recorded as `conflict` with reason `ATOMIC_CHANGESET_CONFLICT`, which names the original failure. An atomic changeset whose changes all apply is `applied`. The declaration is sealed into `proposal_sha`: a changeset sealed as non-atomic cannot be turned into an all-or-nothing one after the fact without breaking the seal. Absent or `false`, the changeset keeps the partial-apply behavior described above.
+
 A changeset MAY be authored by hand (for example a large agent-generated batch) and applied by path with `apply_change`; it does not require a pre-computed `proposal_sha`. When the seal is omitted the runtime computes it at intake; a present but non-matching value means the proposal was modified after it was sealed and is rejected (`PROPOSAL_TAMPERED`), so a hand-authored changeset MUST either omit the seal or carry the exact hash. The document-level `proposal_sha` is therefore optional in the template below.
 
 ## Template
@@ -222,7 +236,7 @@ level: 3
 parent_spec:
   name: changes
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"
-blueprint_version: "V_0-10-0"
+blueprint_version: "V_0-14-0"
 status: proposed
 proposal_sha: "<64-character-sha256-hex>"
 title: "<Changeset Title>"

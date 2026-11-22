@@ -2381,9 +2381,9 @@ var require_stringifyNumber = __commonJS({
     function stringifyNumber({ format, minFractionDigits, tag, value }) {
       if (typeof value === "bigint")
         return String(value);
-      const num = typeof value === "number" ? value : Number(value);
-      if (!isFinite(num))
-        return isNaN(num) ? ".nan" : num < 0 ? "-.inf" : ".inf";
+      const num2 = typeof value === "number" ? value : Number(value);
+      if (!isFinite(num2))
+        return isNaN(num2) ? ".nan" : num2 < 0 ? "-.inf" : ".inf";
       let n = Object.is(value, -0) ? "-0" : JSON.stringify(value);
       if (!format && minFractionDigits && (!tag || tag === "tag:yaml.org,2002:float") && /^-?\d/.test(n) && !n.includes("e")) {
         let i = n.indexOf(".");
@@ -2423,8 +2423,8 @@ var require_float = __commonJS({
       test: /^[-+]?(?:\.[0-9]+|[0-9]+(?:\.[0-9]*)?)[eE][-+]?[0-9]+$/,
       resolve: (str4) => parseFloat(str4),
       stringify(node) {
-        const num = Number(node.value);
-        return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node);
+        const num2 = Number(node.value);
+        return isFinite(num2) ? num2.toExponential() : stringifyNumber.stringifyNumber(node);
       }
     };
     var float = {
@@ -2863,8 +2863,8 @@ var require_float2 = __commonJS({
       test: /^[-+]?(?:[0-9][0-9_]*)?(?:\.[0-9_]*)?[eE][-+]?[0-9]+$/,
       resolve: (str4) => parseFloat(str4.replace(/_/g, "")),
       stringify(node) {
-        const num = Number(node.value);
-        return isFinite(num) ? num.toExponential() : stringifyNumber.stringifyNumber(node);
+        const num2 = Number(node.value);
+        return isFinite(num2) ? num2.toExponential() : stringifyNumber.stringifyNumber(node);
       }
     };
     var float = {
@@ -3066,23 +3066,23 @@ var require_timestamp = __commonJS({
     function parseSexagesimal(str4, asBigInt) {
       const sign = str4[0];
       const parts = sign === "-" || sign === "+" ? str4.substring(1) : str4;
-      const num = (n) => asBigInt ? BigInt(n) : Number(n);
-      const res = parts.replace(/_/g, "").split(":").reduce((res2, p) => res2 * num(60) + num(p), num(0));
-      return sign === "-" ? num(-1) * res : res;
+      const num2 = (n) => asBigInt ? BigInt(n) : Number(n);
+      const res = parts.replace(/_/g, "").split(":").reduce((res2, p) => res2 * num2(60) + num2(p), num2(0));
+      return sign === "-" ? num2(-1) * res : res;
     }
     function stringifySexagesimal(node) {
       let { value } = node;
-      let num = (n) => n;
+      let num2 = (n) => n;
       if (typeof value === "bigint")
-        num = (n) => BigInt(n);
+        num2 = (n) => BigInt(n);
       else if (isNaN(value) || !isFinite(value))
         return stringifyNumber.stringifyNumber(node);
       let sign = "";
       if (value < 0) {
         sign = "-";
-        value *= num(-1);
+        value *= num2(-1);
       }
-      const _60 = num(60);
+      const _60 = num2(60);
       const parts = [value % _60];
       if (value < 60) {
         parts.unshift(0);
@@ -7436,7 +7436,7 @@ __export(index_exports, {
   resolveConsoleSchema: () => resolveConsoleSchema,
   resolveEvidenceCitation: () => resolveEvidenceCitation,
   roleOf: () => roleOf,
-  runRecordOf: () => runRecordOf,
+  runModelOf: () => runModelOf,
   serializeConsoleSlot: () => serializeConsoleSlot,
   sidecarPathFor: () => sidecarPathFor,
   sidecarSubjectPath: () => sidecarSubjectPath,
@@ -8380,6 +8380,28 @@ function validateWritePolicy(concepts) {
   return diagnostics;
 }
 
+// iNNfo/packages/nn-core/src/schema/transitions.ts
+function parseTransitions(raw) {
+  let value = raw;
+  if (typeof raw === "string") {
+    const trimmed = raw.trim();
+    if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return void 0;
+    try {
+      value = JSON.parse(trimmed);
+    } catch {
+      return void 0;
+    }
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) return void 0;
+  const out = {};
+  for (const [from, targets] of Object.entries(value)) {
+    if (!Array.isArray(targets)) return void 0;
+    if (!targets.every((t) => typeof t === "string")) return void 0;
+    out[from] = targets;
+  }
+  return out;
+}
+
 // iNNfo/packages/nn-core/src/schema/extract.ts
 var CONCEPT_DEFINITION = "Concept Definition";
 var FIELD_DEFINITION = "Field Definition";
@@ -8474,6 +8496,8 @@ function extractBlueprintSchema(parsed) {
     if (fieldDescription) field.description = fieldDescription;
     const optionsFrom = asString(el.fields["options_from"]);
     if (optionsFrom) field.options_from = optionsFrom;
+    const transitions = parseTransitions(el.fields["transitions"]);
+    if (transitions) field.transitions = transitions;
     if (scope === "concept" && owner) {
       const list = fieldsByConcept.get(owner);
       if (list) {
@@ -8918,7 +8942,7 @@ var REQUIRED_BY_PRIMITIVE = {
 
 // stub:canonical-registry-stub
 function findCanonicalBlueprint(key) {
-  return key === "changes" ? { name: "changes", version: "V_0-13-0", aliases: [], specContent: "" } : null;
+  return key === "changes" ? { name: "changes", version: "V_0-15-0", aliases: [], specContent: "" } : null;
 }
 
 // iNNfo/packages/nn-core/src/schema/nature.ts
@@ -11321,14 +11345,20 @@ function validateFrontmatter(fm) {
     invalidFrontmatter("missing blueprint_version");
   }
   if (!isChangeStatus(fm.status)) {
-    invalidFrontmatter(
-      "status must be one of proposed|applied|partially_applied|rejected|conflict"
-    );
+    invalidFrontmatter("status must be one of proposed|applied|partially_applied|rejected|conflict");
+  }
+  if (fm.atomic !== void 0 && typeof fm.atomic !== "boolean") {
+    invalidFrontmatter("atomic must be true or false when present");
+  }
+  if (fm.run !== void 0 && (typeof fm.run !== "string" || fm.run.trim() === "")) {
+    invalidFrontmatter('run must be a non-empty "<run-id>@<step-slug>" when present');
   }
   return fm;
 }
 function parseChangeset(rawContent) {
-  const frontmatterMatch = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(rawContent.trimStart());
+  const frontmatterMatch = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(
+    rawContent.trimStart()
+  );
   if (!frontmatterMatch) {
     invalidFrontmatter("missing frontmatter block");
   }
@@ -11502,7 +11532,9 @@ function parseChangeset(rawContent) {
   if (hasGate) {
     for (const key of ["author_kind", "origin", "reviewer"]) {
       if (frontmatter[key] === void 0 || frontmatter[key] === null) {
-        throw new Error(`Invalid review_gate changeset: missing frontmatter "${key}" (required for verdicts)`);
+        throw new Error(
+          `Invalid review_gate changeset: missing frontmatter "${key}" (required for verdicts)`
+        );
       }
     }
   }
@@ -11914,7 +11946,8 @@ var ChangeLogImpl = class {
     for (const rekey of this.fold.rekeys) {
       if (rekey.kind === "extract") continue;
       if (current === rekey.from) current = rekey.to;
-      else if (current.startsWith(`${rekey.from}/`)) current = `${rekey.to}${current.slice(rekey.from.length)}`;
+      else if (current.startsWith(`${rekey.from}/`))
+        current = `${rekey.to}${current.slice(rekey.from.length)}`;
       else continue;
       moved = true;
     }
@@ -11937,6 +11970,15 @@ var ChangeLogImpl = class {
     if (!this.fold.units.has(unit)) return void 0;
     const bucket = this.history(unit);
     return bucket.length > 0 ? bucket[bucket.length - 1] : void 0;
+  }
+  runChanges(runId, stepSlug) {
+    const wanted = stepSlug !== void 0 ? `${runId}@${stepSlug}` : runId;
+    const matches = (change) => {
+      if (!change.run) return false;
+      if (stepSlug !== void 0) return change.run === wanted;
+      return change.run === runId || change.run.startsWith(`${runId}@`);
+    };
+    return this.all.filter((change) => change.applied && matches(change));
   }
   units(model) {
     return unitsFromFold(this.fold, model);
@@ -12021,6 +12063,7 @@ function changesetLikeOf(path2, doc) {
     author: fm.author,
     appliedAt: fm.applied_at,
     ...typeof fm.batch === "string" ? { batch: fm.batch } : {},
+    ...typeof fm.run === "string" && fm.run !== "" ? { run: fm.run } : {},
     ...fm.evidence_sha256 && typeof fm.evidence_sha256 === "object" ? { evidenceSha256: fm.evidence_sha256 } : {},
     changes: doc.changes
   };
@@ -12092,6 +12135,7 @@ function loggedChanges(cs) {
       changesetStatus,
       appliedAt: facts.appliedAt,
       batch: facts.batch,
+      ...cs.run !== void 0 ? { run: cs.run } : {},
       author: facts.author,
       op: change.op,
       target: change.target,
@@ -12411,6 +12455,21 @@ function hashParsedElement(concept, node) {
 
 // iNNfo/packages/nn-core/src/procedure/graph.ts
 var EXECUTORS = ["human", "agent", "engine"];
+var TOOL_ALIASES = /* @__PURE__ */ new Map([
+  ["engine", "engine"],
+  ["agent", "agent"],
+  ["human", "human"],
+  ["console", "human"]
+]);
+var SLOT_RE = /\{([A-Za-z_][\w-]*)\}/g;
+function slotNames(...texts) {
+  const out = [];
+  for (const text2 of texts) {
+    if (!text2) continue;
+    for (const m of text2.matchAll(SLOT_RE)) if (!out.includes(m[1])) out.push(m[1]);
+  }
+  return out;
+}
 function referenceTokens(value) {
   if (value === void 0 || value === null || value === "") return [];
   if (Array.isArray(value)) return value.flatMap(referenceTokens);
@@ -12425,9 +12484,12 @@ function resolver(nodes) {
   return (token) => slugs.has(token) ? token : byName.get(token.toLowerCase());
 }
 var str2 = (v) => v === void 0 || v === null || v === "" ? void 0 : String(v);
-function procedureGraph(model) {
-  const work = model.elements.get("Work") ?? [];
+function procedureGraph(model, container) {
+  const allWork = model.elements.get("Work") ?? [];
   const artifactNodes = model.elements.get("Artifact") ?? [];
+  const toAllWork = resolver(allWork);
+  const containerSlug = container ? toAllWork(container) ?? container : void 0;
+  const work = containerSlug ? descendantsOf(allWork, containerSlug, resolver(allWork)) : allWork;
   const toWork = resolver(work);
   const toArtifact = resolver(artifactNodes);
   const diagnostics = [];
@@ -12447,17 +12509,20 @@ function procedureGraph(model) {
       });
     }
     const executor = str2(n.fields["executor"]);
+    const toolAlias = str2(n.fields["tool"]);
+    const resolvedExecutor = executor && EXECUTORS.includes(executor) ? executor : toolAlias ? TOOL_ALIASES.get(toolAlias.trim().toLowerCase()) : void 0;
     steps[slug] = {
       slug,
       name: n.name,
       stepType: str2(n.fields["step_type"]),
-      executor: executor && EXECUTORS.includes(executor) ? executor : void 0,
+      executor: resolvedExecutor,
       parent: parentOf(n),
       next: [],
       condition: str2(n.fields["condition"]),
       decision: str2(n.fields["decision"]),
       command: str2(n.fields["command"]),
       produces: str2(n.fields["produces"]),
+      ...exitCodesOf(n.fields["exit_codes"]) ? { exitCodes: exitCodesOf(n.fields["exit_codes"]) } : {},
       inputs: artifactRefs(n.fields["input"]),
       outputs: artifactRefs(n.fields["output"])
     };
@@ -12481,10 +12546,15 @@ function procedureGraph(model) {
   for (const n of artifactNodes) {
     const slug = n.slug ?? "";
     const required = n.fields["required"];
+    const kindText = str2(n.fields["kind"]);
+    const kind = kindText === "element" || kindText === "changeset" ? kindText : "file";
+    const at = str2(n.fields["at"]);
     artifacts[slug] = {
       slug,
       name: n.name,
-      verify: str2(n.fields["verify"]),
+      kind,
+      ...at !== void 0 ? { at } : {},
+      verify: verifyOf(str2(n.fields["verify"]), kind),
       required: !(required === false || required === "false"),
       producers: Object.values(steps).filter((s) => s.outputs.includes(slug)).map((s) => s.slug)
     };
@@ -12504,14 +12574,65 @@ function procedureGraph(model) {
       detail: `Several steps have no incoming next: ${starts.join(", ")}.`
     });
   diagnostics.push(...findCycles(steps));
+  const declaredSlots = Array.isArray(model.frontmatter["slots"]) ? model.frontmatter["slots"].map(
+    (s) => typeof s === "string" ? s.replace(/^\{|\}$/g, "").trim() : typeof s === "object" && s !== null && "name" in s ? String(s.name).trim() : ""
+  ) : typeof model.frontmatter["slots"] === "string" ? String(model.frontmatter["slots"]).replace(/^\[|\]$/g, "").split(",").map((s) => s.trim().replace(/^\{|\}$/g, "")) : [];
+  const slots = [
+    .../* @__PURE__ */ new Set([
+      ...declaredSlots.filter((s) => s !== ""),
+      ...slotNames(
+        ...Object.values(steps).map((s) => s.command),
+        ...Object.values(artifacts).map((a) => a.at)
+      )
+    ])
+  ].filter((s) => s !== "run");
   return {
     defRev: str2(model.frontmatter.knowledge_version) ?? null,
     steps,
     artifacts,
     start: starts.length === 1 ? starts[0] : null,
     terminals: Object.values(steps).filter((s) => s.next.length === 0).map((s) => s.slug),
+    slots,
     diagnostics
   };
+}
+function descendantsOf(work, container, toWork) {
+  const childrenOf = /* @__PURE__ */ new Map();
+  for (const n of work) {
+    const parent = referenceTokens(n.fields["parent"]).map(toWork)[0];
+    if (!parent) continue;
+    const list = childrenOf.get(parent);
+    if (list) list.push(n);
+    else childrenOf.set(parent, [n]);
+  }
+  const out = [];
+  const todo = [...childrenOf.get(container) ?? []];
+  for (let n = todo.pop(); n !== void 0; n = todo.pop()) {
+    out.push(n);
+    todo.push(...childrenOf.get(n.slug ?? "") ?? []);
+  }
+  return out;
+}
+function exitCodesOf(v) {
+  if (v === null || v === void 0 || v === "") return void 0;
+  let value = v;
+  if (typeof v === "string") {
+    const trimmed = v.trim();
+    if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return void 0;
+    try {
+      value = JSON.parse(trimmed);
+    } catch {
+      return void 0;
+    }
+  }
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return void 0;
+  return Object.fromEntries(
+    Object.entries(value).map(([k, val]) => [k, String(val)])
+  );
+}
+function verifyOf(declared, kind) {
+  if (declared) return declared;
+  return kind === "changeset" ? "applied" : void 0;
 }
 function findCycles(steps) {
   const found = [];
@@ -12538,46 +12659,30 @@ function findCycles(steps) {
 
 // iNNfo/packages/nn-core/src/procedure/fold.ts
 var TERMINAL = /* @__PURE__ */ new Set(["completed", "failed", "cancelled"]);
-var ARTIFACT_STATUS = {
-  artifact_produced: "produced",
-  artifact_validated: "validated",
-  artifact_rejected: "rejected"
-};
-function foldRun(graph, events, opts) {
+function foldRun(graph, run, opts) {
   const steps = {};
-  for (const slug of Object.keys(graph.steps)) steps[slug] = { status: "pending", attempt: 0 };
   const startedInputs = {};
+  for (const slug of Object.keys(graph.steps)) {
+    const row = run.steps[slug];
+    steps[slug] = {
+      status: rowStatusOf(row),
+      attempt: row?.attempt ?? 0,
+      ...row?.outcome !== void 0 ? { outcome: row.outcome } : {},
+      ...row?.next !== void 0 ? { next: row.next } : {},
+      ...row?.waitingOn !== void 0 ? { waitingOn: row.waitingOn } : {},
+      ...row?.failure !== void 0 ? { failure: row.failure } : {}
+    };
+    if (row?.inputs && Object.keys(row.inputs).length > 0) startedInputs[slug] = row.inputs;
+  }
   const artifacts = {};
   const validatedRev = {};
-  const inputs = {};
-  let pinned = opts.defRev;
-  let paused = false;
-  let terminal;
-  for (const e of events) {
-    const prev = e.step !== void 0 ? steps[e.step] : void 0;
-    if (prev && e.step !== void 0) {
-      if (e.kind === "step_started") {
-        steps[e.step] = { status: "active", attempt: e.attempt ?? prev.attempt + 1 };
-        startedInputs[e.step] = e.inputs ?? {};
-      } else if (e.kind === "step_waiting")
-        steps[e.step] = { ...prev, status: "waiting", waitingOn: e.value };
-      else if (e.kind === "step_completed")
-        steps[e.step] = { status: "done", attempt: prev.attempt, outcome: e.outcome, next: e.next };
-      else if (e.kind === "step_failed")
-        steps[e.step] = { status: "failed", attempt: prev.attempt, failure: e.value };
-    }
-    if (e.kind in ARTIFACT_STATUS && e.field !== void 0) {
-      const status2 = ARTIFACT_STATUS[e.kind];
-      artifacts[e.field] = { status: status2, rev: e.rev, value: e.value, step: e.step };
-      if (status2 === "validated") validatedRev[e.field] = e.rev;
-    }
-    if (e.kind === "input_recorded" && e.field !== void 0)
-      inputs[e.field] = { value: e.value, rev: e.rev };
-    if (e.kind === "interrupted") paused = true;
-    if (e.kind === "resumed") paused = false;
-    if (e.kind === "rebased") pinned = e.value ?? null;
-    if (TERMINAL.has(e.kind)) terminal = e.kind;
+  for (const [slug, row] of Object.entries(run.artifacts)) {
+    artifacts[slug] = artifactStateOf(row);
+    if (row.status === "validated" && row.rev !== void 0) validatedRev[slug] = row.rev;
   }
+  const pinned = opts.defRev;
+  const paused = run.state === "paused";
+  const terminal = TERMINAL.has(run.state) ? run.state : void 0;
   const path2 = [];
   let current = null;
   let blockedBy;
@@ -12628,15 +12733,23 @@ function foldRun(graph, events, opts) {
     const offPath = def.producers.length > 0 && def.producers.every((p) => steps[p].status === "off_path");
     artifacts[slug] = { status: !def.required || offPath ? "not_required" : "expected" };
   }
-  const last = events[events.length - 1];
-  const crashed = opts.lockFree === true && last?.kind === "step_started" && last.step !== void 0 && graph.steps[last.step]?.executor === "engine";
-  if (crashed && !blockedBy)
-    blockedBy = `Engine step "${last.step}" started and never reported back.`;
+  let crashed = false;
+  if (opts.activeStepIsStale) {
+    for (const [slug, row] of Object.entries(run.steps)) {
+      if (row.status !== "active") continue;
+      if (graph.steps[slug]?.executor !== "engine") continue;
+      if (opts.activeStepIsStale(slug, row)) {
+        crashed = true;
+        if (!blockedBy) blockedBy = `Engine step "${slug}" started and never reported back.`;
+        break;
+      }
+    }
+  }
   if (current && steps[current].status === "failed" && !blockedBy)
     blockedBy = `Step "${current}" failed: ${steps[current].failure ?? "no reason recorded"}.`;
   const drift = pinned !== graph.defRev ? { pinned, current: graph.defRev } : null;
   const waiting = paused || current !== null && steps[current].status === "waiting";
-  const status = terminal ?? (drift ? "drifted" : blockedBy ? "blocked" : waiting ? "waiting" : "open");
+  const status = terminal ?? (drift ? "drifted" : blockedBy ? "blocked" : paused ? "paused" : waiting ? "waiting" : "open");
   return {
     status,
     currentStep: current,
@@ -12651,11 +12764,21 @@ function foldRun(graph, events, opts) {
     paused,
     blockedBy,
     canComplete: terminal === void 0 && current === null && path2.length > 0 && !blockedBy,
-    inputs,
-    staleInputs: Object.keys(inputs).filter((f) => {
-      const now = opts.currentRevs?.[f];
-      return now !== void 0 && now !== inputs[f].rev;
-    })
+    inputs: {},
+    staleInputs: [],
+    attempts: run.attempts
+  };
+}
+function rowStatusOf(row) {
+  if (!row) return "pending";
+  return row.status;
+}
+function artifactStateOf(row) {
+  return {
+    status: row.status,
+    ...row.rev !== void 0 ? { rev: row.rev } : {},
+    ...row.value !== void 0 ? { value: row.value } : {},
+    ...row.step !== void 0 ? { step: row.step } : {}
   };
 }
 function reachable(graph, from) {
@@ -12694,27 +12817,99 @@ function json(v) {
     return void 0;
   }
 }
-function eventOf(fields) {
-  const e = { kind: String(fields["kind"]) };
-  for (const key of ["step", "outcome", "next", "field", "value", "rev", "actor", "at"]) {
-    const v = str3(fields[key]);
-    if (v !== void 0) e[key] = v;
-  }
-  const attempt = Number(fields["attempt"]);
-  if (str3(fields["attempt"]) !== void 0 && Number.isFinite(attempt)) e.attempt = attempt;
-  const inputs = json(fields["inputs"]);
-  if (inputs) e.inputs = Object.fromEntries(Object.entries(inputs).map(([k, v]) => [k, String(v)]));
-  return e;
+function stringMap(v) {
+  const obj = json(v);
+  if (!obj) return {};
+  return Object.fromEntries(Object.entries(obj).map(([k, val]) => [k, String(val)]));
 }
-function runRecordOf(model) {
+function num(v) {
+  const text2 = str3(v);
+  if (text2 === void 0) return void 0;
+  const n = Number(text2);
+  return Number.isFinite(n) ? n : void 0;
+}
+var RUN_STATES = /* @__PURE__ */ new Set([
+  "open",
+  "paused",
+  "completed",
+  "failed",
+  "cancelled"
+]);
+var STEP_STATES = /* @__PURE__ */ new Set(["pending", "active", "waiting", "done", "failed"]);
+var ARTIFACT_STATES = /* @__PURE__ */ new Set([
+  "expected",
+  "produced",
+  "validated",
+  "rejected"
+]);
+function runStateOf(v) {
+  const text2 = str3(v);
+  return text2 !== void 0 && RUN_STATES.has(text2) ? text2 : "open";
+}
+function stepStatusOf(v) {
+  const text2 = str3(v);
+  return text2 !== void 0 && STEP_STATES.has(text2) ? text2 : "pending";
+}
+function artifactStatusOf(v) {
+  const text2 = str3(v);
+  return text2 !== void 0 && ARTIFACT_STATES.has(text2) ? text2 : "expected";
+}
+function stepRowOf(fields) {
+  const row = {
+    status: stepStatusOf(fields["status"]),
+    attempt: num(fields["attempt"]) ?? 0,
+    inputs: stringMap(fields["inputs"])
+  };
+  for (const key of ["outcome", "next", "waiting_on", "failure", "claimed_at", "holder"]) {
+    const v = str3(fields[key]);
+    if (v !== void 0) {
+      if (key === "waiting_on") row.waitingOn = v;
+      else if (key === "claimed_at") row.claimedAt = v;
+      else row[key] = v;
+    }
+  }
+  const timeout = num(fields["timeout_ms"]);
+  if (timeout !== void 0) row.timeoutMs = timeout;
+  return row;
+}
+function artifactRowOf(fields) {
+  const kind = str3(fields["kind"]);
+  return {
+    kind: kind === "element" || kind === "changeset" ? kind : "file",
+    status: artifactStatusOf(fields["status"]),
+    ...str3(fields["value"]) !== void 0 ? { value: str3(fields["value"]) } : {},
+    ...str3(fields["rev"]) !== void 0 ? { rev: str3(fields["rev"]) } : {}
+  };
+}
+function runModelOf(model) {
   const header = model.elements.get("Procedure Execution")?.[0];
   if (!header) return null;
+  const steps = {};
+  for (const el of model.elements.get("Step Run") ?? []) {
+    if (el.slug) steps[el.slug] = stepRowOf(el.fields);
+  }
+  const artifacts = {};
+  for (const el of model.elements.get("Run Artifact") ?? []) {
+    if (el.slug) artifacts[el.slug] = artifactRowOf(el.fields);
+  }
+  const inputs = {};
+  for (const el of model.elements.get("Input") ?? []) {
+    if (!el.slug) continue;
+    inputs[el.slug] = {
+      ...str3(el.fields["value"]) !== void 0 ? { value: str3(el.fields["value"]) } : {},
+      ...str3(el.fields["rev"]) !== void 0 ? { rev: str3(el.fields["rev"]) } : {}
+    };
+  }
   return {
-    closed: model.frontmatter["closed"] === true,
+    state: runStateOf(header.fields["state"]),
+    seq: num(header.fields["seq"]) ?? 0,
     procedure: str3(header.fields["procedure"]) ?? "",
     defRev: str3(header.fields["def_rev"]) ?? null,
     params: json(header.fields["params"]) ?? {},
-    events: (model.elements.get("Execution Event") ?? []).map((el) => eventOf(el.fields))
+    steps,
+    artifacts,
+    inputs,
+    attempts: {}
   };
 }
 
@@ -14347,7 +14542,7 @@ function auditModelRecords(log, models) {
   resolveConsoleSchema,
   resolveEvidenceCitation,
   roleOf,
-  runRecordOf,
+  runModelOf,
   serializeConsoleSlot,
   sidecarPathFor,
   sidecarSubjectPath,
