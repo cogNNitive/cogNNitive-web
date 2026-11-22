@@ -11819,7 +11819,7 @@ function checkFrontmatterInvariants(model, d) {
         break;
     }
     if (hasUnfrozen) {
-      d.warn("model", "Model contains elements without explicit slugs and is not frozen. Any mutation will automatically freeze slugs.", { code: "UNFROZEN_MODEL" });
+      d.warn("model", "Model contains elements without explicit slugs and is not frozen. Element mutations freeze them as a side effect, but bump_version does not; run freeze_slugs to freeze them explicitly.", { code: "UNFROZEN_MODEL" });
     }
   }
   for (const concept of fm.concepts ?? []) {
@@ -23602,7 +23602,9 @@ async function artifactTargetProblem(rootDir, rel) {
 }
 
 // iNNfo/packages/nn-mcp/src/tools/propose-changeset.ts
+var import_node_child_process = require("node:child_process");
 var import_promises10 = require("node:fs/promises");
+var import_node_os2 = require("node:os");
 var import_node_path19 = require("node:path");
 init_dist();
 init_spec();
@@ -23758,8 +23760,28 @@ function buildProposedChangeset(changes, meta) {
     changes: numbered
   };
 }
+function resolveDefaultAuthor(rootDir) {
+  const fromEnv = process.env.NN_AUTHOR?.trim();
+  if (fromEnv) return fromEnv;
+  try {
+    const fromGit = (0, import_node_child_process.execFileSync)("git", ["config", "user.name"], {
+      cwd: rootDir,
+      encoding: "utf-8",
+      stdio: ["ignore", "pipe", "ignore"],
+      timeout: 2e3
+    }).trim();
+    if (fromGit) return fromGit;
+  } catch {
+  }
+  try {
+    const fromOs = (0, import_node_os2.userInfo)().username.trim();
+    if (fromOs) return fromOs;
+  } catch {
+  }
+  return "unknown";
+}
 async function writeProposedChangeset(rootDir, input) {
-  const author = input.author?.trim() || "agent";
+  const author = input.author?.trim() || resolveDefaultAuthor(rootDir);
   const workspaceId = input.workspaceId?.trim() || await resolveWorkspaceId(rootDir);
   const document = buildProposedChangeset(input.changes, {
     title: input.title,
@@ -23816,6 +23838,7 @@ init_resolver_node();
 // iNNfo/packages/nn-mcp/src/tools/provenance-models.ts
 init_dist();
 init_list_read();
+init_spec();
 
 // iNNfo/packages/nn-mcp/src/tools/validate.ts
 var DEFAULT_WORKSPACE_IGNORE = /* @__PURE__ */ new Set([
@@ -26083,7 +26106,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
 
 // iNNfo/packages/nn-core/src/console/locate-writer.ts
 var import_node_fs11 = require("node:fs");
-var import_node_os2 = require("node:os");
+var import_node_os3 = require("node:os");
 var import_node_path21 = require("node:path");
 var import_node_url2 = require("node:url");
 var DEV_ROOT_MARKER2 = (0, import_node_path21.join)("iNNfo", "specs", "bluepriNNts", "console", "artifact_shell.html");
@@ -26105,7 +26128,7 @@ function resolveConsoleModulePath2(opts = {}) {
   if (env.INNFO_CONSOLE_DIR) candidates.push((0, import_node_path21.join)(env.INNFO_CONSOLE_DIR, EXPORT_MODULE));
   const devRoot = opts.devRoot === void 0 ? devCheckoutRoot({ requires: [(0, import_node_path21.join)("scripts", EXPORT_MODULE)] }) : opts.devRoot;
   if (devRoot && (0, import_node_fs11.existsSync)((0, import_node_path21.join)(devRoot, DEV_ROOT_MARKER2))) candidates.push((0, import_node_path21.join)(devRoot, "scripts", EXPORT_MODULE));
-  candidates.push((0, import_node_path21.join)(opts.home ?? (0, import_node_os2.homedir)(), ".agents", "console", EXPORT_MODULE));
+  candidates.push((0, import_node_path21.join)(opts.home ?? (0, import_node_os3.homedir)(), ".agents", "console", EXPORT_MODULE));
   return candidates.find((candidate) => (0, import_node_fs11.existsSync)(candidate)) ?? null;
 }
 // Annotate the CommonJS export names for ESM import in node:
