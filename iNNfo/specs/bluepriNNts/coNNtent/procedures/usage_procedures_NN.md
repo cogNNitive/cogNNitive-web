@@ -27,6 +27,9 @@ Three companion procedures state how the wizards' decisions are written, field b
 `create_series_procedures_NN.md` (Series document, Scene Kind grammar, Chrome, Presets),
 `configure_cascade_procedures_NN.md` (setting a parameter at the domain, series or video
 scope) and `create_character_procedures_NN.md` (the character folder, poses and voices).
+Two more are generic production procedures a series may adopt: `produce_video_procedures_NN.md`
+(the router for a video request that names no series) and `draft_scene_visuals_procedures_NN.md`
+(single-visual scenes drafted on real material, behind a media gate).
 
 ## NN Work: Set up the Domain
 slug:: set-up-the-domain

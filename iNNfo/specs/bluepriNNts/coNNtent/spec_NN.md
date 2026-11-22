@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-7-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"
 blueprint_name: "coNNtent"
-blueprint_version: "V_0-30-0"
+blueprint_version: "V_0-31-0"
 title: "coNNtent App"
 catalog: catalog/model-catalog_coNNtent_NN.md
 procedures:
@@ -19,6 +19,12 @@ procedures:
   - id: "create-character"
     name: "Create a Character"
     path: "procedures/create_character_procedures_NN.md"
+  - id: "draft-scene-visuals"
+    name: "Draft Scene Visuals"
+    path: "procedures/draft_scene_visuals_procedures_NN.md"
+  - id: "produce-video"
+    name: "Produce Video"
+    path: "procedures/produce_video_procedures_NN.md"
 relationship_types:
   hierarchy:
     enabled: true

@@ -12791,17 +12791,17 @@ function reachable(graph, from) {
   }
   return seen;
 }
-function guardOf(graph, to, artifacts) {
-  const text2 = graph.steps[to].condition?.trim();
-  if (!text2) return { kind: "none" };
-  const outcome = /^outcome\s*==\s*["']?([\w-]+)["']?$/.exec(text2);
+function guardOf(graph, step, artifacts) {
+  const condition = graph.steps[step]?.condition?.trim();
+  if (!condition) return { kind: "none" };
+  const outcome = /^outcome\s*==\s*["']?([\w-]+)["']?$/.exec(condition);
   if (outcome) return { kind: "outcome", token: outcome[1] };
-  const art = /^(?:\[\[([^\]]+)\]\]|@([\w-]+))\s+validated$/.exec(text2);
+  const art = /^(?:\[\[([^\]]+)\]\]|@([\w-]+))\s+validated$/.exec(condition);
   const ref = art ? (art[1] ?? art[2]).trim() : void 0;
   const slug = ref === void 0 ? void 0 : graph.artifacts[ref] ? ref : Object.values(graph.artifacts).find((a) => a.name.toLowerCase() === ref.toLowerCase())?.slug;
   if (slug)
     return { kind: "artifact", artifact: slug, holds: artifacts[slug]?.status === "validated" };
-  return { kind: "prose", text: text2 };
+  return { kind: "prose", text: condition };
 }
 
 // iNNfo/packages/nn-core/src/procedure/run.ts

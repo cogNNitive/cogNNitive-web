@@ -48,6 +48,10 @@ six procedures, their steps and the tool of each step live in
 stateless, so after a procedure completes run `detectState` again and propose the next.
 Series, cascade and character authoring follow `procedures/create_series_procedures_NN.md`,
 `procedures/configure_cascade_procedures_NN.md` and `procedures/create_character_procedures_NN.md`.
+A request for a video that names no series starts at `procedures/produce_video_procedures_NN.md`
+(it lists the series through their scope documents and hands off to the procedure the series
+declares); `procedures/draft_scene_visuals_procedures_NN.md` drafts single-visual scenes on
+real material only, behind its media gate.
 
 ## 0c. Authoring rules (always)
 
