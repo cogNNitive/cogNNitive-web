@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-9-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-9-0_NN.md"
-blueprint_version: "V_0-4-0"
+blueprint_version: "V_0-4-1"
 title: "Executions App"
 description: "Level-2 blueprint recording runs of procedures as models with state: one instance model per run, holding its header, one row per step and one row per artifact; the history of the run is the change log of that model."
 relationship_types:
@@ -155,7 +155,7 @@ description:: The applied change ids a human step observed, such as the verdicts
 ## NN Field Definition: action
 concept:: Step Request
 type:: select
-options:: [wait, complete, fail]
+options:: [start, wait, complete, fail]
 description:: The action the person asked the runner to record on the step.
 
 ## NN Field Definition: step
@@ -273,7 +273,7 @@ level: 3
 parent_spec:
   name: executions
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/executions/spec_NN.md"
-blueprint_version: "V_0-4-0"
+blueprint_version: "V_0-4-1"
 status: active
 ---
 

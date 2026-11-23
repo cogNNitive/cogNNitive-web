@@ -164,11 +164,46 @@
         })
     }
 
+    function draftRequestsOf(run) {
+      if (!store || !run) return []
+      var list = typeof store.drafts === 'function' ? store.drafts() : []
+      var out = []
+      ;(Array.isArray(list) ? list : []).forEach(function (d) {
+        if (!d || d.concept !== 'Step Request') return
+        if (String(d.knowledge_id) !== String(run.id)) return
+        var fields = d.proposed
+        if (typeof fields === 'string') {
+          try {
+            fields = JSON.parse(fields)
+          } catch {
+            return
+          }
+        }
+        if (!fields || typeof fields !== 'object') return
+        out.push({
+          id: d.element_slug || d.element || 'draft',
+          action: fields.action,
+          status: fields.request_status || 'pending',
+          step: fields.step,
+          baseSeq: fields.base_seq,
+          outcome: fields.requested_outcome,
+          value: fields.requested_value,
+          isDraft: true,
+        })
+      })
+      return out
+    }
+
     /** The pending request for one step, if a person already asked for something there. */
     function pendingRequestFor(step) {
-      return requestsOf(activeRun).filter(function (r) {
+      var inRun = requestsOf(activeRun).filter(function (r) {
         return r.status === 'pending' && r.step === step
       })[0]
+      if (inRun) return inRun
+      var inDrafts = draftRequestsOf(activeRun).filter(function (r) {
+        return r.status === 'pending' && r.step === step
+      })[0]
+      return inDrafts || null
     }
 
     function stepName(slug) {
@@ -920,7 +955,8 @@
      * the state the person saw, so a request that arrives late is marked stale, not applied.
      */
     function runRequest(run, fields) {
-      var name = 'q-' + String(requestsOf(run).length + 1).padStart(3, '0')
+      var all = requestsOf(run).concat(draftRequestsOf(run))
+      var name = 'q-' + String(all.length + 1).padStart(3, '0')
       return store.propose({
         kind: 'new',
         knowledge_id: run.id,
@@ -960,7 +996,8 @@
       if (action === 'fail' || action === 'wait') {
         // The value the runner needs (who it waits on, why it failed) comes from the field the
         // action row renders. A missing one refuses the request instead of sending a blank one.
-        var field = host && host.querySelector ? host.querySelector('[data-proc-request-value]') : null
+        var field =
+          host && host.querySelector ? host.querySelector('[data-proc-request-value]') : null
         var given = field && field.value ? String(field.value).trim() : ''
         if (!given) {
           if (errorEl)
@@ -1030,13 +1067,14 @@
       // request on the same step would be a second intent for one decision.
       var waiting = state.currentStep ? pendingRequestFor(state.currentStep) : null
       if (waiting) {
-        var note = make(
-          'div',
-          'proc-action-waiting',
-          'Waiting for the agent: a "' +
+        var msg = waiting.isDraft
+          ? 'Draft proposed: a "' +
             waiting.action +
-            '" request on this step is pending. It acts on procedure_record.',
-        )
+            '" request on this step is staged. Save the changeset to deliver it to the runner.'
+          : 'Waiting for the agent: a "' +
+            waiting.action +
+            '" request on this step is pending. It acts on procedure_record.'
+        var note = make('div', 'proc-action-waiting', msg)
         note.setAttribute('data-proc-waiting', waiting.action)
         box.appendChild(note)
         host.appendChild(box)
@@ -1044,7 +1082,11 @@
       }
 
       // Only the actions a request can carry: the queue never closes a run.
+      // A manual step (`executor: human`) allows a person to ask for `start`.
+      var stepDef = state.currentStep ? stepsOf(active)[state.currentStep] : null
+      var isManual = stepDef && stepDef.executor === 'human'
       var askable = list.filter(function (a) {
+        if (a === 'start') return isManual
         return a === 'wait' || a === 'complete' || a === 'fail'
       })
       if (!askable.length) {

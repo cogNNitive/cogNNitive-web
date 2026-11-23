@@ -12843,7 +12843,7 @@ var ARTIFACT_STATES = /* @__PURE__ */ new Set([
   "rejected"
 ]);
 var REQUEST_STATES = /* @__PURE__ */ new Set(["pending", "done", "stale", "rejected"]);
-var REQUEST_ACTIONS = /* @__PURE__ */ new Set(["wait", "complete", "fail"]);
+var REQUEST_ACTIONS = /* @__PURE__ */ new Set(["start", "wait", "complete", "fail"]);
 function isTemplatePlaceholder(v) {
   const text2 = str3(v);
   return text2 !== void 0 && /^<[^>]+>(@<[^>]+>)?$/.test(text2);
