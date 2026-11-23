@@ -175,15 +175,15 @@
     },
     "executions": {
       "name": "executions",
-      "adopted": "V_0-5-0",
+      "adopted": "V_0-6-0",
       "tier": "core",
       "access": "public",
       "when_to_use": "Level-2 blueprint recording runs of procedures as models with state: one instance model per run, holding its header, one row per step and one row per artifact; the history of the run is the change log of that model.",
-      "release_tag": "blueprints-v0.92.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
-          "blueprint_version": "V_0-5-0",
+          "blueprint_version": "V_0-6-0",
           "spec_version": "V_0-5-0",
           "title": "Executions App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/executions/spec_NN.md"

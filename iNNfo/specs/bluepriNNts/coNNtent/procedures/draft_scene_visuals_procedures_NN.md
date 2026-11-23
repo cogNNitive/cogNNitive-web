@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-1-0"
+knowledge_version: "V_0-2-0"
 title: "Draft Scene Visuals"
 slots:
   - { name: series_profile, kind: value, required: false, step: split-the-story-into-single-visual-scenes, default: "Keep the structure and style the series document declares: its Scene Kinds, its fixed scenes and its premise." }
@@ -135,18 +135,44 @@ tool:: agent
 produces:: a sealed `proposed` changeset written with `writeProposedChangeset`, one `add_element` per Scene and Layer and an `evidence::` line per change
 scope:: internal
 Regeneration addresses the flagged scene only: a scene sent back with a reason is redrafted in
-its own proposal and the untouched scenes are not reopened.
+its own proposal (`Redraft the flagged scene`) and the untouched scenes are not reopened.
 
 ## NN Work: Approve the draft
 slug:: approve-the-draft
 parent:: @draft-scene-visuals
+next:: [@hand-off-to-produce-an-episode, @redraft-the-flagged-scene]
 step_type:: decision
 tool:: human
-decision:: approve the proposed changeset, or send one scene back with a reason
+decision:: approve the proposed changeset (approve), or send one scene back with a reason (send-back)
 scope:: internal
 The review is about real material: every screenshot, clip and the presenter image already
-exist. The agent never approves and never applies the changeset. Once it is applied, the
-episode continues with `Produce an Episode`, where the spend gates stay human.
+exist. The agent never approves and never applies the changeset. Approving applies it; a
+scene sent back returns here once it is redrafted, and the runner bounds how many times the
+draft is reviewed.
+
+## NN Work: Hand off to Produce an Episode
+slug:: hand-off-to-produce-an-episode
+parent:: @draft-scene-visuals
+step_type:: task
+condition:: outcome == approve
+tool:: agent
+produces:: a started run of `Produce an Episode`, the procedure of that name in `usage_procedures_NN.md`, for this episode
+scope:: internal
+The approved changeset is applied, so the episode continues with `Produce an Episode`, where
+the spend gates stay human. This procedure ends here.
+
+## NN Work: Redraft the flagged scene
+slug:: redraft-the-flagged-scene
+parent:: @draft-scene-visuals
+next:: @approve-the-draft
+step_type:: task
+condition:: outcome == send-back
+tool:: agent
+produces:: a sealed `proposed` changeset that redrafts only the scene sent back, following its reason, with an `evidence::` line per change
+scope:: internal
+Only the flagged scene is redrafted, on the material already in `media/`; the untouched
+scenes are not reopened. A scene that needs new material goes through the capture or render
+step for it before it is redrafted. The new proposal goes back to the approval.
 
 # NN Artifact
 

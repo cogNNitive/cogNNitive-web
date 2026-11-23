@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-9-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-9-0_NN.md"
-blueprint_version: "V_0-5-0"
+blueprint_version: "V_0-6-0"
 title: "Executions App"
 description: "Level-2 blueprint recording runs of procedures as models with state: one instance model per run, holding its header, one row per step and one row per artifact; the history of the run is the change log of that model."
 relationship_types:
@@ -99,8 +99,8 @@ description:: The stored lifecycle of the run. The status the tools return is th
 concept:: [Step Run, Run Artifact]
 type:: select
 options:: [pending, active, waiting, done, failed, expected, produced, validated, rejected]
-transitions:: {"": ["pending", "expected"], "pending": ["active", "failed", "done"], "active": ["waiting", "done", "failed"], "waiting": ["active", "done", "failed"], "failed": ["active"], "done": ["active"], "expected": ["produced", "validated", "rejected"], "produced": ["validated", "rejected"], "validated": ["produced"], "rejected": ["produced"]}
-description:: The stored lifecycle of a step row (pending, active, waiting, done, failed) or an artifact row (expected, produced, validated, rejected). Each row only takes the edges of its own lifecycle; the rows never cross.
+transitions:: {"": ["pending", "expected"], "pending": ["active", "failed", "done"], "active": ["waiting", "done", "failed", "pending"], "waiting": ["active", "done", "failed", "pending"], "failed": ["active"], "done": ["active", "pending"], "expected": ["produced", "validated", "rejected"], "produced": ["validated", "rejected"], "validated": ["produced"], "rejected": ["produced"]}
+description:: The stored lifecycle of a step row (pending, active, waiting, done, failed) or an artifact row (expected, produced, validated, rejected). Each row only takes the edges of its own lifecycle; the rows never cross. A step row goes back to pending only when a loop's back-edge reopens it.
 
 ## NN Field Definition: attempt
 concept:: Step Run
@@ -254,6 +254,10 @@ Every runner changeset holds the header's `seq: n -> n+1` with `from: {seq: n}`,
 
 `action=rebase` is the one call that accepts a definition revision the run was not pinned to. A definition that grew while the run was open names steps and artifacts the run has no row for, so the rebase writes their `Step Run` and `Run Artifact` rows in the same changeset as the new `def_rev`: without one, every later action on them addresses nothing. A row the run already has is never touched.
 
+### Loops
+
+A procedure may loop back to an earlier step when the loop is guarded: a decision step chooses the branch into it (its target carries a `condition`), and its other branches leave it. Completing the step whose `next` is a step the run already walked takes the loop's back-edge: one changeset puts that step and every step walked from it up to the completing one back to `pending`, keeping each row's `attempt`, so the next start counts on from it, and puts every output of those steps that was `validated` back to `produced`; the fold reports those outputs stale until their producer runs again. The loop is bounded: when the step it returns to already took its `max_attempts` (3 when the procedure declares none), the back-edge is refused with `LOOP_LIMIT` and nothing is written, so the actor fails the step or takes another branch.
+
 ### Artifacts
 
 - A `file` artifact is a hash-verified reference, not frozen bytes: a file changed after it was recorded is detected (its rev no longer matches, so dependents go stale), not prevented.
@@ -277,7 +281,7 @@ level: 3
 parent_spec:
   name: executions
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/executions/spec_NN.md"
-blueprint_version: "V_0-5-0"
+blueprint_version: "V_0-6-0"
 status: active
 ---
 

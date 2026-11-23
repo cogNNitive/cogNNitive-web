@@ -214,7 +214,29 @@ test('draft-scene-visuals gates the draft on clean screenshots and rendered Hype
   const render = chain.findIndex((step) => /hyperframes/i.test(step.name))
   assert.ok(capture >= 0 && capture < gateIndex, 'screenshots are not captured before the gate')
   assert.ok(render >= 0 && render < gateIndex, 'clips are not rendered before the gate')
-  assert.equal(toolOf(chain.at(-1)), 'human', 'the draft ends in a human approval')
+  const approval = chain.find((step) => step.fields.step_type === 'decision')
+  assert.ok(approval, 'the draft is not approved by a decision step')
+  assert.equal(toolOf(approval), 'human', 'the draft is not approved by a human')
+})
+
+test('draft-scene-visuals approves the draft or sends one scene back, in a bounded loop', () => {
+  const { steps } = parseWork(read(PROMOTED['draft-scene-visuals']))
+  const bySlug = new Map(steps.map((step) => [step.fields.slug, step]))
+  const approval = bySlug.get('approve-the-draft')
+  assert.ok(approval, 'no approve-the-draft step')
+  assert.equal(approval.fields.step_type, 'decision')
+  const [approve, sendBack] = nextOf(approval)
+  assert.equal(bySlug.get(approve)?.fields.condition, 'outcome == approve')
+  assert.equal(bySlug.get(sendBack)?.fields.condition, 'outcome == send-back')
+  for (const token of ['approve', 'send-back'])
+    assert.ok(
+      approval.fields.decision.includes(`(${token})`),
+      `the decision does not name ${token}`,
+    )
+  assert.deepEqual(nextOf(bySlug.get(approve)), [], `${approve} must end the procedure`)
+  // The redraft goes back to the approval: the loop's back-edge, which the runner bounds by
+  // the approval's attempts.
+  assert.deepEqual(nextOf(bySlug.get(sendBack)), ['approve-the-draft'])
 })
 
 test('produce-video lists series through their scope documents and hands off to the declared procedure', () => {

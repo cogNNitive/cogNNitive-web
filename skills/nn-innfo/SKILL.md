@@ -897,7 +897,9 @@ run's recorded events.
 2. **Read the state.** Call `procedure_state` before every step. It returns the
    current step, what it needs (executor, decision question, command with slots
    substituted, input and output artifacts), the allowed transitions and the
-   `procedure_record` actions allowed now. It writes nothing.
+   `procedure_record` actions allowed now. It writes nothing. The built-in `{run}`
+   slot always reads as the run id, in the state, an engine `command` and an
+   artifact `verify`; never pass it as a parameter.
 3. **Record each fact as it happens** with `procedure_record`, one call per fact:
    `start` the step, do the work, record `input` values read, `artifact` facts
    (`produced`, `validated`, `rejected`), then `complete` with the `outcome`
@@ -905,6 +907,14 @@ run's recorded events.
    refuses `AMBIGUOUS_TRANSITION` and lists them: ask the user and pass `next`.
    Use `wait` when the step waits on a person, `fail` when it fails, `pause`/`resume`
    when the user stops and returns, `cancel` to abandon the run.
+   **Loops.** A decision may send the run back (a redraft that returns to its
+   review): completing a step whose `next` is a step already walked reopens that
+   step and every step after it on the path, in one changeset. They read `pending`
+   again with their attempts kept, their outputs read `stale`, and the state's
+   current step is the one the loop returned to: start it again (its attempt counts
+   on). A loop is bounded by its target's `max_attempts` (3 by default): past it,
+   `complete` refuses `LOOP_LIMIT` and writes nothing. Tell the user, then `fail` the
+   step or take another branch; never retry the same back-edge.
 4. **Console requests.** A person acting from the console never writes the run: they
    record a Step Request (`start`, `wait`, `complete` or `fail` a step) or a
    `run_start` draft (a new run). A saved console arrives through `import_console`
@@ -923,7 +933,8 @@ run's recorded events.
 A refusal writes nothing; read its code, fix the cause and call again. If the
 procedure changed after the run started, the run is `drifted`: tell the user and
 continue only after `rebase`. Graph diagnostics in the state (a missing slug, an
-unknown `next` target, a cycle) are reported to the user, never patched around.
+unknown `next` target, a loop with no guarded branch reported as `CYCLE`) are
+reported to the user, never patched around.
 
 ### 16-bis.4 Output routing
 

@@ -7370,6 +7370,7 @@ var require_dist = __commonJS({
 var index_exports = {};
 __export(index_exports, {
   CHANGE_CONCEPT: () => CHANGE_CONCEPT,
+  CONSOLE_BUNDLE: () => CONSOLE_BUNDLE,
   CONSOLE_HISTORY_LIMIT: () => CONSOLE_HISTORY_LIMIT,
   DEV_ROOT_MARKER: () => DEV_ROOT_MARKER,
   DOMAIN_CONSOLE_FILENAME: () => DOMAIN_CONSOLE_FILENAME,
@@ -7432,6 +7433,7 @@ __export(index_exports, {
   readSynchronizations: () => readSynchronizations,
   resolveArtifactReverseLineage: () => resolveArtifactReverseLineage,
   resolveCitation: () => resolveCitation,
+  resolveConsoleBundlePath: () => resolveConsoleBundlePath,
   resolveConsoleModulePath: () => resolveConsoleModulePath,
   resolveConsoleSchema: () => resolveConsoleSchema,
   resolveEvidenceCitation: () => resolveEvidenceCitation,
@@ -12524,7 +12526,8 @@ function procedureGraph(model, container) {
       produces: str2(n.fields["produces"]),
       ...exitCodesOf(n.fields["exit_codes"]) ? { exitCodes: exitCodesOf(n.fields["exit_codes"]) } : {},
       inputs: artifactRefs(n.fields["input"]),
-      outputs: artifactRefs(n.fields["output"])
+      outputs: artifactRefs(n.fields["output"]),
+      ...maxAttemptsOf(n.fields["max_attempts"]) !== void 0 ? { maxAttempts: maxAttemptsOf(n.fields["max_attempts"]) } : {}
     };
   }
   for (const n of work) {
@@ -12559,7 +12562,12 @@ function procedureGraph(model, container) {
       producers: Object.values(steps).filter((s) => s.outputs.includes(slug)).map((s) => s.slug)
     };
   }
-  const incoming = new Set(Object.values(steps).flatMap((s) => s.next));
+  const cycles = findCycles(steps);
+  const incoming = new Set(
+    Object.values(steps).flatMap(
+      (s) => s.next.filter((t) => !cycles.backEdges.has(`${s.slug}>${t}`))
+    )
+  );
   const starts = Object.keys(steps).filter((s) => !incoming.has(s));
   if (starts.length === 0 && Object.keys(steps).length > 0)
     diagnostics.push({
@@ -12573,7 +12581,7 @@ function procedureGraph(model, container) {
       severity: "error",
       detail: `Several steps have no incoming next: ${starts.join(", ")}.`
     });
-  diagnostics.push(...findCycles(steps));
+  diagnostics.push(...cycles.diagnostics);
   const declaredSlots = Array.isArray(model.frontmatter["slots"]) ? model.frontmatter["slots"].map(
     (s) => typeof s === "string" ? s.replace(/^\{|\}$/g, "").trim() : typeof s === "object" && s !== null && "name" in s ? String(s.name).trim() : ""
   ) : typeof model.frontmatter["slots"] === "string" ? String(model.frontmatter["slots"]).replace(/^\[|\]$/g, "").split(",").map((s) => s.trim().replace(/^\{|\}$/g, "")) : [];
@@ -12605,13 +12613,13 @@ function descendantsOf(work, container, toWork) {
     if (list) list.push(n);
     else childrenOf.set(parent, [n]);
   }
-  const out = [];
+  const out = /* @__PURE__ */ new Set();
   const todo = [...childrenOf.get(container) ?? []];
   for (let n = todo.pop(); n !== void 0; n = todo.pop()) {
-    out.push(n);
+    out.add(n);
     todo.push(...childrenOf.get(n.slug ?? "") ?? []);
   }
-  return out;
+  return work.filter((n) => out.has(n));
 }
 function exitCodesOf(v) {
   if (v === null || v === void 0 || v === "") return void 0;
@@ -12634,27 +12642,40 @@ function verifyOf(declared, kind) {
   if (declared) return declared;
   return kind === "changeset" ? "applied" : void 0;
 }
+function maxAttemptsOf(v) {
+  const n = Number(str2(v));
+  return Number.isInteger(n) && n > 0 ? n : void 0;
+}
 function findCycles(steps) {
-  const found = [];
+  const diagnostics = [];
+  const backEdges = /* @__PURE__ */ new Set();
   const state = /* @__PURE__ */ new Map();
+  const guarded = (loop) => loop.slice(0, -1).some((from, i) => steps[from].next.length > 1 && steps[loop[i + 1]].condition !== void 0);
   const visit = (slug, trail) => {
     state.set(slug, "visiting");
     for (const t of steps[slug].next) {
       if (state.get(t) === "visiting") {
         const walked = [...trail, slug];
         const loop = [...walked.slice(walked.indexOf(t)), t];
-        found.push({
-          code: "CYCLE",
-          severity: "error",
-          step: slug,
-          detail: `Loop ${loop.join(" -> ")}; loops are not runnable yet.`
-        });
+        if (guarded(loop)) backEdges.add(`${slug}>${t}`);
+        else
+          diagnostics.push({
+            code: "CYCLE",
+            severity: "error",
+            step: slug,
+            detail: `Loop ${loop.join(" -> ")} has no guarded branch: a loop needs a decision step whose target carries a condition, so the run can leave it.`
+          });
       } else if (!state.has(t)) visit(t, [...trail, slug]);
     }
     state.set(slug, "done");
   };
-  for (const slug of Object.keys(steps)) if (!state.has(slug)) visit(slug, []);
-  return found;
+  const incoming = new Set(Object.values(steps).flatMap((s) => s.next));
+  const roots = [
+    ...Object.keys(steps).filter((slug) => !incoming.has(slug)),
+    ...Object.keys(steps).filter((slug) => incoming.has(slug))
+  ];
+  for (const slug of roots) if (!state.has(slug)) visit(slug, []);
+  return { diagnostics, backEdges };
 }
 
 // iNNfo/packages/nn-core/src/procedure/fold.ts
@@ -12689,7 +12710,7 @@ function foldRun(graph, run, opts) {
   if (graph.start === null) blockedBy = "The procedure has no single start step.";
   for (let s = graph.start ?? void 0; s !== void 0; ) {
     if (path2.includes(s)) {
-      blockedBy = `Step "${s}" is reached twice; loops are not runnable yet.`;
+      blockedBy = `Step "${s}" is reached twice; a loop's back-edge must reopen its span.`;
       current = s;
       break;
     }
@@ -12718,9 +12739,16 @@ function foldRun(graph, run, opts) {
       ([inp, rev]) => validatedRev[inp] !== void 0 && validatedRev[inp] !== rev
     );
   });
+  for (const [slug, row] of Object.entries(run.artifacts)) {
+    if (row.status !== "produced" && row.status !== "validated") continue;
+    const producer = row.step ?? graph.artifacts[slug]?.producers[0];
+    const prow = producer ? run.steps[producer] : void 0;
+    if (prow?.status === "pending" && prow.attempt > 0 && !stale.includes(slug)) stale.push(slug);
+  }
   for (const slug of stale) artifacts[slug] = { ...artifacts[slug], status: "stale" };
+  const producerOf = (o) => run.artifacts[o]?.step ?? graph.artifacts[o]?.producers[0];
   const reopened = path2.filter(
-    (slug) => steps[slug].status === "done" && graph.steps[slug].outputs.some((o) => stale.includes(o))
+    (slug) => steps[slug].status === "done" && graph.steps[slug].outputs.some((o) => stale.includes(o) && producerOf(o) === slug)
   );
   for (const slug of reopened) steps[slug] = { ...steps[slug], status: "reopened" };
   if (reopened.length > 0) current = reopened[0];
@@ -13734,6 +13762,17 @@ function resolveConsoleModulePath(opts = {}) {
   candidates.push((0, import_node_path5.join)(opts.home ?? (0, import_node_os.homedir)(), ".agents", "console", EXPORT_MODULE));
   return candidates.find((candidate) => (0, import_node_fs4.existsSync)(candidate)) ?? null;
 }
+var CONSOLE_BUNDLE = "nn-console.bundle.js";
+var DEV_CONSOLE_DIR = (0, import_node_path5.join)("iNNfo", "specs", "bluepriNNts", "console");
+function resolveConsoleBundlePath(opts = {}) {
+  const env = opts.env ?? process.env;
+  const candidates = [];
+  if (env.INNFO_CONSOLE_DIR) candidates.push((0, import_node_path5.join)(env.INNFO_CONSOLE_DIR, CONSOLE_BUNDLE));
+  const devRoot = opts.devRoot === void 0 ? devCheckoutRoot({ requires: [(0, import_node_path5.join)(DEV_CONSOLE_DIR, CONSOLE_BUNDLE)] }) : opts.devRoot;
+  if (devRoot && (0, import_node_fs4.existsSync)((0, import_node_path5.join)(devRoot, DEV_ROOT_MARKER))) candidates.push((0, import_node_path5.join)(devRoot, DEV_CONSOLE_DIR, CONSOLE_BUNDLE));
+  candidates.push((0, import_node_path5.join)(opts.home ?? (0, import_node_os.homedir)(), ".agents", "console", CONSOLE_BUNDLE));
+  return candidates.find((candidate) => (0, import_node_fs4.existsSync)(candidate)) ?? null;
+}
 
 // iNNfo/packages/nn-core/src/console/output-path.ts
 var DOMAIN_CONSOLE_FILENAME = "domaiNN_console.html";
@@ -14514,6 +14553,7 @@ function auditModelRecords(log, models) {
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   CHANGE_CONCEPT,
+  CONSOLE_BUNDLE,
   CONSOLE_HISTORY_LIMIT,
   DEV_ROOT_MARKER,
   DOMAIN_CONSOLE_FILENAME,
@@ -14576,6 +14616,7 @@ function auditModelRecords(log, models) {
   readSynchronizations,
   resolveArtifactReverseLineage,
   resolveCitation,
+  resolveConsoleBundlePath,
   resolveConsoleModulePath,
   resolveConsoleSchema,
   resolveEvidenceCitation,
