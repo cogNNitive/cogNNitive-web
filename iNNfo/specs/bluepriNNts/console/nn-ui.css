@@ -6118,6 +6118,73 @@ details.collapse summary {
     }
     .dag-node.projected .node-sub { fill: var(--warning); font-weight: 700; }
 
+    /* Clearly highlight the projected next current step */
+    .dag-node.projected.current rect {
+      stroke-width: 3;
+      stroke: var(--primary);
+      fill: var(--primary-light);
+      stroke-dasharray: 6 3;
+      animation: dagDash 2s linear infinite;
+    }
+    .dag-node.projected.current .node-title {
+      fill: var(--primary);
+      font-weight: 700;
+    }
+    .dag-node.projected.current .node-dot {
+      fill: var(--primary);
+    }
+
+    /* Off-path steps and edges (branches discarded by decisions) */
+    .dag-node.off_path {
+      opacity: 0.35;
+      filter: grayscale(0.8);
+      transition: opacity 0.3s ease;
+    }
+    .dag-node.off_path rect {
+      stroke: var(--border-subtle, var(--border));
+      stroke-dasharray: 4 4;
+      fill: var(--surface-muted, #f8f9fa);
+    }
+    .dag-node.off_path .node-dot { fill: var(--muted); }
+    .dag-node.off_path text { fill: var(--muted); }
+    .dag-edge.off_path {
+      stroke: var(--border-subtle, var(--border));
+      stroke-dasharray: 4 4;
+      opacity: 0.3;
+      transition: opacity 0.3s ease;
+    }
+    .dag-edge-label.off_path {
+      fill: var(--muted);
+      opacity: 0.35;
+      text-decoration: line-through;
+    }
+
+    /* Taken and projected branch edges */
+    .dag-edge.taken {
+      stroke: var(--primary);
+      stroke-width: 2.5;
+    }
+    .dag-edge.taken.done {
+      stroke: var(--success);
+    }
+    .dag-edge.taken.projected {
+      stroke: var(--primary);
+      stroke-width: 3;
+      stroke-dasharray: 6 3;
+      animation: dagDash 1s linear infinite;
+    }
+    .dag-edge-label.taken {
+      fill: var(--primary);
+      font-weight: 800;
+      font-size: 11px;
+    }
+    .dag-edge-label.taken.done {
+      fill: var(--success);
+    }
+    .dag-edge-label.taken.projected {
+      fill: var(--primary);
+    }
+
     /* The pending change on a step card: current value, then the value it would take */
     .proc-projection {
       margin-top: 10px;
@@ -9947,3 +10014,286 @@ pre.nn-file-preview-code {
   color: inherit;
   font-size: 12px;
 }
+
+/* ---- Procedure runner UX (standalone console): response bar, inbox, answers ---- */
+.nn-procedure-view { min-width: 0; }
+.nn-procedure-view * { overflow-wrap: anywhere; }
+.proc-response {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin: 10px 0 14px;
+  padding: 12px 16px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius);
+  background: var(--primary-light);
+}
+.proc-response-text { display: flex; flex-direction: column; gap: 2px; flex: 1 1 220px; min-width: 0; }
+.proc-response-hint { font-size: 0.8rem; color: var(--muted); }
+.proc-response-name { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.proc-response-name-label { font-size: 0.8rem; color: var(--muted); }
+.proc-response-name-input {
+  padding: 6px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  width: 160px;
+  max-width: 100%;
+}
+.proc-response-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+button.proc-response-save,
+button.proc-branch-choice,
+button.proc-start-submit {
+  appearance: none;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+button.proc-response-save:hover:not(:disabled),
+button.proc-branch-choice:hover:not(:disabled),
+button.proc-start-submit:hover:not(:disabled) { background: var(--primary-hover); }
+button.proc-response-save:disabled,
+button.proc-start-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+button.proc-response-secondary,
+button.proc-action-secondary,
+button.proc-start-run,
+button.proc-start-cancel,
+button.proc-undo,
+button.proc-copy,
+button.proc-run-filter {
+  appearance: none;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+button.proc-run-filter { padding: 3px 10px; font-size: 0.74rem; }
+button.proc-run-filter.active,
+button.proc-start-run.active { border-color: var(--primary); color: var(--primary); }
+button.proc-undo { padding: 2px 10px; font-size: 0.74rem; }
+.proc-response-error:empty { display: none; }
+.proc-response-error { color: var(--danger); font-size: 0.8rem; flex-basis: 100%; }
+.proc-response-saved { color: var(--success); font-weight: 600; font-size: 0.85rem; flex-basis: 100%; }
+
+.proc-inbox {
+  margin: 10px 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.proc-inbox-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.proc-inbox-title { font-weight: 700; }
+.proc-inbox-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--primary);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.proc-inbox-list { list-style: none; margin: 0; padding: 0; }
+.proc-inbox-item + .proc-inbox-item { border-top: 1px solid var(--border); }
+button.proc-inbox-open {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+button.proc-inbox-open:hover { background: var(--surface-2); }
+.proc-inbox-item.active button.proc-inbox-open { box-shadow: inset 3px 0 0 var(--primary); }
+.proc-inbox-step { font-weight: 700; }
+.proc-inbox-run { font-size: 0.76rem; color: var(--muted); }
+.proc-inbox-question { font-size: 0.86rem; }
+
+.proc-runs { flex-wrap: wrap; row-gap: 8px; }
+.proc-run-filters,
+.proc-run-list { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+button.proc-run.proc-run-unsent { border-style: dashed; border-color: var(--warning); }
+.proc-run.proc-run-requested {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px dashed var(--warning);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  font-size: 0.76rem;
+  background: var(--warning-light);
+}
+.proc-start-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  max-width: 520px;
+}
+.proc-start-title { font-weight: 700; }
+.proc-start-field { display: flex; flex-direction: column; gap: 4px; }
+.proc-start-label { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.proc-start-input {
+  padding: 7px 9px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.proc-start-note { font-size: 0.8rem; color: var(--muted); }
+.proc-start-actions { display: flex; gap: 8px; }
+
+/* Two columns: the workflow beside one column for the step and the run */
+.nn-procedure-view .exec-workspace { grid-template-columns: minmax(0, 300px) minmax(0, 1fr); }
+.nn-procedure-view .exec-active-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.nn-procedure-view .exec-log-col { grid-column: auto; }
+@media (max-width: 900px) {
+  .nn-procedure-view .exec-workspace { grid-template-columns: minmax(0, 1fr); }
+}
+.dag-edge-label { font-size: 11px; font-weight: 700; fill: var(--muted); }
+.proc-step-list { display: none; list-style: none; margin: 0; padding: 8px; }
+.proc-step-item + .proc-step-item { margin-top: 6px; }
+button.proc-step-item-btn {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.proc-step-item.done button.proc-step-item-btn { border-color: var(--success); }
+.proc-step-item.current button.proc-step-item-btn { border: 2px solid var(--primary); }
+.proc-step-item-name { font-weight: 600; font-size: 0.86rem; }
+.proc-step-item-meta { font-size: 0.72rem; color: var(--muted); }
+@media (max-width: 640px) {
+  .exec-dag-view { display: none; }
+  .proc-step-list { display: block; }
+  .exec-step-card { padding: 16px; }
+}
+
+.exec-step-question { font-size: 1.02rem; font-weight: 600; margin: 0; }
+.step-system-pill,
+.step-executor-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.step-system-pill { background: var(--accent); color: #ffffff; }
+.nn-procedure-view .exec-step-head { flex-wrap: wrap; gap: 6px 8px; justify-content: flex-start; }
+.nn-procedure-view .exec-step-head .step-state-badge { margin-left: auto; }
+.proc-system-note {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border-left: 3px solid var(--accent);
+  font-size: 0.88rem;
+}
+.nn-procedure-view .proc-actions { display: flex; flex-direction: column; gap: 8px; }
+.proc-branches { display: flex; flex-wrap: wrap; gap: 8px; }
+.proc-actions-secondary { display: flex; flex-wrap: wrap; gap: 8px; }
+.nn-procedure-view textarea.proc-action-value {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  resize: vertical;
+}
+.proc-decided {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--warning-light);
+  border: 1px dashed var(--warning);
+}
+.proc-decided-what { font-weight: 700; }
+.proc-decided-state { font-size: 0.76rem; color: var(--warning); font-weight: 700; }
+.proc-decided-reason { flex-basis: 100%; font-size: 0.82rem; color: var(--muted); }
+.nn-procedure-view .proc-run-projected {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--warning-light);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.proc-details > summary,
+.proc-agent-hint > summary,
+.proc-embed > summary { cursor: pointer; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.proc-details { font-size: 0.8rem; color: var(--muted); }
+.proc-details[open] { display: flex; flex-direction: column; gap: 6px; }
+.proc-agent-hint-text {
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.proc-embed {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  background: var(--surface-2);
+}
+.proc-embed .proc-artifact-view-body { max-height: 360px; overflow: auto; margin-top: 8px; }
+.proc-embed-image { max-width: 100%; height: auto; display: block; margin-top: 8px; }
+.proc-embed-media { width: 100%; margin-top: 8px; }
+.proc-artifact-remote { font-size: 0.74rem; color: var(--muted); font-style: italic; }
+.nn-procedure-view .proc-artifact {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+.proc-artifact-top,
+.proc-artifact-links { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.proc-run-summary .exec-step-title { font-size: 1.15rem; }

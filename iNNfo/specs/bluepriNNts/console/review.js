@@ -14,7 +14,11 @@
   var STORE_PREFIX = 'nn-console:v4:'
   var STORE_VERSION = 4
   var BASE_HASH_PATTERN = /^[0-9a-f]{16}$/
-  var ITEM_KINDS = ['correction', 'comment', 'new', 'delete', 'verdict']
+  // `run_start` asks the domain owner's agent to start a procedure run: { procedure, params,
+  // run?, path? }. It targets no element, and the changeset export skips it (import_console
+  // starts the run through procedure_start).
+  var ITEM_KINDS = ['correction', 'comment', 'new', 'delete', 'verdict', 'run_start']
+  var RUN_SLUG = /^[a-z0-9][a-z0-9-]*$/
   // A verdict is a decision on a gate, not a mutation: it carries the gate, its outcome and
   // the hash of the content that was reviewed, never a `base_hash`.
   var VERDICTS = ['approved', 'needs-change']
@@ -124,6 +128,12 @@
     if (d.sources !== undefined && d.sources !== null) {
       draft.sources = Array.isArray(d.sources) ? deepCopy(d.sources) : d.sources
     }
+    // Run request keys: the procedure (id or domain-relative path), its slot values, and an
+    // optional run slug and resolution scope.
+    if (d.procedure != null && d.procedure !== '') draft.procedure = String(d.procedure)
+    if (isObject(d.params)) draft.params = deepCopy(d.params)
+    if (d.run != null && d.run !== '') draft.run = String(d.run)
+    if (d.path != null && d.path !== '') draft.path = String(d.path)
     return draft
   }
 
@@ -329,6 +339,16 @@
           if (VERDICTS.indexOf(String(raw.verdict)) === -1) {
             throw new TypeError('nnReview.createDraftStore: verdict must be one of ' + VERDICTS.join(', '))
           }
+        } else if (raw.kind === 'run_start') {
+          if (raw.procedure == null || String(raw.procedure).trim() === '') {
+            throw new TypeError('nnReview.createDraftStore: run_start draft requires procedure')
+          }
+          if (raw.params != null && !isObject(raw.params)) {
+            throw new TypeError('nnReview.createDraftStore: run_start params must be an object')
+          }
+          if (raw.run != null && raw.run !== '' && !RUN_SLUG.test(String(raw.run))) {
+            throw new TypeError('nnReview.createDraftStore: run_start run must be a lowercase slug')
+          }
         } else if (!isMatrix && (!raw.element_id || !raw.base_hash)) {
           throw new TypeError('nnReview.createDraftStore: element_id and base_hash required')
         }
@@ -397,6 +417,8 @@
     // A verdict's authorisation is `reviewed_hash`, checked by the engine against the
     // content it is applied to; there is no element `base_hash` to compare here.
     if (d.kind === 'verdict') return false
+    // A run request targets no element.
+    if (d.kind === 'run_start') return false
     // Matrix-cell drafts have no element hash to compare against.
     if (d.matrix) return false
     var el = byId[d.element_id]

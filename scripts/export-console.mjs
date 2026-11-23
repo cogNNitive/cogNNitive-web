@@ -950,16 +950,17 @@ function injectSlots(shell, config, schema, model, viewData) {
   const foldSource = foldSlotCache || ''
   if (foldSource) {
     // The shell ships the slot empty; fill it in place so no second, empty one survives.
-    const foldSlot = new RegExp(
-      `(<script type="application/json" id="nn-procedure-core">)[\\s\\S]*?(</script>)`,
-    )
+    const foldSlot = new RegExp(`(<script[^>]*id="nn-procedure-core"[^>]*>)[\\s\\S]*?(</script>)`)
     if (foldSlot.test(html)) {
-      html = html.replace(foldSlot, (_m, open, close) => `${open}\n${foldSource}\n${close}`)
+      html = html.replace(
+        foldSlot,
+        () => `<script type="text/javascript" id="nn-procedure-core">\n${foldSource}\n</script>`,
+      )
     } else {
       html = html.replace(
         modelSlot,
         () =>
-          `${modelSlot}\n    <script type="application/json" id="nn-procedure-core">\n${foldSource}\n</script>`,
+          `${modelSlot}\n    <script type="text/javascript" id="nn-procedure-core">\n${foldSource}\n</script>`,
       )
     }
   }
@@ -1227,6 +1228,18 @@ async function openConsole(file, { open, launcher, platform, cooldownMs, now = D
   }
 }
 
+/** The `workspace_id` the domain manifest declares, or '' when it declares none. */
+function declaredWorkspaceId(root) {
+  const manifest = join(root, 'domaiNN_NN.md')
+  if (!existsSync(manifest)) return ''
+  try {
+    const declared = frontmatterOf(readFileSync(manifest, 'utf8')).workspace_id
+    return typeof declared === 'string' ? declared.trim() : ''
+  } catch {
+    return ''
+  }
+}
+
 /* ── Procedure runs ────────────────────────────────────────────── */
 
 /**
@@ -1255,6 +1268,7 @@ export function collectProcedureRuns({
   const relOf = (m) => relative(root, m.filePath).replace(/\\/g, '/')
   const blueprintOf = (m) => coreBlueprintOf(helper.parentSpecNameOf(m.fm))
   const entries = new Map()
+  const embedBudget = { left: EMBED_TOTAL_CAP }
   const addEntry = (file, content) => {
     let graph = null
     let title = file
@@ -1263,7 +1277,9 @@ export function collectProcedureRuns({
       graph = helper.procedureGraph(parsed)
       title = (parsed.frontmatter && parsed.frontmatter.title) || file
     }
-    const entry = { file, title, graph, runs: [] }
+    const entry = { file, title, graph, slots: [], runs: [] }
+    if (content !== null)
+      entry.slots = slotDeclarationsOf(helper.parseKnowledge(content).frontmatter)
     entries.set(file, entry)
     return entry
   }
@@ -1301,6 +1317,15 @@ export function collectProcedureRuns({
         record.state === 'completed' || record.state === 'failed' || record.state === 'cancelled',
       defRev: record.defRev,
       params: record.params,
+      // The write counter a Step Request pins (`base_seq`): the console must send the seq the
+      // person saw, or the runner reads the request as made against an older state.
+      seq: record.seq,
+      // The requests the run already holds, so a person sees what became of what they asked.
+      requests: record.requests ?? {},
+      // The rows the fold read: the base the console projects its unsent drafts onto.
+      model: runRowsOf(record),
+      // The run's files the reviewer reads, carried inside the console (it is emailed alone).
+      embeds: entry.graph ? embedRunArtifacts(root, entry.graph, record, embedBudget) : {},
       // The console stepper reads a run as a list of events (design §2.4 keeps the widget out
       // of the state-model change). The run model is state, not events, so these are derived
       // from its rows: the stepper keeps its contract and never sees a stale ledger.
@@ -1314,6 +1339,174 @@ export function collectProcedureRuns({
     })
   }
   return [...entries.values()].sort((a, b) => compare(a.file, b.file))
+}
+
+/**
+ * The slots a procedure declares in its frontmatter (`slots: [{ name, kind, required,
+ * default }]`), normalized for the console's "Start a run" form. A bare string is a required
+ * value slot. Anything without a name is dropped.
+ */
+export function slotDeclarationsOf(frontmatter) {
+  const list = frontmatter && Array.isArray(frontmatter.slots) ? frontmatter.slots : []
+  const out = []
+  for (const raw of list) {
+    const decl = typeof raw === 'string' ? { name: raw } : raw
+    if (!decl || typeof decl !== 'object') continue
+    const name = typeof decl.name === 'string' ? decl.name.trim() : ''
+    if (!name) continue
+    out.push({
+      name,
+      kind: typeof decl.kind === 'string' && decl.kind.trim() ? decl.kind.trim() : 'value',
+      required: decl.required !== false,
+      ...(decl.default !== undefined && decl.default !== null
+        ? { default: String(decl.default) }
+        : {}),
+      ...(typeof decl.description === 'string' ? { description: decl.description } : {}),
+    })
+  }
+  return out
+}
+
+/** The run rows the console projects onto: the header and one row per step and artifact. */
+function runRowsOf(record) {
+  return {
+    state: record.state,
+    seq: record.seq,
+    procedure: record.procedure,
+    defRev: record.defRev,
+    params: record.params,
+    steps: record.steps ?? {},
+    artifacts: record.artifacts ?? {},
+    inputs: record.inputs ?? {},
+  }
+}
+
+/*
+ * What a console carries of a run's files. It is emailed and opened with no server, so the
+ * person deciding must see what they decide on inside the file itself. Caps keep one large
+ * recording from making the console unsendable; anything over them stays on the owner's
+ * machine and the console says so.
+ */
+const EMBED_TEXT_CAP = 200_000
+const EMBED_IMAGE_CAP = 1_500_000
+const EMBED_MEDIA_CAP = 3_000_000
+const EMBED_TOTAL_CAP = 8_000_000
+const EMBED_TEXT_EXT = new Set([
+  'md',
+  'txt',
+  'csv',
+  'tsv',
+  'json',
+  'yaml',
+  'yml',
+  'srt',
+  'vtt',
+  'log',
+  'xml',
+  'html',
+])
+const EMBED_MIME = {
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  ogg: 'audio/ogg',
+  opus: 'audio/ogg',
+  m4a: 'audio/mp4',
+  flac: 'audio/flac',
+  mp4: 'video/mp4',
+  webm: 'video/webm',
+}
+
+/** Replaces each `{name}` with its run parameter; `{run}` is the run id. Unknown ones stay. */
+function fillRunSlots(text, params, runId) {
+  const values = { ...(params ?? {}) }
+  if (runId) values.run = runId
+  return String(text).replace(/\{([A-Za-z_][\w-]*)\}/g, (whole, name) =>
+    Object.prototype.hasOwnProperty.call(values, name) && values[name] !== null
+      ? String(values[name])
+      : whole,
+  )
+}
+
+/** A domain-relative file path that stays inside `root`, or null. */
+function insideRoot(root, path) {
+  if (typeof path !== 'string' || !path.trim() || isAbsolute(path) || /\{[^}]*\}/.test(path))
+    return null
+  const abs = resolve(root, path)
+  const rel = relative(root, abs)
+  if (!rel || rel.startsWith('..') || isAbsolute(rel)) return null
+  try {
+    const real = realpathSync(abs)
+    const realRoot = realpathSync(root)
+    const realRel = relative(realRoot, real)
+    if (!realRel || realRel.startsWith('..') || isAbsolute(realRel)) return null
+    return real
+  } catch {
+    return null
+  }
+}
+
+/**
+ * The run's file artifacts the console embeds, by artifact slug: `{ path, kind, bytes }` plus
+ * `text` (text files) or `data` (base64 of an image, audio or video), or `omitted` with the
+ * reason it stayed on the owner's machine (`missing`, `too-large`, `budget`, `unsupported`).
+ * Only artifacts the run produced are read, at the path the run recorded.
+ */
+export function embedRunArtifacts(root, graph, record, budget = { left: EMBED_TOTAL_CAP }) {
+  const out = {}
+  for (const [slug, def] of Object.entries(graph.artifacts ?? {})) {
+    const row = record.artifacts?.[slug]
+    if (!row || (row.status !== 'produced' && row.status !== 'validated')) continue
+    if (row.kind && row.kind !== 'file') continue
+    const verify = typeof def.verify === 'string' ? /^file:\s*(.+)$/.exec(def.verify.trim()) : null
+    const path =
+      typeof row.value === 'string' && row.value.trim()
+        ? row.value.trim()
+        : verify
+          ? fillRunSlots(verify[1].trim(), record.params, null)
+          : ''
+    if (!path) continue
+    const shown = path.replace(/\\/g, '/')
+    const abs = insideRoot(root, path)
+    if (!abs || !existsSync(abs)) {
+      out[slug] = { path: shown, omitted: 'missing' }
+      continue
+    }
+    let bytes
+    try {
+      bytes = readFileSync(abs)
+    } catch {
+      out[slug] = { path: shown, omitted: 'missing' }
+      continue
+    }
+    const ext = (shown.split('.').pop() || '').toLowerCase()
+    const mime = EMBED_MIME[ext]
+    const kind = EMBED_TEXT_EXT.has(ext) ? 'text' : mime ? mime.split('/')[0] : 'unsupported'
+    const cap =
+      kind === 'text'
+        ? EMBED_TEXT_CAP
+        : kind === 'image'
+          ? EMBED_IMAGE_CAP
+          : kind === 'audio' || kind === 'video'
+            ? EMBED_MEDIA_CAP
+            : 0
+    const base = { path: shown, kind, bytes: bytes.length }
+    if (kind === 'unsupported') out[slug] = { ...base, omitted: 'unsupported' }
+    else if (bytes.length > cap) out[slug] = { ...base, omitted: 'too-large' }
+    else if (bytes.length > budget.left) out[slug] = { ...base, omitted: 'budget' }
+    else {
+      budget.left -= bytes.length
+      out[slug] =
+        kind === 'text'
+          ? { ...base, text: bytes.toString('utf8') }
+          : { ...base, mime, data: bytes.toString('base64') }
+    }
+  }
+  return out
 }
 
 /**
@@ -2492,6 +2685,9 @@ export async function writeConsole(opts = {}) {
   const domainId = scoped
     ? `${baseDomainId}::scope:${hashSlice([...scopeModelIds].sort().join('\n'), 8)}`
     : baseDomainId
+  // The domain's declared `workspace_id` names the changesets this console downloads, the
+  // same name the runner gives its own (`<workspace_id>_<author>_<stamp>_changes_NN.md`).
+  const workspaceId = scoped ? '' : declaredWorkspaceId(root)
 
   let filesData = null
   if (opts.files !== false && !opts.noFiles) {
@@ -2530,6 +2726,7 @@ export async function writeConsole(opts = {}) {
         model: basename(root),
         modelId: basename(root),
         domainId,
+        ...(workspaceId ? { workspaceId } : {}),
         generated: undefined,
         changesBlueprintVersion,
         models: modelSummaries,

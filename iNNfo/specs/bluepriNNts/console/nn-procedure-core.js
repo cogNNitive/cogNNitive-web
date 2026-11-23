@@ -43,17 +43,34 @@
    */
   function useFromDocument(doc) {
     if (wired) return available()
-    wired = true
+    var mod =
+      (typeof window !== 'undefined' && window.__nnFoldModule) ||
+      (typeof globalThis !== 'undefined' && globalThis.__nnFoldModule) ||
+      (doc && doc.defaultView && doc.defaultView.__nnFoldModule)
+    if (mod && typeof mod.foldRun === 'function') {
+      wired = true
+      return use(mod)
+    }
     if (!doc || typeof doc.getElementById !== 'function') return false
     var el = doc.getElementById('nn-procedure-core')
     var source = el && el.textContent ? el.textContent.trim() : ''
     if (!source) return false
     try {
-      // The slot holds an IIFE bundle of nn-core's procedure module, whose `globalName` is
-      // `__nnFoldModule`. Evaluating it inside one function scope keeps everything it
-      // defines out of the console's globals: the returned object is the only exit.
-      var factory = new Function(JSON.parse(source) + '\n; return __nnFoldModule')
-      return use(factory())
+      var code = source
+      if (source.startsWith('"')) {
+        try {
+          var parsed = JSON.parse(source)
+          if (typeof parsed === 'string') code = parsed
+        } catch {
+          code = source
+        }
+      }
+      var factory = new Function(
+        code + '\n; return (typeof __nnFoldModule !== "undefined" ? __nnFoldModule : null)',
+      )
+      var res = use(factory())
+      if (res) wired = true
+      return res
     } catch {
       return false
     }
@@ -169,6 +186,10 @@
     var extra = Array.isArray(pendingEvents) ? pendingEvents : []
     var base = run.model || modelOf(Array.isArray(run.events) ? run.events : [], null)
     return fold(run.graph, modelOf(extra, base), opts || {})
+  }
+
+  if (typeof document !== 'undefined' && typeof document.getElementById === 'function') {
+    useFromDocument(document)
   }
 
   return {

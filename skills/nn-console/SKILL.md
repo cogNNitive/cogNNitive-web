@@ -136,7 +136,9 @@ ctx.store.propose({
 
 Drafts appear immediately in the **Changes** tab of the console and are exported in the unified changeset.
 
-**Save Snapshot** writes the drafts and the UI state into the file itself, in the plain JSON slot `<script type="application/json" id="nn-drafts">` (`{ "drafts": [...], "uiState": {...} }`, `{}` in a fresh export), so an agent that receives the saved HTML reads them directly. The model payload stays in `<script id="nn-model">`, compressed with deflate-raw and base64-encoded; decode it in Node with `zlib.inflateRawSync(Buffer.from(slotText.trim(), 'base64'))`.
+**Save Snapshot** writes the drafts and the UI state into the file itself, in the plain JSON slot `<script type="application/json" id="nn-drafts">` (`{ "drafts": [...], "uiState": {...} }`, `{}` in a fresh export), and the model payload stays in `<script id="nn-model">`, compressed with deflate-raw and base64-encoded. An agent that receives the saved HTML does not read those slots by hand: it calls the nn-mcp tool `import_console path=<file>`, which checks the file belongs to the domaiNN, writes the changeset "Download changes" would have produced and, with `apply=true consume=true`, applies it, consumes its Step Requests through `procedure_record request=<id>` and starts its requested runs.
+
+A request for a new procedure run is a draft of kind `run_start`: `{ "kind": "run_start", "procedure": "<procedure id or domain-relative *_procedures_NN.md path>", "params": { "<slot>": "<value>" }, "run": "<optional lowercase slug>", "path": "<optional scope the id resolves from>" }`. The draft store validates it (`procedure` required, `params` an object, `run` a slug), the changeset export skips it, and `import_console` starts the run through `procedure_start` with the reviewer as actor. A view proposes one with `ctx.store.propose({ kind: 'run_start', procedure, params })`.
 
 ---
 
