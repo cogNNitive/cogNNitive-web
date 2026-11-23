@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-1-0"
+knowledge_version: "V_0-2-0"
 title: "Produce Video"
 ---
 
@@ -29,10 +29,10 @@ that series' scope document.
 ## NN Work: Clarify the goal
 slug:: clarify-the-goal
 parent:: @produce-video
-next:: @list-the-series
+next:: [@list-the-series, @hand-off-to-create-a-series, @hand-off-to-produce-an-episode]
 step_type:: decision
 tool:: human
-decision:: a new episode in an existing series (the default), a new series, or producing an episode that already exists
+decision:: a new episode in an existing series (new-episode, the default), a new series (new-series), or producing an episode that already exists (existing-episode)
 scope:: internal
 Offer the default first. A new series hands off to `Create a Series` in
 `usage_procedures_NN.md` and this procedure ends there. An existing episode hands off to
@@ -43,6 +43,7 @@ slug:: list-the-series
 parent:: @produce-video
 next:: @choose-the-series
 step_type:: task
+condition:: outcome == new-episode
 tool:: agent
 produces:: the list of series of the domaiNN, one entry per scope document, each with its slug, `title` and `language`
 scope:: internal
@@ -101,6 +102,28 @@ missing required slot (`MISSING_REQUIRED_SLOT`) or an unknown procedure
 (`PROCEDURE_NOT_FOUND`): on a refusal, ask the person for the missing value or the right
 procedure and never invent one. From here the declared procedure owns the run, its reviews
 and its spend gates; this router spends nothing.
+
+## NN Work: Hand off to Create a Series
+slug:: hand-off-to-create-a-series
+parent:: @produce-video
+step_type:: task
+condition:: outcome == new-series
+tool:: agent
+produces:: a started run of `Create a Series`, the procedure of that name in `usage_procedures_NN.md`
+scope:: internal
+A new series is authored before any of its episodes: this procedure ends here, and the
+`Create a Series` wizard decides what the series is. Ask for the next episode once it is applied.
+
+## NN Work: Hand off to Produce an Episode
+slug:: hand-off-to-produce-an-episode
+parent:: @produce-video
+step_type:: task
+condition:: outcome == existing-episode
+tool:: agent
+produces:: a started run of `Produce an Episode`, the procedure of that name in `usage_procedures_NN.md`, with that episode as its `episode` slot
+scope:: internal
+The episode already exists, so there is no series to choose and no content to confirm: ask the
+person which episode, by its folder, and never invent one. This procedure ends here.
 
 # NN Artifact
 

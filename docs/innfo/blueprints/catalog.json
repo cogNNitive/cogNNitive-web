@@ -7,7 +7,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.92.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -58,7 +58,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.92.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -109,7 +109,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.92.0",
+      "release_tag": null,
       "embedded_skills": [
         "nn-conntent"
       ],
@@ -145,7 +145,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.92.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -196,7 +196,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.92.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -230,7 +230,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.92.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -247,7 +247,7 @@
       "tier": "core",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.92.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -264,7 +264,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.92.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
@@ -366,7 +366,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.92.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {

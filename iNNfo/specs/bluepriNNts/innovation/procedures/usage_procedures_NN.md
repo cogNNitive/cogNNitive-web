@@ -3,86 +3,101 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-1-0"
+knowledge_version: "V_0-2-0"
 title: "Using the Innovation Blueprint"
 ---
 
 # NN Work
 
 ## NN Work: Using the Innovation Blueprint
+slug:: using-the-innovation-blueprint
 step_type:: task
 condition:: You want to run and rank an innovation portfolio
-input:: [[Innovation Portfolio]]
-output:: [[Scored Pipeline]]
-tool:: [[Console]]
+input:: @innovation-portfolio
+output:: @scored-pipeline
+tool:: @console
+executor:: human
 scope:: internal
 Getting started with the Innovation blueprint: create a Program, capture Opportunities, shape Initiatives, then score the pipeline.
 
 ## NN Work: Create a Program
-parent:: [[Using the Innovation Blueprint]]
+slug:: create-a-program
+parent:: @using-the-innovation-blueprint
 step_type:: task
-next:: [[Capture Opportunities]]
+next:: @capture-opportunities
 condition:: No innovation model exists yet
-input:: [[Innovation Portfolio]]
-output:: [[Innovation Portfolio]]
-tool:: [[Console]]
+input:: @innovation-portfolio
+output:: @innovation-portfolio
+tool:: @console
+executor:: human
 scope:: internal
 Add the `Program` element that anchors the portfolio.
 
 ## NN Work: Capture Opportunities
-parent:: [[Using the Innovation Blueprint]]
+slug:: capture-opportunities
+parent:: @using-the-innovation-blueprint
 step_type:: task
-next:: [[Shape Initiatives]]
+next:: @shape-initiatives
 condition:: Program created
-input:: [[Innovation Portfolio]]
-output:: [[Innovation Portfolio]]
-tool:: [[Console]]
+input:: @innovation-portfolio
+output:: @innovation-portfolio
+tool:: @console
+executor:: human
 scope:: internal
 Add `Opportunity` elements and the `Person` elements who surface or sponsor them.
 
 ## NN Work: Shape Initiatives
-parent:: [[Using the Innovation Blueprint]]
+slug:: shape-initiatives
+parent:: @using-the-innovation-blueprint
 step_type:: task
-next:: [[Score the Innovation Pipeline]]
+next:: @score-the-innovation-pipeline
 condition:: Opportunities captured
-input:: [[Innovation Portfolio]]
-output:: [[Innovation Portfolio]]
-tool:: [[Console]]
+input:: @innovation-portfolio
+output:: @innovation-portfolio
+tool:: @console
+executor:: human
 scope:: internal
 Promote the strongest opportunities into `Initiative` elements with owners.
 
 ## NN Work: Score the Innovation Pipeline
-parent:: [[Using the Innovation Blueprint]]
+slug:: score-the-innovation-pipeline
+parent:: @using-the-innovation-blueprint
 step_type:: task
 condition:: Initiatives shaped
-input:: [[Innovation Portfolio]]
-output:: [[Scored Pipeline]]
-tool:: [[AI Agent]]
+input:: @innovation-portfolio
+output:: @scored-pipeline
+tool:: @ai-agent
+executor:: agent
 scope:: internal
 Execute the `score-innovation-pipeline` procedure to rank initiatives for investment.
 
 # NN Artifact
 
 ## NN Artifact: Innovation Portfolio
+slug:: innovation-portfolio
 type:: input
 description:: The active level 3 model built on the Innovation blueprint.
 
 ## NN Artifact: Scored Pipeline
+slug:: scored-pipeline
 type:: output
 description:: Ranked set of initiatives with investment recommendations.
 
 # NN Tools
 
 ## NN Tools: Console
+slug:: console
 type:: manual
 description:: The cogNNitive console used to author and inspect the model.
 
 ## NN Tools: AI Agent
+slug:: ai-agent
 type:: automated
 description:: Cognitive agent scoring the pipeline against program goals.
 
 # NN Roles
 
 ## NN Roles: Innovation Lead
+slug:: innovation-lead
 type:: author
 description:: Owns the innovation program and its investment calls.

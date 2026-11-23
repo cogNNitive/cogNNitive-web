@@ -465,6 +465,22 @@
     }
 
     // ---- Blueprint procedure catalog (parent + includes): `usage` first, shadowed ones hidden ----
+    /** The exported definition document a catalog procedure points at, when this export has it. */
+    function entryForProcedure(p) {
+      var key = String((p && p.id) || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+      if (!key) return null
+      for (var i = 0; i < entries.length; i++) {
+        var hay = (String(entries[i].file || '') + ' ' + String(entries[i].title || ''))
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, ' ')
+        if (hay.indexOf(key) !== -1) return entries[i]
+      }
+      return null
+    }
+
     function renderBlueprintList(hostEl) {
       var list = Array.isArray(schema.procedures)
         ? schema.procedures.filter(function (p) {
@@ -481,12 +497,38 @@
       listEl.setAttribute('data-nn-procedures', 'blueprint')
       listEl.appendChild(make('span', 'proc-blueprint-label', 'Procedures'))
       list.forEach(function (p) {
+        // A pill that looks selectable must select something: when this export carries the
+        // definition document, clicking opens it; when it does not, the pill is a plain label
+        // instead of a dead control.
+        var target = entryForProcedure(p)
         var item = make(
           'span',
-          'proc-blueprint-item' + (p.id === 'usage' ? ' proc-blueprint-usage' : ''),
+          'proc-blueprint-item' +
+            (p.id === 'usage' ? ' proc-blueprint-usage' : '') +
+            (target ? ' is-link' : ' is-orphan'),
           p.id === 'usage' ? 'Getting started' : p.name || p.id,
         )
         item.setAttribute('data-procedure-id', p.id)
+        if (target) {
+          var open = function () {
+            selectEntry(target)
+            render()
+          }
+          item.setAttribute('role', 'button')
+          item.setAttribute('tabindex', '0')
+          item.addEventListener('click', open)
+          item.addEventListener('keydown', function (ev) {
+            if (ev && (ev.key === 'Enter' || ev.key === ' ')) {
+              if (ev.preventDefault) ev.preventDefault()
+              open()
+            }
+          })
+        } else {
+          item.setAttribute(
+            'title',
+            'Listed by the bluepriNNt; this export carries no definition document for it.',
+          )
+        }
         listEl.appendChild(item)
       })
       hostEl.appendChild(listEl)

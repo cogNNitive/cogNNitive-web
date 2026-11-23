@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-3-0"
+knowledge_version: "V_0-4-0"
 title: "Upgrade a Workspace or Import a Legacy Domain Procedure"
 ---
 
@@ -12,26 +12,43 @@ title: "Upgrade a Workspace or Import a Legacy Domain Procedure"
 # NN Work
 
 ## NN Work: Upgrade a Workspace or Import a Legacy Domain
+slug:: upgrade-a-workspace-or-import-a-legacy-domain
 step_type:: task
 condition:: Adopted bluepriNNt versions available (`upgrade-available`) or a legacy domain detected (preflight verdict `legacy-layout`)
-input:: [[Workspace Directory]]
-output:: [[Validated Canonical Workspace]]
+input:: @workspace-directory
+output:: @validated-canonical-workspace
 output_status:: verified
-tool:: [[AI Agent]]
+tool:: @ai-agent
+executor:: agent
 scope:: internal
 Route by the preflight verdict. `upgrade-available` on a current domaiNN runs the bluepriNNt version upgrade (Back Up, Analyze Impact, Rehydrate and Validate). `legacy-layout`, or a domain that cannot be upgraded, runs Import Legacy Domain as Source. Nothing here rewrites or deletes a user domain's content.
 
-## NN Work: Detect Legacy Layout
-parent:: [[Upgrade a Workspace or Import a Legacy Domain]]
-step_type:: task
-next:: [[Import Legacy Domain as Source]]
-condition:: Preflight reports `legacy-layout`
-input:: [[Workspace Directory]]
-output:: [[Legacy Detection Report]]
-output_status:: verified
-tool:: [[innfo-mcp]]
+## NN Work: Route by the Preflight Verdict
+slug:: route-by-the-preflight-verdict
+parent:: @upgrade-a-workspace-or-import-a-legacy-domain
+step_type:: decision
+next:: [@back-up-before-upgrade, @detect-legacy-layout]
+condition:: Preflight has reported a verdict for the domain
+input:: @workspace-directory
+tool:: @ai-agent
+executor:: agent
+decision:: Which verdict did preflight report? Answer upgrade-available for a current domaiNN whose adopted bluepriNNt versions are newer, or legacy-layout for a legacy domain or one that cannot be upgraded.
 scope:: internal
-Read-only detection. A domain is reported as legacy when any of these signals is present; the report lists the signals and writes nothing.
+`upgrade-available` runs the bluepriNNt version upgrade (Back Up, Analyze Impact, Rehydrate and Validate); `legacy-layout` runs Detect Legacy Layout and Import Legacy Domain as Source.
+
+## NN Work: Detect Legacy Layout
+slug:: detect-legacy-layout
+parent:: @upgrade-a-workspace-or-import-a-legacy-domain
+step_type:: task
+next:: @import-legacy-domain-as-source
+condition:: outcome == legacy-layout
+input:: @workspace-directory
+output:: @legacy-detection-report
+output_status:: verified
+tool:: @innfo-mcp
+executor:: agent
+scope:: internal
+Entered when preflight reports `legacy-layout`. Read-only detection. A domain is reported as legacy when any of these signals is present; the report lists the signals and writes nothing.
 
 | Signal | Meaning |
 |---|---|
@@ -42,86 +59,101 @@ Read-only detection. A domain is reported as legacy when any of these signals is
 | legacy L1/L0 `parent_spec` | specification parent below the current level |
 
 ## NN Work: Import Legacy Domain as Source
-parent:: [[Upgrade a Workspace or Import a Legacy Domain]]
+slug:: import-legacy-domain-as-source
+parent:: @upgrade-a-workspace-or-import-a-legacy-domain
 step_type:: task
 condition:: Legacy domain detected, or a domain that cannot be upgraded
-input:: [[Legacy Detection Report]]
-output:: [[Validated Canonical Workspace]]
+input:: @legacy-detection-report
+output:: @validated-canonical-workspace
 output_status:: verified
-tool:: [[AI Agent]]
+tool:: @ai-agent
+executor:: agent
 scope:: internal
 Create a new domain and import the old one as a Source:
 1. Run `node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <old-dir> --import-as-source --new-domain-dir <new-dir>`. The old tree is copied byte-identically under the new domain's `sources/`; the old directory is never modified.
 2. Derive the new domain's content from that Source with agent changesets that cite it, then validate the new domain with `innfo-mcp`.
 
 ## NN Work: Back Up Before Upgrade
-parent:: [[Upgrade a Workspace or Import a Legacy Domain]]
+slug:: back-up-before-upgrade
+parent:: @upgrade-a-workspace-or-import-a-legacy-domain
 step_type:: task
-next:: [[Analyze Upgrade Impact]]
-condition:: Adopted bluepriNNt versions available and the user consented
-input:: [[Workspace Directory]]
-output:: [[Verified Backup]]
+next:: @analyze-upgrade-impact
+condition:: outcome == upgrade-available
+input:: @workspace-directory
+output:: @verified-backup
 output_status:: verified
-tool:: [[AI Agent]]
+tool:: @ai-agent
+executor:: agent
 scope:: internal
-Run `node skills/nn-upgrade/scripts/backup-workspace.js --workspace-dir <dir>`: a timestamped copy outside the workspace with a SHA-256 manifest. No write happens before this backup exists.
+Entered when adopted bluepriNNt versions are available; the user must have consented before anything is written. Run `node skills/nn-upgrade/scripts/backup-workspace.js --workspace-dir <dir>`: a timestamped copy outside the workspace with a SHA-256 manifest. No write happens before this backup exists.
 
 ## NN Work: Analyze Upgrade Impact
-parent:: [[Upgrade a Workspace or Import a Legacy Domain]]
+slug:: analyze-upgrade-impact
+parent:: @upgrade-a-workspace-or-import-a-legacy-domain
 step_type:: task
-next:: [[Rehydrate and Validate]]
+next:: @rehydrate-and-validate
 condition:: Backup verified
-input:: [[Verified Backup]]
-output:: [[Impact Report]]
+input:: @verified-backup
+output:: @impact-report
 output_status:: verified
-tool:: [[AI Agent]]
+tool:: @ai-agent
+executor:: agent
 scope:: internal
 Diff the pinned and adopted schemas. Ask mapping questions only when the diff removes, renames, or re-types a definition in active use.
 
 ## NN Work: Rehydrate and Validate
-parent:: [[Upgrade a Workspace or Import a Legacy Domain]]
+slug:: rehydrate-and-validate
+parent:: @upgrade-a-workspace-or-import-a-legacy-domain
 step_type:: task
 condition:: Impact analysis done
-input:: [[Impact Report]]
-output:: [[Validated Canonical Workspace]]
+input:: @impact-report
+output:: @validated-canonical-workspace
 output_status:: verified
-tool:: [[innfo-mcp]]
+tool:: @innfo-mcp
+executor:: agent
 scope:: internal
 Materialize the adopted bluepriNNts locally, repoint `parent_spec`, update `blueprint_name`, bump the version and re-validate with `innfo-mcp` (0 errors, 0 warnings). On validation failure, restore from the backup.
 
 # NN Tools
 
 ## NN Tools: AI Agent
+slug:: ai-agent
 scope:: external
 LLM coding agent or automation runner that runs the upgrade, reads the Source and proposes changesets.
 
 ## NN Tools: innfo-mcp
+slug:: innfo-mcp
 scope:: internal
 Deterministic validation and AST engine wrapping `@cognnitive/innfo-core` to verify model conformance and detect legacy layouts.
 
 # NN Artifact
 
 ## NN Artifact: Workspace Directory
+slug:: workspace-directory
 type:: spec
 format:: directory
 Root directory of the domaiNN to upgrade or to detect as legacy.
 
 ## NN Artifact: Legacy Detection Report
+slug:: legacy-detection-report
 type:: data
 format:: json
 Read-only list of legacy signals found in the domain.
 
 ## NN Artifact: Verified Backup
+slug:: verified-backup
 type:: data
 format:: directory
 Timestamped out-of-tree copy of the domain with a SHA-256 manifest.
 
 ## NN Artifact: Impact Report
+slug:: impact-report
 type:: data
 format:: markdown
 Diff of the pinned and adopted bluepriNNt schemas and the mapping questions it raises.
 
 ## NN Artifact: Validated Canonical Workspace
+slug:: validated-canonical-workspace
 type:: spec
 format:: markdown
 Domain whose manifest passes all integrity gates.

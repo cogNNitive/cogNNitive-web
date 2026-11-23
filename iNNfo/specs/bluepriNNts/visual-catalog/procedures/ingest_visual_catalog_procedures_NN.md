@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-3-0"
+knowledge_version: "V_0-4-0"
 title: "Ingest Visual Catalog Procedure"
 ---
 
@@ -18,6 +18,7 @@ title: "Ingest Visual Catalog Procedure"
 # NN Procedure
 
 ## NN Procedure: Ingest Visual Catalog
+slug:: ingest-visual-catalog
 category:: ingestion
 summary:: Turn raw visual sources into a validated `visual-catalog` catalogue: stage raw images in sources/import/, establish provenance via co-located sidecars and original_ref, extract Entries/Categories/Evidence, deduplicate by stable keys, upsert idempotently, wire the Entry x Evidence cells and markers, then validate and report.
 inputs_required:: Raw visual files in sources/import/, target `visual-catalog` L3 catalogue document
@@ -28,182 +29,216 @@ procedure_model:: procedures/ingest_visual_catalog_procedures_NN.md
 # NN Work
 
 ## NN Work: Ingest Visual Catalog Workflow
+slug:: ingest-visual-catalog-workflow
 step_type:: task
-next:: [[Normalize Source]]
+next:: @normalize-source
 condition:: Visual files are present in sources/import/ and a target catalogue document exists
-input:: [[Raw Visual Sources]]
-output:: [[Updated Visual Catalog]]
+input:: @raw-visual-sources
+output:: @updated-visual-catalog
 output_status:: verified
-tool:: [[AI Agent]]
+tool:: @ai-agent
+executor:: agent
 scope:: internal
 Orchestrate catalog-specific ingestion end to end. Stage raw visual sources in sources/import/, establish provenance via co-located sidecars and original_ref, extract candidate Entries, Categories, and Evidence, deduplicate by stable key, upsert without duplicating, wire matrix cells and markers, validate, and report. This procedure **references and does not duplicate** `iNNfo/specs/bluepriNNts/workspace/procedures/import_and_analyze_visual_source_procedures_NN.md`, which owns the generic image staging, sidecar provenance, and vision-extraction mechanics; only the catalog-specific identity, dedupe, upsert, and provenance verification steps are added here.
 
 ## NN Work: Normalize Source
-parent:: [[Ingest Visual Catalog Workflow]]
+slug:: normalize-source
+parent:: @ingest-visual-catalog-workflow
 step_type:: task
-next:: [[Derive and Optimize Derivative]]
+next:: @derive-and-optimize-derivative
 condition:: A raw visual file is staged in sources/import/
-input:: [[Raw Visual Sources]]
-output:: [[Normalized Source]]
+input:: @raw-visual-sources
+output:: @normalized-source
 output_status:: verified
-tool:: [[nn-sources Ingestion Engine]]
+tool:: @nn-sources-ingestion-engine
+executor:: agent
 scope:: internal
 Stage raw visual sources in sources/import/ and cognitivize them in place via `process-images` or `nn-sources` to generate co-located sidecars recording original sha256, dimensions, and origin metadata. Images remain raw assets without text conversion.
 
 ## NN Work: Derive and Optimize Derivative
-parent:: [[Ingest Visual Catalog Workflow]]
+slug:: derive-and-optimize-derivative
+parent:: @ingest-visual-catalog-workflow
 step_type:: task
-next:: [[Extract Entities]]
+next:: @extract-entities
 condition:: A normalized source exists
-input:: [[Normalized Source]]
-output:: [[Normalized Source]]
+input:: @normalized-source
+output:: @normalized-source
 output_status:: verified
-tool:: [[File Editor]]
+tool:: @file-editor
+executor:: agent
 scope:: internal
 Create optimized/derived images under artifacts/photos/ or the owning model's assets/ folder, keeping traceability back to original_ref and its co-located sidecar.
 
 ## NN Work: Extract Entities
-parent:: [[Ingest Visual Catalog Workflow]]
+slug:: extract-entities
+parent:: @ingest-visual-catalog-workflow
 step_type:: task
-next:: [[Resolve and Deduplicate]]
+next:: @resolve-and-deduplicate
 condition:: Normalized source with its media companion is available
-input:: [[Normalized Source]]
-output:: [[Candidate Entities]]
+input:: @normalized-source
+output:: @candidate-entities
 output_status:: verified
-tool:: [[Vision Analysis Engine]]
+tool:: @vision-analysis-engine
+executor:: agent
 scope:: external
 Via an external Vision LLM / OCR, extract candidate Entries (the things), Categories (their taxonomy), and Evidence (the witness images). `Entry.name` MUST be a domain identity proposed from the image CONTENT — never derived from the image filename or path.
 
 ## NN Work: Resolve and Deduplicate
-parent:: [[Ingest Visual Catalog Workflow]]
+slug:: resolve-and-deduplicate
+parent:: @ingest-visual-catalog-workflow
 step_type:: decision
-next:: [[Upsert Idempotently]]
+next:: @upsert-idempotently
 condition:: Candidate entities are extracted
-input:: [[Candidate Entities]]
-output:: [[Resolved Entities]]
+input:: @candidate-entities
+output:: @resolved-entities
 output_status:: verified
-tool:: [[AI Agent]]
+tool:: @ai-agent
+executor:: agent
 scope:: internal
 Canonicalize `Entry.name` (normalize case and whitespace) and merge synonyms into one Entry. Collapse duplicate Evidence by image path (preferred) or normalized-source `sha256`. Resolve `Category` parents against the existing taxonomy. Unresolvable or conflicting candidates are reported rather than silently dropped.
 
 ## NN Work: Upsert Idempotently
-parent:: [[Ingest Visual Catalog Workflow]]
+slug:: upsert-idempotently
+parent:: @ingest-visual-catalog-workflow
 step_type:: task
-next:: [[Wire Matrix Cells]]
+next:: @wire-matrix-cells
 condition:: Entities are resolved and deduplicated
-input:: [[Resolved Entities]]
-output:: [[Updated Visual Catalog]]
+input:: @resolved-entities
+output:: @updated-visual-catalog
 output_status:: verified
-tool:: [[File Editor]]
+tool:: @file-editor
+executor:: agent
 scope:: internal
 Find-or-create every record by its deterministic key (see the Idempotency Keys table). Never append a new element when the key already exists — update the existing element in place. Re-ingesting the same source must be a no-op on element count.
 
 ## NN Work: Wire Matrix Cells
-parent:: [[Ingest Visual Catalog Workflow]]
+slug:: wire-matrix-cells
+parent:: @ingest-visual-catalog-workflow
 step_type:: task
-next:: [[Record Confidence and Review]]
+next:: @record-confidence-and-review
 condition:: Entries and Evidence are upserted
-input:: [[Updated Visual Catalog]]
-output:: [[Updated Visual Catalog]]
+input:: @updated-visual-catalog
+output:: @updated-visual-catalog
 output_status:: verified
-tool:: [[File Editor]]
+tool:: @file-editor
+executor:: agent
 scope:: internal
 Upsert the N:M `Entry x Evidence matrix` cell keyed by the `(entry, evidence)` tuple with one of `primary`, `visible`, or `partial`. Many Entries may share one Evidence; each cell is independent.
 
 ## NN Work: Record Confidence and Review
-parent:: [[Ingest Visual Catalog Workflow]]
+slug:: record-confidence-and-review
+parent:: @ingest-visual-catalog-workflow
 step_type:: task
-next:: [[Validate Catalog]]
+next:: @validate-catalog
 condition:: Matrix cells are wired
-input:: [[Updated Visual Catalog]]
-output:: [[Updated Visual Catalog]]
+input:: @updated-visual-catalog
+output:: @updated-visual-catalog
 output_status:: verified
-tool:: [[File Editor]]
+tool:: @file-editor
+executor:: agent
 scope:: internal
 Write `confidence` (0–10 score, extraction certainty) as an Entry field value and `tags:: [reviewed]` for each verified Entry.
 
 ## NN Work: Validate Catalog
-parent:: [[Ingest Visual Catalog Workflow]]
+slug:: validate-catalog
+parent:: @ingest-visual-catalog-workflow
 step_type:: task
-next:: [[Report Ingestion]]
+next:: @report-ingestion
 condition:: The catalogue document is written
-input:: [[Updated Visual Catalog]]
-output:: [[Validated Visual Catalog]]
+input:: @updated-visual-catalog
+output:: @validated-visual-catalog
 output_status:: verified
-tool:: [[nn-mcp]]
+tool:: @nn-mcp
+executor:: agent
 scope:: internal
 Run nn-mcp `validate_knowledge` on the catalogue to confirm zero schema or reference errors, then run `resolve_sources` on every Evidence `source` to confirm the citation resolves and to read back the `sha256` / `media_sha256` provenance. Verify the hash-pair discipline: when both hashes are present on the cited normalized source, the on-disk original must match `sha256`. Any failure stops the procedure before the report.
 
 ## NN Work: Report Ingestion
-parent:: [[Ingest Visual Catalog Workflow]]
+slug:: report-ingestion
+parent:: @ingest-visual-catalog-workflow
 step_type:: task
 condition:: The catalogue validated clean
-input:: [[Validated Visual Catalog]]
-output:: [[Ingestion Report]]
+input:: @validated-visual-catalog
+output:: @ingestion-report
 output_status:: verified
-tool:: [[AI Agent]]
+tool:: @ai-agent
+executor:: agent
 scope:: internal
 Emit an ingestion report: sources processed, Entries/Categories/Evidence created vs updated, cells wired, markers recorded, and any dedupe or hash warnings surfaced during the run.
 
 # NN Tools
 
 ## NN Tools: AI Agent
+slug:: ai-agent
 type:: automated
 description:: Coordinates catalog-specific extraction, resolution, upsert, and reporting.
 
 ## NN Tools: nn-sources Ingestion Engine
+slug:: nn-sources-ingestion-engine
 type:: automated
 description:: Ingestion engine providing in-place cognitivize and process-images for raw media sidecar provenance.
 
 ## NN Tools: Vision Analysis Engine
+slug:: vision-analysis-engine
 type:: external
 description:: External multimodal Vision LLM / OCR engine extracting candidate Entries, Categories, and Evidence from images.
 
 ## NN Tools: File Editor
+slug:: file-editor
 type:: automated
 description:: Writes derived media, catalogue elements, matrix cells, and markers, and updates the catalogue document (nn-mcp).
 
 ## NN Tools: nn-mcp
+slug:: nn-mcp
 type:: automated
 description:: Deterministic validation of the catalogue (`validate_knowledge`) and citation/hash resolution (`resolve_sources`).
 
 # NN Artifact
 
 ## NN Artifact: Raw Visual Sources
+slug:: raw-visual-sources
 type:: input
 description:: The raw image files staged in sources/import/ .
 
 ## NN Artifact: Normalized Source
+slug:: normalized-source
 type:: intermediate
 description:: The raw image in sources/import/ alongside its co-located sidecar recording sha256, size_bytes, and metadata.
 
 ## NN Artifact: Candidate Entities
+slug:: candidate-entities
 type:: intermediate
 description:: Candidate Entries, Categories, and Evidence extracted by the Vision engine before dedupe.
 
 ## NN Artifact: Resolved Entities
+slug:: resolved-entities
 type:: intermediate
 description:: Deduplicated, canonicalized Entries/Categories/Evidence keyed for upsert.
 
 ## NN Artifact: Updated Visual Catalog
+slug:: updated-visual-catalog
 type:: output
 description:: The Level-3 `visual-catalog` document with upserted elements, matrix cells, and markers.
 
 ## NN Artifact: Validated Visual Catalog
+slug:: validated-visual-catalog
 type:: intermediate
 description:: The catalogue after `validate_knowledge` and `resolve_sources` passed, including hash-pair verification.
 
 ## NN Artifact: Ingestion Report
+slug:: ingestion-report
 type:: output
 description:: A summary of the run: created vs updated counts, cells wired, markers recorded, and warnings.
 
 # NN Roles
 
 ## NN Roles: Catalog Maintainer
+slug:: catalog-maintainer
 type:: owner
 description:: Owns the target catalogue scope, approves extracted entities and hash verification.
 
 ## NN Roles: iNNfo Agent
+slug:: innfo-agent
 type:: internal
 description:: Executes the procedure steps and updates the catalogue.
 

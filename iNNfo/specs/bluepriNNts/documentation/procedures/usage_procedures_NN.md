@@ -3,86 +3,101 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-1-0"
+knowledge_version: "V_0-2-0"
 title: "Using the Documentation Blueprint"
 ---
 
 # NN Work
 
 ## NN Work: Using the Documentation Blueprint
+slug:: using-the-documentation-blueprint
 step_type:: task
 condition:: You want to publish a documentation site from a model
-input:: [[Documentation Model]]
-output:: [[Docsify Suite]]
-tool:: [[Console]]
+input:: @documentation-model
+output:: @docsify-suite
+tool:: @console
+executor:: human
 scope:: internal
 Getting started with the Documentation blueprint: create the DocSite, structure its sections and pages, configure the navbar and assets, then generate the Docsify suite.
 
 ## NN Work: Create the DocSite
-parent:: [[Using the Documentation Blueprint]]
+slug:: create-the-docsite
+parent:: @using-the-documentation-blueprint
 step_type:: task
-next:: [[Structure Sections and Pages]]
+next:: @structure-sections-and-pages
 condition:: No documentation model exists yet
-input:: [[Documentation Model]]
-output:: [[Documentation Model]]
-tool:: [[Console]]
+input:: @documentation-model
+output:: @documentation-model
+tool:: @console
+executor:: human
 scope:: internal
 Add the `DocSite` element that anchors the site.
 
 ## NN Work: Structure Sections and Pages
-parent:: [[Using the Documentation Blueprint]]
+slug:: structure-sections-and-pages
+parent:: @using-the-documentation-blueprint
 step_type:: task
-next:: [[Configure Navbar and Assets]]
+next:: @configure-navbar-and-assets
 condition:: DocSite created
-input:: [[Documentation Model]]
-output:: [[Documentation Model]]
-tool:: [[Console]]
+input:: @documentation-model
+output:: @documentation-model
+tool:: @console
+executor:: human
 scope:: internal
 Populate `Section` and `Page` elements in the order they should read.
 
 ## NN Work: Configure Navbar and Assets
-parent:: [[Using the Documentation Blueprint]]
+slug:: configure-navbar-and-assets
+parent:: @using-the-documentation-blueprint
 step_type:: task
-next:: [[Generate the Docsify Suite]]
+next:: @generate-the-docsify-suite
 condition:: Pages defined
-input:: [[Documentation Model]]
-output:: [[Documentation Model]]
-tool:: [[Console]]
+input:: @documentation-model
+output:: @documentation-model
+tool:: @console
+executor:: human
 scope:: internal
 Add the `NavbarItem` and `Asset` elements the site needs.
 
 ## NN Work: Generate the Docsify Suite
-parent:: [[Using the Documentation Blueprint]]
+slug:: generate-the-docsify-suite
+parent:: @using-the-documentation-blueprint
 step_type:: task
 condition:: Site structure configured
-input:: [[Documentation Model]]
-output:: [[Docsify Suite]]
-tool:: [[AI Agent]]
+input:: @documentation-model
+output:: @docsify-suite
+tool:: @ai-agent
+executor:: agent
 scope:: internal
 Execute the `generate-docsify-suite` procedure to emit the publishable site.
 
 # NN Artifact
 
 ## NN Artifact: Documentation Model
+slug:: documentation-model
 type:: input
 description:: The active level 3 model built on the Documentation blueprint.
 
 ## NN Artifact: Docsify Suite
+slug:: docsify-suite
 type:: output
 description:: Publishable documentation site (HTML, config, assets).
 
 # NN Tools
 
 ## NN Tools: Console
+slug:: console
 type:: manual
 description:: The cogNNitive console used to author and inspect the model.
 
 ## NN Tools: AI Agent
+slug:: ai-agent
 type:: automated
 description:: Cognitive agent rendering the Docsify suite from the model.
 
 # NN Roles
 
 ## NN Roles: Documentation Author
+slug:: documentation-author
 type:: author
 description:: Owns the documentation model and its published output.

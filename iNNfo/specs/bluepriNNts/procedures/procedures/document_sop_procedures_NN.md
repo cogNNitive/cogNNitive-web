@@ -3,88 +3,100 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-1-0"
+knowledge_version: "V_0-2-0"
 title: "Standard Operating Procedure: Documenting Procedures in iNNfo"
 ---
 
 # NN Work
 
 ## NN Work: Procedure Documentation Lifecycle
+slug:: procedure-documentation-lifecycle
 step_type:: task
 condition:: New business process or operational workflow identified
-input:: [[Process Intake Brief]]
-output:: [[Validated iNNfo Level 3 Model]]
+input:: @process-intake-brief
+output:: @validated-innfo-level-3-model
 output_status:: verified
-tool:: [[cogNNitive Modeler]]
+tool:: @cognnitive-modeler
+executor:: agent
 scope:: internal
 tags:: [procedure, governance, dogfooding, documentation-lifecycle]
 
 Master lifecycle procedure for transforming unstructured business workflows and operational routines into fully validated iNNfo Level 3 Procedure models.
 
 ## NN Work: Scope & Trigger Identification
-parent:: [[Procedure Documentation Lifecycle]]
+slug:: scope-trigger-identification
+parent:: @procedure-documentation-lifecycle
 step_type:: event
-next:: [[Workflow Step Decomposition]]
+next:: @workflow-step-decomposition
 condition:: Process owner submits documentation request
-input:: [[Process Intake Brief]]
-output:: [[Procedure Scope Definition]]
+input:: @process-intake-brief
+output:: @procedure-scope-definition
 output_status:: verified
-tool:: [[cogNNitive Modeler]]
+tool:: @cognnitive-modeler
+executor:: agent
 scope:: internal
 tags:: [procedure, scoping, intake, boundaries]
 
 Capture the business rationale, operational boundaries, triggering events, and expected outcomes of the target workflow.
 
 ## NN Work: Workflow Step Decomposition
-parent:: [[Procedure Documentation Lifecycle]]
+slug:: workflow-step-decomposition
+parent:: @procedure-documentation-lifecycle
 step_type:: task
-next:: [[Artifact & Tool Attachment]]
+next:: @artifact-tool-attachment
 condition:: Procedure scope approved by domain lead
-input:: [[Procedure Scope Definition]]
-output:: [[Decomposed Step Hierarchy]]
+input:: @procedure-scope-definition
+output:: @decomposed-step-hierarchy
 output_status:: verified
-tool:: [[iNNfo FSM Stepper View]]
+tool:: @innfo-fsm-stepper-view
+executor:: human
 scope:: internal
 tags:: [procedure, decomposition, fsm-modeling, step-sequencing]
 
 Decompose the end-to-end workflow into sequential tasks, decision gates, and event handlers. Establish chronological ordering with next references and transition guards.
 
 ## NN Work: Artifact & Tool Attachment
-parent:: [[Procedure Documentation Lifecycle]]
+slug:: artifact-tool-attachment
+parent:: @procedure-documentation-lifecycle
 step_type:: task
-next:: [[RACI Governance Assignment]]
+next:: @raci-governance-assignment
 condition:: Step sequence validated in FSM preview
-input:: [[Decomposed Step Hierarchy]]
-output:: [[Toolchain & Dependency Map]]
+input:: @decomposed-step-hierarchy
+output:: @toolchain-dependency-map
 output_status:: verified
-tool:: [[cogNNitive Modeler]]
+tool:: @cognnitive-modeler
+executor:: agent
 scope:: internal
 tags:: [procedure, data-flow, toolchain-binding, artifact-mapping]
 
 Identify and link tangible input and output deliverables for every step, then bind required execution tooling, software, or CLI utilities.
 
 ## NN Work: RACI Governance Assignment
-parent:: [[Procedure Documentation Lifecycle]]
+slug:: raci-governance-assignment
+parent:: @procedure-documentation-lifecycle
 step_type:: task
-next:: [[Integrity & Syntax Verification]]
+next:: @integrity-syntax-verification
 condition:: Inputs, outputs, and tools fully populated
-input:: [[Toolchain & Dependency Map]]
-output:: [[RACI Accountability Matrix]]
+input:: @toolchain-dependency-map
+output:: @raci-accountability-matrix
 output_status:: verified
-tool:: [[iNNfo Matrix Editor]]
+tool:: @innfo-matrix-editor
+executor:: agent
 scope:: internal
 tags:: [procedure, raci-governance, role-assignment, matrix-mapping]
 
 Populate functional roles and assign formal RACI governance values (Responsible, Accountable, Consulted, Informed) across all decomposed work steps.
 
 ## NN Work: Integrity & Syntax Verification
-parent:: [[Procedure Documentation Lifecycle]]
+slug:: integrity-syntax-verification
+parent:: @procedure-documentation-lifecycle
 step_type:: task
 condition:: RACI matrix complete and reviewed
-input:: [[RACI Accountability Matrix]]
-output:: [[Validated iNNfo Level 3 Model]]
+input:: @raci-accountability-matrix
+output:: @validated-innfo-level-3-model
 output_status:: verified
-tool:: [[nn-mcp Server]]
+tool:: @nn-mcp-server
+executor:: agent
 scope:: internal
 tags:: [procedure, verification, mcp-audit, syntax-gate]
 
@@ -93,52 +105,66 @@ Execute automated syntactic verification, WikiLink integrity checks, and field e
 # NN Artifact
 
 ## NN Artifact: Process Intake Brief
+slug:: process-intake-brief
 Initial document describing business requirements, rough operational steps, and target actors.
 
 ## NN Artifact: Procedure Scope Definition
+slug:: procedure-scope-definition
 Structured boundary contract defining the trigger, scope, target audience, and terminal goals.
 
 ## NN Artifact: Decomposed Step Hierarchy
+slug:: decomposed-step-hierarchy
 Hierarchical inventory of sequenced work steps with state transitions and branching conditions.
 
 ## NN Artifact: Toolchain & Dependency Map
+slug:: toolchain-dependency-map
 Mapping of consumed input artifacts, produced deliverables, and software tools per work step.
 
 ## NN Artifact: RACI Accountability Matrix
+slug:: raci-accountability-matrix
 Formal cross-functional matrix assigning responsibility and oversight across all procedure steps.
 
 ## NN Artifact: Validated iNNfo Level 3 Model
+slug:: validated-innfo-level-3-model
 Canonical, verified plain-text Markdown model ready for execution in cogNNitive and distribution via MCP.
 
 # NN Tools
 
 ## NN Tools: cogNNitive Modeler
+slug:: cognnitive-modeler
 Main visual modelling environment and syntax-aware workspace for iNNfo documents.
 
 ## NN Tools: iNNfo FSM Stepper View
+slug:: innfo-fsm-stepper-view
 Visualizer for finite state machine flows, sequential step progressions, and conditional transitions.
 
 ## NN Tools: iNNfo Matrix Editor
+slug:: innfo-matrix-editor
 Tabular visual interface for evaluating and assigning relational matrices and RACI governance.
 
 ## NN Tools: nn-mcp Server
+slug:: nn-mcp-server
 Model Context Protocol daemon providing validation, hydration, queries, and integrity checks.
 
 # NN Roles
 
 ## NN Roles: Business Process Architect
+slug:: business-process-architect
 scope:: internal
 Defines high-level process boundaries, business objectives, and organizational taxonomy.
 
 ## NN Roles: Technical Workflow Modeler
+slug:: technical-workflow-modeler
 scope:: internal
 Structures FSM step sequences, binds WikiLink references, and populates Markdown prose documentation.
 
 ## NN Roles: Domain Operations Lead
+slug:: domain-operations-lead
 scope:: internal
 Validates operational accuracy, verifies artifact deliverables, and approves step sequencing.
 
 ## NN Roles: QA & Integrity Reviewer
+slug:: qa-integrity-reviewer
 scope:: internal
 Runs automated verification gates, validates MCP compliance, and approves model publication.
 

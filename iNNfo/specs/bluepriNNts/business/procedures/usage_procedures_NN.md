@@ -3,108 +3,127 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-1-0"
+knowledge_version: "V_0-2-0"
 title: "Using the Business Blueprint"
 ---
 
 # NN Work
 
 ## NN Work: Using the Business Blueprint
+slug:: using-the-business-blueprint
 step_type:: task
 condition:: You want to describe a business end to end
-input:: [[Business Model]]
-output:: [[Validated Business Model]]
-tool:: [[Console]]
+input:: @business-model
+output:: @validated-business-model
+tool:: @console
+executor:: human
 scope:: internal
 Getting started with the Business blueprint: describe the business, then compose its sub-models (Analysis, Organization, Projects, Metrics) and run the procedures those include.
 
 ## NN Work: Open the Business Model
-parent:: [[Using the Business Blueprint]]
+slug:: open-the-business-model
+parent:: @using-the-business-blueprint
 step_type:: task
-next:: [[Describe the Business]]
+next:: @describe-the-business
 condition:: No business model exists yet
-input:: [[Business Model]]
-output:: [[Business Model]]
-tool:: [[Console]]
+input:: @business-model
+output:: @business-model
+tool:: @console
+executor:: human
 scope:: internal
 Create a model on the Business blueprint; its index pulls in the business-model, analysis, organization, projects and metrics apps.
 
 ## NN Work: Describe the Business
-parent:: [[Using the Business Blueprint]]
+slug:: describe-the-business
+parent:: @using-the-business-blueprint
 step_type:: task
-next:: [[Model Organization and People]]
+next:: @model-organization-and-people
 condition:: Business model created
-input:: [[Business Model]]
-output:: [[Business Model]]
-tool:: [[Console]]
+input:: @business-model
+output:: @business-model
+tool:: @console
+executor:: human
 scope:: internal
 Fill the business-model concepts: summary, market, value propositions, solutions, marketing, team, objectives, operations, finance and legal.
 
 ## NN Work: Model Organization and People
-parent:: [[Using the Business Blueprint]]
+slug:: model-organization-and-people
+parent:: @using-the-business-blueprint
 step_type:: task
-next:: [[Plan Projects]]
+next:: @plan-projects
 condition:: Business described
-input:: [[Business Model]]
-output:: [[Business Model]]
-tool:: [[Console]]
+input:: @business-model
+output:: @business-model
+tool:: @console
+executor:: human
 scope:: internal
 Populate the Organization concepts (roles, functions, positions, people, skills) inherited from the organization app.
 
 ## NN Work: Plan Projects
-parent:: [[Using the Business Blueprint]]
+slug:: plan-projects
+parent:: @using-the-business-blueprint
 step_type:: task
-next:: [[Set Metrics and Goals]]
+next:: @set-metrics-and-goals
 condition:: Organization modeled
-input:: [[Business Model]]
-output:: [[Business Model]]
-tool:: [[Console]]
+input:: @business-model
+output:: @business-model
+tool:: @console
+executor:: human
 scope:: internal
 Populate the Projects concepts (phases, milestones, deliverables, tasks, risks) inherited from the projects app.
 
 ## NN Work: Set Metrics and Goals
-parent:: [[Using the Business Blueprint]]
+slug:: set-metrics-and-goals
+parent:: @using-the-business-blueprint
 step_type:: task
-next:: [[Run Included Procedures]]
+next:: @run-included-procedures
 condition:: Projects planned
-input:: [[Business Model]]
-output:: [[Business Model]]
-tool:: [[Console]]
+input:: @business-model
+output:: @business-model
+tool:: @console
+executor:: human
 scope:: internal
 Populate the Metrics concepts (metrics, variables, evolution, scenario) and the goals matrix.
 
 ## NN Work: Run Included Procedures
-parent:: [[Using the Business Blueprint]]
+slug:: run-included-procedures
+parent:: @using-the-business-blueprint
 step_type:: task
 condition:: Sub-models populated
-input:: [[Business Model]]
-output:: [[Validated Business Model]]
-tool:: [[AI Agent]]
+input:: @business-model
+output:: @validated-business-model
+tool:: @ai-agent
+executor:: agent
 scope:: internal
 Run the inherited procedures — `run-coherence-audit`, `prioritize-experiments`, `audit-skill-gaps`, `export-team-directory`, `calculate-critical-path`, `generate-status-report` — as the model matures.
 
 # NN Artifact
 
 ## NN Artifact: Business Model
+slug:: business-model
 type:: input
 description:: The active level 3 model built on the Business blueprint.
 
 ## NN Artifact: Validated Business Model
+slug:: validated-business-model
 type:: output
 description:: Business model whose sub-models are populated and whose procedures have run.
 
 # NN Tools
 
 ## NN Tools: Console
+slug:: console
 type:: manual
 description:: The cogNNitive console used to author and inspect the model.
 
 ## NN Tools: AI Agent
+slug:: ai-agent
 type:: automated
 description:: Cognitive agent running the inherited procedures across the sub-models.
 
 # NN Roles
 
 ## NN Roles: Business Author
+slug:: business-author
 type:: author
 description:: Owns the business model across all of its sub-models.

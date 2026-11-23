@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-1-0"
+knowledge_version: "V_0-2-0"
 title: "Visual Source Import & Semantic Analysis Procedure"
 ---
 
@@ -20,162 +20,192 @@ title: "Visual Source Import & Semantic Analysis Procedure"
 # NN Work
 
 ## NN Work: Import and Analyze Visual Sources
+slug:: import-and-analyze-visual-sources
 step_type:: task
 condition:: Visual files, diagrams, or mockups present in import folder
-input:: [[Raw Visual Sources Directory]]
-output:: [[Verified Target Domain Model]]
+input:: @raw-visual-sources-directory
+output:: @verified-target-domain-model
 output_status:: verified
-tool:: [[AI Agent]]
+tool:: @ai-agent
+executor:: agent
 scope:: internal
 Ingest visual assets (diagrams, architecture charts, UI mockups, whiteboards), extract structured semantic descriptions via external Vision LLM / OCR staged in sources/import/, cognitivize sidecar provenance in place, bind to target domain model elements, and validate integrity.
 
 ## NN Work: Discover Raw Visual Files
-parent:: [[Import and Analyze Visual Sources]]
+slug:: discover-raw-visual-files
+parent:: @import-and-analyze-visual-sources
 step_type:: task
-next:: [[Verify and Deduplicate Visual Sources]]
+next:: @verify-and-deduplicate-visual-sources
 condition:: Ingestion workflow triggered
-input:: [[Raw Visual Sources Directory]]
-output:: [[Unprocessed Visual List]]
+input:: @raw-visual-sources-directory
+output:: @unprocessed-visual-list
 output_status:: verified
-tool:: [[Command Line Interface]]
+tool:: @command-line-interface
+executor:: agent
 scope:: internal
 Scan sources/import/ or drop directories for visual files (.png, .jpg, .svg, .webp) that require semantic extraction.
 
 ## NN Work: Verify and Deduplicate Visual Sources
-parent:: [[Import and Analyze Visual Sources]]
+slug:: verify-and-deduplicate-visual-sources
+parent:: @import-and-analyze-visual-sources
 step_type:: decision
-next:: [[Extract Visual Semantics via Vision LLM]]
+next:: @extract-visual-semantics-via-vision-llm
 condition:: Visual list generated
-input:: [[Unprocessed Visual List]]
-output:: [[Verified Visual Ingestion Queue]]
+input:: @unprocessed-visual-list
+output:: @verified-visual-ingestion-queue
 output_status:: verified
-tool:: [[Command Line Interface]]
+tool:: @command-line-interface
+executor:: agent
 scope:: internal
 Compute SHA-256 hashes of visual assets to avoid re-analyzing images already registered in sources/import/ sidecars or assets/.
 
 ## NN Work: Extract Visual Semantics via Vision LLM
-parent:: [[Import and Analyze Visual Sources]]
+slug:: extract-visual-semantics-via-vision-llm
+parent:: @import-and-analyze-visual-sources
 step_type:: task
-next:: [[Stage Visual Markdown Description]]
+next:: @stage-visual-markdown-description
 condition:: Ingestion queue verified
-input:: [[Verified Visual Ingestion Queue]]
-output:: [[Structured Visual Description]]
+input:: @verified-visual-ingestion-queue
+output:: @structured-visual-description
 output_status:: verified
-tool:: [[Vision Analysis Engine]]
+tool:: @vision-analysis-engine
+executor:: agent
 scope:: external
 Analyze images via Vision LLM or OCR to extract architecture components, relationships, UI elements, text annotations, and layout hierarchy in structured Markdown format.
 
 ## NN Work: Stage Visual Markdown Description
-parent:: [[Import and Analyze Visual Sources]]
+slug:: stage-visual-markdown-description
+parent:: @import-and-analyze-visual-sources
 step_type:: task
-next:: [[Cognitivize Visual Source with Sidecar Provenance]]
+next:: @cognitivize-visual-source-with-sidecar-provenance
 condition:: Visual semantics extracted
-input:: [[Structured Visual Description]]
-output:: [[Staged Visual Import Files]]
+input:: @structured-visual-description
+output:: @staged-visual-import-files
 output_status:: verified
-tool:: [[File Editor]]
+tool:: @file-editor
+executor:: agent
 scope:: internal
 Stage generated Markdown description in sources/import/ and ensure the companion image is preserved or copied into assets/.
 
 ## NN Work: Cognitivize Visual Source with Sidecar Provenance
-parent:: [[Import and Analyze Visual Sources]]
+slug:: cognitivize-visual-source-with-sidecar-provenance
+parent:: @import-and-analyze-visual-sources
 step_type:: task
-next:: [[Bind Visual Source to Target Entity]]
+next:: @bind-visual-source-to-target-entity
 condition:: Visual description staged
-input:: [[Staged Visual Import Files]]
-output:: [[Cognitivized Sources and Sidecars]]
+input:: @staged-visual-import-files
+output:: @cognitivized-sources-and-sidecars
 output_status:: verified
-tool:: [[nn-sources Ingestion Engine]]
+tool:: @nn-sources-ingestion-engine
+executor:: agent
 scope:: internal
 Run nn-sources to cognitivize staged visual descriptions and raw images in place, generating co-located sidecars with SHA-256, dimensions, and origin metadata.
 
 ## NN Work: Bind Visual Source to Target Entity
-parent:: [[Import and Analyze Visual Sources]]
+slug:: bind-visual-source-to-target-entity
+parent:: @import-and-analyze-visual-sources
 step_type:: task
-next:: [[Validate Target Model]]
+next:: @validate-target-model
 condition:: Normalized source created
-input:: [[Cognitivized Sources and Sidecars]]
-output:: [[Updated Domain Model]]
+input:: @cognitivized-sources-and-sidecars
+output:: @updated-domain-model
 output_status:: verified
-tool:: [[File Editor]]
+tool:: @file-editor
+executor:: agent
 scope:: internal
 Add normalized visual source citations to the sources:: field of the corresponding concept element (e.g. Solutions, Features, Infrastructure) in the domain model.
 
 ## NN Work: Validate Target Model
-parent:: [[Import and Analyze Visual Sources]]
+slug:: validate-target-model
+parent:: @import-and-analyze-visual-sources
 step_type:: task
 condition:: Domain model updated
-input:: [[Updated Domain Model]]
-output:: [[Verified Target Domain Model]]
+input:: @updated-domain-model
+output:: @verified-target-domain-model
 output_status:: verified
-tool:: [[innfo-mcp]]
+tool:: @innfo-mcp
+executor:: agent
 scope:: internal
 Validate the updated domain model using innfo-mcp to ensure zero broken references or schema errors.
 
 # NN Tools
 
 ## NN Tools: AI Agent
+slug:: ai-agent
 scope:: internal
 LLM agent coordinating the visual import and domain enrichment workflow.
 
 ## NN Tools: Command Line Interface
+slug:: command-line-interface
 scope:: internal
 Terminal environment for directory inspection and hash verification.
 
 ## NN Tools: Vision Analysis Engine
+slug:: vision-analysis-engine
 scope:: external
 External multimodal Vision LLM or OCR engine generating textual descriptions from images.
 
 ## NN Tools: nn-sources Ingestion Engine
+slug:: nn-sources-ingestion-engine
 scope:: internal
 Deterministic ingestion tool creating in-place sidecars with origin metadata.
 
 ## NN Tools: File Editor
+slug:: file-editor
 scope:: internal
 Tool for writing staged files and modifying domain models.
 
 ## NN Tools: innfo-mcp
+slug:: innfo-mcp
 scope:: internal
 Deterministic validation tool for iNNfo models.
 
 # NN Artifact
 
 ## NN Artifact: Raw Visual Sources Directory
+slug:: raw-visual-sources-directory
 type:: spec
 format:: directory
 Input folder with raw images (.png, .jpg, .svg).
 
 ## NN Artifact: Unprocessed Visual List
+slug:: unprocessed-visual-list
 type:: data
 format:: json
 List of image assets pending semantic extraction.
 
 ## NN Artifact: Verified Visual Ingestion Queue
+slug:: verified-visual-ingestion-queue
 type:: data
 format:: json
 Deduplicated list of images ready for analysis.
 
 ## NN Artifact: Structured Visual Description
+slug:: structured-visual-description
 type:: deliverable
 format:: markdown
 Textual representation of the diagram or UI extracted by the vision engine.
 
 ## NN Artifact: Staged Visual Import Files
+slug:: staged-visual-import-files
 type:: data
 format:: directory
 Markdown files staged in sources/import/ alongside asset references.
 
 ## NN Artifact: Cognitivized Sources and Sidecars
+slug:: cognitivized-sources-and-sidecars
 type:: spec
 format:: markdown
 Traceable Markdown sources and sidecars in sources/import/ establishing visual provenance.
 
 ## NN Artifact: Updated Domain Model
+slug:: updated-domain-model
 type:: spec
 format:: markdown
 Domain model file enriched with visual source citations.
 
 ## NN Artifact: Verified Target Domain Model
+slug:: verified-target-domain-model
 type:: report
 format:: status
 Validation confirmation confirming model integrity.
@@ -183,10 +213,12 @@ Validation confirmation confirming model integrity.
 # NN Roles
 
 ## NN Roles: iNNfo Agent
+slug:: innfo-agent
 scope:: internal
 AI agent executing procedural tasks and model updates.
 
 ## NN Roles: Workspace Maintainer
+slug:: workspace-maintainer
 scope:: external
 Human maintainer reviewing extracted descriptions and approving domain model changes.
 

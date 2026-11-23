@@ -3,60 +3,104 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-1-0"
+knowledge_version: "V_0-2-0"
 title: "Using the Workspace Blueprint"
 ---
 
 # NN Work
 
 ## NN Work: Using the Workspace Blueprint
+slug:: using-the-workspace-blueprint
 step_type:: task
 condition:: You want to set up, configure, and maintain a cognitive workspace
-input:: [[Workspace Specification]]
-output:: [[Validated Workspace]]
-tool:: [[Console]]
+input:: @workspace-specification
+output:: @validated-workspace
+tool:: @console
+executor:: human
 scope:: internal
 Getting started with the Workspace blueprint: configure the workspace root, register models and domain blueprints, stage and import external sources, and run validation procedures.
 
 ## NN Work: Configure the Workspace Root
-parent:: [[Using the Workspace Blueprint]]
+slug:: configure-the-workspace-root
+parent:: @using-the-workspace-blueprint
 step_type:: task
-next:: [[Register Models and Blueprints]]
+next:: @register-models-and-blueprints
 condition:: No workspace root defined yet
-input:: [[Workspace Specification]]
-output:: [[Workspace Root]]
-tool:: [[Console]]
+input:: @workspace-specification
+output:: @workspace-root
+tool:: @console
+executor:: human
 scope:: internal
 Define the workspace identity, directory structure, conventions, and global configuration.
 
 ## NN Work: Register Models and Blueprints
-parent:: [[Using the Workspace Blueprint]]
+slug:: register-models-and-blueprints
+parent:: @using-the-workspace-blueprint
 step_type:: task
-next:: [[Import Sources and Run Procedures]]
+next:: @import-sources-and-run-procedures
 condition:: Workspace root defined
-input:: [[Workspace Root]]
-output:: [[Registered Workspace]]
-tool:: [[Console]]
+input:: @workspace-root
+output:: @registered-workspace
+tool:: @console
+executor:: human
 scope:: internal
 Register models, declare blueprint dependencies, and establish domain hierarchy.
 
 ## NN Work: Import Sources and Run Procedures
-parent:: [[Using the Workspace Blueprint]]
+slug:: import-sources-and-run-procedures
+parent:: @using-the-workspace-blueprint
 step_type:: task
-next:: [[Validate Workspace Integrity]]
+next:: @validate-workspace-integrity
 condition:: Workspace configured
-input:: [[Registered Workspace]]
-output:: [[Processed Sources]]
-tool:: [[AI Agent]]
+input:: @registered-workspace
+output:: @processed-sources
+tool:: @ai-agent
+executor:: agent
 scope:: internal
 Import visual, audio, video, and tabular sources using workspace procedures.
 
 ## NN Work: Validate Workspace Integrity
-parent:: [[Using the Workspace Blueprint]]
+slug:: validate-workspace-integrity
+parent:: @using-the-workspace-blueprint
 step_type:: task
 condition:: Procedures executed
-input:: [[Processed Sources]]
-output:: [[Validated Workspace]]
-tool:: [[Console]]
+input:: @processed-sources
+output:: @validated-workspace
+tool:: @console
+executor:: human
 scope:: internal
 Verify workspace consistency, concept drift, and model linkages against specs.
+
+# NN Tools
+
+## NN Tools: Console
+slug:: console
+scope:: internal
+The domaiNN console, where a person configures and inspects the workspace.
+
+## NN Tools: AI Agent
+slug:: ai-agent
+scope:: internal
+The AI agent that imports sources and runs procedures.
+
+# NN Artifact
+
+## NN Artifact: Workspace Specification
+slug:: workspace-specification
+The workspace bluepriNNt the domaiNN follows.
+
+## NN Artifact: Workspace Root
+slug:: workspace-root
+The configured domaiNN root folder.
+
+## NN Artifact: Registered Workspace
+slug:: registered-workspace
+The domaiNN with its models and bluepriNNts registered.
+
+## NN Artifact: Processed Sources
+slug:: processed-sources
+The imported sources and the results of the procedures run on them.
+
+## NN Artifact: Validated Workspace
+slug:: validated-workspace
+The domaiNN after its integrity validation.

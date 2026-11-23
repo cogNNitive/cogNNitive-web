@@ -3,112 +3,132 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-1-0"
+knowledge_version: "V_0-2-0"
 title: "Using the Projects Blueprint"
 ---
 
 # NN Work
 
 ## NN Work: Using the Projects Blueprint
+slug:: using-the-projects-blueprint
 step_type:: task
 condition:: You want to plan and track delivery work
-input:: [[Project Model]]
-output:: [[Status Report]]
-tool:: [[Console]]
+input:: @project-model
+output:: @status-report
+tool:: @console
+executor:: human
 scope:: internal
 Getting started with the Projects blueprint: create the Project, plan phases and milestones, add deliverables and tasks, track risks, then compute the critical path and generate a status report.
 
 ## NN Work: Create the Project
-parent:: [[Using the Projects Blueprint]]
+slug:: create-the-project
+parent:: @using-the-projects-blueprint
 step_type:: task
-next:: [[Plan Phases and Milestones]]
+next:: @plan-phases-and-milestones
 condition:: No project model exists yet
-input:: [[Project Model]]
-output:: [[Project Model]]
-tool:: [[Console]]
+input:: @project-model
+output:: @project-model
+tool:: @console
+executor:: human
 scope:: internal
 Add the `Project` element that anchors the model.
 
 ## NN Work: Plan Phases and Milestones
-parent:: [[Using the Projects Blueprint]]
+slug:: plan-phases-and-milestones
+parent:: @using-the-projects-blueprint
 step_type:: task
-next:: [[Add Deliverables and Tasks]]
+next:: @add-deliverables-and-tasks
 condition:: Project element created
-input:: [[Project Model]]
-output:: [[Project Model]]
-tool:: [[Console]]
+input:: @project-model
+output:: @project-model
+tool:: @console
+executor:: human
 scope:: internal
 Populate the `Phases` and nested `Milestone` elements.
 
 ## NN Work: Add Deliverables and Tasks
-parent:: [[Using the Projects Blueprint]]
+slug:: add-deliverables-and-tasks
+parent:: @using-the-projects-blueprint
 step_type:: task
-next:: [[Track Risks]]
+next:: @track-risks
 condition:: Phases and milestones planned
-input:: [[Project Model]]
-output:: [[Project Model]]
-tool:: [[Console]]
+input:: @project-model
+output:: @project-model
+tool:: @console
+executor:: human
 scope:: internal
 Capture `Deliverable` and `Task` elements and their dependencies.
 
 ## NN Work: Track Risks
-parent:: [[Using the Projects Blueprint]]
+slug:: track-risks
+parent:: @using-the-projects-blueprint
 step_type:: task
-next:: [[Calculate the Critical Path]]
+next:: @calculate-the-critical-path
 condition:: Tasks and dependencies present
-input:: [[Project Model]]
-output:: [[Project Model]]
-tool:: [[Console]]
+input:: @project-model
+output:: @project-model
+tool:: @console
+executor:: human
 scope:: internal
 Record `Risk` elements and assign owners from `Project roles`.
 
 ## NN Work: Calculate the Critical Path
-parent:: [[Using the Projects Blueprint]]
+slug:: calculate-the-critical-path
+parent:: @using-the-projects-blueprint
 step_type:: task
-next:: [[Generate the Status Report]]
+next:: @generate-the-status-report
 condition:: Task graph complete
-input:: [[Project Model]]
-output:: [[Critical Path]]
-tool:: [[AI Agent]]
+input:: @project-model
+output:: @critical-path
+tool:: @ai-agent
+executor:: agent
 scope:: internal
 Execute the `calculate-critical-path` procedure to identify the longest dependency chain.
 
 ## NN Work: Generate the Status Report
-parent:: [[Using the Projects Blueprint]]
+slug:: generate-the-status-report
+parent:: @using-the-projects-blueprint
 step_type:: task
 condition:: Critical path computed
-input:: [[Critical Path]]
-output:: [[Status Report]]
-tool:: [[AI Agent]]
+input:: @critical-path
+output:: @status-report
+tool:: @ai-agent
+executor:: agent
 scope:: internal
 Execute the `generate-status-report` procedure to summarise progress and slippage.
 
 # NN Artifact
 
 ## NN Artifact: Project Model
+slug:: project-model
 type:: input
 description:: The active level 3 model built on the Projects blueprint.
 
 ## NN Artifact: Critical Path
+slug:: critical-path
 type:: intermediate
 description:: Longest dependency chain through the task graph.
 
 ## NN Artifact: Status Report
+slug:: status-report
 type:: output
 description:: Progress and slippage summary for stakeholders.
 
 # NN Tools
 
 ## NN Tools: Console
+slug:: console
 type:: manual
 description:: The cogNNitive console used to author and inspect the model.
 
 ## NN Tools: AI Agent
+slug:: ai-agent
 type:: automated
 description:: Cognitive agent computing the critical path and drafting the report.
 
 # NN Roles
 
 ## NN Roles: Project Manager
+slug:: project-manager
 type:: author
 description:: Owns the project plan and keeps the status report current.
