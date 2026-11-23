@@ -19110,7 +19110,7 @@ function scaffoldBodyFromSchema(schema, root) {
       lines.push(`_Describe ${c.name} here._`, "");
       continue;
     }
-    if (c.writePolicy && c.writePolicy.policy !== "mutable") {
+    if (root || c.writePolicy && c.writePolicy.policy !== "mutable") {
       lines.push("");
       continue;
     }
