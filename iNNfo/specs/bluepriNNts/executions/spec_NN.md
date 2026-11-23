@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-9-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-9-0_NN.md"
-blueprint_version: "V_0-4-1"
+blueprint_version: "V_0-5-0"
 title: "Executions App"
 description: "Level-2 blueprint recording runs of procedures as models with state: one instance model per run, holding its header, one row per step and one row per artifact; the history of the run is the change log of that model."
 relationship_types:
@@ -248,7 +248,11 @@ A person driving a run from the console cannot write the run: only the runner do
 
 ### Concurrency
 
-Every runner changeset holds the header's `seq: n -> n+1` with `from: {seq: n}`, so any concurrent write to the same run conflicts the whole changeset. A step claim and completion also guard the step's `status` and `attempt`, so a late completion from an older attempt conflicts (the fence). `action=run` writes its claim before the command executes, with the pid of the child that runs it as the holder, so a second caller finds the step claimed instead of running the same command twice. A process that dies between claim and completion leaves `active`; the step is derived as crashed from its `holder`, and the next caller records `active -> failed` and may retry. A command parameter carrying shell syntax is refused (`UNSAFE_COMMAND`) before anything runs.
+Every runner changeset holds the header's `seq: n -> n+1` with `from: {seq: n}`, so any concurrent write to the same run conflicts the whole changeset. A step claim and completion also guard the step's `status` and `attempt`, so a late completion from an older attempt conflicts (the fence). `action=run` writes its claim before the command executes, with the pid of the child that runs it as the holder, so a second caller finds the step claimed instead of running the same command twice. A process that dies between claim and completion leaves `active`; the step is derived as crashed from its `holder`, and the next caller records `active -> failed` and may retry. A command parameter carrying shell syntax is refused (`UNSAFE_COMMAND`) before anything runs. A conflict whose guarded change is this run's header `seq` is reported as `RUN_BUSY`, the signal to re-read and retry.
+
+### Accepting a grown definition
+
+`action=rebase` is the one call that accepts a definition revision the run was not pinned to. A definition that grew while the run was open names steps and artifacts the run has no row for, so the rebase writes their `Step Run` and `Run Artifact` rows in the same changeset as the new `def_rev`: without one, every later action on them addresses nothing. A row the run already has is never touched.
 
 ### Artifacts
 
@@ -273,7 +277,7 @@ level: 3
 parent_spec:
   name: executions
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/executions/spec_NN.md"
-blueprint_version: "V_0-4-1"
+blueprint_version: "V_0-5-0"
 status: active
 ---
 

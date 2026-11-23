@@ -12764,10 +12764,17 @@ function foldRun(graph, run, opts) {
     paused,
     blockedBy,
     canComplete: terminal === void 0 && current === null && path2.length > 0 && !blockedBy,
-    inputs: {},
-    staleInputs: [],
+    inputs: run.inputs,
+    staleInputs: staleInputs(run.inputs, opts.currentRevs),
     attempts: run.attempts
   };
+}
+function staleInputs(inputs, current) {
+  if (!current) return [];
+  return Object.keys(inputs).filter((name) => {
+    const recorded = inputs[name]?.rev;
+    return recorded !== void 0 && current[name] !== void 0 && current[name] !== recorded;
+  });
 }
 function rowStatusOf(row) {
   if (!row) return "pending";
@@ -12900,7 +12907,8 @@ function artifactRowOf(fields) {
     kind: kind === "element" || kind === "changeset" ? kind : "file",
     status: artifactStatusOf(fields["status"]),
     ...str3(fields["value"]) !== void 0 ? { value: str3(fields["value"]) } : {},
-    ...str3(fields["rev"]) !== void 0 ? { rev: str3(fields["rev"]) } : {}
+    ...str3(fields["rev"]) !== void 0 ? { rev: str3(fields["rev"]) } : {},
+    ...str3(fields["step"]) !== void 0 ? { step: str3(fields["step"]) } : {}
   };
 }
 function runModelOf(model) {
@@ -12917,6 +12925,7 @@ function runModelOf(model) {
   const inputs = {};
   for (const el of model.elements.get("Input") ?? []) {
     if (!el.slug) continue;
+    if (isTemplatePlaceholder(el.fields["rev"])) continue;
     inputs[el.slug] = {
       ...str3(el.fields["value"]) !== void 0 ? { value: str3(el.fields["value"]) } : {},
       ...str3(el.fields["rev"]) !== void 0 ? { rev: str3(el.fields["rev"]) } : {}
