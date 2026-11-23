@@ -50,6 +50,7 @@ slug:: verify-and-deduplicate-tabular-sources
 parent:: @import-and-structure-tabular-data
 step_type:: decision
 next:: @parse-and-synthesize-tabular-schema
+decision:: whether the queue holds any tabular file whose SHA-256 does not match an already processed file
 condition:: Tabular list generated
 input:: @unprocessed-tabular-list
 output:: @verified-tabular-ingestion-queue
@@ -78,6 +79,7 @@ slug:: map-table-rows-to-domain-model-elements
 parent:: @import-and-structure-tabular-data
 step_type:: decision
 next:: @normalize-tabular-source-to-markdown
+decision:: which concept field each table column maps to and which model element each row becomes; the workspace maintainer confirms the mapping
 condition:: Schema parsed
 input:: @tabular-schema-and-data-summary
 output:: @model-entity-mapping-plan

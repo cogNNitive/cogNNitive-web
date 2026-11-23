@@ -50,6 +50,7 @@ slug:: verify-and-deduplicate-video-sources
 parent:: @import-and-process-multimodal-video
 step_type:: decision
 next:: @extract-audio-and-key-visual-slides
+decision:: whether the queue holds any video that is not already registered by SHA-256 in sources/nn/
 condition:: Video list generated
 input:: @unprocessed-video-list
 output:: @verified-video-ingestion-queue

@@ -88,6 +88,7 @@ slug:: resolve-and-deduplicate
 parent:: @ingest-visual-catalog-workflow
 step_type:: decision
 next:: @upsert-idempotently
+decision:: which Entry each candidate resolves to once names are canonicalized, and which duplicates collapse by image path or normalized-source sha256
 condition:: Candidate entities are extracted
 input:: @candidate-entities
 output:: @resolved-entities

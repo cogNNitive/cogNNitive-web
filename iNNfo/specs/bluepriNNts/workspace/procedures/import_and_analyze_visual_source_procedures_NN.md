@@ -50,6 +50,7 @@ slug:: verify-and-deduplicate-visual-sources
 parent:: @import-and-analyze-visual-sources
 step_type:: decision
 next:: @extract-visual-semantics-via-vision-llm
+decision:: whether the queue holds any file that is not already registered by SHA-256 in a sidecar under sources/import/ or in assets/
 condition:: Visual list generated
 input:: @unprocessed-visual-list
 output:: @verified-visual-ingestion-queue
@@ -244,7 +245,7 @@ Human maintainer reviewing extracted descriptions and approving domain model cha
 | Verify and Deduplicate Visual Sources | - | Uses | - | - | - | - |
 | Extract Visual Semantics via Vision LLM | - | - | Uses | - | - | - |
 | Stage Visual Markdown Description | - | - | - | - | Uses | - |
-| Normalize Visual Source with Media Link | - | - | - | Uses | - | - |
+| Cognitivize Visual Source with Sidecar Provenance | - | - | - | Uses | - | - |
 | Bind Visual Source to Target Entity | - | - | - | - | Uses | - |
 | Validate Target Model | - | - | - | - | - | Uses |
 
@@ -257,6 +258,6 @@ Human maintainer reviewing extracted descriptions and approving domain model cha
 | Verify and Deduplicate Visual Sources | - | Reviews | Creates | - | - | - | - | - |
 | Extract Visual Semantics via Vision LLM | - | - | Reviews | Creates | - | - | - | - |
 | Stage Visual Markdown Description | - | - | - | Reviews | Creates | - | - | - |
-| Normalize Visual Source with Media Link | - | - | - | - | Reviews | Creates | - | - |
+| Cognitivize Visual Source with Sidecar Provenance | - | - | - | - | Reviews | Creates | - | - |
 | Bind Visual Source to Target Entity | - | - | - | - | - | Reviews | Modifies | - |
 | Validate Target Model | - | - | - | - | - | - | Validates | Creates |
