@@ -21266,7 +21266,567 @@ if (typeof window !== 'undefined') {
       return m ? m[1] : ''
     }
 
-    function renderGraph(hostEl) {
+    /**
+     * Picks a step for the card. The active step is followed (no pin), so the card moves on
+     * when the Runner does; any other step is a manual inspection that stays put.
+     */
+    function selectStep(slug) {
+      var state = viewState()
+      selectedStep =
+        state && !TERMINAL_RUN[state.status] && state.currentStep === slug ? null : slug
+      render()
+    }
+
+    /** What the edge `slug -> t` looks like, shared by the chart and the native fallback. */
+    function edgeFacts(state, current, slug, t) {
+      var graph = active.graph
+      var tStatus = stepStatus(t)
+      var stepState = state && state.steps && state.steps[slug]
+      var isTaken =
+        (stepState && stepState.next === t) ||
+        (isProjected(slug) &&
+          stepStatus(slug) === 'done' &&
+          ((stepState && stepState.next === t) || t === current))
+      var token = ''
+      if (graph.steps[slug].next.length > 1) {
+        // The token alone: every branch target has its own column, so two never share a spot.
+        token = outcomeTokenOf(t) || graph.steps[t].condition || ''
+      }
+      return {
+        status: tStatus,
+        taken: !!isTaken,
+        off: tStatus === 'off_path',
+        projected: isProjected(t) || (isProjected(slug) && !!isTaken),
+        token: token,
+      }
+    }
+
+    /** The sentence a screen reader gets for the whole graph (the chart itself is hidden). */
+    function graphSummary(state, current) {
+      var graph = active.graph
+      var slugs = Object.keys(graph.steps)
+      var branches = slugs.filter(function (s) {
+        return graph.steps[s].next.length > 1
+      }).length
+      var text =
+        'Procedure flow graph: ' +
+        slugs.length +
+        ' steps' +
+        (branches ? ', ' + branches + (branches === 1 ? ' branch point' : ' branch points') : '') +
+        '.'
+      if (state && current && graph.steps[current]) {
+        text += ' Current step: ' + stepName(current) + ' (' + stepStatus(current) + ').'
+      } else if (!activeRun) {
+        text += ' The definition, no run selected.'
+      }
+      return (
+        text +
+        ' Use the arrow keys to move between connected steps and Enter or Space to open the' +
+        ' focused step. The same steps are listed below as a list.'
+      )
+    }
+
+    /** One step said in words: the live-region text for the focused node. */
+    function announceStep(slug) {
+      var step = active.graph.steps[slug]
+      var status = stepStatus(slug)
+      var out = step.next.filter(function (t) {
+        return !!active.graph.steps[t]
+      })
+      return (
+        stepName(slug) +
+        ', ' +
+        (step.stepType || 'task') +
+        ' step' +
+        (step.executor ? ', ' + step.executor : '') +
+        (status !== 'definition' ? ', ' + status : '') +
+        (out.length ? '. Leads to ' + out.map(stepName).join(', ') : '. Last step') +
+        '.'
+      )
+    }
+
+    // ---- Flow graph: the shared ECharts API, with the native svg as the fallback ----
+    var graphView = null
+    var graphFocusSlug = null
+    var refocusGraph = false
+
+    function disposeGraph() {
+      var g = graphView
+      graphView = null
+      if (!g) return
+      g.disposed = true
+      if (g.observer) g.observer.disconnect()
+      if (g.host && g.host.__nnChartObserver) {
+        g.host.__nnChartObserver.disconnect()
+        g.host.__nnChartObserver = null
+      }
+      try {
+        if (g.chart && typeof g.chart.dispose === 'function') g.chart.dispose()
+      } catch (e) {
+        /* already gone with its DOM */
+      }
+    }
+
+    function parseColor(text) {
+      var s = String(text || '').trim()
+      var hex = /^#([0-9a-f]{6})$/i.exec(s)
+      if (hex) {
+        return [
+          parseInt(hex[1].slice(0, 2), 16),
+          parseInt(hex[1].slice(2, 4), 16),
+          parseInt(hex[1].slice(4, 6), 16),
+        ]
+      }
+      var rgb = /^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/i.exec(s)
+      return rgb ? [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])] : null
+    }
+
+    /** `a` over `b` at `t`: ECharts cannot read `color-mix()`, so tints are blended here. */
+    function blend(a, b, t) {
+      var ca = parseColor(a)
+      var cb = parseColor(b)
+      if (!ca || !cb) return b
+      var mix = [0, 1, 2].map(function (i) {
+        return Math.round(ca[i] * t + cb[i] * (1 - t))
+      })
+      return 'rgb(' + mix.join(',') + ')'
+    }
+
+    /** The console's own theme colours, resolved to something ECharts can draw. */
+    function chartPalette(parent) {
+      function resolve(token, fallback) {
+        try {
+          var probe = make('span')
+          probe.style.color = 'var(' + token + ')'
+          parent.appendChild(probe)
+          var c = host.getComputedStyle(probe).color
+          parent.removeChild(probe)
+          return parseColor(c) ? c : fallback
+        } catch (e) {
+          return fallback
+        }
+      }
+      return {
+        surface: resolve('--surface', '#ffffff'),
+        text: resolve('--text', '#111827'),
+        muted: resolve('--muted', '#6b7280'),
+        border: resolve('--border-strong', '#9ca3af'),
+        primary: resolve('--primary', '#2563eb'),
+        success: resolve('--success', '#16a34a'),
+        warning: resolve('--warning', '#d97706'),
+        danger: resolve('--danger', '#dc2626'),
+      }
+    }
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+      })
+    }
+
+    /** Nodes get as wide as the host allows, up to the native 200, down to a readable 84. */
+    function flowGeometry(lay, widthPx) {
+      var widest = lay.rows.reduce(function (n, r) {
+        return Math.max(n, r.length)
+      }, 1)
+      var nodeW = Math.max(84, Math.min(200, Math.floor(widthPx / widest) - 10))
+      var compact = nodeW < 140
+      var nodeH = compact ? 50 : 52
+      var rowH = nodeH + 40
+      var pos = {}
+      lay.rows.forEach(function (row, r) {
+        row.forEach(function (slug, i) {
+          pos[slug] = { x: 0.5 + (i - (row.length - 1) / 2) / widest, y: r }
+        })
+      })
+      return {
+        nodeW: nodeW,
+        nodeH: nodeH,
+        compact: compact,
+        pos: pos,
+        rows: lay.rows.length,
+        rowH: rowH,
+        height: lay.rows.length * rowH,
+      }
+    }
+
+    function flowOption(lay, current, geo, pal, focusSlug, pulse) {
+      var graph = active.graph
+      var state = viewState()
+      var w = geo.nodeW
+      var h = geo.nodeH
+      var tint = function (c) {
+        return blend(c, pal.surface, 0.14)
+      }
+      var data = Object.keys(graph.steps).map(function (slug) {
+        var step = graph.steps[slug]
+        var status = stepStatus(slug)
+        var isCurrent = slug === current
+        var isSelected = slug === selectedStep
+        var projected = isProjected(slug)
+        var border = step.stepType === 'decision' ? pal.warning : pal.border
+        var fill = pal.surface
+        var width = 1.5
+        var type = 'solid'
+        var opacity = 1
+        if (status === 'done') {
+          border = pal.success
+          fill = tint(pal.success)
+        } else if (status === 'failed') {
+          border = pal.danger
+          width = 2
+          fill = tint(pal.danger)
+        } else if (status === 'waiting') {
+          border = pal.warning
+          width = 2
+          fill = tint(pal.warning)
+        } else if (status === 'active') {
+          border = pal.primary
+          fill = tint(pal.primary)
+        } else if (status === 'pending') {
+          type = 'dashed'
+        } else if (status === 'off_path') {
+          type = 'dashed'
+          opacity = 0.55
+        }
+        if (isCurrent) {
+          border = pal.primary
+          width = 3.5
+          type = 'solid'
+        }
+        if (projected) type = 'dotted'
+        var sub = [
+          status !== 'definition' ? status : null,
+          step.stepType || 'task',
+          step.executor || null,
+          projected ? 'projected' : null,
+          isSelected ? 'open' : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')
+        // Rich text reads braces as markup: a step name must not carry any.
+        var clean = function (s) {
+          return String(s).replace(/[{}]/g, ' ')
+        }
+        var inner = w - 16
+        // Rich-text truncation does not hold in every renderer: cut by what fits instead.
+        var subSize = geo.compact ? 9 : 10
+        var titleSize = geo.compact ? 11 : 13
+        var cut = function (text, size) {
+          var fit = Math.max(6, Math.floor(inner / (size * 0.54)))
+          return text.length > fit ? text.slice(0, fit - 1) + '…' : text
+        }
+        return {
+          id: slug,
+          name: step.name || slug,
+          value: [geo.pos[slug].x, geo.pos[slug].y],
+          symbol: 'roundRect',
+          symbolSize: [w, h],
+          status: status,
+          current: isCurrent,
+          selected: isSelected,
+          focused: slug === focusSlug,
+          tooltipText:
+            escapeHtml(step.name || slug) +
+            '<br/>' +
+            escapeHtml(sub) +
+            (step.decision ? '<br/>' + escapeHtml(fillSlots(step.decision, values())) : ''),
+          label: {
+            show: true,
+            position: 'inside',
+            formatter:
+              '{sub|' +
+              cut(clean(sub.toUpperCase()), subSize) +
+              '}\n{title|' +
+              cut(clean(step.name || slug), titleSize) +
+              '}',
+            rich: {
+              sub: {
+                width: inner,
+                align: 'left',
+                overflow: 'truncate',
+                ellipsis: '…',
+                fontSize: subSize,
+                lineHeight: 15,
+                color: isCurrent ? pal.primary : pal.muted,
+                fontWeight: 600,
+              },
+              title: {
+                width: inner,
+                align: 'left',
+                overflow: 'truncate',
+                ellipsis: '…',
+                fontSize: titleSize,
+                lineHeight: 18,
+                color: isCurrent ? pal.primary : pal.text,
+                fontWeight: isCurrent ? 700 : 600,
+              },
+            },
+          },
+          itemStyle: {
+            color: fill,
+            borderColor: border,
+            borderWidth: width,
+            borderType: type,
+            opacity: opacity,
+            shadowBlur: isSelected ? 8 : 0,
+            shadowColor: pal.primary,
+          },
+        }
+      })
+      var links = []
+      var strokes = []
+      var half = h / 2 / geo.rowH
+      Object.keys(graph.steps).forEach(function (slug) {
+        graph.steps[slug].next.forEach(function (t) {
+          if (!geo.pos[t]) return
+          var f = edgeFacts(state, current, slug, t)
+          var color = pal.border
+          if (f.status === 'done') color = pal.success
+          else if (f.status === 'failed') color = pal.danger
+          else if (f.status === 'waiting') color = pal.warning
+          else if (f.status === 'active') color = pal.primary
+          if (f.taken) color = f.projected ? pal.warning : pal.success
+          var dashed = f.off || f.projected || f.status === 'waiting' || f.status === 'pending'
+          var stroke = {
+            color: color,
+            width: f.taken ? 3 : 1.5,
+            type: dashed ? 'dashed' : 'solid',
+            opacity: f.off ? 0.5 : 1,
+          }
+          // The visible line runs from the foot of one box to the head of the next.
+          // ECharts trims a graph edge by the node's average half-size, which swallows it
+          // when the boxes are wider than the rows are apart; so the graph's own links
+          // carry the data and the labels, and an overlay series draws the strokes.
+          strokes.push({
+            coords: [
+              [geo.pos[slug].x, geo.pos[slug].y + half],
+              [geo.pos[t].x, geo.pos[t].y - half],
+            ],
+            lineStyle: stroke,
+          })
+          links.push({
+            source: slug,
+            target: t,
+            lineStyle: { opacity: 0, curveness: 0 },
+            label: f.token
+              ? {
+                  show: true,
+                  formatter: f.token.length > 24 ? f.token.substring(0, 22) + '…' : f.token,
+                  color: f.taken ? pal.success : pal.muted,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  backgroundColor: pal.surface,
+                  padding: [1, 4],
+                  position: 'middle',
+                }
+              : { show: false },
+          })
+        })
+      })
+      var at = function (slug) {
+        return [geo.pos[slug].x, geo.pos[slug].y]
+      }
+      var series = [
+        {
+          type: 'lines',
+          coordinateSystem: 'cartesian2d',
+          silent: true,
+          z: 2,
+          symbol: ['none', 'arrow'],
+          symbolSize: 8,
+          data: strokes,
+        },
+        {
+          type: 'graph',
+          coordinateSystem: 'cartesian2d',
+          layout: 'none',
+          roam: false,
+          z: 3,
+          cursor: 'pointer',
+          data: data,
+          links: links,
+          emphasis: { focus: 'none', scale: false },
+        },
+      ]
+      if (pulse && current && geo.pos[current]) {
+        series.push({
+          type: 'effectScatter',
+          coordinateSystem: 'cartesian2d',
+          silent: true,
+          z: 1,
+          symbol: 'roundRect',
+          symbolSize: [w, h],
+          showEffectOn: 'render',
+          rippleEffect: { period: 3, scale: 1.2, brushType: 'stroke', color: pal.primary },
+          itemStyle: { color: 'rgba(0,0,0,0)', borderColor: pal.primary, borderWidth: 0 },
+          data: [{ id: current, value: at(current) }],
+        })
+      }
+      if (focusSlug && geo.pos[focusSlug]) {
+        series.push({
+          type: 'scatter',
+          coordinateSystem: 'cartesian2d',
+          silent: true,
+          z: 4,
+          symbol: 'roundRect',
+          symbolSize: [w + 12, h + 12],
+          itemStyle: { color: 'rgba(0,0,0,0)', borderColor: pal.text, borderWidth: 3 },
+          data: [{ id: focusSlug, value: at(focusSlug) }],
+        })
+      }
+      return {
+        animation: false,
+        backgroundColor: pal.surface,
+        grid: { left: 0, right: 0, top: 0, bottom: 0 },
+        xAxis: { type: 'value', min: 0, max: 1, show: false },
+        yAxis: { type: 'value', min: -0.5, max: geo.rows - 0.5, inverse: true, show: false },
+        tooltip: {
+          trigger: 'item',
+          confine: true,
+          formatter: function (p) {
+            return p && p.data && p.data.tooltipText ? p.data.tooltipText : ''
+          },
+        },
+        series: series,
+      }
+    }
+
+    /**
+     * Draws the flow through the console's shared chart API (`renderChart`). Returns false
+     * when there is none (no ECharts in this page), so the caller draws the native svg.
+     */
+    function drawChartGraph(view, lay, current) {
+      var rt = runtime
+      if (!rt || typeof rt.renderChart !== 'function') return false
+      var graph = active.graph
+      var wrap = make('div', 'dag-graph')
+      wrap.setAttribute('data-proc-graph', '')
+      wrap.setAttribute('tabindex', '0')
+      wrap.setAttribute('role', 'group')
+      wrap.setAttribute('aria-label', graphSummary(viewState(), current))
+      var chartHost = make('div', 'dag-chart')
+      chartHost.setAttribute('aria-hidden', 'true')
+      var live = make('div', 'dag-live')
+      live.setAttribute('aria-live', 'polite')
+      live.setAttribute('aria-atomic', 'true')
+      wrap.appendChild(chartHost)
+      wrap.appendChild(live)
+      view.appendChild(wrap)
+
+      var reduced = !!(
+        host.matchMedia && host.matchMedia('(prefers-reduced-motion: reduce)').matches
+      )
+      wrap.setAttribute('data-pulse', reduced || !current ? 'off' : 'on')
+      var pal = chartPalette(view)
+      var widthOf = function () {
+        return chartHost.clientWidth || view.clientWidth || 320
+      }
+      var geo = flowGeometry(lay, widthOf())
+      var hasFocus = false
+      var firstStep = function () {
+        return selectedStep || current || graph.start || Object.keys(graph.steps)[0]
+      }
+      var focusSlug = function () {
+        return graph.steps[graphFocusSlug] ? graphFocusSlug : firstStep()
+      }
+      var option = function () {
+        return flowOption(lay, current, geo, pal, hasFocus ? focusSlug() : null, !reduced)
+      }
+      chartHost.style.height = geo.height + 'px'
+      var chart = rt.renderChart(chartHost, option())
+      if (!chart) {
+        view.removeChild(wrap)
+        return false
+      }
+      var g = { chart: chart, host: chartHost, observer: null, disposed: false }
+      graphView = g
+      var redraw = function () {
+        if (g.disposed || (chart.isDisposed && chart.isDisposed())) return
+        chart.setOption(option(), true)
+      }
+      if (typeof chart.on === 'function') {
+        chart.on('click', function (params) {
+          if (params && params.dataType === 'node' && params.data && params.data.id) {
+            graphFocusSlug = params.data.id
+            selectStep(params.data.id)
+          }
+        })
+      }
+
+      var moveTo = function (slug) {
+        if (!slug || !graph.steps[slug]) return
+        graphFocusSlug = slug
+        hasFocus = true
+        redraw()
+        live.textContent = announceStep(slug)
+      }
+      wrap.addEventListener('focus', function () {
+        hasFocus = true
+        redraw()
+        live.textContent = announceStep(focusSlug())
+      })
+      wrap.addEventListener('blur', function () {
+        hasFocus = false
+        redraw()
+      })
+      wrap.addEventListener('keydown', function (ev) {
+        var k = ev.key
+        var slug = focusSlug()
+        var target = null
+        if (k === 'ArrowDown') {
+          target = graph.steps[slug].next.filter(function (t) {
+            return !!graph.steps[t]
+          })[0]
+        } else if (k === 'ArrowUp') {
+          target = Object.keys(graph.steps).filter(function (s) {
+            return graph.steps[s].next.indexOf(slug) !== -1
+          })[0]
+        } else if (k === 'ArrowRight' || k === 'ArrowLeft') {
+          var row =
+            lay.rows.filter(function (r) {
+              return r.indexOf(slug) !== -1
+            })[0] || []
+          target = row[row.indexOf(slug) + (k === 'ArrowRight' ? 1 : -1)]
+        } else if (k === 'Enter' || k === ' ' || k === 'Spacebar') {
+          if (ev.preventDefault) ev.preventDefault()
+          graphFocusSlug = slug
+          refocusGraph = true
+          selectStep(slug)
+          return
+        } else {
+          return
+        }
+        if (ev.preventDefault) ev.preventDefault()
+        moveTo(target)
+      })
+
+      // The host is not as wide as it will be when this runs (a hidden tab, a layout still
+      // settling): lay the nodes out again for the width it ends up with.
+      var RO =
+        host.ResizeObserver || (typeof ResizeObserver !== 'undefined' ? ResizeObserver : null)
+      if (RO) {
+        var lastWidth = Math.round(widthOf())
+        g.observer = new RO(function () {
+          var now = Math.round(widthOf())
+          if (g.disposed || !now || now === lastWidth) return
+          lastWidth = now
+          geo = flowGeometry(lay, now)
+          chartHost.style.height = geo.height + 'px'
+          redraw()
+          if (chart.resize) chart.resize({ width: 'auto', height: 'auto' })
+        })
+        g.observer.observe(chartHost)
+      }
+      if (refocusGraph) {
+        refocusGraph = false
+        if (wrap.focus) wrap.focus()
+      }
+      return true
+    }
+
+    /** The hand-drawn svg: what draws the flow when the page has no ECharts. */
+    function buildNativeGraph(lay, current) {
       var graph = active.graph
       var state = viewState()
       var svgNS = 'http://www.w3.org/2000/svg'
@@ -21274,13 +21834,14 @@ if (typeof window !== 'undefined') {
       var nodeH = 52
       var gapX = 24
       var gapY = 84
-      var lay = layersOf(graph)
       var widest = lay.rows.reduce(function (n, r) {
         return Math.max(n, r.length)
       }, 1)
       var width = widest * (nodeW + gapX) + gapX
       var svg = document.createElementNS(svgNS, 'svg')
       svg.setAttribute('class', 'dag-canvas')
+      svg.setAttribute('role', 'group')
+      svg.setAttribute('aria-label', graphSummary(state, current))
       svg.setAttribute('viewBox', '0 0 ' + width + ' ' + (lay.rows.length * gapY + 20))
       var pos = {}
       lay.rows.forEach(function (row, r) {
@@ -21289,7 +21850,6 @@ if (typeof window !== 'undefined') {
           pos[slug] = { x: offset + i * (nodeW + gapX), y: 16 + r * gapY, layer: r }
         })
       })
-      var current = state ? state.currentStep : null
       Object.keys(graph.steps).forEach(function (slug) {
         graph.steps[slug].next.forEach(function (t) {
           if (!pos[t]) return
@@ -21298,42 +21858,29 @@ if (typeof window !== 'undefined') {
           var y1 = pos[slug].y + nodeH
           var x2 = pos[t].x + nodeW / 2
           var y2 = pos[t].y
-          var tStatus = stepStatus(t)
-          var stepState = state && state.steps && state.steps[slug]
-          var isTaken =
-            (stepState && stepState.next === t) ||
-            (isProjected(slug) &&
-              stepStatus(slug) === 'done' &&
-              ((stepState && stepState.next === t) || t === current))
-          var isOff = tStatus === 'off_path'
-          var isProj = isProjected(t) || (isProjected(slug) && isTaken)
+          var f = edgeFacts(state, current, slug, t)
 
-          var edgeClasses = ['dag-edge', tStatus]
-          if (isTaken) edgeClasses.push('taken')
-          if (isOff) edgeClasses.push('off_path')
-          if (isProj) edgeClasses.push('projected')
+          var edgeClasses = ['dag-edge', f.status]
+          if (f.taken) edgeClasses.push('taken')
+          if (f.off) edgeClasses.push('off_path')
+          if (f.projected) edgeClasses.push('projected')
           edge.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
           edge.setAttribute('class', edgeClasses.join(' '))
           edge.setAttribute('data-from', slug)
           edge.setAttribute('data-to', t)
           svg.appendChild(edge)
-          if (graph.steps[slug].next.length > 1) {
-            // The token alone, just above the step it enters: every branch target has its
-            // own column, so two labels never share a spot.
-            var token = outcomeTokenOf(t) || graph.steps[t].condition
-            if (token) {
-              var label = document.createElementNS(svgNS, 'text')
-              var labelClasses = ['dag-edge-label', tStatus]
-              if (isTaken) labelClasses.push('taken')
-              if (isOff) labelClasses.push('off_path')
-              if (isProj) labelClasses.push('projected')
-              label.setAttribute('class', labelClasses.join(' '))
-              label.setAttribute('x', x2)
-              label.setAttribute('y', y2 - 6)
-              label.setAttribute('text-anchor', 'middle')
-              label.textContent = token.length > 24 ? token.substring(0, 22) + '…' : token
-              svg.appendChild(label)
-            }
+          if (f.token) {
+            var label = document.createElementNS(svgNS, 'text')
+            var labelClasses = ['dag-edge-label', f.status]
+            if (f.taken) labelClasses.push('taken')
+            if (f.off) labelClasses.push('off_path')
+            if (f.projected) labelClasses.push('projected')
+            label.setAttribute('class', labelClasses.join(' '))
+            label.setAttribute('x', x2)
+            label.setAttribute('y', y2 - 6)
+            label.setAttribute('text-anchor', 'middle')
+            label.textContent = f.token.length > 24 ? f.token.substring(0, 22) + '…' : f.token
+            svg.appendChild(label)
           }
         })
       })
@@ -21354,9 +21901,17 @@ if (typeof window !== 'undefined') {
         g.setAttribute('data-step', slug)
         g.setAttribute('data-status', status)
         g.setAttribute('data-layer', String(p.layer))
+        g.setAttribute('tabindex', '0')
+        g.setAttribute('role', 'button')
+        g.setAttribute('aria-label', announceStep(slug))
         g.addEventListener('click', function () {
-          selectedStep = slug
-          render()
+          selectStep(slug)
+        })
+        g.addEventListener('keydown', function (ev) {
+          if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
+            if (ev.preventDefault) ev.preventDefault()
+            selectStep(slug)
+          }
         })
         var rect = document.createElementNS(svgNS, 'rect')
         rect.setAttribute('x', p.x)
@@ -21389,6 +21944,15 @@ if (typeof window !== 'undefined') {
         g.appendChild(title)
         svg.appendChild(g)
       })
+      return svg
+    }
+
+    function renderGraph(hostEl) {
+      disposeGraph()
+      var graph = active.graph
+      var state = viewState()
+      var lay = layersOf(graph)
+      var current = state ? state.currentStep : null
       var col = make('div', 'exec-dag-col flowcard card')
       var head = make('div', 'col-head exec-col-header')
       head.innerHTML = '<span>' + vIcon('workflow', 14) + ' Flow</span>'
@@ -21397,7 +21961,6 @@ if (typeof window !== 'undefined') {
       )
       col.appendChild(head)
       var view = make('div', 'exec-dag-view graphbox')
-      view.appendChild(svg)
       col.appendChild(view)
       col.appendChild(stepList(lay, current))
       var hint = make(
@@ -21408,10 +21971,17 @@ if (typeof window !== 'undefined') {
           : 'El nodo seleccionado es el que se abre abajo. Se mantiene visible en todos los tabs.',
       )
       col.appendChild(hint)
+      // Attached before the chart is drawn, so the chart measures the width it really has.
       hostEl.appendChild(col)
+      if (!drawChartGraph(view, lay, current)) {
+        view.className += ' exec-dag-view-native'
+        view.appendChild(buildNativeGraph(lay, current))
+      }
     }
 
-    /** The same walk as a vertical list: what a phone shows instead of the graph. */
+    /** The same walk as a vertical list: the graph's text alternative, with each status in words. */
+    var stepListOpen = null
+
     function stepList(lay, current) {
       var ol = make('ol', 'proc-step-list')
       ol.setAttribute('data-proc-step-list', '')
@@ -21428,8 +21998,7 @@ if (typeof window !== 'undefined') {
           )
           li.setAttribute('data-step', slug)
           var b = button('proc-step-item-btn', null, function () {
-            selectedStep = slug
-            render()
+            selectStep(slug)
           })
           b.appendChild(make('span', 'proc-step-item-name', step.name || slug))
           var token = outcomeTokenOf(slug)
@@ -21445,7 +22014,19 @@ if (typeof window !== 'undefined') {
           ol.appendChild(li)
         })
       })
-      return ol
+      // A disclosure: in the tab order at every width, open by default only on a phone.
+      var box = make('details', 'proc-step-list-box')
+      var open =
+        stepListOpen === null
+          ? !!(host.matchMedia && host.matchMedia('(max-width: 640px)').matches)
+          : stepListOpen
+      if (open) box.setAttribute('open', '')
+      box.appendChild(make('summary', 'proc-step-list-summary', 'Steps as a list'))
+      box.addEventListener('toggle', function () {
+        stepListOpen = box.open
+      })
+      box.appendChild(ol)
+      return box
     }
 
     // ---- Step card ----
@@ -23298,6 +23879,11 @@ if (typeof window !== 'undefined') {
 
     // ---- Render ----
     function render() {
+      // A rebuilt graph must hand the keyboard back to whoever was on it.
+      var focusedNow = document.activeElement
+      if (focusedNow && focusedNow.hasAttribute && focusedNow.hasAttribute('data-proc-graph'))
+        refocusGraph = true
+      disposeGraph()
       renderResponseBar()
       renderInbox()
       renderTabs()
@@ -23337,8 +23923,8 @@ if (typeof window !== 'undefined') {
 
       // Column 3: Persistent Rail (Flow DAG + Step Detail + Run Panel)
       var rail = make('aside', 'proc-rail rail')
-      renderBdeRail(rail)
       ws.appendChild(rail)
+      renderBdeRail(rail)
     }
 
     // The inbox is the front door: open on the first run that waits on this person.
@@ -23366,6 +23952,7 @@ if (typeof window !== 'undefined') {
       matrices: matrices.length,
       unmount: function () {
         if (typeof unsubscribe === 'function') unsubscribe()
+        disposeGraph()
         container.innerHTML = ''
       },
     }

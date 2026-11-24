@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Artifact Dual-Emission, Review & Feedback Reconciliation Procedure"
 ---
 
@@ -105,23 +105,24 @@ Classifies harvested changes into 4 orthogonal buckets: (1) Scope & Deliverable 
 slug:: step-4-user-intent-decision-gate
 parent:: @artifact-feedback-reconciliation-workflow
 step_type:: decision
-next:: @step-5-upstream-model-and-template-mutation
+next:: [@step-5-upstream-model-and-template-mutation, @record-editorial-cut]
 condition:: Layer 3 domain discrepancies without explicit [DECISION] tag identified
 input:: @four-layer-triage-report
 output:: @user-reconciliation-decisions
 output_status:: verified
 tool:: @engram-persistent-memory
 executor:: human
-decision:: Is this an editorial cut for this document only, or has the domain reality changed?\nscope:: external
+decision:: Is this an editorial cut for this document only, or has the domain reality changed?
+scope:: external
 tags:: [decision-gate, human-in-the-loop, intent-verification]
-If reviewer comments contain explicit tags (`[DECISION]`, `[SCOPE]`), intent is resolved automatically. If untagged direct deletions exist, prompts user with a single focused question: *"Is this an editorial cut for this document only, or has the domain reality changed?"*.
+If reviewer comments contain explicit tags (`[DECISION]`, `[SCOPE]`), intent is resolved automatically. If untagged direct deletions exist, prompts user with a single focused question: *"Is this an editorial cut for this document only, or has the domain reality changed?"*. Record the answer as the outcome `editorial-cut` or `domain-changed`; the decision is recorded as validated before the run moves on, because it is the only authority for changing the upstream models.
 
 ## NN Work: Step 5 - Upstream Model and Template Mutation
 slug:: step-5-upstream-model-and-template-mutation
 parent:: @artifact-feedback-reconciliation-workflow
 step_type:: task
 next:: @step-6-artifact-sanitization-and-lineage-registration
-condition:: Decisions confirmed
+condition:: outcome == domain-changed
 input:: @user-reconciliation-decisions
 output:: @updated-domain-model
 output_status:: verified
@@ -131,11 +132,23 @@ scope:: internal
 tags:: [mcp, mutation, refactoring, validation]
 Executes deterministic mutations on Level 3 domain models via `innfo-mcp_apply_change` or file tools, re-validates schemas with `innfo-mcp_validate_model`, and updates generator templates if deliverable scope changed.
 
+## NN Work: Record Editorial Cut
+slug:: record-editorial-cut
+parent:: @artifact-feedback-reconciliation-workflow
+step_type:: task
+next:: @step-6-artifact-sanitization-and-lineage-registration
+condition:: outcome == editorial-cut
+input:: @user-reconciliation-decisions
+executor:: agent
+scope:: internal
+tags:: [editorial-cut, no-mutation, lineage]
+The reviewer's cuts apply to this document only. Record in the run that the upstream Level 3 models and the generator templates are left untouched, and carry the recorded decision into the final deliverable.
+
 ## NN Work: Step 6 - Artifact Sanitization and Lineage Registration
 slug:: step-6-artifact-sanitization-and-lineage-registration
 parent:: @artifact-feedback-reconciliation-workflow
 step_type:: task
-condition:: Upstream models validated
+condition:: Upstream models validated, or the cut recorded as editorial
 input:: @updated-domain-model
 output:: @published-final-deliverable
 output_status:: verified
@@ -167,6 +180,7 @@ description:: The final, clean, reconciled publication artifact without reviewer
 
 ## NN Artifact: Normalized Extraction and Annotation Bundle
 slug:: normalized-extraction-and-annotation-bundle
+required:: false
 format:: markdown
 storage:: system_temp
 description:: Plain text extraction, XML comments, Track Changes, and reviewer metadata extracted via Pandoc.
@@ -179,12 +193,14 @@ description:: Central workspace lineage index recording models, sources, artifac
 
 ## NN Artifact: Upstream Dependency Map
 slug:: upstream-dependency-map
+required:: false
 format:: structured_json
 storage:: system_temp
 description:: Resolved mapping linking deliverable sections and numbers to upstream models or data sheets.
 
 ## NN Artifact: Four-Layer Triage Report
 slug:: four-layer-triage-report
+required:: false
 format:: markdown
 storage:: session_context
 description:: Structured classification of changes into Scope, Satellite Data, Domain Truth, and Reviewer Anomalies.
@@ -253,6 +269,7 @@ description:: Project lead making definitive decisions on business truth and app
 | Step 3 - Four-Layer Discrepancy Triaging | Informed | Responsible | Accountable |
 | Step 4 - User Intent Decision Gate | Consulted | Responsible | Accountable |
 | Step 5 - Upstream Model and Template Mutation | Informed | Responsible | Accountable |
+| Record Editorial Cut | Informed | Responsible | Accountable |
 | Step 6 - Artifact Sanitization and Lineage Registration | Informed | Responsible | Accountable |
 
 # NN matrices: work-tools matrix
@@ -264,6 +281,7 @@ description:: Project lead making definitive decisions on business truth and app
 | Step 3 - Four-Layer Discrepancy Triaging | - | Uses | Uses | - |
 | Step 4 - User Intent Decision Gate | - | - | - | Uses |
 | Step 5 - Upstream Model and Template Mutation | - | Uses | - | Uses |
+| Record Editorial Cut | - | - | - | - |
 | Step 6 - Artifact Sanitization and Lineage Registration | Uses | Uses | - | Uses |
 
 # NN matrices: work-artifacts matrix
@@ -275,4 +293,5 @@ description:: Project lead making definitive decisions on business truth and app
 | Step 3 - Four-Layer Discrepancy Triaging | - | Reviews | Creates | - | - |
 | Step 4 - User Intent Decision Gate | - | - | Reviews | - | - |
 | Step 5 - Upstream Model and Template Mutation | - | - | Reviews | Modifies | - |
+| Record Editorial Cut | - | - | - | - | - |
 | Step 6 - Artifact Sanitization and Lineage Registration | - | - | - | Validates | Creates |

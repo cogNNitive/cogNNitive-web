@@ -3,9 +3,13 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-1-0"
+knowledge_version: "V_0-2-0"
 title: "Using the coNNtent Blueprint"
-slots:: [episode]
+slots:
+  - { name: episode, kind: value, required: false, type: string, label: Episode, description: "The episode the dry run and the produce engine command address, for example series/<s>/episodes/<slug>." }
+  - { name: name, kind: value, required: false, type: string, label: Voice name, description: "The catalog name of the Voice that one voice-clone command writes." }
+  - { name: sample-audio, kind: value, required: false, type: string, label: Voice sample, description: "The audio sample that one voice-clone command clones." }
+  - { name: code, kind: value, required: false, type: string, label: Language code, description: "The language code of the Voice that one voice-clone command writes, for example es." }
 ---
 
 # NN Work

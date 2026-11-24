@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-4-0"
+knowledge_version: "V_0-5-0"
 title: "Upgrade a Workspace or Import a Legacy Domain Procedure"
 ---
 
@@ -104,15 +104,39 @@ Diff the pinned and adopted schemas. Ask mapping questions only when the diff re
 ## NN Work: Rehydrate and Validate
 slug:: rehydrate-and-validate
 parent:: @upgrade-a-workspace-or-import-a-legacy-domain
-step_type:: task
+step_type:: decision
+next:: [@confirm-validated-workspace, @restore-from-backup]
 condition:: Impact analysis done
 input:: @impact-report
+tool:: @innfo-mcp
+executor:: agent
+decision:: Did the rehydrated domaiNN pass validation with 0 errors and 0 warnings? Answer valid, or invalid when the failure cannot be corrected in this step.
+scope:: internal
+Materialize the adopted bluepriNNts locally, repoint `parent_spec`, update `blueprint_name`, bump the version and re-validate with `innfo-mcp` (0 errors, 0 warnings). Record the outcome `valid` or `invalid`. On `invalid`, the run takes the restore path and the workspace is never recorded as validated.
+
+## NN Work: Confirm Validated Workspace
+slug:: confirm-validated-workspace
+parent:: @upgrade-a-workspace-or-import-a-legacy-domain
+step_type:: task
+condition:: outcome == valid
+input:: @verified-backup
 output:: @validated-canonical-workspace
 output_status:: verified
 tool:: @innfo-mcp
 executor:: agent
 scope:: internal
-Materialize the adopted bluepriNNts locally, repoint `parent_spec`, update `blueprint_name`, bump the version and re-validate with `innfo-mcp` (0 errors, 0 warnings). On validation failure, restore from the backup.
+Record the validated domaiNN as the run's output, with its path and revision, only after the validation of the previous step passed. Finish the run with outcome `completed`.
+
+## NN Work: Restore From Backup
+slug:: restore-from-backup
+parent:: @upgrade-a-workspace-or-import-a-legacy-domain
+step_type:: task
+condition:: outcome == invalid
+input:: @verified-backup
+tool:: @ai-agent
+executor:: agent
+scope:: internal
+Restore the domaiNN from the verified backup, confirm that the restored tree matches the backup's SHA-256 manifest, record the validation findings and finish with outcome `failed`. Do not mark the workspace validated.
 
 # NN Tools
 
@@ -136,6 +160,7 @@ Root directory of the domaiNN to upgrade or to detect as legacy.
 
 ## NN Artifact: Legacy Detection Report
 slug:: legacy-detection-report
+required:: false
 type:: data
 format:: json
 Read-only list of legacy signals found in the domain.
@@ -148,6 +173,7 @@ Timestamped out-of-tree copy of the domain with a SHA-256 manifest.
 
 ## NN Artifact: Impact Report
 slug:: impact-report
+required:: false
 type:: data
 format:: markdown
 Diff of the pinned and adopted bluepriNNt schemas and the mapping questions it raises.

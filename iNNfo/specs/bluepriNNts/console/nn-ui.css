@@ -10337,7 +10337,41 @@ button.proc-run.proc-run-unsent { border-style: dashed; border-color: var(--warn
   .nn-procedure-view .exec-workspace { grid-template-columns: minmax(0, 1fr); }
 }
 .dag-edge-label { font-size: 11px; font-weight: 700; fill: var(--muted); }
-.proc-step-list { display: none; list-style: none; margin: 0; padding: 8px; }
+/* The step list is the flow graph's text alternative: a disclosure, so it is in the tab
+   order at every width and opening or closing it never moves the graph under the pointer. */
+.proc-step-list { list-style: none; margin: 0; padding: 8px; }
+.proc-step-list-box { border-top: 1px solid var(--border); }
+.proc-step-list-summary {
+  cursor: pointer;
+  padding: 8px 13px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.proc-step-list-summary:focus-visible { outline: 3px solid var(--primary); outline-offset: -3px; }
+.dag-graph { position: relative; border-radius: var(--radius-sm); }
+.dag-graph:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.dag-chart { width: 100%; }
+.dag-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.dag-node:focus { outline: none; }
+.dag-node:focus-visible rect { stroke: var(--text); stroke-width: 3; stroke-dasharray: none; }
+@keyframes dag-pulse {
+  0%, 100% { stroke-opacity: 1; }
+  50% { stroke-opacity: 0.3; }
+}
+.dag-node.current.active rect,
+.dag-node.current.waiting rect { animation: dag-pulse 2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .dag-node.current rect { animation: none; }
+  .dag-node { transition: none; }
+}
 .proc-step-item + .proc-step-item { margin-top: 6px; }
 button.proc-step-item-btn {
   appearance: none;
@@ -10359,8 +10393,8 @@ button.proc-step-item-btn {
 .proc-step-item-name { font-weight: 600; font-size: 0.86rem; }
 .proc-step-item-meta { font-size: 0.72rem; color: var(--muted); }
 @media (max-width: 640px) {
-  .exec-dag-view { display: none; }
-  .proc-step-list { display: block; }
+  .exec-dag-view-native { display: none; }
+
   .exec-step-card { padding: 16px; }
 }
 
@@ -10481,6 +10515,17 @@ button.proc-step-item-btn {
   .exec-workspace.proc-bde-layout .proc-rail {
     grid-column: 1 / -1;
     flex-direction: row;
+  }
+}
+
+/* A phone has no room for three columns: stack them, the flow graph at full width. */
+@media (max-width: 760px) {
+  .exec-workspace.proc-bde-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .exec-workspace.proc-bde-layout .proc-rail {
+    flex-direction: column;
+    position: static;
   }
 }
 
