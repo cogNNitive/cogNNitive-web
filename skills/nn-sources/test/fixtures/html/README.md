@@ -1,23 +1,23 @@
 # HTML extraction regression fixtures
 
-Sources from the 2026-10-20 source-cognitivization audit that produced issue #266. Each
-file is the downloaded page that produced a defect, so the converter is measured against
-the real input rather than a reduced stand-in. The exception is
-`pmc-chrome-synthetic.html`: it keeps the real PMC page chrome (an NCBI page, a US
-government work) around a synthetic article, because the original page was a copyrighted
-paper that this public repository may not redistribute.
+Synthetic pages that reproduce the defects found in the 2026-10-20 source-cognitivization
+audit (issue #266). Every file was written for these tests: the prose, names, hosts and
+tokens are invented, and none of them is a copy of a downloaded page. This repository is
+public, so a fixture must never be a page captured from a real domaiNN.
+
+`pmc-chrome-synthetic.html` keeps the PMC page chrome (an NCBI page, a US government work)
+around an invented article, because that chrome is what the navigation defect is about.
 
 | Fixture | Defect it pins |
 |---|---|
-| `FT_55866_20261017T165551Z.html` | CRLF document: the body was 82.5% blank lines and carried 496 undecoded entities (`&iacute;`, `&#243;`) |
+| `crlf-entities-synthetic.html` | CRLF document: the raw markup is ~80% blank lines and carries numeric and named entities (`&iacute;`, `&#243;`) |
 | `pmc-chrome-synthetic.html` | Navigation pollution: the body opened with `Skip to main content`, `Log in`, `Dashboard`, `Account settings` |
-| `NBK1478_20261017T174010Z.html` | reCAPTCHA interstitial (`Checking your browser…`) ingested as an ordinary source |
-| `s10072-023-06789-7_20261017T181030Z.html` | Springer `Client Challenge` wall; its `<noscript>` prose was the entire body |
-| `920_20261017T190632Z.html` | JavaScript wall whose markup carries no extractable text, so the body came out empty |
-| `37032388-15-year-subthalamic-…-case-report_20261017T181041Z.html` | Zero-byte download: registered a source whose `sha256` was the hash of the empty string |
+| `captcha-wall-synthetic.html` | Captcha interstitial (`Checking your browser…`) ingested as an ordinary source |
+| `client-challenge-synthetic.html` | `Client Challenge` wall; its `<noscript>` and error prose was the entire body |
+| `script-only-wall-synthetic.html` | JavaScript wall whose markup carries no extractable text, so the body came out empty |
+| `zero-byte-download.html` | Zero-byte download: registered a source whose `sha256` was the hash of the empty string |
 
-`FT_55866_20261017T165551Z.html` is 68 KB and `pmc-chrome-synthetic.html` is 83 KB.
-They keep the whole page on purpose: a trimmed copy would stop exercising the real page
-weight and the real chrome.
+`crlf-entities-synthetic.html` (52 KB) and `pmc-chrome-synthetic.html` (83 KB) are large on
+purpose: a trimmed page would stop exercising real page weight.
 
 Assertions live in `test/unit/test-web-import.js`; every fixture has at least one.
