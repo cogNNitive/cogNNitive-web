@@ -35,7 +35,8 @@
   var MODEL_VERSION_PATTERN = /^V_\d+-\d+-\d+$/
   // `run_start` asks the domain owner's agent to start a procedure run (import_console calls
   // procedure_start); it is never a changeset change, so the export skips it.
-  var ITEM_KINDS = ['correction', 'comment', 'new', 'delete', 'verdict', 'run_start']
+  // `run_handoff` records the person's final choice for a completed run (import_console too).
+  var ITEM_KINDS = ['correction', 'comment', 'new', 'delete', 'verdict', 'run_start', 'run_handoff']
   // Values the `is:` filter operator understands (see matchAtom).
   var KNOWN_IS_VALUES = ['draft', 'reviewed', 'changed']
   var activeState = null
@@ -4100,6 +4101,17 @@
               else opts.onDraftsChanged()
               return started
             }
+            if (p.kind === 'run_handoff') {
+              var handed = opts.state.store.addDraft({
+                kind: 'run_handoff',
+                run: p.run,
+                choice: p.choice,
+              })
+              var hc = opts.getController()
+              if (hc) hc.refresh()
+              else opts.onDraftsChanged()
+              return handed
+            }
             if (p.kind === 'comment' && !nonEmptyString(p.comment)) {
               throw new Error('cannot propose: a comment needs non-empty comment text')
             }
@@ -7343,7 +7355,7 @@
   function draftToChanges(draft, index, fallbackModel, author) {
     var d = isObject(draft) ? draft : {}
     // A run request is not a model change: the owner's agent starts the run (import_console).
-    if (d.kind === 'run_start') return []
+    if (d.kind === 'run_start' || d.kind === 'run_handoff') return []
     var id = oneLine(d.id || 'c-' + String(index + 1).padStart(2, '0'))
     var model = oneLine(d.knowledge_id || fallbackModel || 'model')
     // A verdict is not a mutation: it records a human decision on a gate. It carries no

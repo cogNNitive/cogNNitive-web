@@ -2133,6 +2133,308 @@
       })
       renderArtifactRow(card, 'Artifacts', produced)
       hostEl.appendChild(card)
+      if (state.status === 'completed' && store) renderHandoff(hostEl)
+    }
+
+    // ---- Final handoff of a completed run (a DRAFT, like every answer) ----
+    var HANDOFF_CHOICES = [
+      ['administrator', 'Send to the administrator'],
+      ['agent', 'Register with the agent'],
+    ]
+
+    function handoffDraftOf(run) {
+      return (
+        allDrafts().filter(function (d) {
+          return d && d.kind === 'run_handoff' && d.run === run.id
+        })[0] || null
+      )
+    }
+
+    /** The ready-to-paste prompt for the person's AI agent. It says only what import_console does. */
+    function handoffAgentPrompt(runId) {
+      return [
+        'Import the cogNNitive console I saved, with the import_console MCP tool and apply set to true, so the final handoff of run "' +
+          runId +
+          '" is registered.',
+        'The saved console HTML file is at: (write the path of the saved file here)',
+        'It carries one draft: { "kind": "run_handoff", "run": "' +
+          runId +
+          '", "choice": "agent" } (Register with the agent).',
+        'import_console with apply records that choice once beside the run (executions/' +
+          runId +
+          '/handoff.json, which procedure_state shows as handoff). It adds nothing to the models of the domaiNN and does nothing else with the run.',
+        'Then tell me what import_console returned for the handoff, including any refusal (for example RUN_NOT_COMPLETED or HANDOFF_CONFLICT). If it asks who signs the changes, ask me for my name.',
+      ].join('\n\n')
+    }
+
+    var handoffDialog = null
+
+    /**
+     * Guidance for a handoff choice, in the console's own modal (a <dialog> with the kit's
+     * nn-edit-modal classes). It explains what the person does next and writes nothing: the
+     * choice itself is the `run_handoff` draft. Escape and Close dismiss it, and focus returns
+     * to the handoff card the modal was opened from.
+     */
+    function openHandoffDialog(choice) {
+      var entry = HANDOFF_CHOICES.filter(function (c) {
+        return c[0] === choice
+      })[0]
+      if (!entry || !activeRun) return
+      if (handoffDialog && handoffDialog.parentNode)
+        handoffDialog.parentNode.removeChild(handoffDialog)
+      var dialog = make('dialog', 'nn-edit-modal proc-handoff-dialog')
+      handoffDialog = dialog
+      dialog.setAttribute('data-proc-handoff-dialog', choice)
+      dialog.setAttribute('role', 'dialog')
+      dialog.setAttribute('aria-modal', 'true')
+      dialog.setAttribute('aria-labelledby', 'proc-handoff-dialog-title')
+
+      function restoreFocus() {
+        var target =
+          container.querySelector('[data-proc-handoff-open]') ||
+          container.querySelector('[data-proc-handoff]')
+        if (!target) return
+        if (!/^(button|a|input)$/i.test(target.tagName)) target.setAttribute('tabindex', '-1')
+        if (typeof target.focus === 'function') target.focus()
+      }
+      function dismiss() {
+        if (!dialog.hasAttribute('open')) return
+        if (typeof dialog.close === 'function') dialog.close()
+        dialog.removeAttribute('open')
+        restoreFocus()
+      }
+      dialog.addEventListener('keydown', function (ev) {
+        if (ev.key !== 'Escape') return
+        ev.preventDefault()
+        dismiss()
+      })
+      dialog.addEventListener('click', function (ev) {
+        if (ev.target === dialog) dismiss()
+      })
+      // A native close (for example the browser's own Escape) still returns the focus.
+      dialog.addEventListener('close', function () {
+        if (dialog.hasAttribute('open')) return
+        restoreFocus()
+      })
+
+      var head = make('div', 'nn-edit-modal-head')
+      var title = make('h2', null, entry[1])
+      title.id = 'proc-handoff-dialog-title'
+      head.appendChild(title)
+      var x = button('nn-edit-modal-close', '×', dismiss, { 'aria-label': 'Close dialog' })
+      head.appendChild(x)
+      dialog.appendChild(head)
+
+      var bodyEl = make('div', 'nn-edit-modal-body proc-handoff-dialog-body')
+      var copyBtn = null
+      if (choice === 'administrator') {
+        bodyEl.appendChild(
+          make(
+            'p',
+            null,
+            'Your choice is recorded as an answer in this console. Nothing has been sent yet. To hand this run to the administrator:',
+          ),
+        )
+        var steps = make('ol', 'proc-handoff-steps')
+        steps.appendChild(
+          make(
+            'li',
+            null,
+            'Use "Save your response" at the top of this view to save your response and your choice in the console file.',
+          ),
+        )
+        steps.appendChild(
+          make(
+            'li',
+            null,
+            'Send or share the saved HTML file with the cogNNitive administrator, by whatever means you use.',
+          ),
+        )
+        bodyEl.appendChild(steps)
+        bodyEl.appendChild(
+          make(
+            'p',
+            'proc-hint',
+            'When the administrator imports the saved file, your choice is recorded with the run. Nothing else is added to the domaiNN.',
+          ),
+        )
+      } else {
+        bodyEl.appendChild(
+          make(
+            'p',
+            null,
+            'Your choice is recorded as an answer in this console. Nothing has been sent yet. To register this run with your AI agent:',
+          ),
+        )
+        var agentSteps = make('ol', 'proc-handoff-steps')
+        agentSteps.appendChild(
+          make(
+            'li',
+            null,
+            'Use "Save your response" at the top of this view to save your response and your choice in the console file.',
+          ),
+        )
+        agentSteps.appendChild(
+          make(
+            'li',
+            null,
+            'Copy the prompt below and paste it to your AI agent, filling in where you saved the file.',
+          ),
+        )
+        bodyEl.appendChild(agentSteps)
+        var area = make('textarea', 'proc-handoff-prompt')
+        area.value = handoffAgentPrompt(activeRun.id)
+        area.readOnly = true
+        area.setAttribute('rows', '10')
+        area.setAttribute('aria-label', 'Prompt for the AI agent')
+        area.setAttribute('data-proc-handoff-prompt', '')
+        bodyEl.appendChild(area)
+        var status = make('div', 'proc-hint')
+        status.setAttribute('role', 'status')
+        status.setAttribute('aria-live', 'polite')
+        status.setAttribute('data-proc-handoff-status', '')
+        bodyEl.appendChild(status)
+        var selectToCopy = function () {
+          area.focus()
+          area.select()
+          if (typeof area.setSelectionRange === 'function')
+            area.setSelectionRange(0, area.value.length)
+          var ok = false
+          try {
+            ok = typeof document.execCommand === 'function' && document.execCommand('copy') === true
+          } catch (e) {
+            ok = false
+          }
+          status.textContent = ok
+            ? 'Copied to the clipboard.'
+            : 'Select and copy: the prompt is selected, press Ctrl+C (Cmd+C on a Mac).'
+        }
+        copyBtn = button(
+          'nn-edit-btn nn-edit-btn-save',
+          'Copy prompt',
+          function () {
+            var win = document.defaultView || GLOBAL
+            var clip = win.navigator && win.navigator.clipboard
+            if (clip && typeof clip.writeText === 'function') {
+              var pending
+              try {
+                pending = Promise.resolve(clip.writeText(area.value))
+              } catch (e) {
+                pending = Promise.reject(e)
+              }
+              pending.then(function () {
+                status.textContent = 'Copied to the clipboard.'
+              }, selectToCopy)
+            } else {
+              selectToCopy()
+            }
+          },
+          { 'data-proc-handoff-copy': '' },
+        )
+      }
+      dialog.appendChild(bodyEl)
+
+      var actions = make('div', 'nn-edit-modal-actions')
+      if (copyBtn) actions.appendChild(copyBtn)
+      actions.appendChild(
+        button('nn-edit-btn nn-edit-btn-cancel', 'Close', dismiss, {
+          'data-proc-handoff-close': '',
+        }),
+      )
+      dialog.appendChild(actions)
+
+      ;(document.body || container).appendChild(dialog)
+      try {
+        if (typeof dialog.showModal === 'function') dialog.showModal()
+        else dialog.setAttribute('open', 'open')
+      } catch (e) {
+        dialog.setAttribute('open', 'open')
+      }
+      var first = copyBtn || actions.lastChild
+      if (first && typeof first.focus === 'function') first.focus()
+    }
+
+    /**
+     * The run is complete: the person chooses what happens to its result. The choice is one
+     * draft; nothing is written until the saved response is imported, and what is recorded is
+     * the choice itself. Each choice also opens a modal that says what to do next (guidance
+     * only: it writes nothing).
+     */
+    function renderHandoff(hostEl) {
+      var box = make('section', 'exec-step-card nn-card proc-handoff')
+      box.setAttribute('data-proc-handoff', activeRun.id)
+      box.appendChild(make('h3', 'exec-step-title', 'Hand off this run'))
+      var draft = handoffDraftOf(activeRun)
+      if (draft) {
+        var label = HANDOFF_CHOICES.filter(function (c) {
+          return c[0] === draft.choice
+        })[0]
+        var chosen = make('div', 'exec-step-fact')
+        chosen.appendChild(
+          make(
+            'span',
+            null,
+            'Your choice: ' + (label ? label[1] : draft.choice) + ' (not sent yet). ',
+          ),
+        )
+        chosen.appendChild(
+          button(
+            'proc-undo',
+            'Undo',
+            function () {
+              removeDraft(draft.id)
+            },
+            { 'data-proc-undo': draft.id || '' },
+          ),
+        )
+        chosen.appendChild(
+          button(
+            'proc-response-secondary',
+            'Show instructions',
+            function () {
+              openHandoffDialog(draft.choice)
+            },
+            {
+              'data-proc-handoff-open': draft.choice,
+              'aria-label': 'Show instructions for: ' + (label ? label[1] : draft.choice),
+            },
+          ),
+        )
+        box.appendChild(chosen)
+        box.appendChild(
+          make('div', 'proc-hint', 'Save your response to send your choice with the rest of it.'),
+        )
+      } else {
+        box.appendChild(
+          make(
+            'div',
+            'proc-hint',
+            'This run is complete. Choose what happens with its result. Nothing is added to the domaiNN until you save your response and the owner of the domaiNN imports it.',
+          ),
+        )
+        var actions = make('div', 'proc-actions')
+        HANDOFF_CHOICES.forEach(function (c) {
+          actions.appendChild(
+            button(
+              'proc-action',
+              c[1],
+              function () {
+                try {
+                  store.propose({ kind: 'run_handoff', run: activeRun.id, choice: c[0] })
+                } catch (e) {
+                  savedNote =
+                    'The console refused this choice: ' + String(e && e.message ? e.message : e)
+                }
+                render()
+                if (handoffDraftOf(activeRun)) openHandoffDialog(c[0])
+              },
+              { 'data-proc-handoff-choice': c[0] },
+            ),
+          )
+        })
+        box.appendChild(actions)
+      }
+      hostEl.appendChild(box)
     }
 
     // ---- Actions a human may record (a DRAFT, never an apply) ----

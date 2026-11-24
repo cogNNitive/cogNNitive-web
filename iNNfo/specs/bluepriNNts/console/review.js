@@ -17,7 +17,10 @@
   // `run_start` asks the domain owner's agent to start a procedure run: { procedure, params,
   // run?, path? }. It targets no element, and the changeset export skips it (import_console
   // starts the run through procedure_start).
-  var ITEM_KINDS = ['correction', 'comment', 'new', 'delete', 'verdict', 'run_start']
+  // `run_handoff` is the person's final choice for a completed run: { run, choice }. It
+  // targets no element either, and the changeset export skips it (import_console records it).
+  var ITEM_KINDS = ['correction', 'comment', 'new', 'delete', 'verdict', 'run_start', 'run_handoff']
+  var HANDOFF_CHOICES = ['administrator', 'agent']
   var RUN_SLUG = /^[a-z0-9][a-z0-9-]*$/
   // A verdict is a decision on a gate, not a mutation: it carries the gate, its outcome and
   // the hash of the content that was reviewed, never a `base_hash`.
@@ -134,6 +137,7 @@
     if (isObject(d.params)) draft.params = deepCopy(d.params)
     if (d.run != null && d.run !== '') draft.run = String(d.run)
     if (d.path != null && d.path !== '') draft.path = String(d.path)
+    if (d.choice != null && d.choice !== '') draft.choice = String(d.choice)
     return draft
   }
 
@@ -349,6 +353,16 @@
           if (raw.run != null && raw.run !== '' && !RUN_SLUG.test(String(raw.run))) {
             throw new TypeError('nnReview.createDraftStore: run_start run must be a lowercase slug')
           }
+        } else if (raw.kind === 'run_handoff') {
+          if (raw.run == null || !RUN_SLUG.test(String(raw.run))) {
+            throw new TypeError('nnReview.createDraftStore: run_handoff draft requires a run slug')
+          }
+          if (HANDOFF_CHOICES.indexOf(String(raw.choice)) === -1) {
+            throw new TypeError(
+              'nnReview.createDraftStore: run_handoff choice must be one of ' +
+                HANDOFF_CHOICES.join(', '),
+            )
+          }
         } else if (!isMatrix && (!raw.element_id || !raw.base_hash)) {
           throw new TypeError('nnReview.createDraftStore: element_id and base_hash required')
         }
@@ -370,6 +384,17 @@
                   var replaced = normalizeDraft(raw, prev.id)
                   s.drafts[i] = replaced
                   return replaced
+                }
+              }
+            }
+            // A run is handed off once: choosing again replaces the earlier choice in place.
+            if (raw.kind === 'run_handoff') {
+              for (var h = 0; h < s.drafts.length; h++) {
+                var held = s.drafts[h]
+                if (held && held.kind === 'run_handoff' && held.run === String(raw.run)) {
+                  var rechosen = normalizeDraft(raw, held.id)
+                  s.drafts[h] = rechosen
+                  return rechosen
                 }
               }
             }
@@ -418,7 +443,7 @@
     // content it is applied to; there is no element `base_hash` to compare here.
     if (d.kind === 'verdict') return false
     // A run request targets no element.
-    if (d.kind === 'run_start') return false
+    if (d.kind === 'run_start' || d.kind === 'run_handoff') return false
     // Matrix-cell drafts have no element hash to compare against.
     if (d.matrix) return false
     var el = byId[d.element_id]

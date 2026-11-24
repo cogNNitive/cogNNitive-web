@@ -10387,6 +10387,22 @@ button.proc-step-item-btn {
 .nn-procedure-view .proc-actions { display: flex; flex-direction: column; gap: 8px; }
 .proc-branches { display: flex; flex-wrap: wrap; gap: 8px; }
 .proc-actions-secondary { display: flex; flex-wrap: wrap; gap: 8px; }
+.proc-handoff-dialog { max-width: min(640px, calc(100vw - 32px)); }
+.proc-handoff-dialog .proc-handoff-steps { margin: 8px 0 12px 1.2rem; padding: 0; }
+.proc-handoff-dialog .proc-handoff-steps li { margin-bottom: 6px; }
+.proc-handoff-dialog textarea.proc-handoff-prompt {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong, var(--border, #cbd5e1));
+  border-radius: 6px;
+  background: var(--surface-2, #f8fafc);
+  color: var(--text, inherit);
+  resize: vertical;
+}
 .nn-procedure-view textarea.proc-action-value {
   border: 1px solid var(--border-strong);
   background: var(--surface);
