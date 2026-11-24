@@ -184,13 +184,35 @@ function blueprintVersionRows(uses, consoleDir, root) {
       status: c.status,
       gap: c.gap || null,
     }
-    row.models.push(use.modelId)
+    if (row.models.indexOf(use.modelId) < 0) row.models.push(use.modelId)
     byName.set(name, row)
   }
   return {
     catalog: catalog ? 'available' : 'unavailable',
     blueprints: Array.from(byName.values()).sort((a, b) => byCodeUnits(a.name, b.name)),
   }
+}
+
+/**
+ * The bluepriNNt the domaiNN's changesets follow (normally `changes`), read from each
+ * changeset's own frontmatter, so the Versions tab lists it like a model's bluepriNNt.
+ */
+function changesetBlueprintUses(root, changesets) {
+  const uses = []
+  for (const cs of Array.isArray(changesets) ? changesets : []) {
+    let fm = null
+    try {
+      fm = frontmatterOf(readFileSync(join(root, cs.path), 'utf8'))
+    } catch {
+      continue
+    }
+    const spec = fm && fm.parent_spec
+    const name =
+      spec && typeof spec === 'object' ? spec.name : typeof spec === 'string' ? spec : null
+    if (!name) continue
+    uses.push({ modelId: 'changes', name: String(name), url: (spec && spec.url) || null })
+  }
+  return uses
 }
 
 const INSTALL_KINDS = [
@@ -2881,7 +2903,11 @@ export async function writeConsole(opts = {}) {
         ...(wholeDomain
           ? {
               versions: {
-                ...blueprintVersionRows(blueprintUses, consoleDir, root),
+                ...blueprintVersionRows(
+                  blueprintUses.concat(changesetBlueprintUses(root, changesets)),
+                  consoleDir,
+                  root,
+                ),
                 installation: installationRecord(root),
               },
             }
