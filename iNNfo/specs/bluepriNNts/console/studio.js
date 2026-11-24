@@ -151,7 +151,15 @@
       host.__nnChartObserver.disconnect()
       host.__nnChartObserver = null
     }
-    var chart = lib.init(host, null, { renderer: o.renderer || 'svg', width: o.width, height: o.height })
+    // A host in a hidden tab has no size yet: start from a fallback size and let the
+    // resize observer measure the real one ('auto') once the tab is shown.
+    var autoWidth = o.width === undefined
+    var autoHeight = o.height === undefined
+    var chart = lib.init(host, null, {
+      renderer: o.renderer || 'svg',
+      width: autoWidth ? (host.clientWidth ? undefined : 960) : o.width,
+      height: autoHeight ? (host.clientHeight ? undefined : 400) : o.height,
+    })
     var merged = {}
     Object.keys(option || {}).forEach(function (key) {
       merged[key] = option[key]
@@ -159,9 +167,11 @@
     if (merged.backgroundColor === undefined) merged.backgroundColor = '#ffffff'
     if (merged.color === undefined) merged.color = CHART_PALETTE
     chart.setOption(merged)
-    if (typeof ResizeObserver !== 'undefined' && o.width === undefined) {
+    if (typeof ResizeObserver !== 'undefined' && (autoWidth || autoHeight)) {
       host.__nnChartObserver = new ResizeObserver(function () {
-        if (!chart.isDisposed()) chart.resize()
+        if (!chart.isDisposed() && host.clientWidth) {
+          chart.resize({ width: autoWidth ? 'auto' : o.width, height: autoHeight ? 'auto' : o.height })
+        }
       })
       host.__nnChartObserver.observe(host)
     }

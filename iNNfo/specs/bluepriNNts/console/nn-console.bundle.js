@@ -8632,7 +8632,15 @@ var yo={},mo={};var xo,_o=function(){function t(t,e,n){var i=this;this._sleepAft
       host.__nnChartObserver.disconnect()
       host.__nnChartObserver = null
     }
-    var chart = lib.init(host, null, { renderer: o.renderer || 'svg', width: o.width, height: o.height })
+    // A host in a hidden tab has no size yet: start from a fallback size and let the
+    // resize observer measure the real one ('auto') once the tab is shown.
+    var autoWidth = o.width === undefined
+    var autoHeight = o.height === undefined
+    var chart = lib.init(host, null, {
+      renderer: o.renderer || 'svg',
+      width: autoWidth ? (host.clientWidth ? undefined : 960) : o.width,
+      height: autoHeight ? (host.clientHeight ? undefined : 400) : o.height,
+    })
     var merged = {}
     Object.keys(option || {}).forEach(function (key) {
       merged[key] = option[key]
@@ -8640,9 +8648,11 @@ var yo={},mo={};var xo,_o=function(){function t(t,e,n){var i=this;this._sleepAft
     if (merged.backgroundColor === undefined) merged.backgroundColor = '#ffffff'
     if (merged.color === undefined) merged.color = CHART_PALETTE
     chart.setOption(merged)
-    if (typeof ResizeObserver !== 'undefined' && o.width === undefined) {
+    if (typeof ResizeObserver !== 'undefined' && (autoWidth || autoHeight)) {
       host.__nnChartObserver = new ResizeObserver(function () {
-        if (!chart.isDisposed()) chart.resize()
+        if (!chart.isDisposed() && host.clientWidth) {
+          chart.resize({ width: autoWidth ? 'auto' : o.width, height: autoHeight ? 'auto' : o.height })
+        }
       })
       host.__nnChartObserver.observe(host)
     }
@@ -14090,6 +14100,58 @@ if (typeof window !== 'undefined') {
   }
 
   // Built-in tabs, registered per boot (they are not in the registry).
+  // The models a reader thinks of as the domaiNN's content: every model but the
+  // synthetic change log, which the Summary counts as changes instead.
+  function summaryModels(meta) {
+    var models = meta && Array.isArray(meta.models) ? meta.models : []
+    return models.filter(function (m) {
+      return m && m.id !== 'changes'
+    })
+  }
+
+  // One line under the tabs that translates the iNNfo vocabulary for a newcomer.
+  var VOCABULARY_LEGEND = [
+    ['bluepriNNt', 'the template a model follows'],
+    ['concept', 'a type of card'],
+    ['element', 'one card'],
+    ['field', 'one piece of data on a card'],
+  ]
+
+  function ensureVocabularyLegend(doc, nav) {
+    if (!nav || !nav.parentNode || doc.querySelector('.nn-vocab-legend')) return
+    var legend = el('p', 'nn-vocab-legend')
+    legend.setAttribute('aria-label', 'Vocabulary')
+    VOCABULARY_LEGEND.forEach(function (pair, i) {
+      if (i) legend.appendChild(doc.createTextNode(' · '))
+      legend.appendChild(el('strong', null, pair[0]))
+      legend.appendChild(doc.createTextNode(' = ' + pair[1]))
+    })
+    nav.parentNode.insertBefore(legend, nav.nextSibling)
+  }
+
+  // Switches to the Knowledge tab with `token` (a facet such as `concept:Deal`) in
+  // the search box. Every "show me these" link in the console goes through here.
+  function revealInKnowledge(doc, token) {
+    var search = doc.getElementById('nn-search')
+    if (search) {
+      search.value = token
+      if (typeof CustomEvent === 'function') {
+        search.dispatchEvent(new CustomEvent('input', { bubbles: true }))
+      }
+    }
+    var expBtn = doc.querySelector('.nn-view-tab[data-tab="explorer"]')
+    if (expBtn && typeof expBtn.click === 'function') expBtn.click()
+  }
+
+  // A dashboard number: label, value and an optional line of context.
+  function kpiCard(label, value, sub) {
+    var card = el('div', 'nn-kpi-card')
+    card.appendChild(el('div', 'kpi-label', label))
+    card.appendChild(el('div', 'kpi-value', value))
+    if (sub) card.appendChild(el('div', 'kpi-sub', sub))
+    return card
+  }
+
   function builtinViews(doc, config, model, meta, shell, schema) {
     var views = []
     // Files sits after the knowledge/changes band and only exists when the
@@ -14107,8 +14169,17 @@ if (typeof window !== 'undefined') {
       }
       return views
     }
+    if (summaryModels(meta).length > 0) {
+      views.push({ id: 'summary', title: 'Summary', icon: 'layout', order: 5, tone: 'core', panelId: 'nn-tab-summary' })
+    }
+    if (meta && meta.versions && typeof meta.versions === 'object') {
+      views.push({ id: 'versions', title: 'Versions', icon: 'milestone', order: 50, tone: 'core', panelId: 'nn-tab-versions' })
+    }
+    if (summaryModels(meta).length > 0 && Array.isArray(model && model.elements) && model.elements.length > 0) {
+      views.push({ id: 'map', title: 'Map', icon: 'network', order: 15, tone: 'core', panelId: 'nn-tab-map' })
+    }
     if (schema && Array.isArray(schema.concepts) && schema.concepts.length) {
-      views.push({ id: 'metamodel', title: 'Domain', icon: 'metamodel', order: 10, tone: 'core', panelId: 'nn-tab-metamodel' })
+      views.push({ id: 'metamodel', title: 'Schema', icon: 'metamodel', order: 10, tone: 'core', panelId: 'nn-tab-metamodel' })
     }
     if ((Array.isArray(model && model.elements) && model.elements.length > 0) || shell.explorer) {
       views.push({ id: 'explorer', title: 'Knowledge', icon: 'explorer', order: 20, tone: 'core', panelId: 'nn-tab-explorer' })
@@ -14260,6 +14331,7 @@ if (typeof window !== 'undefined') {
       })
       nav.appendChild(btn)
     })
+    if (!scopedView) ensureVocabularyLegend(doc, nav)
     updateTabBadges(doc, opts.state)
 
     var current = ''
@@ -15069,11 +15141,7 @@ if (typeof window !== 'undefined') {
 
       var kpis = el('div', 'nn-files-kpis')
       function kpi(label, value, sub) {
-        var card = el('div', 'nn-kpi-card')
-        card.appendChild(el('div', 'kpi-label', label))
-        card.appendChild(el('div', 'kpi-value', value))
-        if (sub) card.appendChild(el('div', 'kpi-sub', sub))
-        kpis.appendChild(card)
+        kpis.appendChild(kpiCard(label, value, sub))
       }
       kpi('Files', String(stats.totalFiles || inventory.length), 'indexed in this workspace')
       kpi('Footprint', filesFmtBytes(stats.totalBytes || 0), 'total bytes on disk')
@@ -16259,194 +16327,942 @@ if (typeof window !== 'undefined') {
     return out
   }
 
+  // ---- Summary tab: the domaiNN at a glance -------------------------------------
+
+  function fieldHasValue(value) {
+    if (value === null || value === undefined) return false
+    if (typeof value === 'string') return value.trim() !== ''
+    if (Array.isArray(value)) return value.length > 0
+    return true
+  }
+
+  function pct(part, whole) {
+    return whole > 0 ? Math.round((part / whole) * 100) : 0
+  }
+
+  function plural(n, one, many) {
+    return n + ' ' + (n === 1 ? one : many)
+  }
+
+  // Declared vs filled fields over a set of elements. A field counts as declared
+  // when the schema lists it for the element's concept.
+  function fieldFill(elements, schema) {
+    var declared = {}
+    ;(schema && Array.isArray(schema.fields) ? schema.fields : []).forEach(function (f) {
+      if (!f || !f.concept || !f.name) return
+      ;(declared[f.concept] = declared[f.concept] || []).push(f.name)
+    })
+    var total = 0
+    var filled = 0
+    elements.forEach(function (e) {
+      var names = declared[e.concept] || []
+      var values = (e && e.fields) || {}
+      total += names.length
+      names.forEach(function (n) {
+        if (fieldHasValue(values[n])) filled++
+      })
+    })
+    return { total: total, filled: filled }
+  }
+
+  // A concept name that opens Knowledge filtered by that concept.
+  function conceptLink(doc, concept, label) {
+    var a = el('a', 'nn-concept-link', label || concept)
+    a.setAttribute('href', '#explorer')
+    a.setAttribute('data-concept', concept)
+    a.addEventListener('click', function (event) {
+      if (event && event.preventDefault) event.preventDefault()
+      revealInKnowledge(doc, formatFacetToken('concept', concept))
+    })
+    return a
+  }
+
+  // Each model card: title, bluepriNNt, size, completeness and a stacked bar of its
+  // elements by concept (ECharts; the card still reads without it).
+  function renderSummaryModelCard(doc, m, elements, schema) {
+    var own = elements.filter(function (e) {
+      return e.modelId === m.id
+    })
+    var byConcept = {}
+    own.forEach(function (e) {
+      byConcept[e.concept] = (byConcept[e.concept] || 0) + 1
+    })
+    var concepts = Object.keys(byConcept)
+    var fill = fieldFill(own, schema)
+    var card = el('article', 'nn-summary-model')
+    card.setAttribute('data-model', m.id)
+    var head = el('header', 'nn-summary-model-head')
+    head.appendChild(el('h3', 'nn-summary-model-title', m.title || m.id))
+    head.appendChild(el('span', 'nn-summary-model-blueprint', m.blueprint || ''))
+    card.appendChild(head)
+    card.appendChild(
+      el(
+        'p',
+        'nn-summary-model-stats',
+        plural(own.length, 'element', 'elements') +
+          ' · ' +
+          plural(concepts.length, 'concept', 'concepts') +
+          ' · ' +
+          pct(fill.filled, fill.total) +
+          '% fields filled',
+      ),
+    )
+    var chartHost = el('div', 'nn-summary-model-chart')
+    card.appendChild(chartHost)
+    var legend = el('ul', 'nn-summary-model-legend')
+    concepts.forEach(function (c) {
+      var li = el('li')
+      var dot = el('span', 'nn-summary-dot')
+      dot.style.background = conceptMetaOf(schema && schema.concepts, c).hexColor
+      li.appendChild(dot)
+      li.appendChild(conceptLink(doc, c, c + ' (' + byConcept[c] + ')'))
+      legend.appendChild(li)
+    })
+    card.appendChild(legend)
+    var open = el('button', 'nn-summary-model-open', 'Open in Knowledge')
+    open.setAttribute('type', 'button')
+    open.addEventListener('click', function () {
+      revealInKnowledge(doc, formatFacetToken('model', m.id))
+    })
+    card.appendChild(open)
+    if (concepts.length) {
+      var chart = Studio.renderChart(chartHost, {
+        animation: false,
+        grid: { left: 4, right: 4, top: 4, bottom: 4 },
+        tooltip: { trigger: 'item', formatter: '{a}: {c}' },
+        xAxis: { type: 'value', show: false, max: own.length },
+        yAxis: { type: 'category', show: false, data: [m.title || m.id] },
+        series: concepts.map(function (c) {
+          return {
+            type: 'bar',
+            name: c,
+            stack: 'elements',
+            barWidth: 18,
+            data: [byConcept[c]],
+            itemStyle: { color: conceptMetaOf(schema && schema.concepts, c).hexColor },
+          }
+        }),
+      })
+      if (chart) {
+        chart.on('click', function (params) {
+          revealInKnowledge(doc, formatFacetToken('concept', params.seriesName))
+        })
+      }
+    }
+    return card
+  }
+
+  function renderSummaryView(doc, model, schema, meta) {
+    var host = doc.getElementById('nn-tab-summary')
+    if (!host) return
+    host.innerHTML = ''
+    var models = summaryModels(meta)
+    var elements = (model && Array.isArray(model.elements) ? model.elements : []).filter(function (e) {
+      return e && e.modelId !== 'changes'
+    })
+    var conceptNames = metamodelConceptNames(schema, elements)
+    var changes = model && Array.isArray(model.changes) ? model.changes : []
+    var pending = changes.filter(function (c) {
+      return c && c.status === 'proposed'
+    }).length
+    var fill = fieldFill(elements, schema)
+    var domain = (meta && meta.domain) || {}
+
+    var root = el('div', 'nn-summary')
+    if (domain.title) root.appendChild(el('h2', 'nn-summary-title', domain.title))
+
+    var kpis = el('div', 'nn-files-kpis nn-summary-kpis')
+    kpis.appendChild(kpiCard('Models', String(models.length), 'documents of kNNowledge'))
+    kpis.appendChild(kpiCard('Concepts', String(conceptNames.length), 'types of card'))
+    kpis.appendChild(kpiCard('Elements', String(elements.length), 'cards across all models'))
+    kpis.appendChild(kpiCard('Sources', String(Number(domain.sourceCount) || 0), 'documents the models cite'))
+    kpis.appendChild(kpiCard('Pending changes', String(pending), 'proposed, not yet applied'))
+    kpis.appendChild(kpiCard('Fields filled', pct(fill.filled, fill.total) + '%', fill.filled + ' of ' + fill.total))
+    root.appendChild(kpis)
+
+    // What to look at: the gaps a newcomer should know about, each a link.
+    var hints = []
+    var counts = {}
+    elements.forEach(function (e) {
+      counts[e.concept] = (counts[e.concept] || 0) + 1
+    })
+    var empty = conceptNames.filter(function (c) {
+      return !counts[c]
+    })
+    if (empty.length === 1) hints.push({ concepts: empty, text: ' has no elements yet.' })
+    else if (empty.length > 1) hints.push({ concepts: empty, text: ' have no elements yet.' })
+    conceptNames.forEach(function (c) {
+      if (!counts[c]) return
+      var f = fieldFill(
+        elements.filter(function (e) {
+          return e.concept === c
+        }),
+        schema,
+      )
+      var p = pct(f.filled, f.total)
+      if (f.total > 0 && p < 50) hints.push({ concepts: [c], text: ': only ' + p + '% of its fields are filled.' })
+    })
+    if (pending) hints.push({ text: plural(pending, 'change is', 'changes are') + ' waiting for review.' })
+    if (hints.length) {
+      var attention = el('section', 'nn-summary-attention')
+      attention.appendChild(el('h3', null, 'What to look at'))
+      var list = el('ul')
+      hints.forEach(function (h) {
+        var li = el('li')
+        ;(h.concepts || []).forEach(function (c, i) {
+          if (i) li.appendChild(doc.createTextNode(i === h.concepts.length - 1 ? ' and ' : ', '))
+          li.appendChild(conceptLink(doc, c))
+        })
+        li.appendChild(doc.createTextNode(h.text))
+        list.appendChild(li)
+      })
+      attention.appendChild(list)
+      root.appendChild(attention)
+    }
+
+    root.appendChild(el('h3', 'nn-summary-section', 'Models'))
+    var grid = el('div', 'nn-summary-models')
+    root.appendChild(grid)
+    host.appendChild(root)
+    // Cards are drawn after they are in the document so the charts get a width.
+    models.forEach(function (m) {
+      grid.appendChild(renderSummaryModelCard(doc, m, elements, schema))
+    })
+  }
+
+  // ---- Versions tab: which bluepriNNts, whether they are current, what is installed ----
+
+  var VERSION_STATUS = {
+    current: ['Up to date', 'ok'],
+    'upgrade-available': ['Update available', 'warn'],
+    ahead: ['Newer than the catalog', 'info'],
+    unlisted: ['Not in the cogNNitive catalog', 'info'],
+    unpinned: ['No version pinned', 'warn'],
+    unknown: ['Not checked (catalog unavailable)', 'muted'],
+  }
+
+  function versionStatusLabel(row) {
+    var entry = VERSION_STATUS[row.status] || VERSION_STATUS.unknown
+    var gap = row.status === 'upgrade-available' && row.gap ? ' (' + row.gap + ')' : ''
+    return { text: entry[0] + gap, tone: entry[1] }
+  }
+
+  function versionOrigin(row) {
+    if (row.status === 'unlisted') return 'Local bluepriNNt'
+    if (row.status === 'unknown' || row.status === 'unpinned') return '—'
+    return 'Published by cogNNitive'
+  }
+
+  function versionsTable(cls, headers, rows) {
+    var table = el('table', 'nn-versions-table ' + cls)
+    // Software versions, not kNNowledge: no cell is an addressable unit.
+    table.setAttribute('data-ku-exempt', '1')
+    var thead = el('thead')
+    var htr = el('tr')
+    headers.forEach(function (h) {
+      htr.appendChild(el('th', null, h))
+    })
+    thead.appendChild(htr)
+    table.appendChild(thead)
+    var tbody = el('tbody')
+    rows.forEach(function (cells) {
+      var tr = el('tr')
+      cells.forEach(function (cell) {
+        if (cell && cell.nodeType) {
+          var td = el('td')
+          td.appendChild(cell)
+          tr.appendChild(td)
+        } else {
+          tr.appendChild(el('td', null, cell == null || cell === '' ? '—' : String(cell)))
+        }
+      })
+      tbody.appendChild(tr)
+    })
+    table.appendChild(tbody)
+    return table
+  }
+
+  var INSTALL_SCOPE_TEXT = {
+    domain: "This domaiNN's own installation (.agents/bootstrap-state.json in the domaiNN).",
+    user: "The installation of the user who exported this console (~/.agents/bootstrap-state.json).",
+    file: 'The installation record given at export time.',
+  }
+
+  function renderVersionsView(doc, meta) {
+    var host = doc.getElementById('nn-tab-versions')
+    if (!host) return
+    host.innerHTML = ''
+    var versions = (meta && meta.versions) || {}
+    var root = el('div', 'nn-versions')
+    var checked = meta && meta.generated ? String(meta.generated).slice(0, 10) : ''
+    root.appendChild(
+      el(
+        'p',
+        'nn-versions-checked',
+        (checked ? 'Checked on ' + checked + ', when this console was exported. ' : '') +
+          'The console never goes online: export it again to refresh these versions.',
+      ),
+    )
+
+    var bp = el('section', 'nn-versions-section nn-versions-blueprints')
+    bp.appendChild(el('h3', null, 'BluepriNNts used by this domaiNN'))
+    bp.appendChild(
+      el(
+        'p',
+        'nn-versions-hint',
+        'Each model follows a bluepriNNt. "Pinned" is the version the model declares; "Latest" is the newest one cogNNitive publishes.',
+      ),
+    )
+    var blueprints = Array.isArray(versions.blueprints) ? versions.blueprints : []
+    var titleById = {}
+    ;(meta && Array.isArray(meta.models) ? meta.models : []).forEach(function (m) {
+      if (m && m.id) titleById[m.id] = m.title || m.id
+    })
+    bp.appendChild(
+      versionsTable(
+        'nn-versions-blueprints-table',
+        ['BluepriNNt', 'Used by', 'Pinned', 'Latest', 'Status', 'Origin'],
+        blueprints.map(function (row) {
+          var label = versionStatusLabel(row)
+          var badge = el('span', 'nn-versions-status nn-versions-status--' + label.tone, label.text)
+          var usedBy = (row.models || []).map(function (id) {
+            return titleById[id] || id
+          })
+          return [row.name, usedBy.join(', '), row.pinned, row.adopted, badge, versionOrigin(row)]
+        }),
+      ),
+    )
+    if (versions.catalog === 'unavailable') {
+      bp.appendChild(el('p', 'nn-versions-hint', 'The bluepriNNt catalog could not be read at export time, so no version was checked.'))
+    }
+    if (
+      blueprints.some(function (row) {
+        return row.status === 'upgrade-available'
+      })
+    ) {
+      bp.appendChild(el('p', 'nn-versions-hint', 'To move a model to a newer bluepriNNt, use the nn-update skill.'))
+    }
+    root.appendChild(bp)
+
+    var inst = el('section', 'nn-versions-section nn-versions-installation')
+    inst.appendChild(el('h3', null, 'Installed cogNNitive'))
+    var record = versions.installation
+    if (record && Array.isArray(record.components) && record.components.length) {
+      inst.appendChild(el('p', 'nn-versions-hint', INSTALL_SCOPE_TEXT[record.scope] || ''))
+      inst.appendChild(
+        versionsTable(
+          'nn-versions-installation-table',
+          ['Component', 'Name', 'Version', 'Updated'],
+          record.components.map(function (c) {
+            return [c.kind, c.name, c.version, c.updatedAt]
+          }),
+        ),
+      )
+    } else {
+      inst.appendChild(el('p', 'nn-versions-hint', 'No installation record was found when this console was exported.'))
+    }
+    var check = el('p', 'nn-versions-hint')
+    check.appendChild(doc.createTextNode('Newer skills, MCP server and console versions cannot be checked offline. Run '))
+    check.appendChild(el('code', null, 'node skills-manager.js status'))
+    check.appendChild(doc.createTextNode(' to compare with the latest cogNNitive release.'))
+    inst.appendChild(check)
+    root.appendChild(inst)
+    host.appendChild(root)
+  }
+
+  // ---- Map tab: how the domaiNN is built and what one element is linked to -------
+  // A treemap nests models, concepts and elements by size; below it, one element and
+  // its links one hop away (never the whole element graph: a force layout with a
+  // couple of thousand nodes blocks the page for many seconds).
+
+  // Links between elements: `relations` from the payload, plus field values that
+  // address another element (`model@slug`, a slug of the same model, or `[[Name]]`).
+  function elementLinks(elements) {
+    var byId = {}
+    var byModelName = {}
+    elements.forEach(function (e) {
+      byId[e.id] = e
+      byModelName[e.modelId + '\u0000' + String(e.name).toLowerCase()] = e
+    })
+    function resolve(from, raw) {
+      if (typeof raw !== 'string') return null
+      var v = raw.trim().replace(/^\[\[|\]\]$/g, '')
+      if (!v) return null
+      if (byId[v]) return byId[v]
+      if (byId[from.modelId + '@' + v]) return byId[from.modelId + '@' + v]
+      return byModelName[from.modelId + '\u0000' + v.toLowerCase()] || null
+    }
+    var out = {}
+    var inc = {}
+    var seen = {}
+    function add(from, to, field) {
+      if (!to || to.id === from.id) return
+      var key = from.id + '\u0000' + to.id + '\u0000' + field
+      if (seen[key]) return
+      seen[key] = true
+      ;(out[from.id] = out[from.id] || []).push({ id: to.id, field: field })
+      ;(inc[to.id] = inc[to.id] || []).push({ id: from.id, field: field })
+    }
+    elements.forEach(function (e) {
+      var fields = (e && e.fields) || {}
+      Object.keys(fields).forEach(function (name) {
+        var values = Array.isArray(fields[name]) ? fields[name] : [fields[name]]
+        values.forEach(function (v) {
+          add(e, resolve(e, v), name)
+        })
+      })
+      ;(Array.isArray(e.relations) ? e.relations : []).forEach(function (r) {
+        if (r && r.target) add(e, byId[r.target], r.field || '')
+      })
+    })
+    return { byId: byId, out: out, inc: inc }
+  }
+
+  function renderMapTree(host, domainTitle, models, elements, schema, onPick) {
+    var tree = models.map(function (m) {
+      var own = elements.filter(function (e) {
+        return e.modelId === m.id
+      })
+      var byConcept = {}
+      own.forEach(function (e) {
+        ;(byConcept[e.concept] = byConcept[e.concept] || []).push(e)
+      })
+      return {
+        name: (m.title || m.id) + (m.blueprint ? ' · ' + m.blueprint : ''),
+        children: Object.keys(byConcept).map(function (c) {
+          var color = conceptMetaOf(schema && schema.concepts, c).hexColor
+          return {
+            name: c,
+            value: byConcept[c].length,
+            itemStyle: { color: color },
+            label: { formatter: '{b} ({c})' },
+            children: byConcept[c].map(function (e) {
+              return { name: e.name || e.id, value: 1, elementId: e.id, itemStyle: { color: color } }
+            }),
+          }
+        }),
+      }
+    })
+    var chart = Studio.renderChart(host, {
+      animation: false,
+      tooltip: { formatter: '{b}: {c}' },
+      series: [
+        {
+          type: 'treemap',
+          name: domainTitle,
+          data: tree,
+          leafDepth: 2,
+          roam: false,
+          nodeClick: 'zoomToNode',
+          breadcrumb: { show: true, bottom: 6 },
+          upperLabel: { show: true, height: 24, color: '#111827', fontWeight: 'bold' },
+          label: { show: true, color: '#ffffff', fontSize: 11 },
+          levels: [
+            { itemStyle: { borderColor: '#e5e7eb', borderWidth: 4, gapWidth: 4 } },
+            { itemStyle: { borderColor: '#ffffff', borderWidth: 2, gapWidth: 2 } },
+            { itemStyle: { borderColor: '#ffffff', borderWidth: 1, gapWidth: 1 } },
+          ],
+        },
+      ],
+    })
+    if (chart) {
+      chart.on('click', function (params) {
+        if (params.data && params.data.elementId) onPick(params.data.elementId)
+      })
+    }
+  }
+
+  function renderMapView(doc, model, schema, meta) {
+    var host = doc.getElementById('nn-tab-map')
+    if (!host) return
+    host.innerHTML = ''
+    var models = summaryModels(meta)
+    var elements = (model && Array.isArray(model.elements) ? model.elements : []).filter(function (e) {
+      return e && e.id && e.modelId !== 'changes'
+    })
+    var titleOf = {}
+    models.forEach(function (m) {
+      titleOf[m.id] = m.title || m.id
+    })
+    var links = elementLinks(elements)
+    function linkCount(id) {
+      return (links.out[id] || []).length + (links.inc[id] || []).length
+    }
+
+    var root = el('div', 'nn-map')
+    root.appendChild(el('h3', 'nn-map-title', 'How the domaiNN is built'))
+    root.appendChild(
+      el(
+        'p',
+        'nn-map-hint',
+        'Each box is a model; inside it, its concepts; inside those, their elements. Bigger means more elements. Click a box to go in, the bar at the bottom to come back out, and an element to see its links below.',
+      ),
+    )
+    var treeHost = el('div', 'nn-map-tree')
+    root.appendChild(treeHost)
+
+    root.appendChild(el('h3', 'nn-map-title', 'Around one element'))
+    var picker = el('label', 'nn-map-picker', 'Element ')
+    var select = el('select', 'nn-map-pick')
+    models.forEach(function (m) {
+      var group = el('optgroup')
+      group.setAttribute('label', titleOf[m.id])
+      elements
+        .filter(function (e) {
+          return e.modelId === m.id
+        })
+        .forEach(function (e) {
+          var opt = el('option', null, (e.name || e.id) + ' (' + e.concept + ')')
+          opt.value = e.id
+          group.appendChild(opt)
+        })
+      select.appendChild(group)
+    })
+    picker.appendChild(select)
+    root.appendChild(picker)
+    var wordsHost = el('p', 'nn-map-words')
+    root.appendChild(wordsHost)
+    var egoHost = el('div', 'nn-map-ego')
+    root.appendChild(egoHost)
+    var open = el('button', 'nn-summary-model-open', 'Open in Knowledge')
+    open.setAttribute('type', 'button')
+    root.appendChild(open)
+    host.appendChild(root)
+
+    function nameOf(id) {
+      var e = links.byId[id]
+      return e ? e.name || e.id : id
+    }
+
+    function linkList(items) {
+      var span = el('span')
+      items.forEach(function (item, i) {
+        if (i) span.appendChild(doc.createTextNode(', '))
+        var a = el('a', 'nn-concept-link', nameOf(item.id))
+        a.setAttribute('href', '#map')
+        a.setAttribute('data-element', item.id)
+        a.addEventListener('click', function (event) {
+          if (event && event.preventDefault) event.preventDefault()
+          show(item.id)
+        })
+        span.appendChild(a)
+        if (item.field) span.appendChild(doc.createTextNode(' (' + item.field + ')'))
+      })
+      return span
+    }
+
+    function show(id) {
+      var center = links.byId[id]
+      if (!center) return
+      select.value = id
+      var outs = links.out[id] || []
+      var ins = links.inc[id] || []
+      wordsHost.innerHTML = ''
+      wordsHost.appendChild(
+        doc.createTextNode(nameOf(id) + ' (' + center.concept + ', ' + (titleOf[center.modelId] || center.modelId) + ') '),
+      )
+      if (outs.length) {
+        wordsHost.appendChild(doc.createTextNode('points to: '))
+        wordsHost.appendChild(linkList(outs))
+        wordsHost.appendChild(doc.createTextNode('. '))
+      } else {
+        wordsHost.appendChild(doc.createTextNode('points to nothing. '))
+      }
+      if (ins.length) {
+        wordsHost.appendChild(doc.createTextNode('Pointed to by: '))
+        wordsHost.appendChild(linkList(ins))
+        wordsHost.appendChild(doc.createTextNode('.'))
+      } else {
+        wordsHost.appendChild(doc.createTextNode('Nothing points to it.'))
+      }
+
+      var ids = [id]
+      outs.concat(ins).forEach(function (n) {
+        if (ids.indexOf(n.id) < 0) ids.push(n.id)
+      })
+      var chart = Studio.renderChart(
+        egoHost,
+        {
+          animation: false,
+          tooltip: { formatter: '{b}' },
+          series: [
+            {
+              type: 'graph',
+              layout: 'circular',
+              circular: { rotateLabel: false },
+              roam: true,
+              top: 50,
+              bottom: 60,
+              left: 120,
+              right: 120,
+              edgeSymbol: ['none', 'arrow'],
+              edgeSymbolSize: 9,
+              label: { show: true, position: 'bottom', fontSize: 11, color: '#1f2937' },
+              data: ids.map(function (nid) {
+                var e = links.byId[nid]
+                var isCenter = nid === id
+                return {
+                  id: nid,
+                  name: nameOf(nid),
+                  symbolSize: isCenter ? 46 : 26,
+                  itemStyle: {
+                    color: conceptMetaOf(schema && schema.concepts, e.concept).hexColor,
+                    borderColor: isCenter ? '#111827' : '#ffffff',
+                    borderWidth: isCenter ? 3 : 1,
+                  },
+                  label: { fontWeight: isCenter ? 'bold' : 'normal' },
+                }
+              }),
+              links: outs
+                .map(function (n) {
+                  return { source: id, target: n.id, field: n.field }
+                })
+                .concat(
+                  ins.map(function (n) {
+                    return { source: n.id, target: id, field: n.field }
+                  }),
+                )
+                .map(function (l) {
+                  return {
+                    source: l.source,
+                    target: l.target,
+                    lineStyle: { color: '#64748b', width: 1.5, curveness: 0.1 },
+                    label: { show: !!l.field, formatter: l.field, fontSize: 10, color: '#334155', backgroundColor: '#ffffff' },
+                  }
+                }),
+            },
+          ],
+        },
+        { height: 340 },
+      )
+      if (chart) {
+        chart.on('click', function (params) {
+          if (params.dataType === 'node' && params.data && params.data.id !== id) show(params.data.id)
+        })
+      }
+    }
+
+    open.addEventListener('click', function () {
+      if (select.value) focusElementCard(doc, select.value)
+    })
+    select.addEventListener('change', function () {
+      show(select.value)
+    })
+
+    renderMapTree(treeHost, (meta && meta.domain && meta.domain.title) || 'domaiNN', models, elements, schema, show)
+
+    var start = elements.reduce(function (best, e) {
+      return !best || linkCount(e.id) > linkCount(best.id) ? e : best
+    }, null)
+    if (start) show(start.id)
+  }
+
+  // ---- Schema tab: the concepts as an entity-relationship diagram ----------------
+  // One box per concept with its fields, grouped by the bluepriNNt that declares it;
+  // solid lines are matrices, dashed lines are fields that point to another concept.
+  // The same schema is also told in words below the chart, so it reads without it.
+
+  var SCHEMA_BOX_WIDTH = 230
+  var SCHEMA_GAP_X = 100
+  var SCHEMA_GAP_Y = 110
+  var SCHEMA_MAX_COLS = 4
+  var SCHEMA_MAX_FIELDS = 8
+  var SCHEMA_LINE = 17
+  var SCHEMA_HEADER = 34
+  var SCHEMA_PAD = 20
+  var SCHEMA_ANCHOR = '__nn-schema-anchor-'
+
+  // The relationships between concepts: declared matrices, reference fields of the
+  // schema, and references found in the data. One entry per source, target and label.
+  function schemaEdges(schema, matrices, elements, conceptNames) {
+    var known = {}
+    conceptNames.forEach(function (c) {
+      known[c] = true
+    })
+    var seen = {}
+    var edges = []
+    function add(kind, source, target, label) {
+      if (!known[source] || !known[target]) return
+      var key = kind + '\u0000' + source + '\u0000' + target + '\u0000' + label
+      if (seen[key]) return
+      seen[key] = true
+      edges.push({ kind: kind, source: source, target: target, label: label })
+    }
+    var allMatrices = (Array.isArray(matrices) ? matrices : []).concat(
+      schema && Array.isArray(schema.matrices) ? schema.matrices : [],
+    )
+    allMatrices.forEach(function (m) {
+      if (m && m.source && m.target) add('matrix', m.source, m.target, m.name || '')
+    })
+    ;(schema && Array.isArray(schema.fields) ? schema.fields : []).forEach(function (f) {
+      ;(Array.isArray(f && f.target_concepts) ? f.target_concepts : []).forEach(function (t) {
+        add('reference', f.concept, t, f.name)
+      })
+    })
+    var conceptOf = {}
+    ;(Array.isArray(elements) ? elements : []).forEach(function (e) {
+      if (e && e.id) conceptOf[e.id] = e.concept
+    })
+    ;(Array.isArray(elements) ? elements : []).forEach(function (e) {
+      ;(Array.isArray(e && e.relations) ? e.relations : []).forEach(function (r) {
+        var t = r && conceptOf[r.target]
+        if (t) add('reference', e.concept, t, r.field || '')
+      })
+    })
+    return edges
+  }
+
+  function schemaFamilyOf(schema, concept) {
+    var list = schema && Array.isArray(schema.concepts) ? schema.concepts : []
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i]
+      if (c && typeof c === 'object' && c.name === concept) return (c.declaredBy && c.declaredBy.family) || 'Other'
+    }
+    return 'Other'
+  }
+
+  function renderSchemaInWords(doc, groups, fieldsOf, counts, edges) {
+    var words = el('section', 'nn-schema-words')
+    words.appendChild(el('h3', 'nn-schema-words-title', 'The schema in words'))
+    groups.forEach(function (g) {
+      var group = el('div', 'nn-schema-group')
+      group.appendChild(el('h3', null, g.family))
+      var list = el('ul')
+      g.concepts.forEach(function (c) {
+        var li = el('li', 'nn-schema-concept')
+        li.appendChild(conceptLink(doc, c))
+        var text = ' — ' + plural(counts[c] || 0, 'element', 'elements') + '.'
+        var fields = fieldsOf[c] || []
+        if (fields.length) {
+          text +=
+            ' Fields: ' +
+            fields
+              .map(function (f) {
+                return f.name + ' (' + (f.type || 'text') + ')'
+              })
+              .join(', ') +
+            '.'
+        }
+        var refs = edges.filter(function (e) {
+          return e.kind === 'reference' && e.source === c
+        })
+        if (refs.length) {
+          text +=
+            ' Points to ' +
+            refs
+              .map(function (e) {
+                return e.target + (e.label ? ' (' + e.label + ')' : '')
+              })
+              .join(', ') +
+            '.'
+        }
+        var mats = edges.filter(function (e) {
+          return e.kind === 'matrix' && e.source === c
+        })
+        if (mats.length) {
+          text +=
+            ' Matrix with ' +
+            mats
+              .map(function (e) {
+                return e.target + (e.label ? ' (' + e.label + ')' : '')
+              })
+              .join(', ') +
+            '.'
+        }
+        li.appendChild(doc.createTextNode(text))
+        list.appendChild(li)
+      })
+      group.appendChild(list)
+      words.appendChild(group)
+    })
+    return words
+  }
+
   function renderMetamodelView(doc, schema, matrices, elements) {
     var host = doc.getElementById('nn-tab-metamodel')
     if (!host) return
     host.innerHTML = ''
-    var nodes = metamodelConceptNames(schema, elements)
-    if (!nodes.length) {
+    // A domaiNN schema keeps one concept per bluepriNNt, so a name can repeat; the
+    // diagram shows it once (graph nodes are keyed by name).
+    var conceptNames = metamodelConceptNames(schema, elements).filter(function (c, i, all) {
+      return all.indexOf(c) === i
+    })
+    if (!conceptNames.length) {
       host.appendChild(el('p', 'empty-state', 'No concepts to map.'))
       return
     }
-    var NS = 'http://www.w3.org/2000/svg'
-    var size = 680
-    var mid = size / 2
-    var r = nodes.length > 1 ? 235 : 0
-    var nodeR = 36
-    var pos = {}
-    nodes.forEach(function (name, i) {
-      var a = -Math.PI / 2 + (i * 2 * Math.PI) / nodes.length
-      pos[name] = { x: mid + r * Math.cos(a), y: mid + r * Math.sin(a) }
+    var counts = {}
+    ;(Array.isArray(elements) ? elements : []).forEach(function (e) {
+      if (e && e.concept) counts[e.concept] = (counts[e.concept] || 0) + 1
     })
-    var svg = doc.createElementNS(NS, 'svg')
-    svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size)
-    svg.setAttribute('class', 'nn-metamodel-svg')
-    svg.setAttribute('role', 'img')
-    svg.setAttribute('aria-label', 'Model metamodel map')
+    var fieldsOf = {}
+    ;(schema && Array.isArray(schema.fields) ? schema.fields : []).forEach(function (f) {
+      if (f && f.concept && f.name) (fieldsOf[f.concept] = fieldsOf[f.concept] || []).push(f)
+    })
+    var groups = []
+    var groupOf = {}
+    conceptNames.forEach(function (c) {
+      var family = schemaFamilyOf(schema, c)
+      if (!groupOf[family]) {
+        groupOf[family] = { family: family, concepts: [] }
+        groups.push(groupOf[family])
+      }
+      groupOf[family].concepts.push(c)
+    })
+    var edges = schemaEdges(schema, matrices, elements, conceptNames)
 
-    var defs = doc.createElementNS(NS, 'defs')
-    var marker = doc.createElementNS(NS, 'marker')
-    marker.setAttribute('id', 'nn-metamodel-arrow')
-    marker.setAttribute('viewBox', '0 0 10 10')
-    marker.setAttribute('refX', '9')
-    marker.setAttribute('refY', '5')
-    marker.setAttribute('markerWidth', '6')
-    marker.setAttribute('markerHeight', '6')
-    marker.setAttribute('orient', 'auto-start-reverse')
-    var arrowPath = doc.createElementNS(NS, 'path')
-    arrowPath.setAttribute('d', 'M 0 1 L 10 5 L 0 9 z')
-    arrowPath.setAttribute('fill', 'var(--primary, #2563eb)')
-    marker.appendChild(arrowPath)
-    defs.appendChild(marker)
-    svg.appendChild(defs)
+    var root = el('div', 'nn-schema')
+    var legend = el('p', 'nn-schema-legend')
+    legend.textContent =
+      'Each box is a concept with its fields, grouped by bluepriNNt. A solid line is a matrix; a dashed line is a field that points to another concept. Click a box to see its elements; drag or scroll to move around.'
+    root.appendChild(legend)
+    var chartHost = el('div', 'nn-schema-chart')
+    root.appendChild(chartHost)
+    root.appendChild(renderSchemaInWords(doc, groups, fieldsOf, counts, edges))
+    host.appendChild(root)
 
-    // Edges: matrices (explicit) + element field refs (implicit).
-    var edges = []
-    var seenEdge = {}
-    var pairCounts = {}
-    function pushEdge(source, target, name, kind) {
-      if (!source || !target || !pos[source] || !pos[target]) return
-      var key = source + '>' + target + '>' + (name || '')
-      if (seenEdge[key]) return
-      seenEdge[key] = true
-      var pairKey = source < target ? source + '|' + target : target + '|' + source
-      var slot = pairCounts[pairKey] || 0
-      pairCounts[pairKey] = slot + 1
-      edges.push({ source: source, target: target, name: name, kind: kind || 'matrix', pairKey: pairKey, slot: slot })
+    // Layout: each bluepriNNt starts a new band of rows; boxes keep their real size
+    // because the chart is sized to the layout instead of squeezing it into the view.
+    var nodes = []
+    var y = 0
+    var cols = 1
+    groups.forEach(function (g) {
+      for (var i = 0; i < g.concepts.length; i += SCHEMA_MAX_COLS) {
+        var row = g.concepts.slice(i, i + SCHEMA_MAX_COLS)
+        cols = Math.max(cols, row.length)
+        var heights = row.map(function (c) {
+          var lines = Math.min((fieldsOf[c] || []).length, SCHEMA_MAX_FIELDS)
+          if ((fieldsOf[c] || []).length > SCHEMA_MAX_FIELDS) lines++
+          return SCHEMA_HEADER + Math.max(lines, 1) * SCHEMA_LINE + 14
+        })
+        var rowHeight = Math.max.apply(null, heights)
+        row.forEach(function (c, k) {
+          nodes.push({
+            name: c,
+            h: heights[k],
+            x: SCHEMA_PAD + SCHEMA_BOX_WIDTH / 2 + k * (SCHEMA_BOX_WIDTH + SCHEMA_GAP_X),
+            y: SCHEMA_PAD + y + heights[k] / 2,
+          })
+        })
+        y += rowHeight + SCHEMA_GAP_Y
+      }
+    })
+    var width = cols * SCHEMA_BOX_WIDTH + (cols - 1) * SCHEMA_GAP_X + 2 * SCHEMA_PAD
+    var height = Math.max(200, y - SCHEMA_GAP_Y + 2 * SCHEMA_PAD)
+    // ECharts fits the node centres into the view. Two invisible anchors at the
+    // canvas corners make that box the whole canvas, so the scale stays 1:1 and
+    // no box is cut or squeezed.
+    var anchors = [
+      [SCHEMA_ANCHOR + 'start', 0, 0],
+      [SCHEMA_ANCHOR + 'end', width, height],
+    ].map(function (a) {
+      return { name: a[0], x: a[1], y: a[2], symbolSize: 0, silent: true, label: { show: false }, tooltip: { show: false } }
+    })
+    chartHost.style.height = height + 'px'
+    chartHost.style.width = width + 'px'
+
+    var chart = null
+    try {
+      chart = Studio.renderChart(
+      chartHost,
+      {
+        animation: false,
+        tooltip: { trigger: 'item', confine: true },
+        series: [
+          {
+            type: 'graph',
+            layout: 'none',
+            roam: true,
+            draggable: true,
+            left: 0,
+            top: 0,
+            width: width,
+            height: height,
+            edgeSymbol: ['none', 'arrow'],
+            edgeSymbolSize: 9,
+            autoCurveness: true,
+            data: anchors.concat(
+              nodes.map(function (n) {
+              var color = conceptMetaOf(schema && schema.concepts, n.name).hexColor
+              var fields = fieldsOf[n.name] || []
+              var lines = fields.slice(0, SCHEMA_MAX_FIELDS).map(function (f) {
+                return '{f|' + f.name + '}  {k|' + (f.type || 'text') + '}'
+              })
+              if (fields.length > SCHEMA_MAX_FIELDS) lines.push('{k|+' + (fields.length - SCHEMA_MAX_FIELDS) + ' more fields}')
+              if (!lines.length) lines.push('{k|no fields}')
+              return {
+                name: n.name,
+                x: n.x,
+                y: n.y,
+                symbol: 'rect',
+                symbolSize: [SCHEMA_BOX_WIDTH, n.h],
+                itemStyle: { color: '#ffffff', borderColor: color, borderWidth: 2 },
+                label: {
+                  show: true,
+                  position: [8, 8],
+                  align: 'left',
+                  verticalAlign: 'top',
+                  width: SCHEMA_BOX_WIDTH - 16,
+                  overflow: 'truncate',
+                  formatter: '{t|' + n.name + '  ·  ' + plural(counts[n.name] || 0, 'element', 'elements') + '}\n' + lines.join('\n'),
+                  rich: {
+                    t: {
+                      width: SCHEMA_BOX_WIDTH - 16,
+                      backgroundColor: color,
+                      color: '#ffffff',
+                      fontWeight: 'bold',
+                      fontSize: 12,
+                      padding: [5, 6],
+                      borderRadius: 3,
+                    },
+                    f: { fontSize: 11, color: '#1f2937', lineHeight: SCHEMA_LINE },
+                    k: { fontSize: 10, color: '#6b7280', lineHeight: SCHEMA_LINE },
+                  },
+                },
+                tooltip: {
+                  formatter:
+                    n.name +
+                    ': ' +
+                    (fields.length
+                      ? fields
+                          .map(function (f) {
+                            return f.name
+                          })
+                          .join(', ')
+                      : 'no fields'),
+                },
+              }
+            }),
+            ),
+            links: edges.map(function (e) {
+              return {
+                source: e.source,
+                target: e.target,
+                lineStyle: { type: e.kind === 'matrix' ? 'solid' : 'dashed', width: 1.5, color: '#64748b' },
+                label: {
+                  show: !!e.label,
+                  formatter: e.label,
+                  fontSize: 10,
+                  color: '#334155',
+                  backgroundColor: '#ffffff',
+                  padding: [1, 3],
+                },
+              }
+            }),
+          },
+        ],
+      },
+      { width: width, height: height },
+      )
+    } catch (err) {
+      // The schema in words below still explains the domaiNN without the diagram.
+      if (typeof console !== 'undefined' && console.warn) console.warn('nn-console: schema diagram failed', err)
     }
-    ;(Array.isArray(matrices) ? matrices : []).forEach(function (m) {
-      if (m) pushEdge(m.source, m.target, m.name, 'matrix')
-    })
-    var byConcept = {}
-    ;(Array.isArray(elements) ? elements : []).forEach(function (e) {
-      if (e && e.concept) byConcept[e.id] = e.concept
-    })
-    ;(Array.isArray(elements) ? elements : []).forEach(function (e) {
-      if (!e || !e.concept || !Array.isArray(e.relations)) return
-      e.relations.forEach(function (r) {
-        if (!r || !r.target) return
-        var tc = byConcept[r.target]
-        if (tc && tc !== e.concept) pushEdge(e.concept, tc, r.field || '', 'relation')
+    if (chart) {
+      chart.on('click', function (params) {
+        if (params.dataType === 'node') revealInKnowledge(doc, formatFacetToken('concept', params.name))
       })
-    })
-    var pendingEdgeLabels = []
-    edges.forEach(function (m) {
-      if (!m || !m.source || !m.target || !pos[m.source] || !pos[m.target]) return
-      var sx = pos[m.source].x
-      var sy = pos[m.source].y
-      var tx = pos[m.target].x
-      var ty = pos[m.target].y
-      var dx = tx - sx
-      var dy = ty - sy
-      var dist = Math.sqrt(dx * dx + dy * dy) || 1
-      var totalForPair = pairCounts[m.pairKey] || 1
-      // Canonical normal vector so parallel edges between the same pair separate cleanly
-      var canonDx = m.source < m.target ? dx : -dx
-      var canonDy = m.source < m.target ? dy : -dy
-      var nx = -canonDy / dist
-      var ny = canonDx / dist
-      var offsetIndex = m.slot - (totalForPair - 1) / 2
-      var perpShift = offsetIndex * 24
-      var x1 = (dist > nodeR * 2 ? sx + (dx / dist) * nodeR : sx) + nx * perpShift
-      var y1 = (dist > nodeR * 2 ? sy + (dy / dist) * nodeR : sy) + ny * perpShift
-      var x2 = (dist > nodeR * 2 ? tx - (dx / dist) * (nodeR + 4) : tx) + nx * perpShift
-      var y2 = (dist > nodeR * 2 ? ty - (dy / dist) * (nodeR + 4) : ty) + ny * perpShift
-      var line = doc.createElementNS(NS, 'line')
-      line.setAttribute('x1', x1)
-      line.setAttribute('y1', y1)
-      line.setAttribute('x2', x2)
-      line.setAttribute('y2', y2)
-      line.setAttribute('class', 'nn-metamodel-edge')
-      line.setAttribute('data-edge-kind', m.kind || 'matrix')
-      if (m.kind === 'relation') {
-        line.setAttribute('stroke-dasharray', '5,4')
-      }
-      line.setAttribute('marker-end', 'url(#nn-metamodel-arrow)')
-      svg.appendChild(line)
-      if (m.name) {
-        var rawName = String(m.name)
-        var shortName = rawName.length > 20 ? rawName.replace(/\s+Matrix$/i, '') : rawName
-        var tFrac = 0.5
-        var lx = x1 + (x2 - x1) * tFrac
-        var ly = y1 + (y2 - y1) * tFrac
-        pendingEdgeLabels.push({ x: lx, y: ly, text: shortName, fullText: rawName, kind: m.kind })
-      }
-    })
-
-    nodes.forEach(function (name) {
-      var c = doc.createElementNS(NS, 'circle')
-      c.setAttribute('cx', pos[name].x)
-      c.setAttribute('cy', pos[name].y)
-      c.setAttribute('r', String(nodeR))
-      c.setAttribute('class', 'nn-metamodel-node')
-      var nodeMeta = conceptMetaOf((schema && schema.concepts && schema.concepts.length ? schema.concepts : nodes), name)
-      if (nodeMeta && nodeMeta.hexColor) {
-        c.style.stroke = nodeMeta.hexColor
-        c.style.strokeWidth = '2.5px'
-        c.style.fill = 'color-mix(in srgb, ' + nodeMeta.hexColor + ' 10%, #ffffff)'
-      }
-      c.style.cursor = 'pointer'
-      var title = doc.createElementNS(NS, 'title')
-      title.textContent = String(name)
-      c.appendChild(title)
-      c.addEventListener('click', function () {
-        var search = doc.getElementById('nn-search')
-        if (search) {
-          search.value = formatFacetToken('concept', name)
-          if (typeof CustomEvent === 'function') {
-            search.dispatchEvent(new CustomEvent('input', { bubbles: true }))
-          }
-        }
-        var expBtn = doc.querySelector('.nn-view-tab[data-tab="explorer"]')
-        if (expBtn && typeof expBtn.click === 'function') expBtn.click()
-      })
-      svg.appendChild(c)
-      var t = doc.createElementNS(NS, 'text')
-      t.setAttribute('x', pos[name].x)
-      t.setAttribute('y', pos[name].y + 4)
-      t.setAttribute('text-anchor', 'middle')
-      t.setAttribute('class', 'nn-metamodel-label')
-      t.style.pointerEvents = 'none'
-      t.textContent = name.length > 18 ? name.slice(0, 17) + '\u2026' : name
-      svg.appendChild(t)
-    })
-
-    pendingEdgeLabels.forEach(function (lbl) {
-      var padX = 7
-      var boxW = Math.max(38, lbl.text.length * 6.8 + padX * 2)
-      var boxH = 18
-      var bg = doc.createElementNS(NS, 'rect')
-      bg.setAttribute('x', lbl.x - boxW / 2)
-      bg.setAttribute('y', lbl.y - boxH / 2 - 2)
-      bg.setAttribute('width', boxW)
-      bg.setAttribute('height', boxH)
-      bg.setAttribute('rx', '9')
-      bg.setAttribute('class', 'nn-metamodel-edge-bg')
-      svg.appendChild(bg)
-
-      var lt = doc.createElementNS(NS, 'text')
-      lt.setAttribute('x', lbl.x)
-      lt.setAttribute('y', lbl.y + 2)
-      lt.setAttribute('text-anchor', 'middle')
-      lt.setAttribute('class', 'nn-metamodel-edge-label')
-      lt.textContent = lbl.text
-      if (lbl.fullText && lbl.fullText !== lbl.text) {
-        var lTitle = doc.createElementNS(NS, 'title')
-        lTitle.textContent = lbl.fullText
-        lt.appendChild(lTitle)
-      }
-      svg.appendChild(lt)
-    })
-
-    var wrap = el('div', 'nn-metamodel')
-    wrap.appendChild(svg)
-    var legend = el('div', 'nn-metamodel-legend')
-    legend.innerHTML =
-      '<span class="nn-mm-legend-item"><span class="nn-mm-line nn-mm-line--matrix"></span> Matrix relationship</span>' +
-      '<span class="nn-mm-legend-item"><span class="nn-mm-line nn-mm-line--relation"></span> Element reference (relation)</span>' +
-      '<span class="nn-mm-legend-hint">Click any concept node to filter in Model Explorer</span>'
-    wrap.appendChild(legend)
-    host.appendChild(wrap)
+    }
   }
 
   // Citation detail dialog (Console Citation Icons / Tanda C). Reuses the
@@ -18610,6 +19426,9 @@ if (typeof window !== 'undefined') {
       },
     })
     renderMetamodelView(active, schema, matrices, elements)
+    renderSummaryView(active, model, schema, meta)
+    renderVersionsView(active, meta)
+    renderMapView(active, model, schema, meta)
 
     var searchBox = active.getElementById('nn-search')
     if (searchBox) {

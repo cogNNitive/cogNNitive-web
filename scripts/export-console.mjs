@@ -111,6 +111,133 @@ function consolePackagesDir(consoleDir) {
   )
 }
 
+// ---- Versions tab data (computed here: the console never goes online) -------------
+
+/** Locale-free, case-insensitive ordering, so the artifact is byte-identical on every machine. */
+function byCodeUnits(a, b) {
+  const la = String(a).toLowerCase()
+  const lb = String(b).toLowerCase()
+  if (la !== lb) return la < lb ? -1 : 1
+  return a < b ? -1 : a > b ? 1 : 0
+}
+
+/**
+ * The bluepriNNt version classifier the preflight already ships (`classifyAgainstCatalog`),
+ * from the repo checkout or the installed skills. Null when neither is present.
+ */
+function loadVersionStatus() {
+  const rel = join('skills', 'nn-preflight', 'scripts', 'lib', 'version-status.generated.cjs')
+  for (const file of [join(repoRoot, rel), join(homedir(), '.agents', rel)]) {
+    if (!existsSync(file)) continue
+    try {
+      return req(file)
+    } catch {
+      // A broken install reads as "no classifier": every bluepriNNt shows unknown.
+    }
+  }
+  return null
+}
+
+/**
+ * The bluepriNNt catalog: `$INNFO_CATALOG` when set (and nothing else), else the
+ * domaiNN's own `specs/bluepriNNts/catalog.json` (the offline lookup nn-mcp uses too),
+ * else the one beside the bluepriNNt packages.
+ */
+function loadBlueprintCatalog(consoleDir, root) {
+  const files = process.env.INNFO_CATALOG
+    ? [process.env.INNFO_CATALOG]
+    : [
+        join(root, 'specs', 'bluepriNNts', 'catalog.json'),
+        join(consolePackagesDir(consoleDir), 'catalog.json'),
+      ]
+  for (const file of files) {
+    if (!existsSync(file)) continue
+    try {
+      return JSON.parse(readFileSync(file, 'utf8'))
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
+/**
+ * One row per bluepriNNt the exported models follow: the models that use it, the
+ * pinned and latest versions and the catalog status. Only the versions of the
+ * bluepriNNts in use are read, so the artifact changes only when one of them does.
+ */
+function blueprintVersionRows(uses, consoleDir, root) {
+  const lib = loadVersionStatus()
+  const catalog = lib ? loadBlueprintCatalog(consoleDir, root) : null
+  const byName = new Map()
+  for (const use of uses) {
+    const c = catalog
+      ? lib.classifyAgainstCatalog(use.url || null, catalog)
+      : { status: 'unknown', template: null, pinned: null, adopted: null, gap: null }
+    const name = c.template || use.name
+    if (!name) continue
+    const row = byName.get(name) || {
+      name,
+      models: [],
+      pinned: c.pinned || null,
+      adopted: c.adopted || null,
+      status: c.status,
+      gap: c.gap || null,
+    }
+    row.models.push(use.modelId)
+    byName.set(name, row)
+  }
+  return {
+    catalog: catalog ? 'available' : 'unavailable',
+    blueprints: Array.from(byName.values()).sort((a, b) => byCodeUnits(a.name, b.name)),
+  }
+}
+
+const INSTALL_KINDS = [
+  ['skills', 'skill'],
+  ['blueprints', 'bluepriNNt'],
+  ['mcp', 'MCP server'],
+  ['console', 'console'],
+  ['cli', 'CLI'],
+]
+
+/**
+ * What is installed, from the skills-manager state: `$INNFO_STATE_FILE` when set (and
+ * nothing else), else the domaiNN's own `.agents/bootstrap-state.json`, else the user's.
+ */
+function installationRecord(root) {
+  const candidates = process.env.INNFO_STATE_FILE
+    ? [['file', process.env.INNFO_STATE_FILE]]
+    : [
+        ['domain', join(root, '.agents', 'bootstrap-state.json')],
+        ['user', join(homedir(), '.agents', 'bootstrap-state.json')],
+      ]
+  for (const [scope, file] of candidates) {
+    if (!existsSync(file)) continue
+    let state
+    try {
+      state = JSON.parse(readFileSync(file, 'utf8'))
+    } catch {
+      continue
+    }
+    const components = []
+    for (const [key, kind] of INSTALL_KINDS) {
+      const section = state && typeof state[key] === 'object' && state[key] ? state[key] : {}
+      for (const name of Object.keys(section).sort(byCodeUnits)) {
+        const entry = section[name] || {}
+        components.push({
+          kind,
+          name,
+          version: entry.version || (entry.commit ? String(entry.commit).slice(0, 7) : null),
+          updatedAt: entry.updated_at ? String(entry.updated_at).slice(0, 10) : null,
+        })
+      }
+    }
+    return { scope, components }
+  }
+  return null
+}
+
 /** Console asset folder: `$INNFO_CONSOLE_DIR`, the repo checkout, this script's own folder, then `~/.agents/console`. */
 function resolveConsoleDir() {
   return (
@@ -2273,6 +2400,7 @@ export async function writeConsole(opts = {}) {
   const seenProcedureSources = new Set()
   const procedureWinners = new Map()
   const modelSummaries = []
+  const blueprintUses = []
   const scopeModelIds = []
   // Distinct sources cited across every model in the domain (for `meta.domain.sourceCount`).
   const domainSources = new Set()
@@ -2414,6 +2542,11 @@ export async function writeConsole(opts = {}) {
       const changeCount = Array.from(modelKeys).reduce(function (n, key) {
         return n + (changeCountByModelPart.get(key) || 0)
       }, 0)
+      blueprintUses.push({
+        modelId: mId,
+        name: blueprintParsed ? blueprintParsed.base : null,
+        url: (m.fm && m.fm.parent_spec && m.fm.parent_spec.url) || null,
+      })
       modelSummaries.push({
         id: mId,
         title: mTitle,
@@ -2731,6 +2864,14 @@ export async function writeConsole(opts = {}) {
           sourceCount: domainSources.size,
         },
         ...(omitChanges ? { changesOmitted: { count: changeCount, bytes: changesBytes } } : {}),
+        ...(wholeDomain
+          ? {
+              versions: {
+                ...blueprintVersionRows(blueprintUses, consoleDir, root),
+                installation: installationRecord(root),
+              },
+            }
+          : {}),
       },
       elements: allElements,
       matrices: allMatrices,

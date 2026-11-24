@@ -123,7 +123,7 @@ async function run() {
     const fixturesDir = path.join(__dirname, '..', 'fixtures', 'html');
     const readFixture = (name) => fs.readFileSync(path.join(fixturesDir, name), 'utf8');
     const FT = 'FT_55866_20261017T165551Z.html';
-    const PMC = 'PMC9547138_20261017T173000Z.html';
+    const PMC = 'pmc-chrome-synthetic.html';
     const NBK = 'NBK1478_20261017T174010Z.html';
     const SPRINGER = 's10072-023-06789-7_20261017T181030Z.html';
     const SCRIPT_ONLY = '920_20261017T190632Z.html';
@@ -173,9 +173,9 @@ async function run() {
     // PMC: navigation chrome is gone, the article's own prose stays.
     const pmcBody = converters.htmlToPlainText(readFixture(PMC));
     for (const forbidden of ['Skip to main content', 'Log in', 'Dashboard', 'Account settings']) {
-      ok(!pmcBody.includes(forbidden), `PMC9547138: the body omits "${forbidden}"`);
+      ok(!pmcBody.includes(forbidden), `PMC chrome: the body omits "${forbidden}"`);
     }
-    ok(/Parkinson/i.test(pmcBody), 'PMC9547138: the article prose is retained');
+    ok(/Parkinson/i.test(pmcBody), 'PMC chrome: the article prose is retained');
 
     // --- An incomplete extraction is reported, never presented as complete ------
     eq(converters.looksPartial(''), 'empty', 'an empty body is reported as empty');
@@ -183,7 +183,7 @@ async function run() {
     eq(converters.looksPartial(converters.htmlToPlainText(readFixture(SCRIPT_ONLY))), 'empty', '920: a script-only wall page extracts empty');
     eq(converters.looksPartial(converters.htmlToPlainText(readFixture(NBK))), 'anti-bot-wall', 'NBK1478: the captcha interstitial is an anti-bot wall');
     eq(converters.looksPartial(converters.htmlToPlainText(readFixture(SPRINGER))), 'anti-bot-wall', 's10072: the Client Challenge page is an anti-bot wall');
-    eq(converters.looksPartial(converters.htmlToPlainText(readFixture(PMC))), null, 'PMC9547138: a healthy article reports nothing');
+    eq(converters.looksPartial(converters.htmlToPlainText(readFixture(PMC))), null, 'PMC chrome: a healthy article reports nothing');
     eq(converters.looksPartial(converters.htmlToPlainText(readFixture(FT))), null, 'FT_55866: a substantial CRLF document reports nothing');
     eq(converters.looksPartial('# T\n\nonly a few characters'), 'trivial', 'a body too short to be the document is trivial');
     eq(
