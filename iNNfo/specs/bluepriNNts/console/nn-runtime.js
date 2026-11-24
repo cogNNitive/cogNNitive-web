@@ -1,5 +1,5 @@
 /* global module: writable */
-/* global uPlot */
+/* global echarts */
 ;(function (root, factory) {
   if (typeof module === 'object' && module.exports) {
     module.exports = factory(require('./ui-kit.js'), require('./review.js'), require('./studio.js'))
@@ -855,7 +855,7 @@
 
   // ---- Charts (shared console capability) ----
   // The runtime renders charts from pure-data series only: `compileChartSeries`
-  // maps nn-model.series{chartId:number[]} into uPlot-ready xs/ys arrays and
+  // maps nn-model.series{chartId:number[]} into chart-ready xs/ys arrays and
   // never executes slot JavaScript. `monthAxis` derives the x-axis month window
   // from meta.months / historyMonths / startMonth / startYear. Missing series
   // for a declared chartId degrade to a console warning (chart skipped); the
@@ -3520,10 +3520,17 @@
     })
   }
 
-  // Renders uPlot charts from the pure-data series mapping (charts capability).
+  // Renders ECharts line charts from the pure-data series mapping (charts capability).
   // Delegates to Studio (studio.js).
   function renderCharts(host, model, meta) {
     return Studio.renderCharts(host, model, meta)
+  }
+
+  // Draws any ECharts option into `host` with the console defaults (white
+  // background, palette) and returns the chart instance, or null without ECharts.
+  // The chart entry point for custom views. Delegates to Studio (studio.js).
+  function renderChart(host, option, opts) {
+    return Studio.renderChart(host, option, opts)
   }
 
   // Delegates timeline grid and studio view to Studio (studio.js).
@@ -8489,6 +8496,7 @@
     chainOf: chainOf,
     compileChartSeries: compileChartSeries,
     monthAxis: monthAxis,
+    renderChart: renderChart,
     renderCharts: renderCharts,
     renderTimelineGrid: renderTimelineGrid,
     createViewRegistry: createViewRegistry,

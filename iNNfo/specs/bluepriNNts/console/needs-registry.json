@@ -1,6 +1,6 @@
 {
   "charts": {
-    "description": "uPlot chart renderer reading pure-data series from nn-model.series{chartId:number[]}; x-axis months window from meta.months/historyMonths/startMonth/startYear.",
+    "description": "ECharts line-chart renderer reading pure-data series from nn-model.series{chartId:number[]}; x-axis months window from meta.months/historyMonths/startMonth/startYear.",
     "anchors": [["nn-charts"], ["nn-studio-view"], ["charts"], ["charts-container"]],
     "renderer": "nn-runtime"
   },

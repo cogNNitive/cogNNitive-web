@@ -5,7 +5,7 @@
    Read-only distribution charts derived from the payload: opportunities by
    status and by source, initiatives by phase and by type. Rendered as CSS bars
    over the console theme tokens (no external chart dependency, so the view can
-   never fail to mount). uPlot is vendored in the bundle and can replace the
+   never fail to mount). ECharts is vendored in the bundle: nnConsole.renderChart can replace the
    bars later without touching the data derivation. */
 
 registerView({
