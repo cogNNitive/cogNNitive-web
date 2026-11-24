@@ -50,13 +50,66 @@
     return file.text()
   }
 
+  async function ensurePermission(handle) {
+    if (!handle || typeof handle.queryPermission !== 'function') return 'granted'
+    var state = await handle.queryPermission({ mode: 'readwrite' })
+    if (state === 'granted') return 'granted'
+    if (typeof handle.requestPermission === 'function') {
+      return handle.requestPermission({ mode: 'readwrite' })
+    }
+    return state
+  }
+
+  /**
+   * The store key of a console's own file: one entry per domaiNN and file name, so two
+   * consoles of the same domain never share a handle.
+   */
+  function snapshotKey(input) {
+    var args = input || {}
+    return 'snapshot:' + String(args.domainId || 'console') + ':' + String(args.name || '')
+  }
+
+  /**
+   * Overwrites the file a person already picked, with no dialog: the handle comes from the
+   * store, which only a previous "Save" ever filled. A `file://` page cannot obtain a
+   * writable handle for its own URL, so the first save must go through the picker; every
+   * later one lands on the same file, which is what keeps its path stable for an agent.
+   *
+   * Returns `no-handle` / `permission-denied` / `write-failed` instead of throwing, so the
+   * caller falls back to the picker and never loses the person's edits to a broken handle.
+   */
+  async function saveToRememberedFile(input) {
+    var args = input || {}
+    var store = args.store || null
+    if (!store) return { ok: false, reason: 'no-store' }
+    var handle = null
+    try {
+      handle = await store.get(args.key)
+    } catch (err) {
+      return { ok: false, reason: 'no-store', error: err }
+    }
+    if (!handle) return { ok: false, reason: 'no-handle' }
+    var permission = await ensurePermission(handle)
+    if (permission !== 'granted') return { ok: false, reason: 'permission-denied' }
+    try {
+      var writable = await handle.createWritable()
+      await writable.write(String(args.text == null ? '' : args.text))
+      await writable.close()
+    } catch (err) {
+      return { ok: false, reason: 'write-failed', error: err }
+    }
+    return { ok: true, filename: handle.name || '', handle: handle }
+  }
+
   function createWriter(options) {
     var opts = options || {}
     var win = opts.win || root
     var store = opts.store || null
-    var now = opts.now || function () {
-      return new Date()
-    }
+    var now =
+      opts.now ||
+      function () {
+        return new Date()
+      }
 
     function available() {
       return !!win && typeof win.showDirectoryPicker === 'function'
@@ -91,16 +144,6 @@
       } catch {
         return null
       }
-    }
-
-    async function ensurePermission(handle) {
-      if (!handle || typeof handle.queryPermission !== 'function') return 'granted'
-      var state = await handle.queryPermission({ mode: 'readwrite' })
-      if (state === 'granted') return 'granted'
-      if (typeof handle.requestPermission === 'function') {
-        return handle.requestPermission({ mode: 'readwrite' })
-      }
-      return state
     }
 
     async function writeChangeset(input) {
@@ -203,6 +246,9 @@
     workspaceIdOf: workspaceIdOf,
     slugifyReviewer: slugifyReviewer,
     compactStamp: compactStamp,
+    ensurePermission: ensurePermission,
+    snapshotKey: snapshotKey,
+    saveToRememberedFile: saveToRememberedFile,
   }
 
   if (typeof module === 'object' && module.exports) module.exports = api

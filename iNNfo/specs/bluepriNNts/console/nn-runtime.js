@@ -8038,8 +8038,104 @@
     return out
   }
 
+  // The file the console was opened from, when it was opened from disk. A `file:` page has
+  // no writable handle for its own URL, but its NAME is what the save dialog must propose:
+  // that is what makes the person overwrite this console instead of creating another one.
+  function openedFileName(win) {
+    var loc = win && win.location
+    if (!loc || loc.protocol !== 'file:') return ''
+    var path = String(loc.pathname || '')
+    var name = path.slice(path.lastIndexOf('/') + 1)
+    try {
+      name = decodeURIComponent(name)
+    } catch {
+      /* a malformed escape keeps the raw name */
+    }
+    return /\.html?$/i.test(name) ? name : ''
+  }
+
+  // A separate database from the connected-folder handles: a snapshot is a file, never a
+  // folder, and one entry exists per domaiNN and file name (nn-fsa `snapshotKey`).
+  var SNAPSHOT_DB = 'nn-console-snapshot'
+
+  function snapshotStore(win) {
+    var api = win && win.nnFsa
+    if (!api || typeof api.createIndexedDbStore !== 'function') return null
+    try {
+      return api.createIndexedDbStore(null, SNAPSHOT_DB)
+    } catch {
+      return null
+    }
+  }
+
+  function consoleSnapshotKey(win, state, name) {
+    var api = win && win.nnFsa
+    if (!api || typeof api.snapshotKey !== 'function') return ''
+    return api.snapshotKey({
+      domainId: (state && state.meta && state.meta.domainId) || '',
+      name: name,
+    })
+  }
+
+  // The one save that asks: File System Access creates a handle only through a dialog. The
+  // handle is remembered afterwards, so this runs at most once per console and file name.
+  function writeThroughPicker(active, drafts, htmlContent, suggestedName, win, store, key) {
+    return win
+      .showSaveFilePicker({
+        id: 'nn-console-snapshot',
+        suggestedName: suggestedName,
+        types: [
+          {
+            description: 'HTML Document',
+            accept: { 'text/html': ['.html', '.htm'] },
+          },
+        ],
+      })
+      .then(
+        function (handle) {
+          return handle.createWritable().then(function (writable) {
+            return writable.write(htmlContent).then(function () {
+              return writable.close().then(function () {
+                return rememberHandle(store, key, handle).then(function () {
+                  showToast(active, 'Saved in place: ' + (handle.name || suggestedName), 'success')
+                  return {
+                    ok: true,
+                    method: 'file-system-access',
+                    inPlace: true,
+                    filename: handle.name || suggestedName,
+                    html: htmlContent,
+                    draftsCount: drafts.length,
+                  }
+                })
+              })
+            })
+          })
+        },
+        function (err) {
+          if (err && (err.name === 'AbortError' || err.code === 20)) {
+            return { ok: false, aborted: true }
+          }
+          return downloadFallback(active, htmlContent, suggestedName, drafts.length)
+        },
+      )
+  }
+
+  function rememberHandle(store, key, handle) {
+    if (!store || !key) return Promise.resolve()
+    try {
+      return Promise.resolve(store.set(key, handle)).then(
+        function () {},
+        function () {},
+      )
+    } catch {
+      return Promise.resolve()
+    }
+  }
+
   // Serializes the exported shell with the (already synchronized) slots and writes it in
   // place through the File System Access API, or downloads it when that API is unavailable.
+  // "In place" means the file this console was opened from: the first save picks it, its
+  // handle is remembered, and every later save overwrites it with no dialog at all.
   function writeSnapshot(active, state, opts, drafts) {
     // 2. Serializes the document: the exported shell when boot captured one, else the
     // live document without its boot marker.
@@ -8055,8 +8151,13 @@
       if (rootEl && hadBooted !== null) rootEl.setAttribute('data-nn-console-booted', hadBooted)
     }
 
-    // 3. In-Place File Overwrite via File System Access API with download fallback
-    var suggestedName = (opts && opts.suggestedName) ||
+    var win = (active && active.defaultView) || (typeof window !== 'undefined' ? window : null)
+
+    // 3. The opened file's own name first: a title-derived name would create a second
+    // console beside the one the person is looking at, which is the bug this avoids.
+    var suggestedName =
+      openedFileName(win) ||
+      (opts && opts.suggestedName) ||
       (state && state.artifactName) ||
       (state && state.meta && state.meta.domainId ? state.meta.domainId + '_console.html' : '') ||
       (active.title ? slugify(active.title) + '.html' : '') ||
@@ -8066,45 +8167,35 @@
       suggestedName += '.html'
     }
 
-    var win = (active && active.defaultView) || (typeof window !== 'undefined' ? window : null)
-    var canUsePicker = win && typeof win.showSaveFilePicker === 'function' && opts.forceDownload !== true
-
-    if (canUsePicker) {
-      return win.showSaveFilePicker({
-        suggestedName: suggestedName,
-        types: [
-          {
-            description: 'HTML Document',
-            accept: { 'text/html': ['.html', '.htm'] },
-          },
-        ],
-      }).then(
-        function (handle) {
-          return handle.createWritable().then(function (writable) {
-            return writable.write(htmlContent).then(function () {
-              return writable.close().then(function () {
-                showToast(active, 'Snapshot saved in-place to ' + (handle.name || suggestedName), 'success')
-                return {
-                  ok: true,
-                  method: 'file-system-access',
-                  filename: handle.name || suggestedName,
-                  html: htmlContent,
-                  draftsCount: drafts.length,
-                }
-              })
-            })
-          })
-        },
-        function (err) {
-          if (err && (err.name === 'AbortError' || err.code === 20)) {
-            return { ok: false, aborted: true }
-          }
-          return downloadFallback(active, htmlContent, suggestedName, drafts.length)
-        },
-      )
+    var canUsePicker =
+      win && typeof win.showSaveFilePicker === 'function' && opts.forceDownload !== true
+    if (!canUsePicker) {
+      return Promise.resolve(downloadFallback(active, htmlContent, suggestedName, drafts.length))
     }
 
-    return Promise.resolve(downloadFallback(active, htmlContent, suggestedName, drafts.length))
+    var store = snapshotStore(win)
+    var key = consoleSnapshotKey(win, state, suggestedName)
+    var fsa = win.nnFsa
+    if (store && key && fsa && typeof fsa.saveToRememberedFile === 'function') {
+      return fsa
+        .saveToRememberedFile({ store: store, key: key, text: htmlContent })
+        .then(function (saved) {
+          if (!saved || !saved.ok) {
+            return writeThroughPicker(active, drafts, htmlContent, suggestedName, win, store, key)
+          }
+          showToast(active, 'Saved in place: ' + (saved.filename || suggestedName), 'success')
+          return {
+            ok: true,
+            method: 'file-system-access',
+            inPlace: true,
+            filename: saved.filename || suggestedName,
+            html: htmlContent,
+            draftsCount: drafts.length,
+          }
+        })
+    }
+
+    return writeThroughPicker(active, drafts, htmlContent, suggestedName, win, store, key)
   }
 
   function mountNavbarActions(doc, state) {
