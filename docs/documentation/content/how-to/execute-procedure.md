@@ -45,3 +45,17 @@ Every run records `produce_artifact` changes for the artifacts it writes, so the
 - [Review changesets](review-changesets.md) — how the agent proposes and applies changes to a procedure.
 - [Sync lineage and back up a domaiNN](sync-and-backup.md) — the record the runs append to.
 - [nn-innfo](../skills/nn-innfo.md) — the skill that owns procedure discovery and execution.
+
+## Request a run from the domain console
+
+An exported console never runs a procedure and never writes to your domaiNN: it records what you decide, and the owner of the domaiNN applies it. Open **Procedures**, choose a procedure included in the export, then choose **Start a run**, fill in the fields, and select **Request the run**. The request is not running yet: use **Save your response** and send the saved HTML to the owner, who applies it with `import_console`.
+
+The same applies to answering a step. On a human step the Runner has not started yet, the answer buttons (or **Mark as done**) save the start and your answer together, so one response is enough. The step your answer leads to is shown as **Next action: save your previous response** (preview only) until the owner imports it and sends you an updated export.
+
+For Document SOP, choose an exported Markdown brief as **Description of the process**. An excerpt is shown if the export carried one. In **Name of the new SOP**, enter a name, not a path; the form shows the destination the procedure will use.
+
+### Declare start fields
+
+Keep Runner inputs as `kind: value`. Add `type` to reuse the matching editor widget: `string`, `number`, `boolean`, `select`, `multiselect`, `reference`, `markdown`, or `markdown_inline`. Omit `type` for a plain text field. Optional `label` and `description` explain the input; declare string `options` for `select` or `multiselect`. Typed values are submitted as JSON values: a number is numeric, a checkbox supplies `true` or `false`, and multiple selections supply an array. These keys only shape the console form; the Runner reads a slot's `name`, `kind`, `required` and `default`, so they do not change how direct MCP callers supply parameters.
+
+A `select` with `source: markdown-files` lists the exported Markdown briefs (not iNNfo models). Preview text is bounded and may be unavailable, and the export must include files. A text slot with `output: { directory: procedures, suffix: _procedures_NN.md }` turns a name into a relative path and shows it before submission. The offline export cannot reserve the path or see files created since export, so the procedure must still check before it writes.

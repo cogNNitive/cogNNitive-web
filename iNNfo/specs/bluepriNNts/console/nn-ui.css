@@ -10325,6 +10325,8 @@ button.proc-run.proc-run-unsent { border-style: dashed; border-color: var(--warn
   font: inherit;
 }
 .proc-start-note { font-size: 0.8rem; color: var(--muted); }
+.proc-start-field select, .proc-start-field textarea { width: 100%; }
+.proc-start-preview pre { white-space: pre-wrap; overflow-wrap: anywhere; }
 .proc-start-actions { display: flex; gap: 8px; }
 
 /* Two columns: the workflow beside one column for the step and the run */

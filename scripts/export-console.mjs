@@ -1487,7 +1487,9 @@ export function collectProcedureRuns({
 /**
  * The slots a procedure declares in its frontmatter (`slots: [{ name, kind, required,
  * default }]`), normalized for the console's "Start a run" form. A bare string is a required
- * value slot. Anything without a name is dropped.
+ * value slot. Anything without a name is dropped. The presentation keys the form reads
+ * (`type`, `label`, `options`, `source: markdown-files`, `output: { directory, suffix }`) pass
+ * through when well-formed; core's slot parsing ignores them, so they never affect a run.
  */
 export function slotDeclarationsOf(frontmatter) {
   const list = frontmatter && Array.isArray(frontmatter.slots) ? frontmatter.slots : []
@@ -1501,10 +1503,22 @@ export function slotDeclarationsOf(frontmatter) {
       name,
       kind: typeof decl.kind === 'string' && decl.kind.trim() ? decl.kind.trim() : 'value',
       required: decl.required !== false,
+      // A typed slot keeps its default as declared (a number, a list); an untyped one is text.
       ...(decl.default !== undefined && decl.default !== null
-        ? { default: String(decl.default) }
+        ? { default: decl.type ? decl.default : String(decl.default) }
         : {}),
       ...(typeof decl.description === 'string' ? { description: decl.description } : {}),
+      ...(typeof decl.type === 'string' ? { type: decl.type } : {}),
+      ...(typeof decl.label === 'string' ? { label: decl.label } : {}),
+      ...(Array.isArray(decl.options)
+        ? { options: decl.options.filter((option) => typeof option === 'string') }
+        : {}),
+      ...(decl.source === 'markdown-files' ? { source: decl.source } : {}),
+      ...(decl.output &&
+      typeof decl.output.directory === 'string' &&
+      typeof decl.output.suffix === 'string'
+        ? { output: { directory: decl.output.directory, suffix: decl.output.suffix } }
+        : {}),
     })
   }
   return out

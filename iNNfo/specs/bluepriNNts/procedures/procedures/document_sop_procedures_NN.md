@@ -3,8 +3,23 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Standard Operating Procedure: Documenting Procedures in iNNfo"
+slots:
+  - name: intake
+    kind: value
+    required: true
+    type: select
+    label: Description of the process
+    description: Choose an existing Markdown brief that explains the process you want to document.
+    source: markdown-files
+  - name: sop
+    kind: value
+    required: true
+    type: string
+    label: Name of the new SOP
+    description: Enter a name, not a path. The new SOP will be saved in the procedures folder.
+    output: { directory: procedures, suffix: _procedures_NN.md }
 ---
 
 # NN Work
@@ -15,7 +30,6 @@ step_type:: task
 condition:: New business process or operational workflow identified
 input:: @process-intake-brief
 output:: @validated-innfo-level-3-model
-output_status:: verified
 tool:: @cognnitive-modeler
 executor:: agent
 scope:: internal
@@ -27,27 +41,45 @@ Master lifecycle procedure for transforming unstructured business workflows and 
 slug:: scope-trigger-identification
 parent:: @procedure-documentation-lifecycle
 step_type:: event
-next:: @workflow-step-decomposition
+next:: @scope-approval
 condition:: Process owner submits documentation request
 input:: @process-intake-brief
 output:: @procedure-scope-definition
-output_status:: verified
 tool:: @cognnitive-modeler
 executor:: agent
 scope:: internal
 tags:: [procedure, scoping, intake, boundaries]
 
-Capture the business rationale, operational boundaries, triggering events, and expected outcomes of the target workflow.
+Read the process intake brief at `{intake}`. Capture the business rationale, operational boundaries, trigger, and expected outcomes. Present the proposed scope to the domain operations lead before authoring the target model.
+
+## NN Work: Scope Approval
+slug:: scope-approval
+parent:: @procedure-documentation-lifecycle
+step_type:: decision
+executor:: human
+decision:: Approve the proposed scope, or reject it and stop this run?
+input:: @procedure-scope-definition
+next:: [@workflow-step-decomposition, @stop-unapproved-scope]
+
+Record `approve` only after the domain operations lead approves the scope. Otherwise record `reject`; do not create or change the target SOP.
+
+## NN Work: Stop for Unapproved Scope
+slug:: stop-unapproved-scope
+parent:: @procedure-documentation-lifecycle
+step_type:: task
+executor:: agent
+condition:: outcome == reject
+
+Record the reason in the run and finish with outcome `failed`. Start a new run if a revised intake is submitted.
 
 ## NN Work: Workflow Step Decomposition
 slug:: workflow-step-decomposition
 parent:: @procedure-documentation-lifecycle
 step_type:: task
 next:: @artifact-tool-attachment
-condition:: Procedure scope approved by domain lead
+condition:: outcome == approve
 input:: @procedure-scope-definition
 output:: @decomposed-step-hierarchy
-output_status:: verified
 tool:: @innfo-fsm-stepper-view
 executor:: human
 scope:: internal
@@ -63,7 +95,6 @@ next:: @raci-governance-assignment
 condition:: Step sequence validated in FSM preview
 input:: @decomposed-step-hierarchy
 output:: @toolchain-dependency-map
-output_status:: verified
 tool:: @cognnitive-modeler
 executor:: agent
 scope:: internal
@@ -79,7 +110,6 @@ next:: @integrity-syntax-verification
 condition:: Inputs, outputs, and tools fully populated
 input:: @toolchain-dependency-map
 output:: @raci-accountability-matrix
-output_status:: verified
 tool:: @innfo-matrix-editor
 executor:: agent
 scope:: internal
@@ -90,22 +120,43 @@ Populate functional roles and assign formal RACI governance values (Responsible,
 ## NN Work: Integrity & Syntax Verification
 slug:: integrity-syntax-verification
 parent:: @procedure-documentation-lifecycle
-step_type:: task
+step_type:: decision
+decision:: Has the SOP model passed validation and been recorded, or is it invalid?
+next:: [@confirm-validated-sop, @stop-invalid-model]
 condition:: RACI matrix complete and reviewed
 input:: @raci-accountability-matrix
 output:: @validated-innfo-level-3-model
-output_status:: verified
 tool:: @nn-mcp-server
 executor:: agent
 scope:: internal
 tags:: [procedure, verification, mcp-audit, syntax-gate]
 
-Execute automated syntactic verification, WikiLink integrity checks, and field exhaustiveness gates via nn-mcp tools.
+Write the new procedure to the domain-relative `{sop}` path without overwriting an existing model. Use `validate_knowledge` with `intent: verify` and the written model?s hierarchical ID (not its file path). Check its workflow and references. Record the output as `validated` only after the checks pass, including its path and SHA-256 revision. If validation fails and cannot be corrected in this step, record outcome `invalid` and take the stop path.
+
+## NN Work: Confirm Validated SOP
+slug:: confirm-validated-sop
+parent:: @procedure-documentation-lifecycle
+step_type:: task
+executor:: agent
+condition:: @validated-innfo-level-3-model validated
+input:: @validated-innfo-level-3-model
+
+Confirm that the run records the validated path and revision. Complete this step and finish the run with outcome `completed`. Do not publish the SOP from this run.
+
+## NN Work: Stop for Invalid Model
+slug:: stop-invalid-model
+parent:: @procedure-documentation-lifecycle
+step_type:: task
+executor:: agent
+condition:: outcome == invalid
+
+Record the unresolved validation findings and finish with outcome `failed`. Do not mark the model validated.
 
 # NN Artifact
 
 ## NN Artifact: Process Intake Brief
 slug:: process-intake-brief
+verify:: file:{intake}
 Initial document describing business requirements, rough operational steps, and target actors.
 
 ## NN Artifact: Procedure Scope Definition
@@ -126,6 +177,7 @@ Formal cross-functional matrix assigning responsibility and oversight across all
 
 ## NN Artifact: Validated iNNfo Level 3 Model
 slug:: validated-innfo-level-3-model
+verify:: file:{sop}
 Canonical, verified plain-text Markdown model ready for execution in cogNNitive and distribution via MCP.
 
 # NN Tools
@@ -172,10 +224,12 @@ Runs automated verification gates, validates MCP compliance, and approves model 
 | Work \ Roles | Business Process Architect | Technical Workflow Modeler | Domain Operations Lead | QA & Integrity Reviewer |
 | :--- | :---: | :---: | :---: | :---: |
 | Scope & Trigger Identification | Responsible | Consulted | Accountable | Informed |
+| Scope Approval | Consulted | Informed | Accountable | Informed |
 | Workflow Step Decomposition | Consulted | Responsible | Accountable | Informed |
 | Artifact & Tool Attachment | Informed | Responsible | Accountable | Consulted |
 | RACI Governance Assignment | Accountable | Responsible | Consulted | Informed |
 | Integrity & Syntax Verification | Informed | Consulted | Informed | Responsible |
+| Confirm Validated SOP | Informed | Consulted | Informed | Responsible |
 
 # NN matrices: work-tools matrix
 | Work \ Tools | cogNNitive Modeler | iNNfo FSM Stepper View | iNNfo Matrix Editor | nn-mcp Server |

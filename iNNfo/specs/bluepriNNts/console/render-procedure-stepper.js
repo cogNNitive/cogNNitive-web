@@ -56,8 +56,21 @@
     off_path: '—',
   }
 
+  /** The slot types a start form can draw: the editor's own field types. */
+  var START_TYPES = [
+    'string',
+    'number',
+    'boolean',
+    'select',
+    'multiselect',
+    'reference',
+    'markdown',
+    'markdown_inline',
+  ]
+
   /** The sentence an engine or agent step shows: the browser never runs it (S2). */
-  var SYSTEM_STEP_NOTE = 'This step is run by the system when you send your response back.'
+  var SYSTEM_STEP_NOTE =
+    'No action for you on this step. The agent or Runner handles it outside this HTML.'
 
   // ---- Pure helpers (exported for tests) ----
 
@@ -998,6 +1011,85 @@
       return declared.concat(extra)
     }
 
+    function startUI() {
+      return host.nnUI || GLOBAL.nnUI
+    }
+
+    /** The input widget for a slot: the editor's own widget for a typed one, plain text otherwise. */
+    function startWidget(slot, options) {
+      var ui = startUI()
+      var value = slot.default
+      if (!slot.type || !ui) {
+        var plain = make('input', 'proc-start-input')
+        plain.setAttribute('type', 'text')
+        plain.setAttribute('name', slot.name)
+        if (value !== undefined) plain.value = value
+        return plain
+      }
+      var opts = { doc: document }
+      if (slot.type === 'number') {
+        var number = ui.FieldNumberWidget(value, opts)
+        number.step = 'any'
+        return number
+      }
+      if (slot.type === 'boolean') return ui.FieldBooleanWidget(value, opts)
+      if (slot.type === 'select') return ui.FieldSelectWidget(value, options, opts)
+      if (slot.type === 'multiselect') return ui.FieldMultiSelectWidget(value, options, opts)
+      if (slot.type === 'reference') {
+        var index = ui.buildReferenceIndex({
+          models: meta.models,
+          collections: model.collections,
+          elements: elements,
+        })
+        return ui.FieldReferenceWidget(value, index.list, opts)
+      }
+      if (slot.type === 'markdown' || slot.type === 'markdown_inline')
+        return ui.FieldMarkdownWidget(value, opts)
+      return ui.FieldStringWidget(value, opts)
+    }
+
+    /** What a slot's widget holds, as the typed JSON value the run records; undefined when empty. */
+    function startValue(widget, slot) {
+      if (slot.type === 'boolean') {
+        var checkbox = widget.querySelector('input')
+        return checkbox ? checkbox.checked : undefined
+      }
+      if (slot.type === 'multiselect') {
+        var selected = Array.from(widget.querySelectorAll('input:checked'), function (input) {
+          return input.value
+        })
+        return selected.length ? selected : undefined
+      }
+      var control = slot.type === 'reference' ? widget.querySelector('input') : widget
+      var raw = control && String(control.value == null ? '' : control.value).trim()
+      if (!raw) return undefined
+      if (slot.type === 'number') return Number.isFinite(Number(raw)) ? Number(raw) : undefined
+      if (slot.output) {
+        var slug = raw
+          .normalize('NFKD')
+          .toLowerCase()
+          .replace(/[̀-ͯ]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+        return slug ? slot.output.directory + '/' + slug + slot.output.suffix : undefined
+      }
+      return raw
+    }
+
+    /** True when a file or procedure of this export already sits at the path (case-insensitive). */
+    function pathExistsInExport(path) {
+      var lower = path.toLowerCase()
+      var files = model.files && Array.isArray(model.files.inventory) ? model.files.inventory : []
+      return (
+        files.some(function (f) {
+          return f && typeof f.path === 'string' && f.path.toLowerCase() === lower
+        }) ||
+        entries.some(function (entry) {
+          return entry.file.toLowerCase() === lower
+        })
+      )
+    }
+
     function renderStartForm(hostEl) {
       var form = make('form', 'proc-start-form')
       form.setAttribute('data-proc-start-form', '')
@@ -1008,25 +1100,93 @@
       var blocked = slots.filter(function (s) {
         return s.kind !== 'value' && s.required && s.default === undefined
       })
-      var fields = {}
+      var fields = Object.create(null)
+      var inventory =
+        model.files && Array.isArray(model.files.inventory) ? model.files.inventory : []
+      var missingSources = false
       slots.forEach(function (s) {
         if (s.kind !== 'value') return
-        var row = make('label', 'proc-start-field')
-        row.appendChild(
-          make(
-            'span',
-            'proc-start-label',
-            labelOfToken(s.name) + (s.required ? '' : ' (optional)'),
-          ),
+        if (s.type && (START_TYPES.indexOf(s.type) === -1 || !startUI())) {
+          // A type this console cannot draw: the person cannot supply it here.
+          if (s.required) blocked.push(s)
+          return
+        }
+        var row = make('div', 'proc-start-field')
+        var label = make(
+          'span',
+          'proc-start-label',
+          (s.label || labelOfToken(s.name)) + (s.required ? '' : ' (optional)'),
         )
-        var input = make('input', 'proc-start-input')
-        input.setAttribute('type', 'text')
-        input.setAttribute('name', s.name)
+        row.appendChild(label)
+        if (s.description) row.appendChild(make('small', 'proc-start-note', s.description))
+        var files =
+          s.source === 'markdown-files'
+            ? inventory.filter(function (f) {
+                return (
+                  f &&
+                  typeof f.path === 'string' &&
+                  /\.md$/i.test(f.path) &&
+                  !/_NN\.md$/i.test(f.path)
+                )
+              })
+            : null
+        var options = files
+          ? files.map(function (f) {
+              return f.path
+            })
+          : s.options
+        var input = startWidget(s, options)
         input.setAttribute('data-proc-slot', s.name)
-        if (s.default !== undefined) input.value = s.default
-        if (s.description) input.setAttribute('placeholder', s.description)
-        fields[s.name] = { input: input, slot: s }
+        input.setAttribute('aria-label', label.textContent)
+        if (s.type !== 'multiselect')
+          Array.from(input.querySelectorAll('input')).forEach(function (control) {
+            control.setAttribute('aria-label', label.textContent)
+          })
+        fields[s.name] = { input: input, slot: s, options: options }
         row.appendChild(input)
+        if (files) {
+          var preview = make('details', 'proc-start-preview')
+          preview.appendChild(make('summary', null, 'View excerpt'))
+          var excerpt = make('pre', null)
+          preview.appendChild(excerpt)
+          row.appendChild(preview)
+          var showExcerpt = function () {
+            var file = files.find(function (f) {
+              return f.path === input.value
+            })
+            preview.hidden = !file
+            excerpt.textContent =
+              file && file.snippet
+                ? file.snippet + (file.snippetTruncated ? '…' : '')
+                : 'No excerpt was included in this export.'
+          }
+          input.addEventListener('change', showExcerpt)
+          showExcerpt()
+          if (!files.length) {
+            if (s.required) missingSources = true
+            input.disabled = true
+            row.appendChild(
+              make(
+                'p',
+                'proc-start-note',
+                'No compatible files were exported. Add a Markdown brief under sources/ and export again with files included.',
+              ),
+            )
+          }
+        }
+        if (s.output) {
+          var destination = make('p', 'proc-start-note')
+          destination.setAttribute('aria-live', 'polite')
+          var showDestination = function () {
+            var path = startValue(input, s)
+            destination.textContent = path
+              ? 'Destination once the procedure runs: ' + path
+              : 'Enter a name to see the destination.'
+          }
+          input.addEventListener('input', showDestination)
+          showDestination()
+          row.appendChild(destination)
+        }
         form.appendChild(row)
       })
       if (!slots.length)
@@ -1051,23 +1211,40 @@
         'data-proc-start-submit': '',
       })
       submit.setAttribute('type', 'submit')
-      if (blocked.length) submit.disabled = true
+      if (blocked.length || missingSources) submit.disabled = true
       form.addEventListener('submit', function (ev) {
         if (ev && ev.preventDefault) ev.preventDefault()
         err.textContent = ''
-        var params = {}
+        if (blocked.length || missingSources) return
+        var params = Object.create(null)
         var missing = []
+        var conflicts = []
         Object.keys(fields).forEach(function (name) {
-          var v = String(fields[name].input.value || '').trim()
-          if (v) params[name] = v
-          else if (fields[name].slot.required) missing.push(name)
+          var field = fields[name]
+          var v = startValue(field.input, field.slot)
+          if (
+            field.slot.type === 'select' &&
+            v !== undefined &&
+            Array.isArray(field.options) &&
+            field.options.indexOf(v) === -1
+          )
+            v = undefined
+          // The export cannot see files created since, so this only catches what it knows;
+          // the procedure itself must still check before it writes.
+          if (field.slot.output && v && pathExistsInExport(v)) conflicts.push(v)
+          if (v !== undefined) params[name] = v
+          else if (field.slot.required) missing.push(field.slot.label || name)
         })
+        if (conflicts.length) {
+          err.textContent = 'Choose a different name: ' + conflicts.join(', ') + ' already exists.'
+          return
+        }
         if (missing.length) {
           err.textContent = 'Fill in ' + missing.join(', ') + ' to request the run.'
           return
         }
         try {
-          store.propose({ kind: 'run_start', procedure: active.file, params: params })
+          store.propose({ kind: 'run_start', procedure: active.file, params: { ...params } })
         } catch (e) {
           err.textContent =
             'The console refused this request: ' + String(e && e.message ? e.message : e)
@@ -1689,7 +1866,19 @@
         card.appendChild(desc)
       }
       var running = activeRun && state && !TERMINAL_RUN[state.status]
-      if (isSystemStep(step) && running && status !== 'done' && status !== 'off_path') {
+      // The step the person's unsent answer led to: the export itself is still at the previous one.
+      var previewOnly =
+        running &&
+        !!activeRun.state &&
+        slug === state.currentStep &&
+        slug !== activeRun.state.currentStep
+      if (
+        !previewOnly &&
+        isSystemStep(step) &&
+        running &&
+        status !== 'done' &&
+        status !== 'off_path'
+      ) {
         var note = make('div', 'proc-system-note', SYSTEM_STEP_NOTE)
         note.setAttribute('data-proc-system-note', '')
         card.appendChild(note)
@@ -1715,6 +1904,8 @@
       if (activeRun) renderDecided(card, slug)
       if (activeRun && slug === (activeRun.state && activeRun.state.currentStep)) {
         renderActions(card, activeRun.state)
+      } else if (previewOnly) {
+        renderPreviewHandoff(card)
       }
       renderRequestBox(card, slug)
 
@@ -1749,6 +1940,38 @@
       if (st) fact('Attempt', st.attempt ? String(st.attempt) : '', details)
       if (details.children.length > 1) card.appendChild(details)
       hostEl.appendChild(card)
+    }
+
+    /**
+     * What a step reached only through the person's unsent answers shows instead of actions:
+     * nothing here can be completed until the Runner has recorded the answer before it. The
+     * button is the response bar's own save control; this view writes nothing itself.
+     */
+    function renderPreviewHandoff(card) {
+      var handoff = make('div', 'proc-actions proc-preview-handoff')
+      handoff.setAttribute('data-proc-preview-handoff', '')
+      handoff.appendChild(make('strong', null, 'Next action: save your previous response'))
+      handoff.appendChild(
+        make(
+          'p',
+          null,
+          'Preview only: the Runner has not confirmed the previous response. Save it and send the saved file to the domain owner, who imports it; then open the updated export. There is nothing to complete on this step yet.',
+        ),
+      )
+      if (responseHost.querySelector('[data-proc-save-response]')) {
+        handoff.appendChild(
+          button(
+            'proc-action',
+            'Save your response',
+            function () {
+              var save = responseHost.querySelector('[data-proc-save-response]')
+              if (save) save.click()
+            },
+            { 'data-proc-preview-save': '' },
+          ),
+        )
+      }
+      card.appendChild(handoff)
     }
 
     /** "Decided: approve · not sent yet", with Undo, on a step the person answered. */
@@ -1993,7 +2216,12 @@
       return 0
     }
 
-    function recordAction(action, state, errorEl, pickedOutcome, hostEl) {
+    /**
+     * Records the person's request. `startFirst` is for a manual step the Runner has not started
+     * yet: the answer is then two requests saved together, the start and the completion, so
+     * one response is enough. A refused completion takes its start back; nothing is left unsent.
+     */
+    function recordAction(action, state, errorEl, pickedOutcome, hostEl, startFirst) {
       actionError = ''
       if (errorEl) errorEl.textContent = ''
       var step = state.currentStep
@@ -2043,10 +2271,20 @@
         // The note travels with the decision: it stays on the request row as its reason.
         if (given) fields.requested_value = given
       }
-      var saved
+      var saved, startDraft
       try {
+        if (startFirst) {
+          startDraft = runRequest(activeRun, {
+            request_status: 'pending',
+            action: 'start',
+            step: step,
+            base_seq: fields.base_seq,
+          })
+        }
         saved = runRequest(activeRun, fields)
+        if (!saved && startDraft) store.remove(startDraft.id)
       } catch (err) {
+        if (startDraft) store.remove(startDraft.id)
         // The console refuses the proposal (a read-only export, a malformed draft). Say
         // so here: an exception thrown under a click is invisible otherwise, and the
         // person is left wondering why nothing happened.
@@ -2115,8 +2353,12 @@
       }
       box.appendChild(make('div', 'proc-actions-title', 'Your answer'))
 
-      var choices = askable.indexOf('complete') !== -1 ? outcomeChoices(state) : []
       var targets = Array.isArray(state.allowedNext) ? state.allowedNext : []
+      // A manual step not started yet is answered in one go: the start travels with the answer.
+      var startFirst =
+        askable.indexOf('start') !== -1 &&
+        (outcomeChoices(state).length > 1 || (stepDef.stepType === 'task' && targets.length <= 1))
+      var choices = startFirst || askable.indexOf('complete') !== -1 ? outcomeChoices(state) : []
       var primary = make('div', 'proc-branches')
       if (choices.length > 1) {
         // One primary button per branch: the person answers the question in one click.
@@ -2125,26 +2367,26 @@
             'proc-action proc-branch-choice',
             c.label,
             function () {
-              recordAction('complete', state, err, c.outcome, box)
+              recordAction('complete', state, err, c.outcome, box, startFirst)
             },
             { 'data-proc-action': 'complete', 'data-proc-outcome': c.outcome },
           )
           b.setAttribute('title', c.label + ' → ' + stepName(c.next))
           primary.appendChild(b)
         })
-      } else if (askable.indexOf('complete') !== -1 && targets.length <= 1) {
+      } else if ((startFirst || askable.indexOf('complete') !== -1) && targets.length <= 1) {
         primary.appendChild(
           button(
             'proc-action proc-branch-choice',
             ACTION_LABEL.complete,
             function () {
-              recordAction('complete', state, err, '', box)
+              recordAction('complete', state, err, '', box, startFirst)
             },
             { 'data-proc-action': 'complete' },
           ),
         )
       }
-      if (askable.indexOf('start') !== -1) {
+      if (!startFirst && askable.indexOf('start') !== -1) {
         primary.appendChild(
           button(
             'proc-action proc-branch-choice',
