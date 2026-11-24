@@ -16,16 +16,14 @@
    * so a view can answer "what would this run look like if the drafts I am holding were
    * applied?", which is a projection over the state it already has, not new truth.
    *
-   * The widget stages its pending work as events (design §2.4 keeps its vocabulary until
-   * it migrates to the row model); `modelOf` is the one translation between the two, the
-   * inverse of the exporter's `eventsOfRunModel`.
+   * Projections apply directly over the RunModel (Step Run rows, Run Artifact rows and Step Requests)
+   * without synthesizing or replaying deprecated historical events.
    *
-   * The implementation is injected, never re-implemented: `scripts/lib/console-bundle.js`
-   * wires the nn-core build in, and a console that boots without it leaves `foldRun` null so
-   * a view degrades to the exported state instead of guessing.
+   * The implementation is provided canonically by `nn-procedure-fold.generated.js` inside
+   * `nn-console.bundle.js` (`globalThis.nnProcedureFold`).
    */
 
-  var CORE_VERSION = '0.2.0'
+  var CORE_VERSION = '0.3.0'
 
   var fold = null
   var wired = false
@@ -37,16 +35,19 @@
   }
 
   /**
-   * Boots from the `nn-procedure-core` slot the exporter writes: the source of nn-core's own
-   * `foldRun`. Returns false when the console carries no slot, which is the honest state of
-   * a console exported before this existed.
+   * Discovers the fold module either from canonical globals (nnProcedureFold / __nnFoldModule)
+   * or, as a fallback, from any inline slot.
    */
   function useFromDocument(doc) {
-    if (wired) return available()
+    if (wired && available()) return true
     var mod =
-      (typeof window !== 'undefined' && window.__nnFoldModule) ||
-      (typeof globalThis !== 'undefined' && globalThis.__nnFoldModule) ||
-      (doc && doc.defaultView && doc.defaultView.__nnFoldModule)
+      (typeof nnProcedureFold !== 'undefined' && nnProcedureFold) ||
+      (typeof window !== 'undefined' && (window.nnProcedureFold || window.__nnFoldModule)) ||
+      (typeof globalThis !== 'undefined' &&
+        (globalThis.nnProcedureFold || globalThis.__nnFoldModule)) ||
+      (doc &&
+        doc.defaultView &&
+        (doc.defaultView.nnProcedureFold || doc.defaultView.__nnFoldModule))
     if (mod && typeof mod.foldRun === 'function') {
       wired = true
       return use(mod)
@@ -66,7 +67,8 @@
         }
       }
       var factory = new Function(
-        code + '\n; return (typeof __nnFoldModule !== "undefined" ? __nnFoldModule : null)',
+        code +
+          '\n; return (typeof nnProcedureFold !== "undefined" ? nnProcedureFold : typeof __nnFoldModule !== "undefined" ? __nnFoldModule : null)',
       )
       var res = use(factory())
       if (res) wired = true
@@ -78,6 +80,16 @@
 
   function available() {
     return typeof fold === 'function'
+  }
+
+  // Auto-wire on initialization if nnProcedureFold is in global scope
+  var initialMod =
+    (typeof nnProcedureFold !== 'undefined' && nnProcedureFold) ||
+    (typeof window !== 'undefined' && (window.nnProcedureFold || window.__nnFoldModule)) ||
+    (typeof globalThis !== 'undefined' && (globalThis.nnProcedureFold || globalThis.__nnFoldModule))
+  if (initialMod && typeof initialMod.foldRun === 'function') {
+    fold = initialMod.foldRun
+    wired = true
   }
 
   function rowOf(row) {
@@ -93,33 +105,115 @@
     return out
   }
 
-  /**
-   * The run model a list of events describes, applied on top of a base model's rows. The
-   * recorded rows are the truth; the events are what a caller is holding as drafts.
-   */
-  function modelOf(events, base) {
-    var model = {
+  function cloneRunModel(base) {
+    var out = {
       state: (base && base.state) || 'open',
       seq: (base && base.seq) || 0,
       procedure: (base && base.procedure) || '',
       defRev: (base && base.defRev) || null,
-      params: (base && base.params) || {},
+      params: Object.assign({}, base && base.params),
       steps: {},
       artifacts: {},
-      inputs: {},
-      attempts: {},
+      inputs: Object.assign({}, base && base.inputs),
+      attempts: Object.assign({}, base && base.attempts),
     }
     if (base && base.steps) {
-      Object.keys(base.steps).forEach(function (slug) {
-        model.steps[slug] = rowOf(base.steps[slug])
+      Object.keys(base.steps).forEach(function (k) {
+        out.steps[k] = rowOf(base.steps[k])
       })
     }
     if (base && base.artifacts) {
-      Object.keys(base.artifacts).forEach(function (slug) {
-        model.artifacts[slug] = Object.assign({}, base.artifacts[slug])
+      Object.keys(base.artifacts).forEach(function (k) {
+        out.artifacts[k] = Object.assign({}, base.artifacts[k])
       })
     }
-    if (base && base.inputs) model.inputs = Object.assign({}, base.inputs)
+    return out
+  }
+
+  function nextStepOf(graph, stepSlug, outcome) {
+    if (!graph || !graph.steps || !graph.steps[stepSlug]) return undefined
+    var def = graph.steps[stepSlug]
+    var nextList = Array.isArray(def.next) ? def.next : []
+    if (outcome && nextList.length) {
+      for (var i = 0; i < nextList.length; i++) {
+        var t = nextList[i]
+        var targetStep = graph.steps[t]
+        if (targetStep && targetStep.condition) {
+          var m = /outcome\s*==\s*([\w-]+)/.exec(targetStep.condition)
+          if (m && m[1] === outcome) return t
+        }
+      }
+    }
+    if (graph.edges && outcome) {
+      for (var j = 0; j < graph.edges.length; j++) {
+        var edge = graph.edges[j]
+        if (
+          edge &&
+          edge.from === stepSlug &&
+          edge.guard &&
+          edge.guard.kind === 'outcome' &&
+          edge.guard.token === outcome
+        ) {
+          return edge.to
+        }
+      }
+    }
+    if (nextList.length === 1) return nextList[0]
+    return undefined
+  }
+
+  /**
+   * Projects a RunModel directly by applying draft Step Requests or state updates onto it.
+   */
+  function projectModel(baseModel, requests, graph) {
+    var model = cloneRunModel(baseModel)
+    var reqs = Array.isArray(requests) ? requests : []
+    reqs.forEach(function (r) {
+      if (!r) return
+      if (r.step) {
+        var cur = model.steps[r.step] || { status: 'pending', attempt: 0, inputs: {} }
+        if (r.action === 'complete') {
+          var done = Object.assign({}, cur, { status: 'done' })
+          if (r.outcome !== undefined) done.outcome = r.outcome
+          var nxt = r.next || nextStepOf(graph, r.step, r.outcome)
+          if (nxt) done.next = nxt
+          model.steps[r.step] = done
+        } else if (r.action === 'fail') {
+          model.steps[r.step] = Object.assign({}, cur, {
+            status: 'failed',
+            failure: r.value || '',
+          })
+        } else if (r.action === 'wait') {
+          model.steps[r.step] = Object.assign({}, cur, {
+            status: 'waiting',
+            waitingOn: r.value || '',
+          })
+        } else if (r.action === 'start') {
+          model.steps[r.step] = Object.assign({}, cur, {
+            status: 'active',
+            attempt: (cur.attempt || 0) + 1,
+          })
+        }
+      }
+      if (r.artifact) {
+        var prior = model.artifacts[r.artifact] || { kind: 'file' }
+        var art = Object.assign({}, prior)
+        if (r.action === 'produce' || r.status === 'produced') art.status = 'produced'
+        else if (r.action === 'validate' || r.status === 'validated') art.status = 'validated'
+        else if (r.action === 'reject' || r.status === 'rejected') art.status = 'rejected'
+        if (r.value !== undefined) art.value = r.value
+        model.artifacts[r.artifact] = art
+      }
+    })
+    return model
+  }
+
+  /**
+   * The run model a list of legacy events describes, applied on top of a base model's rows.
+   * Kept for backwards compatibility with tests and older fixtures.
+   */
+  function modelOf(events, base) {
+    var model = cloneRunModel(base)
     ;(Array.isArray(events) ? events : []).forEach(function (e) {
       if (e.kind === 'step_started') {
         model.steps[e.step] = { status: 'active', attempt: e.attempt || 1, inputs: e.inputs || {} }
@@ -178,14 +272,22 @@
   }
 
   /**
-   * The state a run would have if its pending events were applied on top of what it
-   * already recorded. Same fold, over the recorded rows plus the pending events.
+   * The state a run would have if its pending requests or events were applied on top of what it
+   * already recorded. Direct RunModel projection when requests are given; event translation if legacy events.
    */
-  function project(run, pendingEvents, opts) {
+  function project(run, pending, opts) {
     if (!run || !run.graph || !available()) return null
-    var extra = Array.isArray(pendingEvents) ? pendingEvents : []
-    var base = run.model || modelOf(Array.isArray(run.events) ? run.events : [], null)
-    return fold(run.graph, modelOf(extra, base), opts || {})
+    var extra = Array.isArray(pending) ? pending : []
+    var isLegacyEventList = extra.length > 0 && typeof extra[0].kind === 'string'
+    var targetModel
+    if (isLegacyEventList) {
+      var base = run.model || modelOf(Array.isArray(run.events) ? run.events : [], null)
+      targetModel = modelOf(extra, base)
+    } else {
+      var baseModel = run.model || (run.events ? modelOf(run.events, null) : null)
+      targetModel = projectModel(baseModel, extra, run.graph)
+    }
+    return fold(run.graph, targetModel, opts || {})
   }
 
   if (typeof document !== 'undefined' && typeof document.getElementById === 'function') {
@@ -198,6 +300,8 @@
     use: use,
     useFromDocument: useFromDocument,
     available: available,
+    cloneRunModel: cloneRunModel,
+    projectModel: projectModel,
     modelOf: modelOf,
     stateOf: stateOf,
     project: project,

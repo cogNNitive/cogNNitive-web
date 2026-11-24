@@ -10318,3 +10318,326 @@ button.proc-step-item-btn {
 .proc-artifact-top,
 .proc-artifact-links { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
 .proc-run-summary .exec-step-title { font-size: 1.15rem; }
+
+/* ---- Procedure Runner B+D+E integrated layout ---- */
+.exec-workspace.proc-bde-layout {
+  display: grid;
+  grid-template-columns: 244px 1fr 342px;
+  gap: 16px;
+  align-items: stretch;
+}
+@media (max-width: 1240px) {
+  .exec-workspace.proc-bde-layout {
+    grid-template-columns: 244px 1fr;
+  }
+  .exec-workspace.proc-bde-layout .proc-rail {
+    grid-column: 1 / -1;
+    flex-direction: row;
+  }
+}
+
+.proc-nav {
+  align-self: start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.proc-nav .proc-runs {
+  border-top: 1px solid var(--border);
+}
+
+.proc-main {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.proc-runbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.proc-runbar .id {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+.proc-runbar .sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+}
+.proc-runbar .spacer {
+  flex: 1;
+}
+
+.proc-tabbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.proc-tabbar button {
+  appearance: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.proc-tabbar button:hover {
+  color: var(--text);
+}
+.proc-tabbar button.on {
+  color: var(--text);
+  border-bottom-color: var(--primary);
+}
+.proc-tabbar button[hidden] {
+  display: none;
+}
+
+.proc-panel {
+  display: none;
+}
+.proc-panel.on {
+  display: block;
+  flex: 1 1 auto;
+}
+.proc-panel .pad {
+  padding: 18px 20px;
+}
+
+/* D: Flow sequence */
+.step-row {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+}
+.rail-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.rail-col .dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
+  margin-top: 12px;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+.rail-col .dot.done {
+  border-color: var(--success);
+  background: var(--success);
+  color: #fff;
+}
+.rail-col .dot.failed {
+  border-color: var(--error);
+  background: var(--error);
+  color: #fff;
+}
+.rail-col .dot.waiting {
+  border-color: var(--warning);
+  background: var(--warning-light);
+  color: var(--warning);
+}
+.rail-col .line {
+  width: 2px;
+  flex: 1;
+  background: var(--border);
+}
+.rail-col .line.done {
+  background: var(--success);
+}
+.rail-col .line.failed {
+  background: var(--error);
+}
+.step-row .body {
+  padding: 6px 0 10px;
+}
+.step-row .compact {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.step-row .compact:hover {
+  background: var(--surface-2);
+}
+.step-row.on .compact {
+  background: var(--primary-light);
+  box-shadow: inset 2px 0 0 var(--primary);
+}
+.step-row .compact .t {
+  font-weight: 600;
+}
+.step-row .compact .d {
+  color: var(--faint);
+  font-size: 11.5px;
+}
+
+/* Document definition */
+.doc-step {
+  border-left: 2px solid var(--border);
+  padding: 2px 0 14px 16px;
+  margin-left: 8px;
+  cursor: pointer;
+}
+.doc-step.on {
+  border-left-color: var(--primary);
+  background: var(--surface-2);
+}
+.doc-step h3 {
+  font-size: 13px;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.doc-step h3 .idx {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--faint);
+}
+.doc-step .instructions p {
+  font-size: 12.5px;
+  margin: 0 0 6px;
+  color: var(--text);
+}
+.doc-step .instructions ul {
+  margin: 0 0 6px;
+  padding-left: 18px;
+  font-size: 12.5px;
+  color: var(--text);
+}
+.doc-step .instructions li {
+  margin-bottom: 2px;
+}
+.doc-step .instructions code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  background: var(--surface-3);
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* E: Table */
+table.proc-steps-table,
+table.proc-artifacts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+table.proc-steps-table thead th,
+table.proc-artifacts-table thead th {
+  text-align: left;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--faint);
+  font-weight: 700;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+table.proc-steps-table tbody td,
+table.proc-artifacts-table tbody td {
+  padding: 9px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12.5px;
+}
+table.proc-steps-table tbody tr {
+  cursor: pointer;
+}
+table.proc-steps-table tbody tr:hover,
+table.proc-artifacts-table tbody tr:hover {
+  background: var(--surface-2);
+}
+table.proc-steps-table tbody tr.on {
+  background: var(--primary-light);
+}
+table.proc-steps-table tbody tr.on td:first-child {
+  box-shadow: inset 2px 0 0 var(--primary);
+}
+.dotmark {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+}
+.dotmark.done {
+  background: var(--success);
+  color: #fff;
+}
+.dotmark.failed {
+  background: var(--error);
+  color: #fff;
+}
+.dotmark.waiting {
+  border: 2px solid var(--warning);
+  color: var(--warning);
+  background: var(--warning-light);
+}
+.dotmark.pending {
+  border: 1.5px solid var(--border-strong);
+  color: var(--faint);
+}
+.dotmark.definition {
+  border: 1.5px solid var(--border-strong);
+  color: var(--muted);
+}
+
+/* Persistent Rail */
+.proc-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+}
+.flowcard .graphbox {
+  padding: 10px 8px 4px;
+}
+.flowcard svg.dag {
+  cursor: pointer;
+}
+.rail-hint {
+  padding: 8px 13px 12px;
+  font-size: 11px;
+  color: var(--faint);
+}
+.proc-detail-card .detail-inner {
+  padding: 13px 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}

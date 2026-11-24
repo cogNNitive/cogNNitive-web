@@ -913,17 +913,11 @@ async function renderTree(models, root, consoles, out) {
  * calls it again with a different timestamp), and re-bundling on every call would rebuild
  * the same bytes.
  */
-let foldSlotCache = null
+let foldSlotCache = ''
 async function loadProcedureFoldSlot() {
-  if (foldSlotCache !== null) return foldSlotCache
-  try {
-    const { procedureFoldBrowserSource } = await import('./lib/procedure-fold-browser.js')
-    foldSlotCache = await procedureFoldBrowserSource(repoRoot)
-  } catch {
-    // No bundler available: the console ships without a projection rather than a broken one.
-    foldSlotCache = ''
-  }
-  return foldSlotCache
+  // foldRun is now included canonically in nn-console.bundle.js via nn-procedure-fold.generated.js.
+  // No dynamic script injection is needed into exported consoles.
+  return ''
 }
 
 function injectSlots(shell, config, schema, model, viewData) {

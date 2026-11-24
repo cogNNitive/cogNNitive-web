@@ -46,6 +46,16 @@
 
   var TERMINAL_RUN = { completed: true, failed: true, cancelled: true }
 
+  var MARK_SYMBOLS = {
+    done: '✓',
+    failed: '✕',
+    waiting: '◍',
+    pending: '○',
+    active: '▶',
+    definition: '·',
+    off_path: '—',
+  }
+
   /** The sentence an engine or agent step shows: the browser never runs it (S2). */
   var SYSTEM_STEP_NOTE = 'This step is run by the system when you send your response back.'
 
@@ -212,12 +222,11 @@
   function projectRun(core, graph, run, requests) {
     if (!core || typeof core.project !== 'function' || !graph || !run) return null
     if (typeof core.available === 'function' && !core.available()) return null
-    var events = eventsOfRequests(graph, run, requests)
-    if (!events.length) return null
+    if (!Array.isArray(requests) || !requests.length) return null
     try {
       return core.project(
         { graph: graph, model: run.model, events: run.events },
-        events,
+        requests,
         run.defRev ? { defRev: run.defRev } : {},
       )
     } catch {
@@ -384,13 +393,13 @@
     var inboxHost = make('div', 'proc-inbox-host')
     root.appendChild(inboxHost)
     var tabsHost = make('div', 'proc-tabs')
-    root.appendChild(tabsHost)
     var body = make('div', 'proc-body')
     root.appendChild(body)
 
     var active = entries[0]
     var activeRun = null
     var selectedStep = null
+    var activeTab = 'flow'
     var runFilter = 'all'
     var startFormOpen = false
     var savedNote = null
@@ -782,10 +791,12 @@
     }
 
     // ---- Tabs: one per procedure document ----
-    function renderTabs() {
-      tabsHost.innerHTML = ''
+    function renderTabs(hostEl) {
+      var target = hostEl || tabsHost
+      target.innerHTML = ''
+      if (entries.length <= 1) return
       entries.forEach(function (entry) {
-        tabsHost.appendChild(
+        target.appendChild(
           button(
             'proc-tab' + (entry === active ? ' active' : ''),
             entry.title || entry.file,
@@ -1260,15 +1271,25 @@
         g.appendChild(title)
         svg.appendChild(g)
       })
-      var col = make('div', 'exec-dag-col')
-      var head = make('div', 'exec-col-header')
-      head.innerHTML = '<span>' + vIcon('workflow', 14) + ' Workflow</span>'
-      head.appendChild(make('span', 'count-badge', Object.keys(graph.steps).length + ' steps'))
+      var col = make('div', 'exec-dag-col flowcard card')
+      var head = make('div', 'col-head exec-col-header')
+      head.innerHTML = '<span>' + vIcon('workflow', 14) + ' Flow</span>'
+      head.appendChild(
+        make('span', 'count-badge count', Object.keys(graph.steps).length + ' steps'),
+      )
       col.appendChild(head)
-      var view = make('div', 'exec-dag-view')
+      var view = make('div', 'exec-dag-view graphbox')
       view.appendChild(svg)
       col.appendChild(view)
       col.appendChild(stepList(lay, current))
+      var hint = make(
+        'div',
+        'rail-hint hint',
+        !activeRun
+          ? 'La forma del procedimiento. Se mantiene visible en todos los tabs.'
+          : 'El nodo seleccionado es el que se abre abajo. Se mantiene visible en todos los tabs.',
+      )
+      col.appendChild(hint)
       hostEl.appendChild(col)
     }
 
@@ -2366,6 +2387,430 @@
       hostEl.appendChild(box)
     }
 
+    // ---- Artifacts panel (Tab 'artifacts') ----
+    function renderArtifactPanel(hostEl) {
+      var pad = make('div', 'pad')
+      var artMap = (active.graph && active.graph.artifacts) || {}
+      var slugs = Object.keys(artMap)
+      var state = viewState()
+      var table = make('table', 'proc-artifacts-table')
+      var thead = make('thead')
+      var htr = make('tr')
+      ;['Artifact', 'Produced by', 'State', 'File'].forEach(function (h) {
+        htr.appendChild(make('th', null, h))
+      })
+      thead.appendChild(htr)
+      table.appendChild(thead)
+      var tbody = make('tbody')
+      slugs.forEach(function (slug) {
+        var def = artMap[slug] || {}
+        var st = state && state.artifacts ? state.artifacts[slug] : null
+        var tr = make('tr')
+        tr.setAttribute('data-proc-artifact-item', slug)
+        var td1 = make('td')
+        td1.appendChild(artifactChip(slug))
+        tr.appendChild(td1)
+        var td2 = make('td', 'dim')
+        var producer = (def.producers || [])[0] || (st && st.step) || '—'
+        td2.textContent =
+          producer !== '—' && stepsOf(active)[producer] ? stepName(producer) : producer
+        tr.appendChild(td2)
+        var td3 = make('td')
+        var status = st ? st.status : 'expected'
+        td3.appendChild(
+          make(
+            'span',
+            'badge ' + (status === 'validated' || status === 'produced' ? 'done' : status),
+            status,
+          ),
+        )
+        tr.appendChild(td3)
+        var td4 = make('td', 'mono dim')
+        td4.textContent =
+          filePathOf(slug, def) || fillSlots(def.path || def.verify || '—', values())
+        tr.appendChild(td4)
+        tbody.appendChild(tr)
+      })
+      table.appendChild(tbody)
+      pad.appendChild(table)
+      if (slugs.length) {
+        var artBox = make('div', 'proc-run-artifacts')
+        artBox.appendChild(make('div', 'proc-run-artifacts-label', 'Artifacts'))
+        var artList = make('div', 'proc-artifact-list')
+        slugs.forEach(function (slug) {
+          artList.appendChild(artifactChip(slug))
+        })
+        artBox.appendChild(artList)
+        pad.appendChild(artBox)
+      }
+      hostEl.appendChild(pad)
+    }
+
+    // ---- BDE Run Bar ----
+    function renderBdeRunBar(hostEl) {
+      var bar = make('div', 'proc-runbar proc-run-state-bar')
+      var stepsCount = Object.keys(stepsOf(active)).length
+      var artCount = Object.keys((active.graph && active.graph.artifacts) || {}).length
+      var defRev = (active.graph && active.graph.defRev) || 'v1'
+      if (!activeRun) {
+        bar.appendChild(make('span', 'mono id proc-run-title', active.file))
+        bar.appendChild(make('span', 'badge pending proc-run-status', 'definition'))
+        bar.appendChild(make('span', 'sep'))
+        bar.appendChild(
+          make(
+            'span',
+            'path proc-run-path',
+            stepsCount + ' steps · ' + artCount + ' artifacts · pinned ' + defRev,
+          ),
+        )
+        bar.appendChild(make('span', 'spacer'))
+        bar.appendChild(
+          make(
+            'span',
+            'mono faint',
+            'No run selected: this is the procedure definition.' +
+              (store ? ' Use "Start a run" to request one.' : ''),
+          ),
+        )
+        if (store && active.graph && !/^bluepriNNt:/.test(active.file)) {
+          bar.appendChild(
+            button(
+              'btn btn-sm proc-start-run' + (startFormOpen ? ' active' : ''),
+              'Start a run',
+              function () {
+                startFormOpen = !startFormOpen
+                render()
+              },
+              { 'data-proc-start-run': '' },
+            ),
+          )
+        }
+        hostEl.appendChild(bar)
+        return
+      }
+      var recorded = activeRun.state
+      bar.appendChild(
+        make(
+          'span',
+          'mono id proc-run-title',
+          'Run ' + activeRun.id + (activeRun.closed ? ' (closed)' : ''),
+        ),
+      )
+      if (!recorded) {
+        bar.appendChild(make('span', 'badge pending proc-run-status', 'pending'))
+        bar.appendChild(make('span', 'spacer'))
+        bar.appendChild(make('span', 'mono faint', 'The definition is not in this export.'))
+        hostEl.appendChild(bar)
+        return
+      }
+      var state = viewState()
+      var projected = state !== recorded
+      bar.appendChild(
+        make('span', 'badge ' + state.status + ' proc-run-status', 'Status: ' + state.status),
+      )
+      bar.appendChild(make('span', 'sep'))
+      bar.appendChild(
+        make(
+          'span',
+          'proc-run-current',
+          'Current step: ' + (state.currentStep ? stepName(state.currentStep) : 'none'),
+        ),
+      )
+      bar.appendChild(make('span', 'sep'))
+      bar.appendChild(
+        make('span', 'path proc-run-path', 'Path: ' + state.path.map(stepName).join(' → ')),
+      )
+      if (projected) {
+        var pending = make(
+          'span',
+          'badge warning proc-run-projected',
+          'Showing the run with your answers applied. They are not sent yet.',
+        )
+        pending.setAttribute('data-proc-projected', '')
+        bar.appendChild(pending)
+      }
+      if (state.drift) {
+        bar.appendChild(
+          make(
+            'span',
+            'proc-run-drift note warn',
+            'Definition changed: the run is pinned to ' +
+              state.drift.pinned +
+              ', the procedure is now ' +
+              state.drift.current +
+              '.',
+          ),
+        )
+      }
+      bar.appendChild(make('span', 'spacer'))
+      bar.appendChild(make('span', 'mono faint proc-run-seq', 'Run seq: ' + runSeq()))
+      hostEl.appendChild(bar)
+    }
+
+    // ---- BDE Tab Bar ----
+    function renderBdeTabBar(hostEl) {
+      var bar = make('div', 'proc-tabbar tabbar')
+      var tabs = [
+        { id: 'flow', label: 'Flow' },
+        { id: 'steps', label: 'Steps' },
+        { id: 'requests', label: 'Requests', count: requestsOf(activeRun).length },
+        {
+          id: 'artifacts',
+          label: 'Artifacts',
+          count: Object.keys((active.graph && active.graph.artifacts) || {}).length,
+        },
+      ]
+      tabs.forEach(function (t) {
+        var btn = button(
+          'proc-tab-btn' + (activeTab === t.id ? ' on' : ''),
+          t.label,
+          function () {
+            activeTab = t.id
+            render()
+          },
+          { 'data-tab': t.id },
+        )
+        if (t.count !== undefined && t.count > 0) {
+          btn.appendChild(make('span', 'faint count', ' ' + t.count))
+        }
+        if (t.id === 'requests' && !activeRun) {
+          btn.hidden = true
+        }
+        bar.appendChild(btn)
+      })
+      hostEl.appendChild(bar)
+    }
+
+    // ---- BDE Panels (Flow, Steps, Requests, Artifacts) ----
+    function renderBdePanels(hostEl) {
+      if (!activeRun && activeTab === 'requests') activeTab = 'flow'
+      var graph = active.graph
+      var state = viewState()
+      var steps = graph && graph.steps ? graph.steps : {}
+      var stepKeys = Object.keys(steps)
+      var current = state ? state.currentStep : null
+      var def = !activeRun
+
+      // Panel 1: Flow
+      var pFlow = make(
+        'section',
+        'proc-panel panel panel-flow' + (activeTab === 'flow' ? ' on' : ''),
+      )
+      pFlow.setAttribute('data-tab-panel', 'flow')
+      var padFlow = make('div', 'pad')
+      var noteFlow = make(
+        'div',
+        'proc-flow-note path',
+        def
+          ? 'El documento tal como está definido: cada paso con sus instrucciones. Sin estado de run, sin secuencia ejecutada.'
+          : 'Cadena lineal, sin ramas · el orden de avance. La topología vive en el rail de la derecha.',
+      )
+      padFlow.appendChild(noteFlow)
+
+      var stepperBox = make('div', 'proc-stepper')
+      if (def) {
+        stepKeys.forEach(function (slug, i) {
+          var s = steps[slug]
+          var row = make(
+            'div',
+            'doc-step' + (slug === (selectedStep || graph.start || stepKeys[0]) ? ' on' : ''),
+          )
+          row.setAttribute('data-step', slug)
+          var h3 = make('h3')
+          h3.appendChild(make('span', 'idx', String(i + 1).padStart(2, '0')))
+          h3.appendChild(document.createTextNode(' ' + (s.name || slug) + ' '))
+          h3.appendChild(
+            make(
+              'span',
+              'pill' + (s.stepType === 'decision' ? ' decision' : ''),
+              s.stepType || 'task',
+            ),
+          )
+          if (s.executor) h3.appendChild(make('span', 'pill', s.executor))
+          if (s.outputs && s.outputs.length) {
+            h3.appendChild(make('span', 'spacer'))
+            h3.appendChild(make('span', 'sub', s.outputs.length + ' out'))
+          }
+          row.appendChild(h3)
+          var el = elementOf(slug)
+          if (el && el.description) {
+            var inst = make('div', 'instructions')
+            appendMarkdown(inst, fillSlots(el.description, values()))
+            row.appendChild(inst)
+          }
+          row.addEventListener('click', function () {
+            selectedStep = slug
+            render()
+          })
+          stepperBox.appendChild(row)
+        })
+      } else {
+        stepKeys.forEach(function (slug, i) {
+          var s = steps[slug]
+          var st = stepStatus(slug)
+          var last = i === stepKeys.length - 1
+          var lineCls = st === 'done' ? 'done' : st === 'failed' ? 'failed' : ''
+          var row = make(
+            'div',
+            'step-row' +
+              (slug === (selectedStep || current || graph.start || stepKeys[0]) ? ' on' : ''),
+          )
+          row.setAttribute('data-step', slug)
+          var railCol = make('div', 'rail-col')
+          var dot = make('div', 'dot ' + (st === 'pending' ? '' : st), MARK_SYMBOLS[st] || '○')
+          railCol.appendChild(dot)
+          if (!last) {
+            var line = make('div', 'line ' + lineCls)
+            railCol.appendChild(line)
+          }
+          row.appendChild(railCol)
+          var bodyCol = make('div', 'body')
+          var compact = make('div', 'compact')
+          compact.appendChild(make('span', 't', s.name || slug))
+          compact.appendChild(
+            make(
+              'span',
+              'pill' + (s.stepType === 'decision' ? ' decision' : ''),
+              s.stepType || 'task',
+            ),
+          )
+          if (s.executor) compact.appendChild(make('span', 'pill', s.executor))
+          compact.appendChild(make('span', 'spacer'))
+          compact.appendChild(make('span', 'badge ' + st, st))
+          bodyCol.appendChild(compact)
+          row.appendChild(bodyCol)
+          row.addEventListener('click', function () {
+            selectedStep = slug
+            render()
+          })
+          stepperBox.appendChild(row)
+        })
+      }
+      padFlow.appendChild(stepperBox)
+      pFlow.appendChild(padFlow)
+      hostEl.appendChild(pFlow)
+
+      // Panel 2: Steps (Master table)
+      var pSteps = make(
+        'section',
+        'proc-panel panel panel-steps' + (activeTab === 'steps' ? ' on' : ''),
+      )
+      pSteps.setAttribute('data-tab-panel', 'steps')
+      var padSteps = make('div', 'pad')
+      var cardSteps = make('div', 'card')
+      var headSteps = make('div', 'col-head')
+      headSteps.appendChild(make('span', null, 'Steps'))
+      headSteps.appendChild(
+        make(
+          'span',
+          'count',
+          def
+            ? 'definición del documento · ' + stepKeys.length
+            : 'orden de ejecución · ' + stepKeys.length,
+        ),
+      )
+      cardSteps.appendChild(headSteps)
+      var table = make('table', 'proc-steps-table')
+      var thead = make('thead')
+      var htr = make('tr')
+      htr.appendChild(make('th', null))
+      htr.appendChild(make('th', null, 'Step'))
+      htr.appendChild(make('th', null, 'Type'))
+      htr.appendChild(make('th', null, 'Executor'))
+      if (def) {
+        htr.appendChild(make('th', null, 'Inputs'))
+        htr.appendChild(make('th', null, 'Outputs'))
+      } else {
+        var thDur = make('th', 'num', 'Attempt')
+        thDur.style.textAlign = 'right'
+        htr.appendChild(thDur)
+        htr.appendChild(make('th', null, 'Artifacts'))
+      }
+      thead.appendChild(htr)
+      table.appendChild(thead)
+      var tbody = make('tbody')
+      stepKeys.forEach(function (slug) {
+        var s = steps[slug]
+        var st = def ? 'definition' : stepStatus(slug)
+        var tr = make('tr', slug === selectedStep ? 'on' : '')
+        tr.setAttribute('data-step', slug)
+        var td1 = make('td')
+        var mark = make('span', 'dotmark ' + st, MARK_SYMBOLS[st] || '·')
+        td1.appendChild(mark)
+        tr.appendChild(td1)
+        var td2 = make('td')
+        if (slug === selectedStep) {
+          td2.appendChild(make('b', null, s.name || slug))
+        } else {
+          td2.textContent = s.name || slug
+        }
+        tr.appendChild(td2)
+        var td3 = make('td')
+        td3.appendChild(
+          make(
+            'span',
+            'pill' + (s.stepType === 'decision' ? ' decision' : ''),
+            s.stepType || 'task',
+          ),
+        )
+        tr.appendChild(td3)
+        tr.appendChild(make('td', 'dim', s.executor || '—'))
+        if (def) {
+          var inText = s.inputs && s.inputs.length ? s.inputs.join(', ') : '—'
+          var outText = s.outputs && s.outputs.length ? s.outputs.join(', ') : '—'
+          tr.appendChild(make('td', s.inputs && s.inputs.length ? 'faint' : 'dim', inText))
+          tr.appendChild(make('td', s.outputs && s.outputs.length ? 'faint' : 'dim', outText))
+        } else {
+          var stepState = state && state.steps ? state.steps[slug] : null
+          var attText = stepState && stepState.attempt ? String(stepState.attempt) : '—'
+          var artText = s.outputs && s.outputs.length ? s.outputs.length + ' out' : '—'
+          var tdAtt = make('td', 'num', attText)
+          tdAtt.style.textAlign = 'right'
+          tr.appendChild(tdAtt)
+          tr.appendChild(make('td', s.outputs && s.outputs.length ? 'faint' : 'dim', artText))
+        }
+        tr.addEventListener('click', function () {
+          selectedStep = slug
+          render()
+        })
+        tbody.appendChild(tr)
+      })
+      table.appendChild(tbody)
+      cardSteps.appendChild(table)
+      padSteps.appendChild(cardSteps)
+      pSteps.appendChild(padSteps)
+      hostEl.appendChild(pSteps)
+
+      // Panel 3: Requests
+      var pReqs = make(
+        'section',
+        'proc-panel panel panel-requests' + (activeTab === 'requests' ? ' on' : ''),
+      )
+      pReqs.setAttribute('data-tab-panel', 'requests')
+      var padReqs = make('div', 'pad')
+      renderRequestQueue(padReqs)
+      pReqs.appendChild(padReqs)
+      hostEl.appendChild(pReqs)
+
+      // Panel 4: Artifacts
+      var pArts = make(
+        'section',
+        'proc-panel panel panel-artifacts' + (activeTab === 'artifacts' ? ' on' : ''),
+      )
+      pArts.setAttribute('data-tab-panel', 'artifacts')
+      renderArtifactPanel(pArts)
+      hostEl.appendChild(pArts)
+    }
+
+    // ---- Persistent Rail (Flow DAG + Step Detail + Run Panel) ----
+    function renderBdeRail(hostEl) {
+      renderGraph(hostEl)
+      var detail = make('div', 'proc-detail-card detail')
+      renderStepCard(detail)
+      renderRunPanel(detail)
+      hostEl.appendChild(detail)
+    }
+
     // ---- Render ----
     function render() {
       renderResponseBar()
@@ -2374,8 +2819,8 @@
       renderDiagnostics()
       body.innerHTML = ''
       renderFicha(body)
-      renderRunList(body)
       if (!active.graph) {
+        renderRunList(body)
         body.appendChild(
           make(
             'div',
@@ -2388,15 +2833,27 @@
         if (activeRun) renderRunPanel(ws0)
         return
       }
-      var ws = make('div', 'exec-workspace')
+      var ws = make('div', 'exec-workspace proc-bde-layout')
       body.appendChild(ws)
-      // The recorded state is the truth; when the person holds unsent answers, the graph, the
-      // card and the panel read the same projection of them (`nnProcedureCore.project`).
-      renderGraph(ws)
-      var main = make('div', 'exec-active-col')
+
+      // Column 1: Nav (Procedures + Runs)
+      var nav = make('nav', 'proc-nav nav')
+      renderBlueprintList(nav)
+      renderTabs(nav)
+      renderRunList(nav)
+      ws.appendChild(nav)
+
+      // Column 2: Main (Runbar + Tabbar + Panels)
+      var main = make('div', 'proc-main main')
+      renderBdeRunBar(main)
+      renderBdeTabBar(main)
+      renderBdePanels(main)
       ws.appendChild(main)
-      renderStepCard(main)
-      renderRunPanel(main)
+
+      // Column 3: Persistent Rail (Flow DAG + Step Detail + Run Panel)
+      var rail = make('aside', 'proc-rail rail')
+      renderBdeRail(rail)
+      ws.appendChild(rail)
     }
 
     // The inbox is the front door: open on the first run that waits on this person.
