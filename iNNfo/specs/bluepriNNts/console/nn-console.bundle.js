@@ -14216,7 +14216,7 @@ if (typeof window !== 'undefined') {
       return views
     }
     if (summaryModels(meta).length > 0) {
-      views.push({ id: 'summary', title: 'Summary', icon: 'layout', order: 5, tone: 'core', panelId: 'nn-tab-summary' })
+      views.push({ id: 'domain', title: 'Domain', icon: 'layout', order: 5, tone: 'core', panelId: 'nn-tab-domain' })
     }
     if (meta && meta.versions && typeof meta.versions === 'object') {
       views.push({ id: 'versions', title: 'Versions', icon: 'milestone', order: 50, tone: 'core', panelId: 'nn-tab-versions' })
@@ -14768,6 +14768,9 @@ if (typeof window !== 'undefined') {
         })
       }
       if (scopedView && has(scopedView)) return scopedView
+      // A search in the URL is a question for the explorer: show its answer there
+      // even when the console lands elsewhere by default.
+      if (has('explorer') && parseViewHash(doc.location ? doc.location.hash : '').q) return 'explorer'
       var preferred = opts.config && opts.config.defaultView
       if (preferred && has(preferred)) return preferred
       if (has('explorer')) return 'explorer'
@@ -16423,6 +16426,29 @@ if (typeof window !== 'undefined') {
     return a
   }
 
+  // A concept as the console's own concept badge: clicking its name opens the concept
+  // window (the badge's details panel, the same one its ⋮ opens).
+  function conceptBadge(doc, modelId, concept, schema) {
+    var holder = el('span', 'nn-summary-concept-ref')
+    holder.setAttribute('data-concept', concept)
+    var meta = conceptMetaOf(schema && schema.concepts, concept)
+    var badge = UI.Ku('section', { model: modelId, concept: concept, label: concept, index: meta.index, color: meta.color }, { doc: doc })
+    holder.appendChild(badge)
+    var unit = holder.querySelector('.nn-ku')
+    if (unit) {
+      unit.style.cursor = 'pointer'
+      unit.addEventListener('click', function () {
+        openConceptWindow(holder)
+      })
+    }
+    return holder
+  }
+
+  function openConceptWindow(holder) {
+    var more = holder && holder.querySelector('[data-ku-more]')
+    if (more && typeof more.click === 'function') more.click()
+  }
+
   // Each model card: title, bluepriNNt, size, completeness and a stacked bar of its
   // elements by concept (ECharts; the card still reads without it).
   function renderSummaryModelCard(doc, m, elements, schema) {
@@ -16455,13 +16481,23 @@ if (typeof window !== 'undefined') {
     )
     var chartHost = el('div', 'nn-summary-model-chart')
     card.appendChild(chartHost)
-    var legend = el('ul', 'nn-summary-model-legend')
+    // Every concept the model's bluepriNNt declares, the empty ones too, then any
+    // concept that only appears in the data.
+    var listed = (Array.isArray(m.declaredConcepts) ? m.declaredConcepts.slice() : []).filter(function (c, i, all) {
+      return all.indexOf(c) === i
+    })
     concepts.forEach(function (c) {
+      if (listed.indexOf(c) < 0) listed.push(c)
+    })
+    var legend = el('ul', 'nn-summary-model-legend')
+    listed.forEach(function (c) {
       var li = el('li')
+      li.setAttribute('data-concept', c)
       var dot = el('span', 'nn-summary-dot')
       dot.style.background = conceptMetaOf(schema && schema.concepts, c).hexColor
       li.appendChild(dot)
-      li.appendChild(conceptLink(doc, c, c + ' (' + byConcept[c] + ')'))
+      li.appendChild(conceptBadge(doc, m.id, c, schema))
+      li.appendChild(el('span', 'nn-summary-count', String(byConcept[c] || 0)))
       legend.appendChild(li)
     })
     card.appendChild(legend)
@@ -16491,7 +16527,8 @@ if (typeof window !== 'undefined') {
       })
       if (chart) {
         chart.on('click', function (params) {
-          revealInKnowledge(doc, formatFacetToken('concept', params.seriesName))
+          var row = legend.querySelector('li[data-concept="' + String(params.seriesName).replace(/"/g, '') + '"]')
+          openConceptWindow(row)
         })
       }
     }
@@ -16499,7 +16536,10 @@ if (typeof window !== 'undefined') {
   }
 
   function renderSummaryView(doc, model, schema, meta) {
-    var host = doc.getElementById('nn-tab-summary')
+    // Only into the panel of the built-in tab: a panel with this id that some other
+    // shell or view owns is left alone.
+    if (!summaryModels(meta).length) return
+    var host = doc.getElementById('nn-tab-domain')
     if (!host) return
     host.innerHTML = ''
     var models = summaryModels(meta)
@@ -16513,6 +16553,16 @@ if (typeof window !== 'undefined') {
     }).length
     var fill = fieldFill(elements, schema)
     var domain = (meta && meta.domain) || {}
+    // The model a concept belongs to, for its badge address: the first model that
+    // holds or declares it.
+    function conceptHome(c) {
+      for (var i = 0; i < models.length; i++) {
+        var mm = models[i]
+        var names = (mm.declaredConcepts || []).concat(mm.conceptNames || [])
+        if (names.indexOf(c) >= 0) return mm.id
+      }
+      return (meta && (meta.modelId || meta.model)) || ''
+    }
 
     var root = el('div', 'nn-summary')
     if (domain.title) root.appendChild(el('h2', 'nn-summary-title', domain.title))
@@ -16557,7 +16607,7 @@ if (typeof window !== 'undefined') {
         var li = el('li')
         ;(h.concepts || []).forEach(function (c, i) {
           if (i) li.appendChild(doc.createTextNode(i === h.concepts.length - 1 ? ' and ' : ', '))
-          li.appendChild(conceptLink(doc, c))
+          li.appendChild(conceptBadge(doc, conceptHome(c), c, schema))
         })
         li.appendChild(doc.createTextNode(h.text))
         list.appendChild(li)
@@ -16635,6 +16685,7 @@ if (typeof window !== 'undefined') {
   }
 
   function renderVersionsView(doc, meta) {
+    if (!(meta && meta.versions && typeof meta.versions === 'object')) return
     var host = doc.getElementById('nn-tab-versions')
     if (!host) return
     host.innerHTML = ''
@@ -16819,6 +16870,7 @@ if (typeof window !== 'undefined') {
   }
 
   function renderMapView(doc, model, schema, meta) {
+    if (!summaryModels(meta).length || !(Array.isArray(model && model.elements) && model.elements.length)) return
     var host = doc.getElementById('nn-tab-map')
     if (!host) return
     host.innerHTML = ''

@@ -2344,6 +2344,9 @@ export async function writeConsole(opts = {}) {
         'https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/console/nn-console.bundle.js',
     },
   }
+  // The whole-domaiNN console opens on the Domain tab; a single-model console keeps
+  // Knowledge as its landing page.
+  if (wholeDomain) config.defaultView = 'domain'
 
   const resolver = payloadHelper.createFsSourceResolver
     ? payloadHelper.createFsSourceResolver(root)
@@ -2560,6 +2563,17 @@ export async function writeConsole(opts = {}) {
         changeCount: changeCount,
         ownership: (payload.model.meta && payload.model.meta.ownership) || 'authored',
         conceptNames: Array.from(modelConcepts),
+        // Every concept the model's bluepriNNt declares, with or without elements.
+        declaredConcepts: Array.from(
+          new Set(
+            (payload && payload.schema && Array.isArray(payload.schema.concepts)
+              ? payload.schema.concepts
+              : []
+            )
+              .map((c) => (typeof c === 'string' ? c : c && c.name))
+              .filter(Boolean),
+          ),
+        ),
         elementCount: Array.isArray(payload.model.elements) ? payload.model.elements.length : 0,
       })
       scopeModelIds.push(mId)
