@@ -3,6 +3,9 @@
  * Source: iNNfo/packages/nn-core/src/trannsformPrimitives.ts
  * Regenerate: node scripts/build-core-mirrors.mjs
  * Drift-guarded by scripts/verify.js (core-mirror --check).
+ *
+ * Includes third-party code:
+ *   - yaml (ISC - Copyright (c) Eemeli Aro <eemeli@gmail.com>)
  */
 // @ts-nocheck
 "use strict";

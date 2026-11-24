@@ -3,6 +3,9 @@
  * Source: iNNfo/packages/nn-core (planDomainScaffold, parseKnowledge, serializeKnowledge, freeze_slugs)
  * Regenerate: node scripts/build-preflight-primitives.mjs
  * Drift-guarded by scripts/verify.js (build-preflight-primitives --check).
+ *
+ * Includes third-party code:
+ *   - yaml (ISC - Copyright (c) Eemeli Aro <eemeli@gmail.com>)
  */
 // @ts-nocheck
 var __create = Object.create;

@@ -4,6 +4,9 @@
  * Source: scripts/skills-manager.js (+ scripts/lib/*)
  * Regenerate: node scripts/build-skills-manager-bundle.mjs
  * Drift-guarded by scripts/verify.js (build-skills-manager-bundle --check).
+ *
+ * Includes third-party code:
+ *   - yaml (ISC - Copyright (c) Eemeli Aro <eemeli@gmail.com>)
  */
 // @ts-nocheck
 var __getOwnPropNames = Object.getOwnPropertyNames;

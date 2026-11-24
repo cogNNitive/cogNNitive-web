@@ -3,6 +3,9 @@
  * Source: scripts/core-mirrors/coNNtent.ts (nn-core scope, parser, changeset and apply)
  * Regenerate: node scripts/build-core-mirrors.mjs
  * Drift-guarded by scripts/verify.js (core-mirror --check).
+ *
+ * Includes third-party code:
+ *   - yaml (ISC - Copyright (c) Eemeli Aro <eemeli@gmail.com>)
  */
 // @ts-nocheck
 const __nnImportMetaUrl = require('node:url').pathToFileURL(__filename).href;
