@@ -10009,11 +10009,18 @@ var nnProcedureFold = (() => {
         ([inp, rev]) => validatedRev[inp] !== void 0 && validatedRev[inp] !== rev,
       )
     })
+    const runsAgain = reachable(graph, current)
     for (const [slug, row] of Object.entries(run.artifacts)) {
       if (row.status !== 'produced' && row.status !== 'validated') continue
       const producer = row.step ?? graph.artifacts[slug]?.producers[0]
       const prow = producer ? run.steps[producer] : void 0
-      if (prow?.status === 'pending' && prow.attempt > 0 && !stale.includes(slug)) stale.push(slug)
+      if (
+        prow?.status === 'pending' &&
+        prow.attempt > 0 &&
+        (path.includes(producer) || runsAgain.has(producer)) &&
+        !stale.includes(slug)
+      )
+        stale.push(slug)
     }
     for (const slug of stale) artifacts[slug] = { ...artifacts[slug], status: 'stale' }
     const producerOf = (o) => run.artifacts[o]?.step ?? graph.artifacts[o]?.producers[0]
@@ -22244,10 +22251,33 @@ if (typeof window !== 'undefined') {
       hostEl.appendChild(form)
     }
 
-    // ---- Graph layout: a step's layer is its longest distance from the start ----
+    /**
+     * The loop back-edges of the graph: an edge into a step still open on the depth-first
+     * walk from the start (a revise step returning to its review). The layout skips them, so
+     * a loop never pushes its decision below the steps it branches to.
+     */
+    function backEdgesOf(graph) {
+      var steps = graph.steps
+      var back = {}
+      var state = {}
+      function visit(s) {
+        state[s] = 'open'
+        ;(steps[s].next || []).forEach(function (t) {
+          if (!steps[t]) return
+          if (state[t] === 'open') back[s + '>' + t] = true
+          else if (state[t] === undefined) visit(t)
+        })
+        state[s] = 'done'
+      }
+      if (graph.start && steps[graph.start]) visit(graph.start)
+      return back
+    }
+
+    // ---- Graph layout: a step's layer is its longest distance from the start, loops aside ----
     function layersOf(graph) {
       var steps = graph.steps
       var order = Object.keys(steps)
+      var back = backEdgesOf(graph)
       var layer = {}
       var queue = graph.start ? [graph.start] : []
       if (graph.start) layer[graph.start] = 0
@@ -22255,6 +22285,7 @@ if (typeof window !== 'undefined') {
       while (queue.length && guard-- > 0) {
         var s = queue.shift()
         steps[s].next.forEach(function (t) {
+          if (back[s + '>' + t]) return
           if (layer[t] === undefined || layer[t] < layer[s] + 1) {
             // A cycle never settles; its depth is capped at the step count.
             if (layer[s] + 1 >= order.length) return
@@ -23004,8 +23035,8 @@ if (typeof window !== 'undefined') {
         'div',
         'rail-hint hint',
         !activeRun
-          ? 'La forma del procedimiento. Se mantiene visible en todos los tabs.'
-          : 'El nodo seleccionado es el que se abre abajo. Se mantiene visible en todos los tabs.',
+          ? 'The shape of the procedure. It stays visible on every tab.'
+          : 'The selected node is the one that opens below. It stays visible on every tab.',
       )
       col.appendChild(hint)
       // Attached before the chart is drawn, so the chart measures the width it really has.

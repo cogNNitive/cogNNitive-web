@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-9-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-9-0_NN.md"
-blueprint_version: "V_0-6-0"
+blueprint_version: "V_0-6-1"
 title: "Executions App"
 description: "Level-2 blueprint recording runs of procedures as models with state: one instance model per run, holding its header, one row per step and one row per artifact; the history of the run is the change log of that model."
 relationship_types:
@@ -256,7 +256,7 @@ Every runner changeset holds the header's `seq: n -> n+1` with `from: {seq: n}`,
 
 ### Loops
 
-A procedure may loop back to an earlier step when the loop is guarded: a decision step chooses the branch into it (its target carries a `condition`), and its other branches leave it. Completing the step whose `next` is a step the run already walked takes the loop's back-edge: one changeset puts that step and every step walked from it up to the completing one back to `pending`, keeping each row's `attempt`, so the next start counts on from it, and puts every output of those steps that was `validated` back to `produced`; the fold reports those outputs stale until their producer runs again. The loop is bounded: when the step it returns to already took its `max_attempts` (3 when the procedure declares none), the back-edge is refused with `LOOP_LIMIT` and nothing is written, so the actor fails the step or takes another branch.
+A procedure may loop back to an earlier step when the loop is guarded: a decision step chooses the branch into it (its target carries a `condition`), and its other branches leave it. Completing the step whose `next` is a step the run already walked takes the loop's back-edge: one changeset puts that step and every step walked from it up to the completing one back to `pending`, keeping each row's `attempt`, so the next start counts on from it, and puts every output of those steps that was `validated` back to `produced`; the fold reports those outputs stale until their producer runs again. The loop is bounded: when the step it returns to already took its `max_attempts` (3 when the procedure declares none), the back-edge is refused with `LOOP_LIMIT` and nothing is written, so the actor fails the step or takes another branch. The same limit is checked where the choice is made: a decision whose chosen branch can only lead back to a loop target that already took its `max_attempts` is refused with `LOOP_LIMIT` at the decision itself, so the run is never sent into a branch it cannot leave. A step that declares a required output completes only when it recorded that output itself; an artifact another producer validated earlier (the first draft, before a loop's revise step) does not satisfy it, so every pass of a loop records its own output.
 
 ### Artifacts
 
@@ -281,7 +281,7 @@ level: 3
 parent_spec:
   name: executions
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/executions/spec_NN.md"
-blueprint_version: "V_0-6-0"
+blueprint_version: "V_0-6-1"
 status: active
 ---
 

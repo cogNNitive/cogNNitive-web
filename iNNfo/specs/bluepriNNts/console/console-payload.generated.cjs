@@ -12739,11 +12739,13 @@ function foldRun(graph, run, opts) {
       ([inp, rev]) => validatedRev[inp] !== void 0 && validatedRev[inp] !== rev
     );
   });
+  const runsAgain = reachable(graph, current);
   for (const [slug, row] of Object.entries(run.artifacts)) {
     if (row.status !== "produced" && row.status !== "validated") continue;
     const producer = row.step ?? graph.artifacts[slug]?.producers[0];
     const prow = producer ? run.steps[producer] : void 0;
-    if (prow?.status === "pending" && prow.attempt > 0 && !stale.includes(slug)) stale.push(slug);
+    if (prow?.status === "pending" && prow.attempt > 0 && (path2.includes(producer) || runsAgain.has(producer)) && !stale.includes(slug))
+      stale.push(slug);
   }
   for (const slug of stale) artifacts[slug] = { ...artifacts[slug], status: "stale" };
   const producerOf = (o) => run.artifacts[o]?.step ?? graph.artifacts[o]?.producers[0];
