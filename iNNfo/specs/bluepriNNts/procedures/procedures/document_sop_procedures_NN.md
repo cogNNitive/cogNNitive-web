@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-3-0"
+knowledge_version: "V_0-4-0"
 title: "Standard Operating Procedure: Documenting Procedures in iNNfo"
 slots:
   - name: intake
@@ -125,23 +125,23 @@ decision:: Has the SOP model passed validation and been recorded, or is it inval
 next:: [@confirm-validated-sop, @stop-invalid-model]
 condition:: RACI matrix complete and reviewed
 input:: @raci-accountability-matrix
-output:: @validated-innfo-level-3-model
 tool:: @nn-mcp-server
 executor:: agent
 scope:: internal
 tags:: [procedure, verification, mcp-audit, syntax-gate]
 
-Write the new procedure to the domain-relative `{sop}` path without overwriting an existing model. Use `validate_knowledge` with `intent: verify` and the written model?s hierarchical ID (not its file path). Check its workflow and references. Record the output as `validated` only after the checks pass, including its path and SHA-256 revision. If validation fails and cannot be corrected in this step, record outcome `invalid` and take the stop path.
+Write the new procedure to the domain-relative `{sop}` path without overwriting an existing model. Use `validate_knowledge` with `intent: verify` and the written model's hierarchical ID (not its file path). Check its workflow and references. This step records no output: it only decides. If the checks pass, record outcome `valid`, and the next step records the validated output. If validation fails and cannot be corrected in this step, record outcome `invalid` and take the stop path.
 
 ## NN Work: Confirm Validated SOP
 slug:: confirm-validated-sop
 parent:: @procedure-documentation-lifecycle
 step_type:: task
 executor:: agent
-condition:: @validated-innfo-level-3-model validated
-input:: @validated-innfo-level-3-model
+condition:: outcome == valid
+input:: @raci-accountability-matrix
+output:: @validated-innfo-level-3-model
 
-Confirm that the run records the validated path and revision. Complete this step and finish the run with outcome `completed`. Do not publish the SOP from this run.
+Record the output as `validated`, including its path and SHA-256 revision, then complete this step and finish the run with outcome `completed`. Do not publish the SOP from this run.
 
 ## NN Work: Stop for Invalid Model
 slug:: stop-invalid-model

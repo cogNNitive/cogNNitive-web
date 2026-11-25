@@ -1571,8 +1571,9 @@
         // Rich-text truncation does not hold in every renderer: cut by what fits instead.
         var subSize = geo.compact ? 9 : 10
         var titleSize = geo.compact ? 11 : 13
-        var cut = function (text, size) {
-          var fit = Math.max(6, Math.floor(inner / (size * 0.54)))
+        // Upper-case bold text is wider per character than the title's mixed case.
+        var cut = function (text, size, em) {
+          var fit = Math.max(6, Math.floor(inner / (size * (em || 0.54))))
           return text.length > fit ? text.slice(0, fit - 1) + '…' : text
         }
         return {
@@ -1595,7 +1596,7 @@
             position: 'inside',
             formatter:
               '{sub|' +
-              cut(clean(sub.toUpperCase()), subSize) +
+              cut(clean(sub.toUpperCase()), subSize, 0.68) +
               '}\n{title|' +
               cut(clean(step.name || slug), titleSize) +
               '}',
@@ -3723,12 +3724,17 @@
       )
       pFlow.setAttribute('data-tab-panel', 'flow')
       var padFlow = make('div', 'pad')
+      var branches = stepKeys.some(function (slug) {
+        return Array.isArray(steps[slug].next) && steps[slug].next.length > 1
+      })
       var noteFlow = make(
         'div',
         'proc-flow-note path',
         def
-          ? 'El documento tal como está definido: cada paso con sus instrucciones. Sin estado de run, sin secuencia ejecutada.'
-          : 'Cadena lineal, sin ramas · el orden de avance. La topología vive en el rail de la derecha.',
+          ? 'The document as defined: each step with its instructions. No run state, no executed sequence.'
+          : branches
+            ? 'Steps in the order of progress. The branches and where each one leads are drawn in the flow graph.'
+            : 'A straight chain with no branches, in the order of progress. The flow graph shows the same steps.',
       )
       padFlow.appendChild(noteFlow)
 
