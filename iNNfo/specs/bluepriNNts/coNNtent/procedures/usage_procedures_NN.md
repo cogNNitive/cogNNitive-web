@@ -3,22 +3,20 @@ level: 3
 parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Using the coNNtent Blueprint"
 slots:
-  - { name: episode, kind: value, required: false, type: string, label: Episode, description: "The episode the dry run and the produce engine command address, for example series/<s>/episodes/<slug>." }
-  - { name: name, kind: value, required: false, type: string, label: Voice name, description: "The catalog name of the Voice that one voice-clone command writes." }
-  - { name: sample-audio, kind: value, required: false, type: string, label: Voice sample, description: "The audio sample that one voice-clone command clones." }
-  - { name: code, kind: value, required: false, type: string, label: Language code, description: "The language code of the Voice that one voice-clone command writes, for example es." }
+  - { name: episode, kind: value, required: false, type: string, label: Episode, description: "The episode Produce an Episode runs on, for example series/<s>/episodes/<slug>." }
 ---
 
 # NN Work
 
 Six procedures carry a person from an empty folder to a delivered episode: Set up the
 Domain, Define a Frame, Define a Character, Create a Series, Plan an Episode and Produce
-an Episode. Each step declares exactly one tool: `agent` (the AI agent, which reads and
-proposes), `engine` (a script under `~/.agents/skills/nn-conntent/scripts/`), `console`
-(the domaiNN console) or `human` (the person's decision). There is no Deliver procedure:
+an Episode. Each step declares exactly one tool: `agent` (the AI agent, which reads, proposes,
+and runs a skill script once per value the run itself decided), `engine` (a script under
+`~/.agents/skills/nn-conntent/scripts/`), `console` (the domaiNN console) or `human` (the
+person's decision). There is no Deliver procedure:
 delivery is the automatic last stage of Produce an Episode.
 
 A kNNowledge document changes only through a changeset. The four setup procedures are
@@ -101,7 +99,7 @@ parent:: @set-up-the-domain
 next:: @clone-the-chosen-voices
 step_type:: decision
 tool:: human
-decision:: the voice for each language the domaiNN will produce in â€” clone a sample, or pick an existing Voice whose `language` matches
+decision:: the voice for each language the domaiNN will produce in — clone a sample, or pick an existing Voice whose `language` matches
 scope:: internal
 At least one voice per chosen language. A Voice whose `language` differs from the slot it is offered for is refused and another is asked for. The wizard does not move to the proposal until every chosen language has a voice, or the person records the choice to defer.
 
@@ -110,10 +108,10 @@ slug:: clone-the-chosen-voices
 parent:: @set-up-the-domain
 next:: @check-whispercpp
 step_type:: task
-tool:: engine
-command:: ~/.agents/skills/nn-conntent/scripts/voice-clone.mjs {name} {sample-audio} --language {code}
+tool:: agent
+produces:: one catalog Voice per voice the person chose to clone
 scope:: internal
-Each clone writes a catalog Voice carrying its `language`. A re-clone of an existing name needs the explicit force flag, which the agent never assumes.
+For each voice the person chose to clone, run `~/.agents/skills/nn-conntent/scripts/voice-clone.mjs <name> <sample-audio> --language <code>` once, with that voice's name, sample and language. The names, samples and languages are decided in the previous step, one per language, so they are never run parameters. Each clone writes a catalog Voice carrying its `language`. A re-clone of an existing name needs the explicit force flag, which the agent never assumes; the script refuses a name or a sample already cloned and ledgers every attempt, so a repeated call never pays twice.
 
 ## NN Work: Check whisper.cpp
 slug:: check-whispercpp
@@ -179,7 +177,7 @@ parent:: @define-a-frame
 next:: @build-the-frame
 step_type:: decision
 tool:: human
-decision:: the level (domaiNN or series) and the starting point â€” one of the thirteen HyperFrames frame presets, `hyperframes capture <url>`, or scratch
+decision:: the level (domaiNN or series) and the starting point — one of the thirteen HyperFrames frame presets, `hyperframes capture <url>`, or scratch
 scope:: internal
 A series-level frame lives in `series/<s>/library/frames/`; a domaiNN-level frame serves every series.
 
@@ -256,10 +254,10 @@ slug:: clone-the-character-voices
 parent:: @define-a-character
 next:: @choose-the-appearance-defaults
 step_type:: task
-tool:: engine
-command:: ~/.agents/skills/nn-conntent/scripts/voice-clone.mjs {name} {sample-audio} --language {code}
+tool:: agent
+produces:: one catalog Voice per voice the person chose to clone
 scope:: internal
-Each clone writes a catalog Voice carrying its `language`. One voice at a time, with its own sample, so each Voice is traceable to its recording.
+For each voice the person chose to clone, run `~/.agents/skills/nn-conntent/scripts/voice-clone.mjs <name> <sample-audio> --language <code>` once, with that voice's name, sample and language, decided in the previous step. Each clone writes a catalog Voice carrying its `language`. One voice at a time, with its own sample, so each Voice is traceable to its recording.
 
 ## NN Work: Choose the appearance defaults
 slug:: choose-the-appearance-defaults
@@ -335,7 +333,7 @@ parent:: @create-a-series
 next:: @write-the-chrome-for-each-language
 step_type:: decision
 tool:: human
-decision:: one Scene Kind at a time â€” its role, maximum duration, narration on or off, Chrome slots, presets and direct fields
+decision:: one Scene Kind at a time — its role, maximum duration, narration on or off, Chrome slots, presets and direct fields
 scope:: internal
 Every episode declares a Kind per scene, or the reserved `Libre`.
 
@@ -394,10 +392,10 @@ slug:: run-the-dry-run-test-episode
 parent:: @create-a-series
 next:: @keep-or-discard-the-test-episode
 step_type:: task
-tool:: engine
-command:: ~/.agents/skills/nn-conntent/scripts/produce.mjs {episode} --dry-run
+tool:: agent
+produces:: the dry-run report of the test episode
 scope:: internal
-Validation and the persisted plan only: no synthesis, no render, no spend, no ledger record. It reports every resolved value with its source trace, the library names and the files they resolved to, the Chrome and the voice found for the series language, and the plan estimate. A missing item fails and is named, and the procedure does not complete while the dry run fails.
+Run `~/.agents/skills/nn-conntent/scripts/produce.mjs <test-episode-dir> --dry-run` on the test episode the applied series proposal created; its path is known only inside the run, so it is not a run parameter. Validation and the persisted plan only: no synthesis, no render, no spend, no ledger record. It reports every resolved value with its source trace, the library names and the files they resolved to, the Chrome and the voice found for the series language, and the plan estimate. A missing item fails and is named, and the procedure does not complete while the dry run fails.
 
 ## NN Work: Keep or discard the test episode
 slug:: keep-or-discard-the-test-episode
@@ -455,7 +453,7 @@ step_type:: task
 tool:: agent
 produces:: the speaking and narrative rules the narration must follow
 scope:: internal
-Read `CHARACTER.md` for the active character â€” the host set by the series, plus any guest the scene brings. Its prose (speaking and narrative style, things never said, examples) is binding: the narration never uses a phrase the prose forbids.
+Read `CHARACTER.md` for the active character — the host set by the series, plus any guest the scene brings. Its prose (speaking and narrative style, things never said, examples) is binding: the narration never uses a phrase the prose forbids.
 
 ## NN Work: Draft the scenes
 slug:: draft-the-scenes

@@ -58,7 +58,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.98.1",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {

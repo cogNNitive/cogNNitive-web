@@ -267,9 +267,11 @@ test('Create a Series ends with a dry-run test episode kept or discarded by the 
   const procedure = procedures.find((element) => element.name === 'Create a Series');
   const steps = stepsOf(procedure);
 
-  const dryRun = steps.find((step) => toolOf(step) === 'engine' && /dry run/i.test(body(step)));
-  assert.ok(dryRun, 'Create a Series has no engine dry-run step');
-  assert.match(dryRun.fields.command || '', /--dry-run\b/, 'the dry run does not pass --dry-run');
+  // The test episode is created inside the run, so its path is not a run parameter: the agent
+  // runs the dry run on the episode the applied proposal created.
+  const dryRun = steps.find((step) => toolOf(step) === 'agent' && /dry run/i.test(body(step)));
+  assert.ok(dryRun, 'Create a Series has no agent dry-run step');
+  assert.match(body(dryRun), /scripts\/produce\.mjs\b[^\n]*--dry-run\b/, 'the dry run does not name produce --dry-run');
   assert.match(allText(procedure), /no spend|spends nothing|nothing is spent/i, 'the dry run does not state that it spends nothing');
 
   const choice = steps.find((step) => toolOf(step) === 'human' && /keep/i.test(body(step)) && /discard/i.test(body(step)));
@@ -278,6 +280,20 @@ test('Create a Series ends with a dry-run test episode kept or discarded by the 
   const last = steps.at(-1);
   assert.equal(toolOf(last), 'human', 'the keep-or-discard choice must be the last step');
   assert.match(allText(procedure), /first episode/i, 'keeping must make the test episode the first episode');
+});
+
+test('voices are cloned by the agent, once per voice the person chose, each with its language', () => {
+  // Names, samples and languages are decided inside the run, one per language, so no engine
+  // command can take them as run parameters.
+  for (const name of ['Set up the Domain', 'Define a Character']) {
+    const procedure = procedures.find((element) => element.name === name);
+    const clones = stepsOf(procedure).filter((step) => /voice-clone\.mjs/.test(body(step)));
+    assert.equal(clones.length, 1, `${name} has no single voice-clone step`);
+    const [clone] = clones;
+    assert.equal(toolOf(clone), 'agent', `${name} clones voices outside the agent`);
+    assert.match(body(clone), /scripts\/voice-clone\.mjs\b[^\n]*--language\b/, `${name} clones without a language`);
+    assert.match(body(clone), /each (chosen )?voice|once per voice|for every voice/i, `${name} does not clone per voice`);
+  }
 });
 
 test('Plan an Episode reads CHARACTER.md prose before writing narration', () => {
