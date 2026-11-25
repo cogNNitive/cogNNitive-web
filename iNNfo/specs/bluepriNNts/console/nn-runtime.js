@@ -8150,12 +8150,127 @@
     return JSON.stringify(value).split(sep[0]).join('\\u2028').split(sep[1]).join('\\u2029')
   }
 
-  function draftToChanges(draft, index, fallbackModel, author) {
+  /**
+   * The canonical address a draft names, derived once so the summary table and the
+   * normative changeset cannot disagree. The payload's element records are the authority
+   * — each carries its own `modelId` and immutable `slug` — so a draft that records an
+   * `element_id` but no `element_slug` (what the console UI itself does) still resolves.
+   * A draft nothing resolves yields NO element part: the old `elem`/`unit` placeholders
+   * looked like addresses an agent could apply, and pointed at nothing. `elementFound`
+   * reports whether the slug came from a payload record or only from the draft's own text.
+   */
+  function draftIdentity(draft, fallbackModel, elements) {
+    var d = isObject(draft) ? draft : {}
+    var list = Array.isArray(elements) ? elements : []
+    var elementId = String(d.element_id || '')
+    var at = elementId.indexOf('@')
+    var idModel = at > 0 ? elementId.slice(0, at) : ''
+    var idSlug = at > 0 ? elementId.slice(at + 1).split('&')[0] : ''
+    // A caller may hand over a ready-made canonical address instead of the parts.
+    var address = String(d.address || '')
+    var addressAt = address.indexOf('@')
+    var addressModel = addressAt > 0 ? address.slice(0, addressAt) : ''
+    var addressRest = addressAt > 0 ? address.slice(addressAt + 1) : ''
+    var addressAmp = addressRest.indexOf('&')
+    var addressSlug = addressAmp === -1 ? addressRest : addressRest.slice(0, addressAmp)
+    var addressField = addressAmp === -1 ? '' : addressRest.slice(addressAmp + 1)
+    var wantedSlug = String(d.element_slug || addressSlug || '')
+    var rec = null
+    var i
+    if (elementId) {
+      for (i = 0; i < list.length && !rec; i++) {
+        if (list[i] && String(list[i].id || '') === elementId) rec = list[i]
+      }
+    }
+    if (!rec && wantedSlug) {
+      for (i = 0; i < list.length && !rec; i++) {
+        var e = list[i]
+        if (!e || String(e.slug || '') !== wantedSlug) continue
+        if (idModel && e.modelId && String(e.modelId) !== idModel) continue
+        rec = e
+      }
+    }
+    if (!rec && elementId) rec = findElementForTarget(list, elementId)
+    var model =
+      (rec && rec.modelId) || idModel || addressModel || d.knowledge_id || fallbackModel || 'model'
+    var slug = (rec && rec.slug) || wantedSlug || idSlug || ''
+    var field = d.field || addressField
+    return {
+      model: oneLine(model),
+      element: slug ? oneLine(slug) : '',
+      field: field ? oneLine(field) : '',
+      // Whether the payload actually holds the element this draft names. A slug the payload
+      // does not carry still reaches the target verbatim (the console must not rewrite what
+      // the reviewer typed), so callers get the fact instead of re-scanning `elements`.
+      elementFound: !!rec,
+    }
+  }
+
+  /** The operations that address one element, so their target must name one that exists. */
+  function isElementScopedOp(op) {
+    return (
+      op === 'update_field' ||
+      op === 'update_element_text' ||
+      op === 'remove_element' ||
+      op === 'rename_element' ||
+      op === 'update_matrix_cell'
+    )
+  }
+
+  // Why a draft cannot be exported as an applicable change, or '' when it can. Only the
+  // operations that address one element are checked: a model-level comment/verdict has
+  // no element by design.
+  function draftTargetProblem(identity, op) {
+    if (identity.element) return ''
+    if (isElementScopedOp(op)) {
+      return 'no element slug resolves for this draft, so its target names no element'
+    }
+    return ''
+  }
+
+  // Why an element-scoped draft names an element this console holds no record of, or '' when it
+  // does. A changeset addressing a nonexistent element is rejected by `apply_change`, and the
+  // reviewer only finds out after copying the export. Only a model the payload lists in
+  // `meta.models` is checked: that list is what proves the payload carries the model's full
+  // element set, so an absent record is real absence and never a partial payload. A `kind: 'new'`
+  // draft creates its element (`add_element`), and a draft that resolves no element at all is
+  // already reported by `draftTargetProblem`.
+  function draftElementProblem(identity, op, coveredModels) {
+    if (!isElementScopedOp(op)) return ''
+    if (!identity.element || identity.elementFound) return ''
+    var ids = Array.isArray(coveredModels) ? coveredModels : []
+    if (ids.indexOf(identity.model) === -1) return ''
+    return (
+      'element `' +
+      identity.element +
+      '` is not one of the elements this console holds for `' +
+      identity.model +
+      '`, so `apply_change` rejects this target'
+    )
+  }
+
+  /** A model's record in the console meta `models[]`, or null when it lists none by that id. */
+  function modelRecordOf(meta, modelId) {
+    var models = Array.isArray(meta && meta.models) ? meta.models : []
+    for (var i = 0; i < models.length; i++) {
+      if (models[i] && String(models[i].id || '') === String(modelId)) return models[i]
+    }
+    return null
+  }
+
+  // The one plan a draft becomes: its blocks, the canonical target they share, and the
+  // reason it cannot be applied as-is ('' when it can). `draftToChanges` is the block list
+  // of this same plan, so a caller that also renders a summary reads the identical target.
+  // `coveredModels` (optional) names the models this console covers; the element-existence
+  // check reads it, because only a covered model's payload is known to hold every element.
+  function draftPlan(draft, index, fallbackModel, author, elements, coveredModels) {
     var d = isObject(draft) ? draft : {}
     // A run request is not a model change: the owner's agent starts the run (import_console).
-    if (d.kind === 'run_start' || d.kind === 'run_handoff') return []
+    if (d.kind === 'run_start' || d.kind === 'run_handoff')
+      return { id: '', model: '', blocks: [], target: '', problem: '' }
     var id = oneLine(d.id || 'c-' + String(index + 1).padStart(2, '0'))
-    var model = oneLine(d.knowledge_id || fallbackModel || 'model')
+    var identity = draftIdentity(d, fallbackModel, elements)
+    var model = identity.model
     // A verdict is not a mutation: it records a human decision on a gate. It carries no
     // evidence (its authority is the changeset frontmatter) and never a base_hash.
     if (d.kind === 'verdict' || d.op === 'review_gate') {
@@ -8168,8 +8283,8 @@
       // episode model itself (there is no element_slug).
       var verdictTarget = oneLine(
         d.target ||
-          (d.element_slug
-            ? model + '@' + d.element_slug
+          (identity.element
+            ? model + '@' + identity.element
             : d.knowledge_id || fallbackModel || 'model'),
       )
       var verdictLines = [
@@ -8182,12 +8297,19 @@
       ]
       if (planHash) verdictLines.push('plan_hash:: ' + planHash)
       if (d.notes) verdictLines.push('notes:: ' + oneLine(d.notes))
-      return verdictLines.join('\n')
+      return {
+        id: id,
+        model: model,
+        blocks: [verdictLines.join('\n')],
+        target: verdictTarget,
+        problem: '',
+      }
     }
-    // The element part of a target is always the element slug: never the display
-    // name or the element id (the engine resolves slugs, and every payload element
-    // carries one).
-    var elementTarget = oneLine(d.element_slug || 'elem')
+    // The element part of a target is always the element slug: never the display name
+    // or an element id. It is '' when the draft names no element this payload holds, so
+    // the target stays visibly incomplete instead of pointing at a placeholder.
+    var elementTarget = identity.element
+    var elementPart = elementTarget ? '@' + elementTarget : ''
     var matrixName = d.matrix != null && d.matrix !== '' ? oneLine(d.matrix) : ''
     var isMatrix = !!matrixName
     var canUpdate =
@@ -8197,18 +8319,18 @@
     var op = isMatrix ? 'update_matrix_cell' : 'update_field'
     var target = isMatrix
       ? model + '@' + matrixName + '&' + oneLine(d.row) + '&' + oneLine(d.col)
-      : model + '@' + elementTarget + (d.field ? '&' + oneLine(d.field) : '')
+      : model + elementPart + (identity.field ? '&' + identity.field : '')
     if (isRename) {
       // Element display name is identity, not a field — the engine rejects
       // update_field on &name (PRECONDITION_FAILED). Emit rename_element.
       op = 'rename_element'
-      target = model + '@' + elementTarget
+      target = model + elementPart
     } else if (isProse) {
       op = 'update_element_text'
-      target = model + '@' + elementTarget
+      target = model + elementPart
     } else if (d.kind === 'delete') {
       op = 'remove_element'
-      target = model + '@' + elementTarget
+      target = model + elementPart
     } else if (d.kind === 'new') {
       if (d.concept && d.element) {
         // A new element is addressed by its concept; the engine reads name/fields below.
@@ -8220,6 +8342,8 @@
     } else if (d.kind === 'comment' || !canUpdate) {
       op = 'comment'
     }
+    var problem = draftTargetProblem(identity, op)
+    if (!problem) problem = draftElementProblem(identity, op, coveredModels)
 
     var lines = []
     lines.push('## NN Change: ' + id)
@@ -8261,7 +8385,8 @@
     if (d.comment) {
       lines.push('notes:: ' + formatChangesetValue(d.comment))
     }
-    if (op !== 'add_element') return [lines.join('\n')]
+    if (op !== 'add_element')
+      return { id: id, model: model, blocks: [lines.join('\n')], target: target, problem: problem }
     // A caller that already holds the element's fields as one JSON value (the procedure
     // runner builds its `Execution Event` that way) emits them verbatim: `apply_change`
     // writes `to` in the same `add_element` mutation, so element and values are one change.
@@ -8278,17 +8403,25 @@
           asJson = null
         }
         lines.push('to:: ' + (isObject(asJson) ? jsonLine(asJson) : formatChangesetValue(raw)))
-        return [lines.join('\n')]
+        return {
+          id: id,
+          model: model,
+          blocks: [lines.join('\n')],
+          target: target,
+          problem: problem,
+        }
       }
-      return [lines.join('\n')]
+      return { id: id, model: model, blocks: [lines.join('\n')], target: target, problem: problem }
     }
-    if (Object.keys(d.proposed).length === 0) return [lines.join('\n')]
+    if (Object.keys(d.proposed).length === 0)
+      return { id: id, model: model, blocks: [lines.join('\n')], target: target, problem: problem }
     // A change carries no inline fields. The filled fields share the draft's one
     // evidence, so they are set by ONE `set_fields` (a single field stays an
     // `update_field`), with no `from`: the fields do not exist yet.
     var slug = oneLine(d.element_slug || slugify(d.element || '') || 'elem')
     var blocks = [lines.join('\n')]
     var filled = Object.keys(d.proposed).sort()
+    var filledTarget = model + '@' + slug
     if (filled.length > 1) {
       var payload = {}
       filled.forEach(function (field) {
@@ -8300,27 +8433,32 @@
         [
           '## NN Change: ' + id + '-fields',
           'op:: set_fields',
-          'target:: ' + model + '@' + slug,
+          'target:: ' + filledTarget,
           'evidence:: ' + oneLine(ev),
           'to:: ' + jsonLine(payload),
           'author:: ' + oneLine(author || 'reviewer'),
         ].join('\n'),
       )
-      return blocks
+      return { id: id, model: model, blocks: blocks, target: filledTarget, problem: '' }
     }
     filled.forEach(function (field) {
       blocks.push(
         [
           '## NN Change: ' + id + '-' + slugify(field),
           'op:: update_field',
-          'target:: ' + model + '@' + slug + '&' + oneLine(field),
+          'target:: ' + filledTarget + '&' + oneLine(field),
           'evidence:: ' + oneLine(ev),
           'to:: ' + formatChangesetValue(d.proposed[field]),
           'author:: ' + oneLine(author || 'reviewer'),
         ].join('\n'),
       )
     })
-    return blocks
+    return { id: id, model: model, blocks: blocks, target: filledTarget, problem: '' }
+  }
+
+  // The blocks of one draft; the plan's own target is what the summary table shows.
+  function draftToChanges(draft, index, fallbackModel, author, elements, coveredModels) {
+    return draftPlan(draft, index, fallbackModel, author, elements, coveredModels).blocks
   }
 
   /** The first reason a verdict draft cannot be exported, or null. */
@@ -8355,7 +8493,7 @@
     }
   }
 
-  function serializeChangesetMarkdown(meta, drafts, fallbackModel) {
+  function serializeChangesetMarkdown(meta, drafts, fallbackModel, elements) {
     // The stamped version is the changes bluepriNNt version the payload was built
     // against (core's canonical registry); composeExport refuses to export without it.
     var title = meta.title || meta.source_knowledge || 'Proposed Changes'
@@ -8383,7 +8521,7 @@
     var modelName = fallbackModel || meta.source_knowledge || 'model'
     var blocks = []
     drafts.forEach(function (d, i) {
-      blocks = blocks.concat(draftToChanges(d, i, modelName, author))
+      blocks = blocks.concat(draftToChanges(d, i, modelName, author, elements))
     })
     lines.push(blocks.join('\n\n'))
     lines.push('')
@@ -8416,7 +8554,12 @@
       return { ok: false, errors: [verdictProblem] }
     }
 
-    var text = serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
+    var text = serializeChangesetMarkdown(
+      exportMeta,
+      drafts,
+      state && state.modelId,
+      state && state.elements,
+    )
     var filename = modelSlugOf(state) + '_' + reviewerSlug + '_' + stamp + '_changes_NN.md'
     return {
       ok: true,
@@ -8482,6 +8625,9 @@
       },
     }
     if (nonEmptyString(i.exportedAt)) state.exportedAt = i.exportedAt
+    // A saved console's slots carry its elements; when the caller supplies them the target
+    // addresses resolve exactly as they do in the live page.
+    if (Array.isArray(i.elements)) state.elements = i.elements
     return composeExport(state, nonEmptyString(i.reviewer) ? i.reviewer : DEFAULT_REVIEWER_NAME)
   }
 
@@ -8490,17 +8636,10 @@
       identifier && String(identifier).trim() ? String(identifier).trim() : getReviewerName()
     var drafts = state && state.store ? state.store.drafts() : []
     var model = state && state.modelTitle ? state.modelTitle : 'Model'
-    var version = state && state.modelVersion ? state.modelVersion : '1-0-0'
-
-    var rawVersion = String(version || '1-0-0')
-    var normVersion = MODEL_VERSION_PATTERN.test(rawVersion)
-      ? rawVersion
-      : 'V_' + rawVersion.replace(/^V_/, '').replace(/\./g, '-')
     var reviewerSlug = slugify(reviewer) || 'reviewer'
 
     var exportMeta = Object.assign({}, (state && state.meta) || {}, {
       source_knowledge: model,
-      source_knowledge_version: normVersion,
       artifact: (state && state.artifactName) || model + '_console.html',
       artifact_version: CONSOLE_VERSION,
       exported_at: (state && state.exportedAt) || new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
@@ -8526,7 +8665,12 @@
     var stamp = changesetStampOf(
       state && state.exportedAt ? new Date(state.exportedAt) : new Date(),
     )
-    var changesetMd = serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
+    var changesetMd = serializeChangesetMarkdown(
+      exportMeta,
+      drafts,
+      state && state.modelId,
+      state && state.elements,
+    )
     var modelSlug = modelSlugOf(state)
     var changesetFilename = modelSlug + '_' + reviewerSlug + '_' + stamp + '_changes_NN.md'
 
@@ -8680,22 +8824,45 @@
   function composeAgentPrompt(state) {
     state =
       state || (typeof document !== 'undefined' && document.__nnConsoleState) || activeState || {}
+    var meta = isObject(state && state.meta) ? state.meta : {}
+    var models = Array.isArray(meta.models) ? meta.models : []
+    var elements = state && state.elements
     var drafts = state && state.store ? state.store.drafts() : []
     var domainOrModel = (state && state.modelTitle) || 'Domain Model'
-    var version = (state && state.modelVersion) || 'V_1-0-0'
-    var slugOrId = (state && (state.modelSlug || state.modelId)) || 'model'
-    var domainId = (state && state.meta && (state.meta.domainId || state.meta.modelId)) || slugOrId
+    // Only a resolved version is stated. A console covering several models has no single
+    // version, and a fallback here reads to the agent as the domain's real one.
+    var version = state && state.modelVersion ? String(state.modelVersion) : ''
+    var reviewer = getReviewerName()
 
+    // One plan per draft: the summary table and the normative changeset below are the same
+    // resolution, so they cannot disagree about a target. The covered model ids are what makes
+    // an absent element record prove absence instead of a partial payload.
+    var coveredModelIds = models.map(function (m) {
+      return String((m && m.id) || '')
+    })
+    var plans = drafts.map(function (d, i) {
+      return draftPlan(d, i, state && state.modelId, reviewer, elements, coveredModelIds)
+    })
     var targetAddresses = []
-    drafts.forEach(function (d) {
-      var addr =
-        d.address ||
-        (d.knowledge_id || slugOrId) +
-          '@' +
-          (d.element_slug || d.element || d.element_id || 'unit') +
-          (d.field ? '&' + d.field : '')
-      if (targetAddresses.indexOf(addr) === -1) {
-        targetAddresses.push(addr)
+    var targetModels = []
+    var problems = []
+    plans.forEach(function (plan, i) {
+      if (plan.target && targetAddresses.indexOf(plan.target) === -1) {
+        targetAddresses.push(plan.target)
+      }
+      var record = modelRecordOf(meta, plan.model)
+      if (record && targetModels.indexOf(plan.model) === -1) targetModels.push(plan.model)
+      var label = '- `' + (plan.id || 'c-' + String(i + 1).padStart(2, '0')) + '`: '
+      if (plan.problem) problems.push(label + plan.problem)
+      if (plan.target && models.length > 0 && !record) {
+        // The console lists its own models: a target outside that list is a change no
+        // reader of this console can resolve, and `apply_change` rejects it.
+        problems.push(
+          label +
+            'model `' +
+            plan.model +
+            '` is not one of the models this console covers, so the target resolves to nothing',
+        )
       }
     })
 
@@ -8704,9 +8871,33 @@
     lines.push('')
     lines.push('## Target Domain & Entity')
     lines.push('- **Domain / Model**: ' + domainOrModel)
-    lines.push('- **Version**: ' + version)
-    lines.push('- **Domain Identifier**: `' + domainId + '`')
-    lines.push('- **Target Model / Entity Slug**: `' + slugOrId + '`')
+    // The declared `workspace_id` is the domain's own identity, readable in its
+    // `domaiNN_NN.md`. The console's draft-store key (`meta.domainId`) is a local storage
+    // name derived from the path, not a domain identifier, so it is never presented as one.
+    if (nonEmptyString(meta.workspaceId))
+      lines.push('- **Workspace ID**: `' + meta.workspaceId + '`')
+    if (version) {
+      lines.push('- **Version**: ' + version)
+    } else if (models.length > 1) {
+      lines.push(
+        '- **Version**: not available — this console covers ' +
+          models.length +
+          " models, so it has no single version; use each target model's own `knowledge_version`",
+      )
+    }
+    if (targetModels.length > 0) {
+      lines.push('- **Target Models**:')
+      targetModels.forEach(function (id) {
+        var record = modelRecordOf(meta, id) || {}
+        var file =
+          record.filePath && String(record.filePath).charAt(0) !== '<'
+            ? String(record.filePath)
+            : ''
+        var at = file ? ' — `' + file + '`' : ''
+        var atVersion = record.version ? ' (' + record.version + ')' : ''
+        lines.push('  - `' + id + '`' + at + atVersion)
+      })
+    }
     if (targetAddresses.length > 0) {
       lines.push('- **Target Canonical Addresses**:')
       targetAddresses.forEach(function (addr) {
@@ -8714,6 +8905,17 @@
       })
     }
     lines.push('')
+
+    if (problems.length > 0) {
+      lines.push('## Blocking Problems')
+      lines.push(
+        'These drafts name a target this console cannot resolve, so the changeset below cannot be applied as it stands:',
+      )
+      problems.forEach(function (line) {
+        lines.push(line)
+      })
+      lines.push('')
+    }
 
     lines.push(
       '## Changeset Summary (' +
@@ -8729,13 +8931,10 @@
     } else {
       lines.push('| Kind | Target Address | Field | Proposed / Details | Notes |')
       lines.push('| :--- | :--- | :--- | :--- | :--- |')
-      drafts.forEach(function (d) {
-        var addr =
-          d.address ||
-          (d.knowledge_id || slugOrId) +
-            '@' +
-            (d.element_slug || d.element || d.element_id || 'unit')
-        var field = d.field || '-'
+      drafts.forEach(function (d, i) {
+        var plan = plans[i] || {}
+        var addr = plan.target || '(unresolved)'
+        var field = plan.field || d.field || '-'
         var proposed =
           d.proposed !== undefined ? formatChangesetValue(d.proposed) : d.comment || '-'
         var note =
@@ -8757,7 +8956,6 @@
     }
     lines.push('')
 
-    var reviewer = getReviewerName()
     // The placeholder names nobody: the engine refuses a changeset signed by it
     // (GATE_REVIEWER_REQUIRED), so no changeset is embedded until a name is set (#606).
     var unnamed = !reviewer || reviewer === DEFAULT_REVIEWER_NAME
@@ -8765,8 +8963,7 @@
       source_knowledge: domainOrModel,
       title: 'Review Changes: ' + domainOrModel,
       author: reviewer,
-      changesBlueprintVersion:
-        (state && state.meta && state.meta.changesBlueprintVersion) || 'V_0-1-0',
+      changesBlueprintVersion: meta.changesBlueprintVersion || 'V_0-1-0',
     }
     if (unnamed && drafts.length > 0) {
       lines.push('### Normative Changeset Document')
@@ -8778,7 +8975,7 @@
     try {
       var changesetDoc = unnamed
         ? ''
-        : serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
+        : serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId, elements)
       if (changesetDoc && drafts.length > 0) {
         lines.push('### Normative Changeset Document (`_changes_NN.md`)')
         lines.push('```markdown')
@@ -8790,21 +8987,22 @@
       /* ignore if markdown generation fails */
     }
 
+    // The steps a domain workspace actually has: `apply_change` applies the document and
+    // regenerates the console, and `regenerate_console` rebuilds it alone. A domain has no
+    // package.json, `scripts/` or npm build, so naming one would send the agent nowhere.
     lines.push('## Actionable Instructions for AI Assistant')
     lines.push(
       '1. Inspect and validate the requested modifications against the target domain blueprints and schemas.',
     )
-    lines.push('2. Apply each change to the authoritative knowledge files under `models/`:')
     lines.push(
-      '   - Use the `nn-mcp` tool `apply_change` when connected, or directly update the Level 3 Markdown units.',
+      "2. Save the document above as a `_changes_NN.md` file and pass its path to the `nn-mcp` tool `apply_change` (`changeset`), or edit the target model's document in the domain directly.",
     )
-    lines.push('   - Ensure element frontmatter hashes and canonical addresses match.')
-    lines.push('3. Verify integrity across the workspace and regenerate the console:')
-    lines.push('   ```bash')
-    lines.push('   npm run build:console')
-    lines.push('   npm run check:console-bundle')
-    lines.push('   node scripts/export-console.mjs <domain-path> --domain --no-open')
-    lines.push('   ```')
+    lines.push(
+      "   - Preserve each element's canonical address and `base_hash`: a hash that moved on rejects the change.",
+    )
+    lines.push(
+      '3. If you edited the documents directly, regenerate the console with `regenerate_console`; `apply_change` already regenerates it for the domain it applied to.',
+    )
 
     return lines.join('\n')
   }
@@ -9305,12 +9503,12 @@
       identifierInput.value = storedName === DEFAULT_REVIEWER_NAME ? '' : storedName
     }
     if (agentPrompt) {
+      var promptVersion = state && state.modelVersion ? String(state.modelVersion) : ''
       agentPrompt.textContent =
         'Apply the attached changeset to ' +
         (state ? state.modelTitle : 'Model') +
-        ' (' +
-        (state ? state.modelVersion : '') +
-        '). ' +
+        (promptVersion ? ' (' + promptVersion + ')' : '') +
+        '. ' +
         UI.COPY.agentPromptSkipped
     }
 
