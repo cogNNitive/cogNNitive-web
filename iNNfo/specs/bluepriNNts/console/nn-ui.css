@@ -11766,12 +11766,12 @@ button.proc-run.proc-run-unsent {
     stroke-opacity: 0.3;
   }
 }
-.dag-node.current.active rect,
-.dag-node.current.waiting rect {
+/* The stepper sets data-pulse with the rule ECharts uses: the current step, whatever its status. */
+.dag-canvas[data-pulse='on'] .dag-node.current rect {
   animation: dag-pulse 2s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
-  .dag-node.current rect {
+  .dag-canvas[data-pulse='on'] .dag-node.current rect {
     animation: none;
   }
   .dag-node {

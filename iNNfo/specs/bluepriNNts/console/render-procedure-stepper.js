@@ -1809,6 +1809,15 @@
       }
     }
 
+    function reducedMotion() {
+      return !!(host.matchMedia && host.matchMedia('(prefers-reduced-motion: reduce)').matches)
+    }
+
+    /** One rule for both renderers: the current step pulses, whatever its status, unless motion is reduced. */
+    function pulseOf(current) {
+      return reducedMotion() || !current ? 'off' : 'on'
+    }
+
     /**
      * Draws the flow through the console's shared chart API (`renderChart`). Returns false
      * when there is none (no ECharts in this page), so the caller draws the native svg.
@@ -1831,10 +1840,8 @@
       wrap.appendChild(live)
       view.appendChild(wrap)
 
-      var reduced = !!(
-        host.matchMedia && host.matchMedia('(prefers-reduced-motion: reduce)').matches
-      )
-      wrap.setAttribute('data-pulse', reduced || !current ? 'off' : 'on')
+      var reduced = reducedMotion()
+      wrap.setAttribute('data-pulse', pulseOf(current))
       var pal = chartPalette(view)
       var widthOf = function () {
         return chartHost.clientWidth || view.clientWidth || 320
@@ -1871,16 +1878,33 @@
         })
       }
 
+      // The focus ring is painted inside the chart, so the browser cannot scroll it into view:
+      // keep the focused step's row inside the flow box (`.exec-dag-view` scrolls at 580 px).
+      var reveal = function (slug) {
+        var p = geo.pos[slug]
+        if (!p || !view.getBoundingClientRect || !chartHost.getBoundingClientRect) return
+        var top =
+          chartHost.getBoundingClientRect().top -
+          view.getBoundingClientRect().top +
+          view.scrollTop +
+          p.y * geo.rowH
+        var bottom = top + geo.rowH
+        if (top < view.scrollTop) view.scrollTop = top
+        else if (bottom > view.scrollTop + view.clientHeight)
+          view.scrollTop = bottom - view.clientHeight
+      }
       var moveTo = function (slug) {
         if (!slug || !graph.steps[slug]) return
         graphFocusSlug = slug
         hasFocus = true
         redraw()
+        reveal(slug)
         live.textContent = announceStep(slug)
       }
       wrap.addEventListener('focus', function () {
         hasFocus = true
         redraw()
+        reveal(focusSlug())
         live.textContent = announceStep(focusSlug())
       })
       wrap.addEventListener('blur', function () {
@@ -1957,6 +1981,8 @@
       var width = widest * (nodeW + gapX) + gapX
       var svg = document.createElementNS(svgNS, 'svg')
       svg.setAttribute('class', 'dag-canvas')
+      svg.setAttribute('data-proc-graph', '')
+      svg.setAttribute('data-pulse', pulseOf(current))
       svg.setAttribute('role', 'group')
       svg.setAttribute('aria-label', graphSummary(state, current))
       svg.setAttribute('viewBox', '0 0 ' + width + ' ' + (lay.rows.length * gapY + 20))
