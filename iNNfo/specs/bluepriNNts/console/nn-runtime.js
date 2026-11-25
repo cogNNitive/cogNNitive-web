@@ -287,7 +287,9 @@
 
   function compressionUnsupported(api) {
     var err = new Error(
-      'This console cannot open in this browser: it needs ' + api + ' to read its embedded data. ' +
+      'This console cannot open in this browser: it needs ' +
+        api +
+        ' to read its embedded data. ' +
         'Open the file in a current version of Chrome, Edge, Firefox or Safari.',
     )
     err.code = 'NN_COMPRESSION_UNSUPPORTED'
@@ -347,7 +349,9 @@
   function modelSlotText(doc) {
     if (decodedModels && decodedModels.has(doc)) return decodedModels.get(doc)
     if (slotText(doc, 'nn-model') === '') return ''
-    throw new Error('nn-console: the nn-model slot is compressed; await decodeModelSlot(document) before boot()')
+    throw new Error(
+      'nn-console: the nn-model slot is compressed; await decodeModelSlot(document) before boot()',
+    )
   }
 
   /** The nn-drafts slot: `{ drafts, uiState }` in plain JSON, `{}` when the console is fresh. */
@@ -380,7 +384,9 @@
     }
     var message = (err && err.message) || String(err)
     box.textContent =
-      err && err.code === 'NN_COMPRESSION_UNSUPPORTED' ? message : 'The console could not start: ' + message
+      err && err.code === 'NN_COMPRESSION_UNSUPPORTED'
+        ? message
+        : 'The console could not start: ' + message
     if (!box.parentNode) doc.body.insertBefore(box, doc.body.firstChild)
     return box
   }
@@ -392,24 +398,40 @@
   function getElementEffectiveTags(element) {
     if (!element) return []
     if (Array.isArray(element.tags)) {
-      return element.tags.map(function (t) { return String(t).toLowerCase() })
+      return element.tags.map(function (t) {
+        return String(t).toLowerCase()
+      })
     }
     var tags = []
     if (element.fields && element.fields.tags) {
       if (Array.isArray(element.fields.tags)) tags = tags.concat(element.fields.tags)
-      else if (typeof element.fields.tags === 'string') tags = tags.concat(element.fields.tags.split(',').map(function (s) { return s.trim() }))
+      else if (typeof element.fields.tags === 'string')
+        tags = tags.concat(
+          element.fields.tags.split(',').map(function (s) {
+            return s.trim()
+          }),
+        )
     }
     if (element.inherited && element.inherited.tags && element.inherited.tags.value) {
       var inh = element.inherited.tags.value
       if (Array.isArray(inh)) tags = tags.concat(inh)
-      else if (typeof inh === 'string') tags = tags.concat(inh.split(',').map(function (s) { return s.trim() }))
+      else if (typeof inh === 'string')
+        tags = tags.concat(
+          inh.split(',').map(function (s) {
+            return s.trim()
+          }),
+        )
     }
     var seen = {}
-    return tags.map(function (t) { return String(t).toLowerCase() }).filter(function (t) {
-      if (!t || seen[t]) return false
-      seen[t] = true
-      return true
-    })
+    return tags
+      .map(function (t) {
+        return String(t).toLowerCase()
+      })
+      .filter(function (t) {
+        if (!t || seen[t]) return false
+        seen[t] = true
+        return true
+      })
   }
 
   function elementHaystack(element) {
@@ -457,7 +479,10 @@
       var colonIdx = t.indexOf(':')
       if (colonIdx > 0 && t.charAt(0) !== '(' && t.charAt(0) !== ')') {
         var key = t.slice(0, colonIdx).toLowerCase()
-        var val = t.slice(colonIdx + 1).replace(/^["']|["']$/g, '').toLowerCase()
+        var val = t
+          .slice(colonIdx + 1)
+          .replace(/^["']|["']$/g, '')
+          .toLowerCase()
         return { type: 'operator', key: key, val: val, raw: t }
       }
       var unquoted = t.replace(/^["']|["']$/g, '')
@@ -567,7 +592,11 @@
     }
     // Inherited concept-level values are effective values: fall back to them
     // when the element carries no own value for the field.
-    if ((v === null || v === '' || v === undefined) && el.inherited && typeof el.inherited === 'object') {
+    if (
+      (v === null || v === '' || v === undefined) &&
+      el.inherited &&
+      typeof el.inherited === 'object'
+    ) {
       var iKeys = Object.keys(el.inherited)
       for (var j = 0; j < iKeys.length; j++) {
         if (iKeys[j].toLowerCase() === lkey) {
@@ -580,8 +609,12 @@
     }
     if ((v === null || v === '' || v === undefined) && Array.isArray(el.relations)) {
       var relMatches = el.relations
-        .filter(function (r) { return r && String(r.field || '').toLowerCase() === lkey })
-        .map(function (r) { return r.targetLabel || r.target || '' })
+        .filter(function (r) {
+          return r && String(r.field || '').toLowerCase() === lkey
+        })
+        .map(function (r) {
+          return r.targetLabel || r.target || ''
+        })
         .filter(Boolean)
       if (relMatches.length) v = relMatches.join(', ')
     }
@@ -623,7 +656,8 @@
       var isMatch = false
       if (opVal === 'draft') isMatch = !!draftsById[el.id]
       else if (opVal === 'reviewed') isMatch = !!reviewedMap[el.id]
-      else if (opVal === 'changed') isMatch = !!(reviewedMap[el.id] && reviewedMap[el.id] !== el.hash)
+      else if (opVal === 'changed')
+        isMatch = !!(reviewedMap[el.id] && reviewedMap[el.id] !== el.hash)
       return isNeg ? !isMatch : isMatch
     }
     if (key === 'has') {
@@ -653,8 +687,12 @@
     // values (one OR group). Repeated tokens stay AND (handled by filterElements).
     var anyTokens = opVal
       .split('|')
-      .map(function (s) { return s.trim() })
-      .filter(function (s) { return s !== '' })
+      .map(function (s) {
+        return s.trim()
+      })
+      .filter(function (s) {
+        return s !== ''
+      })
     if (anyTokens.length === 0) return true
     var isArrayValue = Array.isArray(actual)
     var actualStr = String(actual).toLowerCase()
@@ -662,7 +700,7 @@
       if (tok.length > 1 && (tok.charAt(0) === '>' || tok.charAt(0) === '<')) {
         var isGte = tok.slice(0, 2) === '>='
         var isLte = tok.slice(0, 2) === '<='
-        var prefixLen = (isGte || isLte) ? 2 : 1
+        var prefixLen = isGte || isLte ? 2 : 1
         var numTarget = parseFloat(tok.slice(prefixLen))
         var numActual = parseFloat(actualStr)
         if (isNaN(numTarget) || isNaN(numActual)) return false
@@ -674,7 +712,9 @@
       if (isArrayValue) {
         // Exact membership, case-insensitive (valueKey). Never substring.
         var tv = valueKey(tok)
-        return actual.some(function (v) { return valueKey(v) === tv })
+        return actual.some(function (v) {
+          return valueKey(v) === tv
+        })
       }
       if (selectFields && selectFields[key]) {
         // A scalar select matches by exact, case-insensitive equality.
@@ -706,7 +746,12 @@
     }
 
     // Check if query used explicit boolean groups (e.g. parentheses or OR keyword)
-    var hasExplicitLogic = parsed.groups.some(function (g) { return g.length > 1 }) || query.indexOf('(') !== -1 || /\bOR\b/i.test(query)
+    var hasExplicitLogic =
+      parsed.groups.some(function (g) {
+        return g.length > 1
+      }) ||
+      query.indexOf('(') !== -1 ||
+      /\bOR\b/i.test(query)
 
     if (hasExplicitLogic) {
       return list.filter(function (el) {
@@ -842,9 +887,13 @@
       var node = nodes[id]
       if (!node.parentId || !nodes[node.parentId]) roots.push(node)
     })
-    roots.sort(function (a, b) { return a.docOrder - b.docOrder })
+    roots.sort(function (a, b) {
+      return a.docOrder - b.docOrder
+    })
     roots.forEach(function (root) {
-      root.children.sort(function (a, b) { return a.docOrder - b.docOrder })
+      root.children.sort(function (a, b) {
+        return a.docOrder - b.docOrder
+      })
     })
     return { nodes: nodes, roots: roots }
   }
@@ -896,7 +945,9 @@
     var bg = tone === 'error' ? '#7f1d1d' : '#171717'
     toast.style.cssText =
       'position:fixed;right:16px;bottom:16px;z-index:10000;max-width:380px;padding:10px 16px;' +
-      'border-radius:6px;background:' + bg + ';color:#ffffff;font-size:13px;font-weight:500;' +
+      'border-radius:6px;background:' +
+      bg +
+      ';color:#ffffff;font-size:13px;font-weight:500;' +
       'box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;align-items:center;gap:8px;' +
       'font-family:var(--nn-font, sans-serif);line-height:1.4;'
     toast.textContent = String(message)
@@ -953,13 +1004,18 @@
     var models = Array.isArray(meta.models) ? meta.models : []
     var titleEl = doc.getElementById('nn-domain-title')
     if (titleEl) {
-      var singleTitle = models.length === 1 && models[0] && models[0].title ? String(models[0].title) : ''
+      var singleTitle =
+        models.length === 1 && models[0] && models[0].title ? String(models[0].title) : ''
       var title = singleTitle || String(meta.title || meta.model || 'iNNfo Console')
       // A whole-domaiNN console titles itself "<model> Domain" (export-console).
       // The header reads better as just "<model>"; the domain record and the
       // changeset title keep the full "<model> Domain" elsewhere.
       var domainModel = meta.model != null ? String(meta.model) : ''
-      if (!singleTitle && domainModel && title.toLowerCase() === (domainModel + ' domain').toLowerCase()) {
+      if (
+        !singleTitle &&
+        domainModel &&
+        title.toLowerCase() === (domainModel + ' domain').toLowerCase()
+      ) {
         title = domainModel
       }
       titleEl.textContent = title
@@ -1004,17 +1060,24 @@
         infoBtn.className = 'nn-navbar-info-btn'
         infoBtn.type = 'button'
         infoBtn.setAttribute('aria-label', 'Domain info')
-        infoBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
+        infoBtn.innerHTML =
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
 
         var popover = doc.createElement('div')
         popover.className = 'nn-navbar-info-popover'
         popover.style.display = 'none'
 
         var popoverLines = []
-        if (template) popoverLines.push('<div><strong>Template:</strong> ' + String(template) + '</div>')
-        if (version) popoverLines.push('<div><strong>Version:</strong> ' + String(version) + '</div>')
+        if (template)
+          popoverLines.push('<div><strong>Template:</strong> ' + String(template) + '</div>')
+        if (version)
+          popoverLines.push('<div><strong>Version:</strong> ' + String(version) + '</div>')
         if (meta.generated) {
-          var stamp = String(meta.generated).replace('T', ' ').replace(/\..*/, '').replace(/Z$/, '').trim()
+          var stamp = String(meta.generated)
+            .replace('T', ' ')
+            .replace(/\..*/, '')
+            .replace(/Z$/, '')
+            .trim()
           popoverLines.push('<div><strong>Generated:</strong> ' + stamp + ' UTC</div>')
         }
         popover.innerHTML = popoverLines.join('')
@@ -1068,12 +1131,12 @@
     input.type = 'text'
     input.setAttribute('aria-label', 'Reviewer name')
     var current = getReviewerName()
-      // Nudge: the default is a SHARED pseudonym, so several reviewers would collapse
-      // into one author. Flag it until it is set.
-      if (current === DEFAULT_REVIEWER_NAME) {
-        chip.setAttribute('data-default', 'true')
-        chip.setAttribute('title', 'Set your identifier so your proposals are attributed to you')
-      }
+    // Nudge: the default is a SHARED pseudonym, so several reviewers would collapse
+    // into one author. Flag it until it is set.
+    if (current === DEFAULT_REVIEWER_NAME) {
+      chip.setAttribute('data-default', 'true')
+      chip.setAttribute('title', 'Set your identifier so your proposals are attributed to you')
+    }
     input.value = current === DEFAULT_REVIEWER_NAME ? '' : current
     input.placeholder = DEFAULT_REVIEWER_NAME
     input.addEventListener('change', function () {
@@ -1088,7 +1151,8 @@
   function renderBanner(doc, meta, needs, draftCount, onReviewerChange, state) {
     var banner = doc.getElementById('nn-feedback-banner') || doc.getElementById('nn-banner')
     if (!banner) return
-    var existingOpen = doc.getElementById('nn-feedback-open') || doc.getElementById('nn-export-open')
+    var existingOpen =
+      doc.getElementById('nn-feedback-open') || doc.getElementById('nn-export-open')
     banner.innerHTML = ''
     var title = el('span', 'nn-banner-title', null)
     if (title) {
@@ -1120,9 +1184,14 @@
 
     if (existingOpen) {
       existingOpen.textContent = 'Changes · ' + (draftCount || 0)
-      if (!existingOpen.parentNode || existingOpen.parentNode === banner) banner.appendChild(existingOpen)
+      if (!existingOpen.parentNode || existingOpen.parentNode === banner)
+        banner.appendChild(existingOpen)
     } else if (banner.id === 'nn-feedback-banner') {
-      var openBtn = el('button', 'nn-feedback-open nn-navbar-action-btn', 'Changes · ' + (draftCount || 0))
+      var openBtn = el(
+        'button',
+        'nn-feedback-open nn-navbar-action-btn',
+        'Changes · ' + (draftCount || 0),
+      )
       if (openBtn) {
         openBtn.id = 'nn-feedback-open'
         openBtn.setAttribute('type', 'button')
@@ -1145,7 +1214,8 @@
     if (activeHost) activeHost.innerHTML = ''
 
     var models = state && state.meta && Array.isArray(state.meta.models) ? state.meta.models : []
-    var filterModelId = (state && (state.modelId || (state.meta && (state.meta.modelId || state.meta.model)))) || ''
+    var filterModelId =
+      (state && (state.modelId || (state.meta && (state.meta.modelId || state.meta.model)))) || ''
     var parsed = parseFilterQuery(activeQuery || '')
 
     // Extract active values for model and concept
@@ -1162,7 +1232,10 @@
       var lowerVal = String(val).toLowerCase()
 
       parsed.operators.forEach(function (op) {
-        if ((op.key === key || (key === 'model' && op.key === 'file')) && op.val.toLowerCase() === lowerVal) {
+        if (
+          (op.key === key || (key === 'model' && op.key === 'file')) &&
+          op.val.toLowerCase() === lowerVal
+        ) {
           if (!add) removed = true
           else newOps.push(op)
         } else {
@@ -1198,7 +1271,8 @@
       mBtn.setAttribute('type', 'button')
       var mIcon = typeof nnIcons !== 'undefined' ? nnIcons.getSvg('file-text', { size: 14 }) : '📄'
       var mLabel = activeModels.length > 0 ? 'Models (' + activeModels.length + ')' : 'Models'
-      mBtn.innerHTML = mIcon + ' <span>' + mLabel + '</span> <span style="font-size: 10px;">▼</span>'
+      mBtn.innerHTML =
+        mIcon + ' <span>' + mLabel + '</span> <span style="font-size: 10px;">▼</span>'
 
       var mMenu = el('div', 'nn-facet-menu')
       models.forEach(function (m) {
@@ -1207,7 +1281,11 @@
         cb.type = 'checkbox'
         var mMatchKey = (m.id || m.filePath || '').toLowerCase()
         var isChecked = activeModels.some(function (am) {
-          return am === mMatchKey || (m.filePath && am === m.filePath.toLowerCase()) || (m.id && am === m.id.toLowerCase())
+          return (
+            am === mMatchKey ||
+            (m.filePath && am === m.filePath.toLowerCase()) ||
+            (m.id && am === m.id.toLowerCase())
+          )
         })
         cb.checked = isChecked
 
@@ -1223,7 +1301,11 @@
                 { doc: doc },
               )
             : el('span', 'flex-1 truncate font-medium text-slate-700', m.title || m.filePath)
-        var cntBadge = el('span', 'badge badge-xs badge-ghost font-mono', String(m.elementCount || 0))
+        var cntBadge = el(
+          'span',
+          'badge badge-xs badge-ghost font-mono',
+          String(m.elementCount || 0),
+        )
 
         item.appendChild(cb)
         item.appendChild(mUnit)
@@ -1234,7 +1316,9 @@
       mBtn.addEventListener('click', function (e) {
         e.stopPropagation()
         var isOpen = mMenu.classList.contains('open')
-        doc.querySelectorAll('.nn-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
+        doc.querySelectorAll('.nn-facet-menu').forEach(function (menu) {
+          menu.classList.remove('open')
+        })
         if (!isOpen) mMenu.classList.add('open')
       })
 
@@ -1275,9 +1359,11 @@
           conceptCounts[e.concept] = (conceptCounts[e.concept] || 0) + 1
         }
       })
-      Object.keys(conceptCounts).sort().forEach(function (cName) {
-        allConcepts.push({ name: cName, count: conceptCounts[cName] })
-      })
+      Object.keys(conceptCounts)
+        .sort()
+        .forEach(function (cName) {
+          allConcepts.push({ name: cName, count: conceptCounts[cName] })
+        })
     }
 
     if (allConcepts.length > 0) {
@@ -1285,8 +1371,10 @@
       var cBtn = el('button', 'nn-facet-btn' + (activeConcepts.length > 0 ? ' active' : ''))
       cBtn.setAttribute('type', 'button')
       var cIcon = typeof nnIcons !== 'undefined' ? nnIcons.getSvg('layers', { size: 14 }) : '🏷️'
-      var cLabel = activeConcepts.length > 0 ? 'Concepts (' + activeConcepts.length + ')' : 'Concepts'
-      cBtn.innerHTML = cIcon + ' <span>' + cLabel + '</span> <span style="font-size: 10px;">▼</span>'
+      var cLabel =
+        activeConcepts.length > 0 ? 'Concepts (' + activeConcepts.length + ')' : 'Concepts'
+      cBtn.innerHTML =
+        cIcon + ' <span>' + cLabel + '</span> <span style="font-size: 10px;">▼</span>'
 
       var cMenu = el('div', 'nn-facet-menu')
       allConcepts.forEach(function (c) {
@@ -1300,7 +1388,10 @@
           toggleFacet('concept', c.name, cb.checked)
         })
 
-        var cMetaFacet = conceptMetaOf((state && state.schema && state.schema.concepts) || (state && state.concepts), c.name)
+        var cMetaFacet = conceptMetaOf(
+          (state && state.schema && state.schema.concepts) || (state && state.concepts),
+          c.name,
+        )
         var cUnit =
           UI && typeof UI.Ku === 'function'
             ? UI.Ku(
@@ -1326,7 +1417,9 @@
       cBtn.addEventListener('click', function (e) {
         e.stopPropagation()
         var isOpen = cMenu.classList.contains('open')
-        doc.querySelectorAll('.nn-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
+        doc.querySelectorAll('.nn-facet-menu').forEach(function (menu) {
+          menu.classList.remove('open')
+        })
         if (!isOpen) cMenu.classList.add('open')
       })
 
@@ -1366,7 +1459,8 @@
     function rawFieldValue(e, fName) {
       if (!e) return undefined
       var ef = e.fields
-      if (ef && typeof ef === 'object' && !Array.isArray(ef) && ef[fName] !== undefined) return ef[fName]
+      if (ef && typeof ef === 'object' && !Array.isArray(ef) && ef[fName] !== undefined)
+        return ef[fName]
       var inh = e.inherited
       if (inh && typeof inh === 'object' && inh[fName] !== undefined) {
         var iv = inh[fName]
@@ -1421,7 +1515,12 @@
       var activeFieldCount = 0
       parsed.operators.forEach(function (op) {
         var normKey = op.key.replace(/^[!-]/, '').toLowerCase()
-        if (fieldCounts[normKey] || fieldNames.some(function (fn) { return fn.toLowerCase() === normKey })) {
+        if (
+          fieldCounts[normKey] ||
+          fieldNames.some(function (fn) {
+            return fn.toLowerCase() === normKey
+          })
+        ) {
           activeFieldCount++
         }
       })
@@ -1429,9 +1528,13 @@
       var fWrap = el('div', 'nn-facet-dropdown')
       var fBtn = el('button', 'nn-facet-btn' + (activeFieldCount > 0 ? ' active' : ''))
       fBtn.setAttribute('type', 'button')
-      var fIcon = typeof nnIcons !== 'undefined' ? nnIcons.getSvg('sliders', { size: 14 }) || nnIcons.getSvg('tag', { size: 14 }) : '🏷️'
+      var fIcon =
+        typeof nnIcons !== 'undefined'
+          ? nnIcons.getSvg('sliders', { size: 14 }) || nnIcons.getSvg('tag', { size: 14 })
+          : '🏷️'
       var fLabel = activeFieldCount > 0 ? 'Fields (' + activeFieldCount + ')' : 'Fields'
-      fBtn.innerHTML = fIcon + ' <span>' + fLabel + '</span> <span style="font-size: 10px;">▼</span>'
+      fBtn.innerHTML =
+        fIcon + ' <span>' + fLabel + '</span> <span style="font-size: 10px;">▼</span>'
 
       var fMenu = el('div', 'nn-facet-menu')
       fMenu.style.minWidth = '240px'
@@ -1440,13 +1543,17 @@
         var rows = el('div', 'nn-facet-values')
         var def = declaredFieldDef(fName)
         var observed = observedValues(fName)
-        var declared = def && Array.isArray(def.options) && def.options.length ? def.options.map(String) : null
+        var declared =
+          def && Array.isArray(def.options) && def.options.length ? def.options.map(String) : null
         var isBoolean = !!(def && String(def.type || '') === 'boolean')
-        var options = isBoolean ? ['true', 'false'] : (declared || Object.keys(observed).sort())
+        var options = isBoolean ? ['true', 'false'] : declared || Object.keys(observed).sort()
         var isChecked = function (valKey) {
           return parsed.operators.some(function (op) {
             var normKey = op.key.replace(/^[!-]/, '').toLowerCase()
-            return normKey === fName.toLowerCase() && String(op.val).toLowerCase() === String(valKey).toLowerCase()
+            return (
+              normKey === fName.toLowerCase() &&
+              String(op.val).toLowerCase() === String(valKey).toLowerCase()
+            )
           })
         }
         options.slice(0, 200).forEach(function (valKey) {
@@ -1462,7 +1569,9 @@
           item.appendChild(cb)
           item.appendChild(nameSpan)
           if (observed[valKey] != null) {
-            item.appendChild(el('span', 'badge badge-xs badge-ghost font-mono', String(observed[valKey])))
+            item.appendChild(
+              el('span', 'badge badge-xs badge-ghost font-mono', String(observed[valKey])),
+            )
           }
           rows.appendChild(item)
         })
@@ -1495,7 +1604,13 @@
           renderFieldList()
         })
         fMenu.appendChild(back)
-        fMenu.appendChild(el('div', 'text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1 pb-1 border-b border-slate-100', fName))
+        fMenu.appendChild(
+          el(
+            'div',
+            'text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1 pb-1 border-b border-slate-100',
+            fName,
+          ),
+        )
         fMenu.appendChild(fieldValueRows(fName))
       }
 
@@ -1505,7 +1620,9 @@
           var item = el('button', 'nn-facet-item')
           item.setAttribute('type', 'button')
           item.appendChild(el('span', 'flex-1 truncate font-medium text-slate-700', fName))
-          item.appendChild(el('span', 'badge badge-xs badge-ghost font-mono', String(fieldCounts[fName] || 0)))
+          item.appendChild(
+            el('span', 'badge badge-xs badge-ghost font-mono', String(fieldCounts[fName] || 0)),
+          )
           item.addEventListener('click', function (ev) {
             ev.stopPropagation()
             renderFieldStep(fName)
@@ -1519,7 +1636,9 @@
       fBtn.addEventListener('click', function (e) {
         e.stopPropagation()
         var isOpen = fMenu.classList.contains('open')
-        doc.querySelectorAll('.nn-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
+        doc.querySelectorAll('.nn-facet-menu').forEach(function (menu) {
+          menu.classList.remove('open')
+        })
         if (!isOpen) {
           renderFieldList()
           fMenu.classList.add('open')
@@ -1534,7 +1653,12 @@
           e.stopPropagation()
           var newOps = parsed.operators.filter(function (op) {
             var normKey = op.key.replace(/^[!-]/, '').toLowerCase()
-            return !fieldCounts[normKey] && !fieldNames.some(function (fn) { return fn.toLowerCase() === normKey })
+            return (
+              !fieldCounts[normKey] &&
+              !fieldNames.some(function (fn) {
+                return fn.toLowerCase() === normKey
+              })
+            )
           })
           var queryParts = parsed.textTokens.map(function (t) {
             return t.indexOf(' ') !== -1 ? '"' + t + '"' : t
@@ -1559,7 +1683,11 @@
 
     // 4. Clear button if any filter is active
     if (activeQuery) {
-      var clearBtn = el('button', 'btn btn-ghost btn-xs text-xs text-slate-500 hover:text-error', 'Clear filters')
+      var clearBtn = el(
+        'button',
+        'btn btn-ghost btn-xs text-xs text-slate-500 hover:text-error',
+        'Clear filters',
+      )
       clearBtn.setAttribute('type', 'button')
       clearBtn.addEventListener('click', function () {
         if (typeof onQueryChange === 'function') onQueryChange('')
@@ -1568,7 +1696,12 @@
     }
 
     // 5. Sort Dropdown (available across all explorer view modes)
-    if (state && Array.isArray(state.elements) && state.elements.length > 0 && typeof onSortChange === 'function') {
+    if (
+      state &&
+      Array.isArray(state.elements) &&
+      state.elements.length > 0 &&
+      typeof onSortChange === 'function'
+    ) {
       var sWrap = el('div', 'nn-facet-dropdown nn-sort-dropdown')
       sWrap.style.marginLeft = 'auto'
 
@@ -1577,12 +1710,17 @@
       sBtn.setAttribute('type', 'button')
       sBtn.id = 'nn-sort-btn'
 
-      var sortIconName = !isSorted ? 'arrow-up-down' : (sortState.dir === 'desc' ? 'arrow-down' : 'arrow-up')
+      var sortIconName = !isSorted
+        ? 'arrow-up-down'
+        : sortState.dir === 'desc'
+          ? 'arrow-down'
+          : 'arrow-up'
       var sIcon = typeof nnIcons !== 'undefined' ? nnIcons.getSvg(sortIconName, { size: 14 }) : '⇅'
       var sLabel = isSorted
         ? 'Sort: ' + sortState.key + (sortState.dir === 'desc' ? ' ↓' : ' ↑')
         : 'Sort'
-      sBtn.innerHTML = sIcon + ' <span>' + sLabel + '</span> <span style="font-size: 10px;">▼</span>'
+      sBtn.innerHTML =
+        sIcon + ' <span>' + sLabel + '</span> <span style="font-size: 10px;">▼</span>'
 
       var sMenu = el('div', 'nn-facet-menu nn-sort-menu')
       sMenu.style.right = '0'
@@ -1590,19 +1728,32 @@
       sMenu.style.minWidth = '220px'
 
       // Direction selector
-      var dirHeader = el('div', 'text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1 pb-1 border-b border-slate-100 flex items-center justify-between')
+      var dirHeader = el(
+        'div',
+        'text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-1 pb-1 border-b border-slate-100 flex items-center justify-between',
+      )
       var dirTitle = el('span', null, 'Direction')
       dirHeader.appendChild(dirTitle)
 
       var dirGroup = el('div', 'inline-flex gap-1')
-      var ascBtn = el('button', 'btn btn-xs ' + ((!sortState || sortState.dir !== 'desc') ? 'btn-primary' : 'btn-ghost text-slate-500'), '↑ Asc')
+      var ascBtn = el(
+        'button',
+        'btn btn-xs ' +
+          (!sortState || sortState.dir !== 'desc' ? 'btn-primary' : 'btn-ghost text-slate-500'),
+        '↑ Asc',
+      )
       ascBtn.setAttribute('type', 'button')
       ascBtn.addEventListener('click', function (e) {
         e.stopPropagation()
         onSortChange(sortState && sortState.key ? sortState.key : 'name', 'asc')
       })
 
-      var descBtn = el('button', 'btn btn-xs ' + (sortState && sortState.dir === 'desc' ? 'btn-primary' : 'btn-ghost text-slate-500'), '↓ Desc')
+      var descBtn = el(
+        'button',
+        'btn btn-xs ' +
+          (sortState && sortState.dir === 'desc' ? 'btn-primary' : 'btn-ghost text-slate-500'),
+        '↓ Desc',
+      )
       descBtn.setAttribute('type', 'button')
       descBtn.addEventListener('click', function (e) {
         e.stopPropagation()
@@ -1615,7 +1766,11 @@
       sMenu.appendChild(dirHeader)
 
       // Section: Fields
-      var fieldSectionHeader = el('div', 'text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-2 pb-1 border-b border-slate-100', 'Sort By Field')
+      var fieldSectionHeader = el(
+        'div',
+        'text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2 pt-2 pb-1 border-b border-slate-100',
+        'Sort By Field',
+      )
       sMenu.appendChild(fieldSectionHeader)
 
       var baseSortOptions = [
@@ -1634,23 +1789,35 @@
         })
       }
 
-      var allSortOptions = baseSortOptions.concat(sortFields.map(function (fn) {
-        return { key: fn, label: fn }
-      }))
+      var allSortOptions = baseSortOptions.concat(
+        sortFields.map(function (fn) {
+          return { key: fn, label: fn }
+        }),
+      )
 
       allSortOptions.forEach(function (opt) {
         var item = el('button', 'nn-facet-item w-full text-left flex items-center justify-between')
         item.setAttribute('type', 'button')
-        var isCurrent = (sortState && sortState.key === opt.key) || ((!sortState || !sortState.key) && opt.key === '')
+        var isCurrent =
+          (sortState && sortState.key === opt.key) ||
+          ((!sortState || !sortState.key) && opt.key === '')
         if (isCurrent) {
           item.classList.add('bg-slate-50', 'font-bold')
         }
 
-        var labelSpan = el('span', 'flex-1 truncate ' + (isCurrent ? 'text-primary font-bold' : 'text-slate-700'), opt.label)
+        var labelSpan = el(
+          'span',
+          'flex-1 truncate ' + (isCurrent ? 'text-primary font-bold' : 'text-slate-700'),
+          opt.label,
+        )
         item.appendChild(labelSpan)
 
         if (isCurrent && opt.key !== '') {
-          var checkSpan = el('span', 'text-xs text-primary font-bold ml-1', sortState.dir === 'desc' ? '↓' : '↑')
+          var checkSpan = el(
+            'span',
+            'text-xs text-primary font-bold ml-1',
+            sortState.dir === 'desc' ? '↓' : '↑',
+          )
           item.appendChild(checkSpan)
         }
 
@@ -1660,7 +1827,12 @@
           if (opt.key === '') {
             onSortChange(null)
           } else {
-            var newDir = (sortState && sortState.key === opt.key && sortState.dir === 'asc') ? 'desc' : (sortState && sortState.dir ? sortState.dir : 'asc')
+            var newDir =
+              sortState && sortState.key === opt.key && sortState.dir === 'asc'
+                ? 'desc'
+                : sortState && sortState.dir
+                  ? sortState.dir
+                  : 'asc'
             onSortChange(opt.key, newDir)
           }
         })
@@ -1670,7 +1842,9 @@
       sBtn.addEventListener('click', function (e) {
         e.stopPropagation()
         var isOpen = sMenu.classList.contains('open')
-        doc.querySelectorAll('.nn-facet-menu').forEach(function (menu) { menu.classList.remove('open') })
+        doc.querySelectorAll('.nn-facet-menu').forEach(function (menu) {
+          menu.classList.remove('open')
+        })
         if (!isOpen) sMenu.classList.add('open')
       })
 
@@ -1692,21 +1866,44 @@
 
     // 4. Render Active Filter Pills grouped by Boolean Clause (with explicit AND / OR connectors)
     if (activeHost && (parsed.operators.length > 0 || parsed.textTokens.length > 0)) {
-      var schemaConcepts = (state && state.concepts && state.concepts.length ? state.concepts : (state && state.schema && state.schema.concepts)) || allConcepts.map(function (c) { return c.name })
+      var schemaConcepts =
+        (state && state.concepts && state.concepts.length
+          ? state.concepts
+          : state && state.schema && state.schema.concepts) ||
+        allConcepts.map(function (c) {
+          return c.name
+        })
 
       function renderAtomPill(atom) {
-        var pill = el('span', 'nn-active-filter-pill badge badge-sm badge-outline gap-1.5 text-[11px] py-2 px-2.5 bg-base-100')
+        var pill = el(
+          'span',
+          'nn-active-filter-pill badge badge-sm badge-outline gap-1.5 text-[11px] py-2 px-2.5 bg-base-100',
+        )
         if (atom.type === 'text') {
           pill.classList.add('font-mono')
           pill.appendChild(el('span', null, '"' + atom.val + '"'))
-          var removeBtn = el('button', 'nn-filter-pill-remove ml-1 hover:text-error cursor-pointer font-bold', '×')
+          var removeBtn = el(
+            'button',
+            'nn-filter-pill-remove ml-1 hover:text-error cursor-pointer font-bold',
+            '×',
+          )
           removeBtn.setAttribute('type', 'button')
           removeBtn.addEventListener('click', function (e) {
             e.stopPropagation()
             var nextTokens = parsed.textTokens
-              .filter(function (t) { return t !== atom.val })
-              .map(function (t) { return t.indexOf(' ') !== -1 ? '"' + t + '"' : t })
-            var nextQuery = nextTokens.concat(parsed.operators.map(function (o) { return o.raw || formatFacetToken(o.key, o.val) })).join(' ')
+              .filter(function (t) {
+                return t !== atom.val
+              })
+              .map(function (t) {
+                return t.indexOf(' ') !== -1 ? '"' + t + '"' : t
+              })
+            var nextQuery = nextTokens
+              .concat(
+                parsed.operators.map(function (o) {
+                  return o.raw || formatFacetToken(o.key, o.val)
+                }),
+              )
+              .join(' ')
             if (typeof onQueryChange === 'function') onQueryChange(nextQuery)
           })
           pill.appendChild(removeBtn)
@@ -1753,12 +1950,26 @@
         } else {
           var labelText = op.key + ':' + op.val
           pill.appendChild(el('span', 'font-mono', labelText))
-          if (String(op.key).replace(/^[!-]/, '').toLowerCase() === 'is' && KNOWN_IS_VALUES.indexOf(String(op.val).toLowerCase()) === -1) {
+          if (
+            String(op.key).replace(/^[!-]/, '').toLowerCase() === 'is' &&
+            KNOWN_IS_VALUES.indexOf(String(op.val).toLowerCase()) === -1
+          ) {
             pill.setAttribute('data-filter-invalid', 'true')
-            pill.setAttribute('title', 'Unknown is: value "' + op.val + '" matches nothing (known: ' + KNOWN_IS_VALUES.join(', ') + ')')
+            pill.setAttribute(
+              'title',
+              'Unknown is: value "' +
+                op.val +
+                '" matches nothing (known: ' +
+                KNOWN_IS_VALUES.join(', ') +
+                ')',
+            )
           }
         }
-        var removeBtn = el('button', 'nn-filter-pill-remove ml-1 hover:text-error cursor-pointer font-bold', '×')
+        var removeBtn = el(
+          'button',
+          'nn-filter-pill-remove ml-1 hover:text-error cursor-pointer font-bold',
+          '×',
+        )
         removeBtn.setAttribute('type', 'button')
         removeBtn.setAttribute('aria-label', 'Remove filter ' + op.key)
         removeBtn.addEventListener('click', function (e) {
@@ -1769,18 +1980,34 @@
         return pill
       }
 
-      var displayGroups = parsed.groups.length > 0
-        ? parsed.groups
-        : [parsed.operators.concat(parsed.textTokens.map(function (t) { return { type: 'text', val: t } }))]
+      var displayGroups =
+        parsed.groups.length > 0
+          ? parsed.groups
+          : [
+              parsed.operators.concat(
+                parsed.textTokens.map(function (t) {
+                  return { type: 'text', val: t }
+                }),
+              ),
+            ]
 
       // ponytail: flat boolean model by design. Clauses join with AND, atoms with OR.
       function serializeGroups(groups) {
-        return groups.map(function (clause) {
-          var clauseStr = clause.map(function (atom) {
-            return atom.raw || (atom.type === 'operator' ? formatFacetToken(atom.key, atom.val) : '"' + atom.val + '"')
-          }).join(' OR ')
-          return clause.length > 1 ? '(' + clauseStr + ')' : clauseStr
-        }).join(' AND ')
+        return groups
+          .map(function (clause) {
+            var clauseStr = clause
+              .map(function (atom) {
+                return (
+                  atom.raw ||
+                  (atom.type === 'operator'
+                    ? formatFacetToken(atom.key, atom.val)
+                    : '"' + atom.val + '"')
+                )
+              })
+              .join(' OR ')
+            return clause.length > 1 ? '(' + clauseStr + ')' : clauseStr
+          })
+          .join(' AND ')
       }
 
       function createConnectorSelect(currentVal, onChange) {
@@ -1789,7 +2016,10 @@
         group.setAttribute('role', 'group')
         group.setAttribute('aria-label', 'Combine with')
         // The AND/OR explanation, on hover only.
-        group.setAttribute('title', "Fields and text combine with AND; within one token a|b is OR. Model and Concept combine with OR. Inside one Field token, a|b matches any of the listed values.")
+        group.setAttribute(
+          'title',
+          'Fields and text combine with AND; within one token a|b is OR. Model and Concept combine with OR. Inside one Field token, a|b matches any of the listed values.',
+        )
         ;['AND', 'OR'].forEach(function (val) {
           var b = el('button', 'nn-op-btn' + (val === currentVal ? ' active' : ''), val)
           b.setAttribute('type', 'button')
@@ -1826,7 +2056,10 @@
 
         var isMulti = clause.length > 1
         var clauseContainer = isMulti
-          ? el('span', 'inline-flex items-center gap-1.5 p-1 bg-slate-50 border border-dashed border-slate-300 rounded-lg')
+          ? el(
+              'span',
+              'inline-flex items-center gap-1.5 p-1 bg-slate-50 border border-dashed border-slate-300 rounded-lg',
+            )
           : null
 
         clause.forEach(function (atom, aIdx) {
@@ -1920,9 +2153,10 @@
     if (!rail) return
     rail.innerHTML = ''
 
-    var queryStr = activeQuery !== undefined
-      ? activeQuery
-      : (doc.getElementById('nn-search') && doc.getElementById('nn-search').value) || ''
+    var queryStr =
+      activeQuery !== undefined
+        ? activeQuery
+        : (doc.getElementById('nn-search') && doc.getElementById('nn-search').value) || ''
     var parsedRailQuery = parseFilterQuery(queryStr)
     var activeModels = []
     var activeConcepts = []
@@ -1964,9 +2198,10 @@
       return { names: out, counts: counts }
     }
 
-    var models = state && state.meta && Array.isArray(state.meta.models) && state.meta.models.length > 1
-      ? state.meta.models
-      : null
+    var models =
+      state && state.meta && Array.isArray(state.meta.models) && state.meta.models.length > 1
+        ? state.meta.models
+        : null
 
     // Hierarchical rail: Level 1 = one <details> per model, Level 2 = its concepts
     // nested inside. Clicking a model sets the `model:` facet; clicking a concept
@@ -2030,7 +2265,11 @@
           ),
         )
         summary.appendChild(
-          el('span', 'nn-rail-count badge badge-ghost badge-xs', String(Number(m.elementCount) || 0)),
+          el(
+            'span',
+            'nn-rail-count badge badge-ghost badge-xs',
+            String(Number(m.elementCount) || 0),
+          ),
         )
         summary.addEventListener('click', function (e) {
           // Clicking the chevron zone on the right edge toggles accordion open/close
@@ -2093,7 +2332,11 @@
               ),
             )
             a.appendChild(
-              el('span', 'nn-rail-count badge badge-ghost badge-xs', String(Number(modelConceptCounts[name]) || 0)),
+              el(
+                'span',
+                'nn-rail-count badge badge-ghost badge-xs',
+                String(Number(modelConceptCounts[name]) || 0),
+              ),
             )
             a.addEventListener('click', function (e) {
               if (e && e.preventDefault) e.preventDefault()
@@ -2129,7 +2372,8 @@
     var list = mk('ul')
     if (list) list.className = 'menu menu-xs bg-base-100 p-2 w-full'
     var globalConcepts = Array.isArray(concepts) ? concepts : []
-    var railModel = (state && (state.modelId || (state.meta && (state.meta.modelId || state.meta.model)))) || ''
+    var railModel =
+      (state && (state.modelId || (state.meta && (state.meta.modelId || state.meta.model)))) || ''
 
     globalConcepts.forEach(function (concept, index) {
       var name = typeof concept === 'string' ? concept : concept.name
@@ -2146,12 +2390,22 @@
         a.appendChild(
           UI.Ku(
             'section',
-            { model: railModel, concept: name, label: name, index: cMeta.index, color: cMeta.color },
+            {
+              model: railModel,
+              concept: name,
+              label: name,
+              index: cMeta.index,
+              color: cMeta.color,
+            },
             { doc: doc },
           ),
         )
         a.appendChild(
-          el('span', 'nn-rail-count badge badge-ghost badge-xs', String(Number(counts && counts[name]) || 0)),
+          el(
+            'span',
+            'nn-rail-count badge badge-ghost badge-xs',
+            String(Number(counts && counts[name]) || 0),
+          ),
         )
         var draftCount = draftCountsByConcept ? draftCountsByConcept[name] || 0 : 0
         if (draftCount > 0) {
@@ -2185,7 +2439,8 @@
     for (i = 0; i < list.length; i++) {
       var c = list[i]
       var cname = typeof c === 'string' ? c : c && c.name
-      if (String(cname || '').toLowerCase() === target) return typeof c === 'string' ? { name: c } : c
+      if (String(cname || '').toLowerCase() === target)
+        return typeof c === 'string' ? { name: c } : c
     }
     for (i = 0; i < list.length; i++) {
       var c2 = list[i]
@@ -2230,7 +2485,8 @@
     return list.filter(function (m) {
       if (!m) return false
       return (
-        String(m.source || '').toLowerCase() === cname || String(m.target || '').toLowerCase() === cname
+        String(m.source || '').toLowerCase() === cname ||
+        String(m.target || '').toLowerCase() === cname
       )
     })
   }
@@ -2256,13 +2512,25 @@
     var head = el('div', 'nn-guide-head')
     var badge =
       UI && typeof UI.Ku === 'function'
-        ? UI.Ku('section', { model: modelId || '', concept: name, label: name, index: gMeta.index, color: gMeta.color }, { doc: doc })
+        ? UI.Ku(
+            'section',
+            {
+              model: modelId || '',
+              concept: name,
+              label: name,
+              index: gMeta.index,
+              color: gMeta.color,
+            },
+            { doc: doc },
+          )
         : el('span', 'nn-card-concept-badge badge badge-sm', name)
     head.appendChild(badge)
 
     var count = counts && counts[name] != null ? counts[name] : null
     if (count != null) {
-      head.appendChild(el('span', 'nn-guide-meta', count + ' ' + (count === 1 ? 'element' : 'elements')))
+      head.appendChild(
+        el('span', 'nn-guide-meta', count + ' ' + (count === 1 ? 'element' : 'elements')),
+      )
     }
     // Collapsible: the toggle lives in the head and survives re-renders because
     // the collapsed state is a class on the aside, not on the rebuilt children.
@@ -2272,7 +2540,10 @@
       if (collapsed) host.classList.add('is-collapsed')
       else host.classList.remove('is-collapsed')
       collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true')
-      collapseBtn.setAttribute('aria-label', collapsed ? 'Expand concept details' : 'Collapse concept details')
+      collapseBtn.setAttribute(
+        'aria-label',
+        collapsed ? 'Expand concept details' : 'Collapse concept details',
+      )
       collapseBtn.setAttribute('title', collapsed ? 'Expand' : 'Collapse')
       collapseBtn.innerHTML = UI.icon(collapsed ? 'chevron-left' : 'chevron-right', 15)
     }
@@ -2319,7 +2590,17 @@
         if (targetC) {
           var tcMeta = conceptMetaOf(schema && schema.concepts, targetC)
           dd.appendChild(
-            UI.Ku('section', { model: modelId || '', concept: targetC, label: targetC, index: tcMeta.index, color: tcMeta.color }, { doc: doc }),
+            UI.Ku(
+              'section',
+              {
+                model: modelId || '',
+                concept: targetC,
+                label: targetC,
+                index: tcMeta.index,
+                color: tcMeta.color,
+              },
+              { doc: doc },
+            ),
           )
         }
         if (f.description) dd.appendChild(el('p', 'nn-guide-field-desc', String(f.description)))
@@ -2330,7 +2611,10 @@
       host.appendChild(fs)
     }
 
-    var conceptVals = concept.conceptFields && typeof concept.conceptFields === 'object' ? concept.conceptFields : null
+    var conceptVals =
+      concept.conceptFields && typeof concept.conceptFields === 'object'
+        ? concept.conceptFields
+        : null
     if (!conceptVals && schema && schema.concepts) {
       var cMetaForVals = conceptMetaOf(schema.concepts, concept.name)
       if (cMetaForVals && cMetaForVals.conceptFields) conceptVals = cMetaForVals.conceptFields
@@ -2381,7 +2665,7 @@
       matrixList.forEach(function (m) {
         if (!m) return
         var mli = el('li', 'nn-guide-matrix-item')
-        var mLabel = String(m.name || (m.source + ' \u2192 ' + m.target))
+        var mLabel = String(m.name || m.source + ' \u2192 ' + m.target)
         var mDeclaredBy = m.declaredBy || {}
         mli.appendChild(
           UI.Ku(
@@ -2400,11 +2684,31 @@
           var sMeta = conceptMetaOf(schema && schema.concepts, m.source)
           var tMeta = conceptMetaOf(schema && schema.concepts, m.target)
           pairWrap.appendChild(
-            UI.Ku('section', { model: modelId || '', concept: m.source, label: m.source, index: sMeta.index, color: sMeta.color }, { doc: doc }),
+            UI.Ku(
+              'section',
+              {
+                model: modelId || '',
+                concept: m.source,
+                label: m.source,
+                index: sMeta.index,
+                color: sMeta.color,
+              },
+              { doc: doc },
+            ),
           )
           pairWrap.appendChild(el('span', 'nn-guide-matrix-arrow', '⇄'))
           pairWrap.appendChild(
-            UI.Ku('section', { model: modelId || '', concept: m.target, label: m.target, index: tMeta.index, color: tMeta.color }, { doc: doc }),
+            UI.Ku(
+              'section',
+              {
+                model: modelId || '',
+                concept: m.target,
+                label: m.target,
+                index: tMeta.index,
+                color: tMeta.color,
+              },
+              { doc: doc },
+            ),
           )
           mli.appendChild(pairWrap)
         }
@@ -2450,11 +2754,16 @@
       idx = target ? h % 12 : 0
     }
     var rawColor = found && found.color ? String(found.color).trim() : undefined
-    var safeRaw = rawColor && /^(#[0-9a-fA-F]{3,8}|[a-zA-Z]{2,20})$/.test(rawColor) ? rawColor : undefined
-    var slot = UI && typeof UI.conceptSlot === 'function' ? UI.conceptSlot({ index: idx, color: safeRaw }) : (idx % 12) + 1
-    var hexColor = safeRaw && safeRaw.charAt(0) === '#'
-      ? safeRaw
-      : SLOT_HEX_PALETTE[(slot - 1) % SLOT_HEX_PALETTE.length]
+    var safeRaw =
+      rawColor && /^(#[0-9a-fA-F]{3,8}|[a-zA-Z]{2,20})$/.test(rawColor) ? rawColor : undefined
+    var slot =
+      UI && typeof UI.conceptSlot === 'function'
+        ? UI.conceptSlot({ index: idx, color: safeRaw })
+        : (idx % 12) + 1
+    var hexColor =
+      safeRaw && safeRaw.charAt(0) === '#'
+        ? safeRaw
+        : SLOT_HEX_PALETTE[(slot - 1) % SLOT_HEX_PALETTE.length]
     return {
       index: idx,
       slot: slot,
@@ -2499,7 +2808,7 @@
 
     newDrafts.forEach(function (nd) {
       projectedElements.push({
-        id: nd.element_id || ('new-' + nd.id),
+        id: nd.element_id || 'new-' + nd.id,
         name: nd.element || 'New element',
         concept: nd.concept || 'New',
         description: nd.comment || 'New element, not applied yet',
@@ -2518,7 +2827,11 @@
     s = s.replace(/^\[\[\s*/, '').replace(/\s*\]\]$/, '')
     s = s.split('|')[0].split('#')[0].replace(/\\/g, '/')
     s = s.replace(/^(?:.*\/)?kNNowledge\//i, '')
-    return s.replace(/_NN\.md$/i, '').replace(/\.md$/i, '').trim().toLowerCase()
+    return s
+      .replace(/_NN\.md$/i, '')
+      .replace(/\.md$/i, '')
+      .trim()
+      .toLowerCase()
   }
 
   // The `meta.models[]` entry a knowledge value names (file stem, id or title), or
@@ -2535,7 +2848,11 @@
     }
     var exactHits = []
     for (var i = 0; i < models.length; i++) {
-      if (models[i] && keysOf(models[i]).indexOf(want) !== -1 && exactHits.indexOf(models[i]) === -1) {
+      if (
+        models[i] &&
+        keysOf(models[i]).indexOf(want) !== -1 &&
+        exactHits.indexOf(models[i]) === -1
+      ) {
         exactHits.push(models[i])
       }
     }
@@ -2571,7 +2888,11 @@
       other.relations.forEach(function (r) {
         if (!r || !r.target) return
         if (!map[r.target]) map[r.target] = []
-        map[r.target].push({ field: r.field, target: other.id, targetLabel: other.name || other.id })
+        map[r.target].push({
+          field: r.field,
+          target: other.id,
+          targetLabel: other.name || other.id,
+        })
       })
     })
     return map
@@ -2708,7 +3029,20 @@
     return out
   }
 
-  function mountElementCards(doc, elements, drafts, refs, concepts, schema, incomingById, focusId, actions, modelId, referenceIndex, sortState) {
+  function mountElementCards(
+    doc,
+    elements,
+    drafts,
+    refs,
+    concepts,
+    schema,
+    incomingById,
+    focusId,
+    actions,
+    modelId,
+    referenceIndex,
+    sortState,
+  ) {
     var content = doc.getElementById('nn-content')
     if (!content) return
     content.innerHTML = ''
@@ -2739,7 +3073,8 @@
         Object.keys(element.fields).forEach(function (k) {
           if (k === 'sources' || k === 'source') return
           var val = element.fields[k]
-          var cleanKey = typeof val === 'string' ? val.replace(/^\[\[|\]\]$/g, '').trim() : String(val)
+          var cleanKey =
+            typeof val === 'string' ? val.replace(/^\[\[|\]\]$/g, '').trim() : String(val)
           var target =
             refs && isObject(refs[String(val)])
               ? refs[String(val)]
@@ -2754,10 +3089,14 @@
               target =
                 refs && isObject(refs[relMatch.target])
                   ? refs[relMatch.target]
-                  : { id: relMatch.target, name: relMatch.targetLabel || cleanKey || relMatch.target }
+                  : {
+                      id: relMatch.target,
+                      name: relMatch.targetLabel || cleanKey || relMatch.target,
+                    }
             }
           }
-          var targetCMeta = target && target.concept ? conceptMetaOf(concepts, target.concept) : null
+          var targetCMeta =
+            target && target.concept ? conceptMetaOf(concepts, target.concept) : null
           fields.push({
             name: k,
             value: val,
@@ -2791,10 +3130,18 @@
           description: element.description,
           fields: fields,
           citations:
-            element.citations && typeof element.citations === 'object' ? element.citations : undefined,
-          history: Array.isArray(element.history) && element.history.length ? element.history : undefined,
+            element.citations && typeof element.citations === 'object'
+              ? element.citations
+              : undefined,
+          history:
+            Array.isArray(element.history) && element.history.length ? element.history : undefined,
           historyTotal: typeof element.historyTotal === 'number' ? element.historyTotal : undefined,
-          qud: { id: element.id, concept: element.concept, hash: element.hash, path: element.canonicalUnit || element.modelFile || element.modelTitle || null },
+          qud: {
+            id: element.id,
+            concept: element.concept,
+            hash: element.hash,
+            path: element.canonicalUnit || element.modelFile || element.modelTitle || null,
+          },
           path: element.location || element.modelFile || element.modelTitle || null,
           tags: getElementEffectiveTags(element),
           relations:
@@ -2849,7 +3196,8 @@
       var thumbEl = card.querySelector('.nn-card-thumb')
       if (thumbEl && thumbEl.classList && thumbEl.classList.contains('nn-card-thumb--concept')) {
         thumbEl.style.color = hexColor
-        thumbEl.style.borderColor = 'color-mix(in srgb, ' + hexColor + ' 38%, var(--nn-border, #e5e5e5))'
+        thumbEl.style.borderColor =
+          'color-mix(in srgb, ' + hexColor + ' 38%, var(--nn-border, #e5e5e5))'
         thumbEl.style.backgroundColor = 'color-mix(in srgb, ' + hexColor + ' 12%, #ffffff)'
       }
       if (mediaItems.length && thumbEl && thumbEl.tagName === 'IMG') {
@@ -2968,7 +3316,17 @@
     content.appendChild(wrap)
   }
 
-  function mountElementMiniCards(doc, elements, drafts, concepts, refs, incomingById, actions, modelId, sortState) {
+  function mountElementMiniCards(
+    doc,
+    elements,
+    drafts,
+    concepts,
+    refs,
+    incomingById,
+    actions,
+    modelId,
+    sortState,
+  ) {
     var content = doc.getElementById('nn-content')
     if (!content) return
     content.innerHTML = ''
@@ -2996,7 +3354,7 @@
             onClick: function () {
               renderRefDialog(doc, element)
             },
-          }
+          },
         )
         frag.appendChild(mini)
       })
@@ -3099,7 +3457,10 @@
     }
 
     var fieldCols = elementFieldColumns(projected)
-    var columns = [{ key: 'name', label: 'Name' }, { key: 'concept', label: 'Concept' }]
+    var columns = [
+      { key: 'name', label: 'Name' },
+      { key: 'concept', label: 'Concept' },
+    ]
     fieldCols.forEach(function (k) {
       columns.push({ key: k, label: k })
     })
@@ -3212,7 +3573,8 @@
           var draftState = UI.StatusBadge({
             status: 'local',
             label: 'Unsent',
-            title: 'This element has a change recorded in this console that has not been exported yet.',
+            title:
+              'This element has a change recorded in this console that has not been exported yet.',
           })
           draftState.classList.add('ml-2')
           nameTd.appendChild(draftState)
@@ -3244,8 +3606,12 @@
         var rawVal = element.fields && element.fields[k] !== undefined ? element.fields[k] : ''
         if ((rawVal === '' || rawVal == null) && Array.isArray(element.relations)) {
           var relMatches = element.relations
-            .filter(function (r) { return r && r.field === k })
-            .map(function (r) { return r.targetLabel || r.target || '' })
+            .filter(function (r) {
+              return r && r.field === k
+            })
+            .map(function (r) {
+              return r.targetLabel || r.target || ''
+            })
             .filter(Boolean)
           if (relMatches.length) rawVal = relMatches.join(', ')
         }
@@ -3342,7 +3708,12 @@
     var group = el('div', 'nn-viewmode')
     group.setAttribute('role', 'group')
     group.setAttribute('aria-label', 'Element view mode')
-    ;[['sheets', 'Sheets'], ['cards', 'Cards'], ['badges', 'Badges'], ['table', 'Table']].forEach(function (pair) {
+    ;[
+      ['sheets', 'Sheets'],
+      ['cards', 'Cards'],
+      ['badges', 'Badges'],
+      ['table', 'Table'],
+    ].forEach(function (pair) {
       var b = el('button', 'nn-viewmode-btn', pair[1])
       b.setAttribute('type', 'button')
       b.setAttribute('data-mode', pair[0])
@@ -3419,7 +3790,9 @@
         var colMap = {}
         rows.forEach(function (r) {
           if (r && isObject(r.cells)) {
-            Object.keys(r.cells).forEach(function (k) { colMap[k] = true })
+            Object.keys(r.cells).forEach(function (k) {
+              colMap[k] = true
+            })
           }
         })
         cols = Object.keys(colMap)
@@ -3428,8 +3801,14 @@
       var headTr = el('tr', null, null)
       if (headTr) {
         var cornerTh = el('th', 'nn-matrix-corner', null)
-        var srcConcept = matrix.source || (rows.length && headRows[isStructured ? (rows[0].sourceId || rows[0].sourceLabel) : rows[0]] && headRows[isStructured ? (rows[0].sourceId || rows[0].sourceLabel) : rows[0]].concept) || null
-        var tgtConcept = matrix.target || (cols.length && headCols[cols[0]] && headCols[cols[0]].concept) || null
+        var srcConcept =
+          matrix.source ||
+          (rows.length &&
+            headRows[isStructured ? rows[0].sourceId || rows[0].sourceLabel : rows[0]] &&
+            headRows[isStructured ? rows[0].sourceId || rows[0].sourceLabel : rows[0]].concept) ||
+          null
+        var tgtConcept =
+          matrix.target || (cols.length && headCols[cols[0]] && headCols[cols[0]].concept) || null
         if (cornerTh && srcConcept && tgtConcept) {
           var sMetaM = conceptMetaOf(conceptList, srcConcept)
           var tMetaM = conceptMetaOf(conceptList, tgtConcept)
@@ -3474,11 +3853,14 @@
       rows.forEach(function (r) {
         var tr = el('tr', null, null)
         if (!tr) return
-        var rowKey = isStructured ? (r.sourceId || r.sourceLabel || '') : String(r)
-        var rowLabel = isStructured ? (r.sourceLabel || r.sourceId || '') : String(r)
-        var rowCells = isStructured ? (r.cells || {}) : (cells[r] || cells[String(r)] || {})
+        var rowKey = isStructured ? r.sourceId || r.sourceLabel || '' : String(r)
+        var rowLabel = isStructured ? r.sourceLabel || r.sourceId || '' : String(r)
+        var rowCells = isStructured ? r.cells || {} : cells[r] || cells[String(r)] || {}
         var rowTh = el('th', null, null)
-        if (rowTh) rowTh.appendChild(headerBadge(headRows[rowKey] || headRows[rowLabel], rowLabel, matrixModel))
+        if (rowTh)
+          rowTh.appendChild(
+            headerBadge(headRows[rowKey] || headRows[rowLabel], rowLabel, matrixModel),
+          )
         tr.appendChild(rowTh)
         cols.forEach(function (c) {
           var value = rowCells[c] != null ? String(rowCells[c]) : ''
@@ -3551,11 +3933,15 @@
   // The frame has no scripts and no same-origin access, so a meta-refresh
   // navigation inside it is accepted and out of scope here.
   var VIEW_CSP_META =
-    '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; base-uri \'none\'; form-action \'none\'; img-src data: blob:; style-src \'unsafe-inline\'">'
+    "<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; base-uri 'none'; form-action 'none'; img-src data: blob:; style-src 'unsafe-inline'\">"
 
   function nonEmptyString(v) {
     return typeof v === 'string' && v.trim() !== ''
   }
+
+  // The Domain view and the views shown as its sub-tabs, in sub-tab order. The first one is
+  // the Domain view itself (its "Overview" sub-tab).
+  var DOMAIN_SUBVIEWS = ['domain', 'metamodel', 'map', 'versions']
 
   var TAB_ICONS = {
     chart: 'bar-chart-2',
@@ -3586,9 +3972,17 @@
     }
     var iconKey = TAB_ICONS[def.icon] || def.icon
     if (typeof nnIcons !== 'undefined' && nnIcons && nnIcons.ICONS && !nnIcons.ICONS[iconKey]) {
-      return at + 'icon "' + def.icon + '" is unknown (known icons: ' + Object.keys(nnIcons.ICONS).sort().join(', ') + ')'
+      return (
+        at +
+        'icon "' +
+        def.icon +
+        '" is unknown (known icons: ' +
+        Object.keys(nnIcons.ICONS).sort().join(', ') +
+        ')'
+      )
     }
-    if (typeof def.order !== 'number' || !isFinite(def.order)) return at + 'order must be a finite number'
+    if (typeof def.order !== 'number' || !isFinite(def.order))
+      return at + 'order must be a finite number'
     if (VIEW_KINDS.indexOf(def.kind) < 0) return at + 'kind must be "editable" or "readonly"'
     if (typeof def.mount !== 'function') return at + 'mount must be a function'
     return ''
@@ -3614,7 +4008,11 @@
       if (reason) reject(id, [source], reason)
       for (var i = 0; i < views.length; i++) {
         if (views[i].id === id) {
-          reject(id, [views[i].source, source], 'view "' + id + '": duplicate id (already registered by ' + views[i].source + ')')
+          reject(
+            id,
+            [views[i].source, source],
+            'view "' + id + '": duplicate id (already registered by ' + views[i].source + ')',
+          )
         }
       }
       views.push(Object.assign({}, def, { source: source }))
@@ -3626,7 +4024,11 @@
       return function (def) {
         var viewId = def && def.id !== undefined ? def.id : id
         if (def && def.id !== undefined && def.id !== id && !def.id.startsWith(id + '-')) {
-          reject(id, [source], 'view "' + id + '": declared id "' + def.id + '" does not match the file slug')
+          reject(
+            id,
+            [source],
+            'view "' + id + '": declared id "' + def.id + '" does not match the file slug',
+          )
         }
         return register(Object.assign({}, def, { id: viewId, source: source }))
       }
@@ -3685,7 +4087,12 @@
     // Matrices get their own panel; the host must not stay inside the
     // explorer panel, which is hidden while the Matrices tab is active.
     var hasMatrices = Array.isArray(model && model.matrices) && model.matrices.length > 0
-    if (!doc.getElementById('nn-tab-matrices') && hasMatrices && explorerPanel && explorerPanel.parentNode) {
+    if (
+      !doc.getElementById('nn-tab-matrices') &&
+      hasMatrices &&
+      explorerPanel &&
+      explorerPanel.parentNode
+    ) {
       var matricesPanel = el('div', 'nn-tab-panel')
       matricesPanel.id = 'nn-tab-matrices'
       var matricesHostEl = doc.getElementById('nn-matrices')
@@ -3827,32 +4234,92 @@
     // A standalone --view artifact mounts that view alone.
     if (scoped) {
       if (scoped === 'files' && hasFiles) {
-        views.push({ id: 'files', title: 'Files', icon: 'folder', order: 25, tone: 'core', panelId: 'nn-tab-files' })
+        views.push({
+          id: 'files',
+          title: 'Files',
+          icon: 'folder',
+          order: 25,
+          tone: 'core',
+          panelId: 'nn-tab-files',
+        })
       }
       return views
     }
     if (summaryModels(meta).length > 0) {
-      views.push({ id: 'domain', title: 'Domain', icon: 'layout', order: 5, tone: 'core', panelId: 'nn-tab-domain' })
+      views.push({
+        id: 'domain',
+        title: 'Domain',
+        icon: 'layout',
+        order: 5,
+        tone: 'core',
+        panelId: 'nn-tab-domain',
+      })
     }
     if (meta && meta.versions && typeof meta.versions === 'object') {
-      views.push({ id: 'versions', title: 'Versions', icon: 'milestone', order: 50, tone: 'core', panelId: 'nn-tab-versions' })
+      views.push({
+        id: 'versions',
+        title: 'Versions',
+        icon: 'milestone',
+        order: 50,
+        tone: 'core',
+        panelId: 'nn-tab-versions',
+      })
     }
-    if (summaryModels(meta).length > 0 && Array.isArray(model && model.elements) && model.elements.length > 0) {
-      views.push({ id: 'map', title: 'Map', icon: 'network', order: 15, tone: 'core', panelId: 'nn-tab-map' })
+    if (
+      summaryModels(meta).length > 0 &&
+      Array.isArray(model && model.elements) &&
+      model.elements.length > 0
+    ) {
+      views.push({
+        id: 'map',
+        title: 'Map',
+        icon: 'network',
+        order: 15,
+        tone: 'core',
+        panelId: 'nn-tab-map',
+      })
     }
     if (schema && Array.isArray(schema.concepts) && schema.concepts.length) {
-      views.push({ id: 'metamodel', title: 'Schema', icon: 'metamodel', order: 10, tone: 'core', panelId: 'nn-tab-metamodel' })
+      views.push({
+        id: 'metamodel',
+        title: 'Schema',
+        icon: 'metamodel',
+        order: 10,
+        tone: 'core',
+        panelId: 'nn-tab-metamodel',
+      })
     }
     if ((Array.isArray(model && model.elements) && model.elements.length > 0) || shell.explorer) {
-      views.push({ id: 'explorer', title: 'Knowledge', icon: 'explorer', order: 20, tone: 'core', panelId: 'nn-tab-explorer' })
+      views.push({
+        id: 'explorer',
+        title: 'Knowledge',
+        icon: 'explorer',
+        order: 20,
+        tone: 'core',
+        panelId: 'nn-tab-explorer',
+      })
     }
     if (Array.isArray(model && model.matrices) && model.matrices.length > 0) {
-      views.push({ id: 'matrices', title: 'Matrices', icon: 'matrices', order: 30, tone: 'core', panelId: 'nn-tab-matrices' })
+      views.push({
+        id: 'matrices',
+        title: 'Matrices',
+        icon: 'matrices',
+        order: 30,
+        tone: 'core',
+        panelId: 'nn-tab-matrices',
+      })
     }
     // Files sits right after the knowledge/changes band and only exists when the
     // payload carries a precomputed inventory.
     if (hasFiles) {
-      views.push({ id: 'files', title: 'Files', icon: 'folder', order: 25, tone: 'core', panelId: 'nn-tab-files' })
+      views.push({
+        id: 'files',
+        title: 'Files',
+        icon: 'folder',
+        order: 25,
+        tone: 'core',
+        panelId: 'nn-tab-files',
+      })
     }
     return views
   }
@@ -3937,22 +4404,36 @@
       var panelId = 'nn-tab-' + v.id
       var existing = doc.getElementById(panelId)
       if (clash) {
-        report(v.id, [clash.id + ' (built-in)', v.source], 'view "' + v.id + '": duplicate id (a built-in tab already uses it)')
+        report(
+          v.id,
+          [clash.id + ' (built-in)', v.source],
+          'view "' + v.id + '": duplicate id (a built-in tab already uses it)',
+        )
       } else if (existing && existing.getAttribute('data-nn-view') !== v.id) {
         // The panel belongs to the shell or a built-in tab; never mount into it.
-        report(v.id, [v.source], 'view "' + v.id + '": panel #' + panelId + ' already exists and is not owned by this view')
+        report(
+          v.id,
+          [v.source],
+          'view "' +
+            v.id +
+            '": panel #' +
+            panelId +
+            ' already exists and is not owned by this view',
+        )
       } else {
         var isBlueprint = /bluepriNN?ts[\\/]/.test(String(v.source || ''))
         // The procedures blueprint view is promoted into the core band, right
         // after Matrices, and reads "Procedures" in the header.
         var isProcedure = v.id === 'procedure'
-        tabs.push(Object.assign({}, v, {
-          panelId: 'nn-tab-' + v.id,
-          external: true,
-          tone: isProcedure ? 'core' : isBlueprint ? 'blueprint' : 'custom',
-          order: isProcedure ? 40 : v.order,
-          title: isProcedure ? 'Procedures' : v.title,
-        }))
+        tabs.push(
+          Object.assign({}, v, {
+            panelId: 'nn-tab-' + v.id,
+            external: true,
+            tone: isProcedure ? 'core' : isBlueprint ? 'blueprint' : 'custom',
+            order: isProcedure ? 40 : v.order,
+            title: isProcedure ? 'Procedures' : v.title,
+          }),
+        )
       }
     })
     // Band order is fixed: core (Domain · Knowledge · Matrices · Procedures) →
@@ -3976,23 +4457,62 @@
       shell.main.insertBefore(panel, shell.review)
     })
 
-    nav.innerHTML = ''
-    nav.style.display = 'flex'
-    nav.className = 'nn-view-tabs tabs tabs-boxed bg-base-200 p-1 rounded-lg gap-1 mb-4 inline-flex'
-    tabs.forEach(function (t) {
-      if (t.id === 'review' || t.id === 'changes') return
-      var btn = el('button', 'nn-view-tab tab flex items-center gap-2')
+    // Schema, Map and Versions describe the domaiNN as a whole, so they live inside the
+    // Domain view as its sub-tabs instead of beside it. Their ids, panels and hash routes
+    // stay the same; only the button moves. Without a Domain view they stay top-level.
+    var hasDomain = tabs.some(function (t) {
+      return t.id === 'domain'
+    })
+    var inDomain = function (id) {
+      return hasDomain && DOMAIN_SUBVIEWS.indexOf(id) > 0
+    }
+    var subnav = doc.getElementById('nn-domain-subtabs')
+    if (subnav && subnav.parentNode) subnav.parentNode.removeChild(subnav)
+    subnav = null
+
+    function tabButton(t, title, extraClass) {
+      var btn = el(
+        'button',
+        'nn-view-tab tab flex items-center gap-2' + (extraClass ? ' ' + extraClass : ''),
+      )
       btn.setAttribute('type', 'button')
       btn.dataset.tab = t.id
       btn.classList.add('tone-' + (t.tone || 'custom'))
-      var label = el('span', null, t.title)
+      var label = el('span', null, title)
       btn.innerHTML = UI.icon(TAB_ICONS[t.icon] || t.icon, 15)
       btn.appendChild(label)
       btn.addEventListener('click', function () {
         select(t.id, false)
       })
-      nav.appendChild(btn)
+      return btn
+    }
+
+    nav.innerHTML = ''
+    nav.style.display = 'flex'
+    nav.className = 'nn-view-tabs tabs tabs-boxed bg-base-200 p-1 rounded-lg gap-1 mb-4 inline-flex'
+    tabs.forEach(function (t) {
+      if (t.id === 'review' || t.id === 'changes') return
+      if (inDomain(t.id)) return
+      nav.appendChild(tabButton(t, t.title))
     })
+    var grouped = DOMAIN_SUBVIEWS.map(function (id) {
+      return tabs.filter(function (t) {
+        return t.id === id
+      })[0]
+    }).filter(Boolean)
+    if (hasDomain && grouped.length > 1) {
+      subnav = el('nav', 'nn-domain-subtabs tabs tabs-bordered gap-1 mb-3')
+      subnav.id = 'nn-domain-subtabs'
+      subnav.setAttribute('aria-label', 'Domain views')
+      subnav.style.display = 'none'
+      grouped.forEach(function (t) {
+        subnav.appendChild(tabButton(t, t.id === 'domain' ? 'Overview' : t.title, 'nn-view-subtab'))
+      })
+      // Above the Domain view's own content, not in the header next to the main tabs.
+      var firstPanel = shell.main && shell.main.querySelector('.nn-tab-panel')
+      if (firstPanel) shell.main.insertBefore(subnav, firstPanel)
+      else nav.parentNode.insertBefore(subnav, nav.nextSibling)
+    }
     if (!scopedView) ensureVocabularyLegend(doc, nav)
     updateTabBadges(doc, opts.state)
 
@@ -4019,7 +4539,8 @@
     var ownFrames = []
     function stripIframes(t, root) {
       var found = FRAME_TAGS.indexOf(root.nodeName) >= 0 ? [root] : []
-      if (root.querySelectorAll) found = found.concat([].slice.call(root.querySelectorAll(FRAME_SELECTOR)))
+      if (root.querySelectorAll)
+        found = found.concat([].slice.call(root.querySelectorAll(FRAME_SELECTOR)))
       found = found.filter(function (f) {
         return ownFrames.indexOf(f) < 0
       })
@@ -4030,7 +4551,9 @@
         report(
           t.id,
           [t.source],
-          'view "' + t.id + '": views must not mount iframes, objects or embeds; use ctx.mountHtml (removed)',
+          'view "' +
+            t.id +
+            '": views must not mount iframes, objects or embeds; use ctx.mountHtml (removed)',
         )
         showErrors()
       }
@@ -4083,7 +4606,11 @@
             p = p && typeof p === 'object' ? p : {}
             if (ITEM_KINDS.indexOf(p.kind) < 0) {
               throw new Error(
-                'cannot propose: kind must be one of ' + ITEM_KINDS.join(', ') + ' (got "' + p.kind + '")',
+                'cannot propose: kind must be one of ' +
+                  ITEM_KINDS.join(', ') +
+                  ' (got "' +
+                  p.kind +
+                  '")',
               )
             }
             // A run request names a procedure, not an element: it goes straight to the store,
@@ -4116,7 +4643,8 @@
               throw new Error('cannot propose: a comment needs non-empty comment text')
             }
             if (p.kind === 'correction') {
-              if (!nonEmptyString(p.field)) throw new Error('cannot propose: a correction needs a field')
+              if (!nonEmptyString(p.field))
+                throw new Error('cannot propose: a correction needs a field')
               if (p.proposed === undefined || p.proposed === null) {
                 throw new Error('cannot propose: a correction needs a proposed value')
               }
@@ -4129,12 +4657,19 @@
                 throw new Error('cannot propose: a verdict must be approved or needs-change')
               }
               if (!/^[0-9a-f]{64}$/.test(String(p.reviewed_hash || ''))) {
-                throw new Error('cannot propose: a verdict needs the 64-hex reviewed_hash of the content it reviews')
+                throw new Error(
+                  'cannot propose: a verdict needs the 64-hex reviewed_hash of the content it reviews',
+                )
               }
               if (p.verdict === 'needs-change' && !nonEmptyString(p.notes)) {
                 throw new Error('cannot propose: needs-change needs a reason')
               }
-              if (p.plan_hash !== undefined && p.plan_hash !== null && p.plan_hash !== '' && !/^[0-9a-f]{64}$/.test(String(p.plan_hash))) {
+              if (
+                p.plan_hash !== undefined &&
+                p.plan_hash !== null &&
+                p.plan_hash !== '' &&
+                !/^[0-9a-f]{64}$/.test(String(p.plan_hash))
+              ) {
                 throw new Error('cannot propose: plan_hash must be 64 hex characters')
               }
             }
@@ -4167,9 +4702,12 @@
                     ? src.name
                     : p.field === 'description'
                       ? src.description
-                      : src.rawFields && Object.prototype.hasOwnProperty.call(src.rawFields, p.field)
+                      : src.rawFields &&
+                          Object.prototype.hasOwnProperty.call(src.rawFields, p.field)
                         ? src.rawFields[p.field]
-                        : src.fields ? src.fields[p.field] : undefined
+                        : src.fields
+                          ? src.fields[p.field]
+                          : undefined
               }
             }
             var saved = controller().propose(anchor(p), payload)
@@ -4192,7 +4730,14 @@
           },
           onChange: function (fn) {
             return opts.subscribe(fn, function (err) {
-              report(t.id, [t.source], 'view "' + t.id + '": onChange listener failed: ' + String(err && err.message ? err.message : err))
+              report(
+                t.id,
+                [t.source],
+                'view "' +
+                  t.id +
+                  '": onChange listener failed: ' +
+                  String(err && err.message ? err.message : err),
+              )
               showErrors()
             })
           },
@@ -4268,7 +4813,9 @@
             getElements: function () {
               return typeof opts.getFilteredElements === 'function'
                 ? opts.getFilteredElements()
-                : (opts.model && opts.model.elements ? opts.model.elements : [])
+                : opts.model && opts.model.elements
+                  ? opts.model.elements
+                  : []
             },
             onChange: function (fn) {
               if (typeof fn === 'function') {
@@ -4290,7 +4837,13 @@
       } catch (err) {
         var msg = String(err && err.message ? err.message : err)
         mounted[t.id] = { api: {}, failed: true }
-        panel.appendChild(el('div', 'nn-view-error alert alert-error text-sm', 'View "' + t.id + '" failed to mount: ' + msg))
+        panel.appendChild(
+          el(
+            'div',
+            'nn-view-error alert alert-error text-sm',
+            'View "' + t.id + '" failed to mount: ' + msg,
+          ),
+        )
         report(t.id, [t.source], 'view "' + t.id + '": mount failed: ' + msg)
         showErrors()
       }
@@ -4303,7 +4856,16 @@
         try {
           m.api[name].apply(m.api, args || [])
         } catch (err) {
-          report(id, [], 'view "' + id + '": ' + name + ' failed: ' + String(err && err.message ? err.message : err))
+          report(
+            id,
+            [],
+            'view "' +
+              id +
+              '": ' +
+              name +
+              ' failed: ' +
+              String(err && err.message ? err.message : err),
+          )
           showErrors()
         }
       }
@@ -4318,7 +4880,14 @@
               try {
                 fn(filteredElements, query)
               } catch (err) {
-                report(t.id, [t.source], 'view "' + t.id + '": filter listener failed: ' + String(err && err.message ? err.message : err))
+                report(
+                  t.id,
+                  [t.source],
+                  'view "' +
+                    t.id +
+                    '": filter listener failed: ' +
+                    String(err && err.message ? err.message : err),
+                )
                 showErrors()
               }
             })
@@ -4327,7 +4896,14 @@
             try {
               m.api.onFilter(filteredElements, query)
             } catch (err) {
-              report(t.id, [t.source], 'view "' + t.id + '": onFilter failed: ' + String(err && err.message ? err.message : err))
+              report(
+                t.id,
+                [t.source],
+                'view "' +
+                  t.id +
+                  '": onFilter failed: ' +
+                  String(err && err.message ? err.message : err),
+              )
               showErrors()
             }
           }
@@ -4342,15 +4918,26 @@
       if (!next || tabId === current) return
       var prev = current
       current = tabId
+      var domainOpen = tabId === 'domain' || inDomain(tabId)
       tabs.forEach(function (t) {
         var btn = nav.querySelector('.nn-view-tab[data-tab="' + t.id + '"]')
         var panel = doc.getElementById(t.panelId)
+        // The Domain button stays lit while one of its sub-tabs is showing.
+        var lit = t.id === tabId || (t.id === 'domain' && domainOpen)
         if (btn) {
-          btn.classList.toggle('active', t.id === tabId)
-          btn.classList.toggle('tab-active', t.id === tabId)
+          btn.classList.toggle('active', lit)
+          btn.classList.toggle('tab-active', lit)
+          btn.setAttribute('aria-current', lit ? 'page' : 'false')
+        }
+        var sub = subnav && subnav.querySelector('.nn-view-tab[data-tab="' + t.id + '"]')
+        if (sub) {
+          sub.classList.toggle('active', t.id === tabId)
+          sub.classList.toggle('tab-active', t.id === tabId)
+          sub.setAttribute('aria-current', t.id === tabId ? 'page' : 'false')
         }
         if (panel) panel.classList.toggle('active', t.id === tabId)
       })
+      if (subnav) subnav.style.display = domainOpen ? 'flex' : 'none'
       var dockChangesBtn = doc.querySelector('[data-nn="dock-changes"]')
       if (dockChangesBtn) dockChangesBtn.classList.toggle('active', tabId === 'review')
       if (!scopedView && doc.querySelector) {
@@ -4360,7 +4947,8 @@
         }
       }
       if (prev) hook(prev, 'onHide')
-      if (tabId === 'review' && opts.state) renderReviewTab(doc, opts.state, opts.config, opts.onRefresh)
+      if (tabId === 'review' && opts.state)
+        renderReviewTab(doc, opts.state, opts.config, opts.onRefresh)
       if (next.external) {
         if (mounted[tabId]) hook(tabId, 'onShow')
         else mountView(next)
@@ -4397,7 +4985,8 @@
       if (scopedView && has(scopedView)) return scopedView
       // A search in the URL is a question for the explorer: show its answer there
       // even when the console lands elsewhere by default.
-      if (has('explorer') && parseViewHash(doc.location ? doc.location.hash : '').q) return 'explorer'
+      if (has('explorer') && parseViewHash(doc.location ? doc.location.hash : '').q)
+        return 'explorer'
       var preferred = opts.config && opts.config.defaultView
       if (preferred && has(preferred)) return preferred
       if (has('explorer')) return 'explorer'
@@ -4441,18 +5030,23 @@
     if (btn) {
       var old = btn.querySelector('.nn-rail-badge')
       if (old && old.parentNode) old.parentNode.removeChild(old)
-      if (n > 0) btn.appendChild(el('span', 'nn-rail-badge badge badge-sm badge-neutral', String(n)))
+      if (n > 0)
+        btn.appendChild(el('span', 'nn-rail-badge badge badge-sm badge-neutral', String(n)))
     }
     if (dockBtn) {
       var oldDockBadge = dockBtn.querySelector('.nn-dock-badge')
       if (oldDockBadge && oldDockBadge.parentNode) oldDockBadge.parentNode.removeChild(oldDockBadge)
-      if (n > 0) dockBtn.appendChild(el('span', 'nn-dock-badge badge badge-sm badge-neutral ml-1', String(n)))
+      if (n > 0)
+        dockBtn.appendChild(
+          el('span', 'nn-dock-badge badge badge-sm badge-neutral ml-1', String(n)),
+        )
     }
   }
 
   function elementsByIdOf(state) {
     var byId = {}
-    var concepts = (state && state.schema && state.schema.concepts) || (state && state.concepts) || []
+    var concepts =
+      (state && state.schema && state.schema.concepts) || (state && state.concepts) || []
     ;(state && state.elements ? state.elements : []).forEach(function (e) {
       if (e && e.id) {
         if (e.concept && !e._conceptHexColor) {
@@ -4597,7 +5191,10 @@
     var SIDECAR_SUFFIX = '_sidecar_NN.md'
     function citationSubject(raw) {
       var norm = String(raw).replace(/\\/g, '/').replace(/^\/+/, '').split('#')[0]
-      if (norm.length > SIDECAR_SUFFIX.length && norm.slice(-SIDECAR_SUFFIX.length) === SIDECAR_SUFFIX) {
+      if (
+        norm.length > SIDECAR_SUFFIX.length &&
+        norm.slice(-SIDECAR_SUFFIX.length) === SIDECAR_SUFFIX
+      ) {
         return norm.slice(0, norm.length - SIDECAR_SUFFIX.length)
       }
       return norm
@@ -4610,7 +5207,9 @@
     // `testlab_admin_intake_changes_NN#a-01` -> `testlab_admin_intake` (the
     // changeset node id the pipeline Changes column uses).
     function changeNodeIdOf(unitId) {
-      return String(unitId).split('#')[0].replace(/_changes_NN$/, '')
+      return String(unitId)
+        .split('#')[0]
+        .replace(/_changes_NN$/, '')
     }
 
     var unitsByPath = {}
@@ -4661,7 +5260,7 @@
     function kuBadge(unitId) {
       var target = elementsById[unitId]
       var ref = {
-        id: (target && target.id) ? target.id : String(unitId),
+        id: target && target.id ? target.id : String(unitId),
         label: (target && (target.name || target.slug)) || String(unitId),
       }
       if (target && target.concept) ref.concept = target.concept
@@ -4732,7 +5331,9 @@
       search.setAttribute('aria-label', 'Filter files by path')
       search.value = state.query
       search.addEventListener('input', function () {
-        state.query = String(search.value || '').toLowerCase().trim()
+        state.query = String(search.value || '')
+          .toLowerCase()
+          .trim()
         renderSidebar()
       })
       sidebar.appendChild(search)
@@ -4778,14 +5379,21 @@
             row.setAttribute('tabindex', '0')
             row.setAttribute('data-path', entry.path)
             row.setAttribute('title', entry.path)
-            var icon = el('span', 'nn-file-icon', entry.category === 'artifact' ? '\u25A0' : '\u25A1')
+            var icon = el(
+              'span',
+              'nn-file-icon',
+              entry.category === 'artifact' ? '\u25A0' : '\u25A1',
+            )
             icon.setAttribute('aria-hidden', 'true')
             row.appendChild(icon)
             row.appendChild(el('span', 'nn-file-name', filesBaseName(entry.path)))
             row.appendChild(el('span', 'nn-file-size', filesFmtBytes(entry.size)))
             if (entry.uncited || (entry.sidecar && entry.sidecar.exists === false)) {
               var warn = el('span', 'nn-badge-warning', '!')
-              warn.setAttribute('title', entry.uncited ? 'Not cited by any knowledge unit or change' : 'No sidecar')
+              warn.setAttribute(
+                'title',
+                entry.uncited ? 'Not cited by any knowledge unit or change' : 'No sidecar',
+              )
               row.appendChild(warn)
             }
             function open() {
@@ -4821,10 +5429,18 @@
       }
       kpi('Files', String(stats.totalFiles || inventory.length), 'indexed in this workspace')
       kpi('Footprint', filesFmtBytes(stats.totalBytes || 0), 'total bytes on disk')
-      kpi('Source coverage', filesPct(stats.sourceCoverageRate), (stats.uncitedSourceCount || 0) + ' uncited')
+      kpi(
+        'Source coverage',
+        filesPct(stats.sourceCoverageRate),
+        (stats.uncitedSourceCount || 0) + ' uncited',
+      )
       kpi(
         'Sidecars',
-        String((stats.sidecarMissingCount || 0) + (stats.sidecarInvalidCount || 0) + (stats.sidecarMismatchCount || 0)),
+        String(
+          (stats.sidecarMissingCount || 0) +
+            (stats.sidecarInvalidCount || 0) +
+            (stats.sidecarMismatchCount || 0),
+        ),
         'missing, invalid or stale',
       )
       dash.appendChild(kpis)
@@ -4944,7 +5560,9 @@
 
       var header = el('div', 'nn-file-detail-header')
       header.appendChild(el('h2', 'nn-file-detail-title', filesBaseName(entry.path)))
-      header.appendChild(el('span', 'nn-badge', FILES_CATEGORY_LABEL[entry.category] || entry.category))
+      header.appendChild(
+        el('span', 'nn-badge', FILES_CATEGORY_LABEL[entry.category] || entry.category),
+      )
       card.appendChild(header)
       card.appendChild(el('p', 'nn-file-detail-path', entry.path))
 
@@ -4992,7 +5610,8 @@
         if (!entry.sidecar.exists) {
           status.textContent = 'No sidecar for this file.'
         } else if (!entry.sidecar.valid) {
-          status.textContent = 'Sidecar is not valid: ' + String(entry.sidecar.error || 'unknown error')
+          status.textContent =
+            'Sidecar is not valid: ' + String(entry.sidecar.error || 'unknown error')
         } else {
           status.textContent =
             'Sidecar ' +
@@ -5056,7 +5675,9 @@
           tiers.appendChild(el('p', 'nn-lineage-sub', 'Changes: ' + line.changesetIds.join(', ')))
         }
         if ((line.sourcePaths || []).length) {
-          tiers.appendChild(el('p', 'nn-lineage-sub', 'Original files: ' + line.sourcePaths.join(', ')))
+          tiers.appendChild(
+            el('p', 'nn-lineage-sub', 'Original files: ' + line.sourcePaths.join(', ')),
+          )
         }
         card.appendChild(tiers)
       }
@@ -5108,7 +5729,8 @@
           .split('/')
           .pop()
           .replace(/_changes_NN\.md$/i, '')
-        if (id) changeNode[id] = { name: (cs && cs.title) || id, sub: (cs && cs.status) || 'changeset' }
+        if (id)
+          changeNode[id] = { name: (cs && cs.title) || id, sub: (cs && cs.status) || 'changeset' }
       })
       Object.keys(lineage).forEach(function (k) {
         ;(lineage[k].changesetIds || []).forEach(function (id) {
@@ -5126,7 +5748,11 @@
           }
         }),
         sources: sourcesStage.map(function (f) {
-          return { id: 'file:' + f.path, name: filesBaseName(f.path), sub: FILES_CATEGORY_LABEL[f.category] + ' · ' + filesFmtBytes(f.size) }
+          return {
+            id: 'file:' + f.path,
+            name: filesBaseName(f.path),
+            sub: FILES_CATEGORY_LABEL[f.category] + ' · ' + filesFmtBytes(f.size),
+          }
         }),
         changes: changeIds.map(function (id) {
           return { id: 'change:' + id, name: changeNode[id].name, sub: changeNode[id].sub }
@@ -5188,7 +5814,9 @@
         if (
           target &&
           typeof target.closest === 'function' &&
-          target.closest('[data-ku-more], .nn-ku-more, [data-ku-action], .nn-ku-action, .nn-ku-change-pip, [data-nn-component="ku-change-pip"]')
+          target.closest(
+            '[data-ku-more], .nn-ku-more, [data-ku-action], .nn-ku-action, .nn-ku-change-pip, [data-nn-component="ku-change-pip"]',
+          )
         ) {
           return
         }
@@ -5201,7 +5829,9 @@
         if (
           target &&
           typeof target.closest === 'function' &&
-          target.closest('[data-ku-more], .nn-ku-more, [data-ku-action], .nn-ku-action, .nn-ku-change-pip, [data-nn-component="ku-change-pip"]')
+          target.closest(
+            '[data-ku-more], .nn-ku-more, [data-ku-action], .nn-ku-action, .nn-ku-change-pip, [data-nn-component="ku-change-pip"]',
+          )
         ) {
           return
         }
@@ -5404,7 +6034,11 @@
         body.appendChild(pre)
         if (truncated) {
           body.appendChild(
-            el('p', 'nn-file-preview-note', 'Preview truncated. The complete file stays in the workspace.'),
+            el(
+              'p',
+              'nn-file-preview-note',
+              'Preview truncated. The complete file stays in the workspace.',
+            ),
           )
         }
       } else {
@@ -5419,7 +6053,12 @@
       if (copyBtn) {
         copyBtn.onclick = function () {
           var view = doc.defaultView
-          if (view && view.navigator && view.navigator.clipboard && typeof entry.snippet === 'string') {
+          if (
+            view &&
+            view.navigator &&
+            view.navigator.clipboard &&
+            typeof entry.snippet === 'string'
+          ) {
             try {
               view.navigator.clipboard.writeText(entry.snippet)
             } catch {
@@ -5485,8 +6124,14 @@
       renderSidebar()
     }
 
-    if (explorerBtn) explorerBtn.addEventListener('click', function () { setMode('explorer') })
-    if (pipelineBtn) pipelineBtn.addEventListener('click', function () { setMode('pipeline') })
+    if (explorerBtn)
+      explorerBtn.addEventListener('click', function () {
+        setMode('explorer')
+      })
+    if (pipelineBtn)
+      pipelineBtn.addEventListener('click', function () {
+        setMode('pipeline')
+      })
 
     renderSidebar()
     renderDashboard()
@@ -5524,7 +6169,9 @@
   // One Changes tab: Unsent on top (the only change signal a model view carries),
   // the applied history below. The history reads the payload `changes` collection.
   function renderReviewTab(doc, state, config, onRefresh, container) {
-    var host = container || (doc && typeof doc.getElementById === 'function' ? doc.getElementById('nn-tab-review') : null)
+    var host =
+      container ||
+      (doc && typeof doc.getElementById === 'function' ? doc.getElementById('nn-tab-review') : null)
     var inDialog = !!container
     if (!host) return
     host.innerHTML = ''
@@ -5532,13 +6179,20 @@
     var drafts = state && state.store ? state.store.drafts() : []
     var changes = state && Array.isArray(state.changes) ? state.changes : []
     var byId = elementsByIdOf(state)
-    var root = el('div', inDialog ? 'nn-review-tab-content' : 'nn-review-tab-content p-6 max-w-5xl mx-auto')
+    var root = el(
+      'div',
+      inDialog ? 'nn-review-tab-content' : 'nn-review-tab-content p-6 max-w-5xl mx-auto',
+    )
     if (!root) return
 
-    var head = el('section', 'nn-review-head flex justify-between items-center mb-6 pb-4 border-b border-base-200')
+    var head = el(
+      'section',
+      'nn-review-head flex justify-between items-center mb-6 pb-4 border-b border-base-200',
+    )
     if (head) {
       var titleWrap = el('div')
-      if (!inDialog) titleWrap.appendChild(el('h2', 'text-2xl font-bold tracking-tight', UI.COPY.changes))
+      if (!inDialog)
+        titleWrap.appendChild(el('h2', 'text-2xl font-bold tracking-tight', UI.COPY.changes))
       var count = el(
         'p',
         'nn-review-count text-sm opacity-70 mt-1',
@@ -5552,7 +6206,8 @@
         var staleNote = el(
           'p',
           'nn-review-stale text-sm mt-1',
-          staleCount + (staleCount === 1 ? ' unsent change targets' : ' unsent changes target') +
+          staleCount +
+            (staleCount === 1 ? ' unsent change targets' : ' unsent changes target') +
             ' an element that changed since it was written: review before exporting.',
         )
         if (staleNote) {
@@ -5564,11 +6219,16 @@
       head.appendChild(titleWrap)
 
       if (drafts.length > 0 && !inDialog) {
-        var exportBtn = el('button', 'nn-btn nn-tab-export-btn btn btn-primary btn-sm flex items-center gap-2 shadow-sm', 'Export changes')
+        var exportBtn = el(
+          'button',
+          'nn-btn nn-tab-export-btn btn btn-primary btn-sm flex items-center gap-2 shadow-sm',
+          'Export changes',
+        )
         if (exportBtn) {
           exportBtn.setAttribute('type', 'button')
           if (typeof nnIcons !== 'undefined' && typeof nnIcons.getSvg === 'function') {
-            exportBtn.innerHTML = nnIcons.getSvg('download', { size: 14 }) + '<span>Export changes</span>'
+            exportBtn.innerHTML =
+              nnIcons.getSvg('download', { size: 14 }) + '<span>Export changes</span>'
           }
           exportBtn.addEventListener('click', function () {
             openExportModal(doc, state)
@@ -5596,7 +6256,14 @@
       var elRec = findElementForTarget(state.elements, entry.target)
       var field = entry.field || targetFieldOf(entry.target)
       if (!elRec || !field) return
-      var current = field === 'name' ? elRec.name : field === 'description' ? elRec.description : elRec.fields ? elRec.fields[field] : undefined
+      var current =
+        field === 'name'
+          ? elRec.name
+          : field === 'description'
+            ? elRec.description
+            : elRec.fields
+              ? elRec.fields[field]
+              : undefined
       state.store.addDraft({
         element_id: elRec.id,
         concept: elRec.concept,
@@ -5643,7 +6310,11 @@
         if (note) note.setAttribute('data-nn', 'publication-note')
         unsent.appendChild(note)
         unsent.appendChild(
-          el('div', 'empty-state nn-review-empty text-sm p-4 rounded-lg', 'No unsent changes. Edit an element to record one.'),
+          el(
+            'div',
+            'empty-state nn-review-empty text-sm p-4 rounded-lg',
+            'No unsent changes. Edit an element to record one.',
+          ),
         )
       }
       root.appendChild(unsent)
@@ -5659,7 +6330,13 @@
       if (history && history.children.length > 0) {
         applied.appendChild(history)
       } else {
-        applied.appendChild(el('div', 'empty-state nn-review-empty text-sm p-4 rounded-lg', 'No applied changes yet.'))
+        applied.appendChild(
+          el(
+            'div',
+            'empty-state nn-review-empty text-sm p-4 rounded-lg',
+            'No applied changes yet.',
+          ),
+        )
       }
       root.appendChild(applied)
     }
@@ -5690,7 +6367,11 @@
     if (!card) {
       var content = doc.getElementById('nn-content')
       var cardWindow = content && content.__nnCardWindow
-      if (cardWindow && typeof cardWindow.revealElement === 'function' && cardWindow.revealElement(elementId)) {
+      if (
+        cardWindow &&
+        typeof cardWindow.revealElement === 'function' &&
+        cardWindow.revealElement(elementId)
+      ) {
         card = doc.getElementById('el-' + String(elementId))
       }
     }
@@ -5741,7 +6422,11 @@
       UI && typeof UI.Ku === 'function'
         ? UI.Ku(
             'section',
-            { model: refModel, concept: element.concept || 'Element', label: String(element.concept || 'Element') },
+            {
+              model: refModel,
+              concept: element.concept || 'Element',
+              label: String(element.concept || 'Element'),
+            },
             { doc: doc },
           )
         : el('span', 'nn-ref-tag', String(element.concept || 'Element'))
@@ -5846,7 +6531,9 @@
       var body = el('div', 'nn-media-body')
       var img = doc.createElement('img')
       var rawSrc = String(item.value || '')
-      var normMatch = rawSrc.replace(/\\/g, '/').match(/^.+?\/((?:sources|kNNowledge|assets|evidence)\/.+)$/)
+      var normMatch = rawSrc
+        .replace(/\\/g, '/')
+        .match(/^.+?\/((?:sources|kNNowledge|assets|evidence)\/.+)$/)
       img.setAttribute('src', normMatch ? normMatch[1] : rawSrc)
       img.setAttribute('alt', item.name || '')
       img.className = 'nn-media-image'
@@ -5947,7 +6634,8 @@
     if (head && h) head.appendChild(h)
     if (head && close) head.appendChild(close)
     var body = el('div', 'nn-field-detail-body')
-    if (field.elementName) body.appendChild(el('p', 'nn-field-detail-meta', String(field.elementName)))
+    if (field.elementName)
+      body.appendChild(el('p', 'nn-field-detail-meta', String(field.elementName)))
     var valueNode =
       UI && typeof UI.FieldValue === 'function'
         ? UI.FieldValue({ value: field.value, type: field.type, name: field.name }, { doc: doc })
@@ -6059,7 +6747,11 @@
     var holder = el('span', 'nn-summary-concept-ref')
     holder.setAttribute('data-concept', concept)
     var meta = conceptMetaOf(schema && schema.concepts, concept)
-    var badge = UI.Ku('section', { model: modelId, concept: concept, label: concept, index: meta.index, color: meta.color }, { doc: doc })
+    var badge = UI.Ku(
+      'section',
+      { model: modelId, concept: concept, label: concept, index: meta.index, color: meta.color },
+      { doc: doc },
+    )
     holder.appendChild(badge)
     var unit = holder.querySelector('.nn-ku')
     if (unit) {
@@ -6110,9 +6802,11 @@
     card.appendChild(chartHost)
     // Every concept the model's bluepriNNt declares, the empty ones too, then any
     // concept that only appears in the data.
-    var listed = (Array.isArray(m.declaredConcepts) ? m.declaredConcepts.slice() : []).filter(function (c, i, all) {
-      return all.indexOf(c) === i
-    })
+    var listed = (Array.isArray(m.declaredConcepts) ? m.declaredConcepts.slice() : []).filter(
+      function (c, i, all) {
+        return all.indexOf(c) === i
+      },
+    )
     concepts.forEach(function (c) {
       if (listed.indexOf(c) < 0) listed.push(c)
     })
@@ -6154,7 +6848,9 @@
       })
       if (chart) {
         chart.on('click', function (params) {
-          var row = legend.querySelector('li[data-concept="' + String(params.seriesName).replace(/"/g, '') + '"]')
+          var row = legend.querySelector(
+            'li[data-concept="' + String(params.seriesName).replace(/"/g, '') + '"]',
+          )
           openConceptWindow(row)
         })
       }
@@ -6170,9 +6866,11 @@
     if (!host) return
     host.innerHTML = ''
     var models = summaryModels(meta)
-    var elements = (model && Array.isArray(model.elements) ? model.elements : []).filter(function (e) {
-      return e && e.modelId !== 'changes'
-    })
+    var elements = (model && Array.isArray(model.elements) ? model.elements : []).filter(
+      function (e) {
+        return e && e.modelId !== 'changes'
+      },
+    )
     var conceptNames = metamodelConceptNames(schema, elements)
     var changes = model && Array.isArray(model.changes) ? model.changes : []
     var pending = changes.filter(function (c) {
@@ -6198,9 +6896,17 @@
     kpis.appendChild(kpiCard('Models', String(models.length), 'documents of kNNowledge'))
     kpis.appendChild(kpiCard('Concepts', String(conceptNames.length), 'types of card'))
     kpis.appendChild(kpiCard('Elements', String(elements.length), 'cards across all models'))
-    kpis.appendChild(kpiCard('Sources', String(Number(domain.sourceCount) || 0), 'documents the models cite'))
+    kpis.appendChild(
+      kpiCard('Sources', String(Number(domain.sourceCount) || 0), 'documents the models cite'),
+    )
     kpis.appendChild(kpiCard('Pending changes', String(pending), 'proposed, not yet applied'))
-    kpis.appendChild(kpiCard('Fields filled', pct(fill.filled, fill.total) + '%', fill.filled + ' of ' + fill.total))
+    kpis.appendChild(
+      kpiCard(
+        'Fields filled',
+        pct(fill.filled, fill.total) + '%',
+        fill.filled + ' of ' + fill.total,
+      ),
+    )
     root.appendChild(kpis)
 
     // What to look at: the gaps a newcomer should know about, each a link.
@@ -6223,9 +6929,11 @@
         schema,
       )
       var p = pct(f.filled, f.total)
-      if (f.total > 0 && p < 50) hints.push({ concepts: [c], text: ': only ' + p + '% of its fields are filled.' })
+      if (f.total > 0 && p < 50)
+        hints.push({ concepts: [c], text: ': only ' + p + '% of its fields are filled.' })
     })
-    if (pending) hints.push({ text: plural(pending, 'change is', 'changes are') + ' waiting for review.' })
+    if (pending)
+      hints.push({ text: plural(pending, 'change is', 'changes are') + ' waiting for review.' })
     if (hints.length) {
       var attention = el('section', 'nn-summary-attention')
       attention.appendChild(el('h3', null, 'What to look at'))
@@ -6307,7 +7015,7 @@
 
   var INSTALL_SCOPE_TEXT = {
     domain: "This domaiNN's own installation (.agents/bootstrap-state.json in the domaiNN).",
-    user: "The installation of the user who exported this console (~/.agents/bootstrap-state.json).",
+    user: 'The installation of the user who exported this console (~/.agents/bootstrap-state.json).',
     file: 'The installation record given at export time.',
   }
 
@@ -6357,14 +7065,26 @@
       ),
     )
     if (versions.catalog === 'unavailable') {
-      bp.appendChild(el('p', 'nn-versions-hint', 'The bluepriNNt catalog could not be read at export time, so no version was checked.'))
+      bp.appendChild(
+        el(
+          'p',
+          'nn-versions-hint',
+          'The bluepriNNt catalog could not be read at export time, so no version was checked.',
+        ),
+      )
     }
     if (
       blueprints.some(function (row) {
         return row.status === 'upgrade-available'
       })
     ) {
-      bp.appendChild(el('p', 'nn-versions-hint', 'To move a model to a newer bluepriNNt, use the nn-update skill.'))
+      bp.appendChild(
+        el(
+          'p',
+          'nn-versions-hint',
+          'To move a model to a newer bluepriNNt, use the nn-update skill.',
+        ),
+      )
     }
     root.appendChild(bp)
 
@@ -6383,10 +7103,20 @@
         ),
       )
     } else {
-      inst.appendChild(el('p', 'nn-versions-hint', 'No installation record was found when this console was exported.'))
+      inst.appendChild(
+        el(
+          'p',
+          'nn-versions-hint',
+          'No installation record was found when this console was exported.',
+        ),
+      )
     }
     var check = el('p', 'nn-versions-hint')
-    check.appendChild(doc.createTextNode('Newer skills, MCP server and console versions cannot be checked offline. Run '))
+    check.appendChild(
+      doc.createTextNode(
+        'Newer skills, MCP server and console versions cannot be checked offline. Run ',
+      ),
+    )
     check.appendChild(el('code', null, 'node skills-manager.js status'))
     check.appendChild(doc.createTextNode(' to compare with the latest cogNNitive release.'))
     inst.appendChild(check)
@@ -6461,7 +7191,12 @@
             itemStyle: { color: color },
             label: { formatter: '{b} ({c})' },
             children: byConcept[c].map(function (e) {
-              return { name: e.name || e.id, value: 1, elementId: e.id, itemStyle: { color: color } }
+              return {
+                name: e.name || e.id,
+                value: 1,
+                elementId: e.id,
+                itemStyle: { color: color },
+              }
             }),
           }
         }),
@@ -6497,14 +7232,20 @@
   }
 
   function renderMapView(doc, model, schema, meta) {
-    if (!summaryModels(meta).length || !(Array.isArray(model && model.elements) && model.elements.length)) return
+    if (
+      !summaryModels(meta).length ||
+      !(Array.isArray(model && model.elements) && model.elements.length)
+    )
+      return
     var host = doc.getElementById('nn-tab-map')
     if (!host) return
     host.innerHTML = ''
     var models = summaryModels(meta)
-    var elements = (model && Array.isArray(model.elements) ? model.elements : []).filter(function (e) {
-      return e && e.id && e.modelId !== 'changes'
-    })
+    var elements = (model && Array.isArray(model.elements) ? model.elements : []).filter(
+      function (e) {
+        return e && e.id && e.modelId !== 'changes'
+      },
+    )
     var titleOf = {}
     models.forEach(function (m) {
       titleOf[m.id] = m.title || m.id
@@ -6584,7 +7325,14 @@
       var ins = links.inc[id] || []
       wordsHost.innerHTML = ''
       wordsHost.appendChild(
-        doc.createTextNode(nameOf(id) + ' (' + center.concept + ', ' + (titleOf[center.modelId] || center.modelId) + ') '),
+        doc.createTextNode(
+          nameOf(id) +
+            ' (' +
+            center.concept +
+            ', ' +
+            (titleOf[center.modelId] || center.modelId) +
+            ') ',
+        ),
       )
       if (outs.length) {
         wordsHost.appendChild(doc.createTextNode('points to: '))
@@ -6652,7 +7400,13 @@
                     source: l.source,
                     target: l.target,
                     lineStyle: { color: '#64748b', width: 1.5, curveness: 0.1 },
-                    label: { show: !!l.field, formatter: l.field, fontSize: 10, color: '#334155', backgroundColor: '#ffffff' },
+                    label: {
+                      show: !!l.field,
+                      formatter: l.field,
+                      fontSize: 10,
+                      color: '#334155',
+                      backgroundColor: '#ffffff',
+                    },
                   }
                 }),
             },
@@ -6662,7 +7416,8 @@
       )
       if (chart) {
         chart.on('click', function (params) {
-          if (params.dataType === 'node' && params.data && params.data.id !== id) show(params.data.id)
+          if (params.dataType === 'node' && params.data && params.data.id !== id)
+            show(params.data.id)
         })
       }
     }
@@ -6674,7 +7429,14 @@
       show(select.value)
     })
 
-    renderMapTree(treeHost, (meta && meta.domain && meta.domain.title) || 'domaiNN', models, elements, schema, show)
+    renderMapTree(
+      treeHost,
+      (meta && meta.domain && meta.domain.title) || 'domaiNN',
+      models,
+      elements,
+      schema,
+      show,
+    )
 
     var start = elements.reduce(function (best, e) {
       return !best || linkCount(e.id) > linkCount(best.id) ? e : best
@@ -6741,7 +7503,8 @@
     var list = schema && Array.isArray(schema.concepts) ? schema.concepts : []
     for (var i = 0; i < list.length; i++) {
       var c = list[i]
-      if (c && typeof c === 'object' && c.name === concept) return (c.declaredBy && c.declaredBy.family) || 'Other'
+      if (c && typeof c === 'object' && c.name === concept)
+        return (c.declaredBy && c.declaredBy.family) || 'Other'
     }
     return 'Other'
   }
@@ -6881,7 +7644,15 @@
       [SCHEMA_ANCHOR + 'start', 0, 0],
       [SCHEMA_ANCHOR + 'end', width, height],
     ].map(function (a) {
-      return { name: a[0], x: a[1], y: a[2], symbolSize: 0, silent: true, label: { show: false }, tooltip: { show: false } }
+      return {
+        name: a[0],
+        x: a[1],
+        y: a[2],
+        symbolSize: 0,
+        silent: true,
+        label: { show: false },
+        tooltip: { show: false },
+      }
     })
     chartHost.style.height = height + 'px'
     chartHost.style.width = width + 'px'
@@ -6889,103 +7660,116 @@
     var chart = null
     try {
       chart = Studio.renderChart(
-      chartHost,
-      {
-        animation: false,
-        tooltip: { trigger: 'item', confine: true },
-        series: [
-          {
-            type: 'graph',
-            layout: 'none',
-            roam: true,
-            draggable: true,
-            left: 0,
-            top: 0,
-            width: width,
-            height: height,
-            edgeSymbol: ['none', 'arrow'],
-            edgeSymbolSize: 9,
-            autoCurveness: true,
-            data: anchors.concat(
-              nodes.map(function (n) {
-              var color = conceptMetaOf(schema && schema.concepts, n.name).hexColor
-              var fields = fieldsOf[n.name] || []
-              var lines = fields.slice(0, SCHEMA_MAX_FIELDS).map(function (f) {
-                return '{f|' + f.name + '}  {k|' + (f.type || 'text') + '}'
-              })
-              if (fields.length > SCHEMA_MAX_FIELDS) lines.push('{k|+' + (fields.length - SCHEMA_MAX_FIELDS) + ' more fields}')
-              if (!lines.length) lines.push('{k|no fields}')
-              return {
-                name: n.name,
-                x: n.x,
-                y: n.y,
-                symbol: 'rect',
-                symbolSize: [SCHEMA_BOX_WIDTH, n.h],
-                itemStyle: { color: '#ffffff', borderColor: color, borderWidth: 2 },
-                label: {
-                  show: true,
-                  position: [8, 8],
-                  align: 'left',
-                  verticalAlign: 'top',
-                  width: SCHEMA_BOX_WIDTH - 16,
-                  overflow: 'truncate',
-                  formatter: '{t|' + n.name + '  ·  ' + plural(counts[n.name] || 0, 'element', 'elements') + '}\n' + lines.join('\n'),
-                  rich: {
-                    t: {
+        chartHost,
+        {
+          animation: false,
+          tooltip: { trigger: 'item', confine: true },
+          series: [
+            {
+              type: 'graph',
+              layout: 'none',
+              roam: true,
+              draggable: true,
+              left: 0,
+              top: 0,
+              width: width,
+              height: height,
+              edgeSymbol: ['none', 'arrow'],
+              edgeSymbolSize: 9,
+              autoCurveness: true,
+              data: anchors.concat(
+                nodes.map(function (n) {
+                  var color = conceptMetaOf(schema && schema.concepts, n.name).hexColor
+                  var fields = fieldsOf[n.name] || []
+                  var lines = fields.slice(0, SCHEMA_MAX_FIELDS).map(function (f) {
+                    return '{f|' + f.name + '}  {k|' + (f.type || 'text') + '}'
+                  })
+                  if (fields.length > SCHEMA_MAX_FIELDS)
+                    lines.push('{k|+' + (fields.length - SCHEMA_MAX_FIELDS) + ' more fields}')
+                  if (!lines.length) lines.push('{k|no fields}')
+                  return {
+                    name: n.name,
+                    x: n.x,
+                    y: n.y,
+                    symbol: 'rect',
+                    symbolSize: [SCHEMA_BOX_WIDTH, n.h],
+                    itemStyle: { color: '#ffffff', borderColor: color, borderWidth: 2 },
+                    label: {
+                      show: true,
+                      position: [8, 8],
+                      align: 'left',
+                      verticalAlign: 'top',
                       width: SCHEMA_BOX_WIDTH - 16,
-                      backgroundColor: color,
-                      color: '#ffffff',
-                      fontWeight: 'bold',
-                      fontSize: 12,
-                      padding: [5, 6],
-                      borderRadius: 3,
+                      overflow: 'truncate',
+                      formatter:
+                        '{t|' +
+                        n.name +
+                        '  ·  ' +
+                        plural(counts[n.name] || 0, 'element', 'elements') +
+                        '}\n' +
+                        lines.join('\n'),
+                      rich: {
+                        t: {
+                          width: SCHEMA_BOX_WIDTH - 16,
+                          backgroundColor: color,
+                          color: '#ffffff',
+                          fontWeight: 'bold',
+                          fontSize: 12,
+                          padding: [5, 6],
+                          borderRadius: 3,
+                        },
+                        f: { fontSize: 11, color: '#1f2937', lineHeight: SCHEMA_LINE },
+                        k: { fontSize: 10, color: '#6b7280', lineHeight: SCHEMA_LINE },
+                      },
                     },
-                    f: { fontSize: 11, color: '#1f2937', lineHeight: SCHEMA_LINE },
-                    k: { fontSize: 10, color: '#6b7280', lineHeight: SCHEMA_LINE },
+                    tooltip: {
+                      formatter:
+                        n.name +
+                        ': ' +
+                        (fields.length
+                          ? fields
+                              .map(function (f) {
+                                return f.name
+                              })
+                              .join(', ')
+                          : 'no fields'),
+                    },
+                  }
+                }),
+              ),
+              links: edges.map(function (e) {
+                return {
+                  source: e.source,
+                  target: e.target,
+                  lineStyle: {
+                    type: e.kind === 'matrix' ? 'solid' : 'dashed',
+                    width: 1.5,
+                    color: '#64748b',
                   },
-                },
-                tooltip: {
-                  formatter:
-                    n.name +
-                    ': ' +
-                    (fields.length
-                      ? fields
-                          .map(function (f) {
-                            return f.name
-                          })
-                          .join(', ')
-                      : 'no fields'),
-                },
-              }
-            }),
-            ),
-            links: edges.map(function (e) {
-              return {
-                source: e.source,
-                target: e.target,
-                lineStyle: { type: e.kind === 'matrix' ? 'solid' : 'dashed', width: 1.5, color: '#64748b' },
-                label: {
-                  show: !!e.label,
-                  formatter: e.label,
-                  fontSize: 10,
-                  color: '#334155',
-                  backgroundColor: '#ffffff',
-                  padding: [1, 3],
-                },
-              }
-            }),
-          },
-        ],
-      },
-      { width: width, height: height },
+                  label: {
+                    show: !!e.label,
+                    formatter: e.label,
+                    fontSize: 10,
+                    color: '#334155',
+                    backgroundColor: '#ffffff',
+                    padding: [1, 3],
+                  },
+                }
+              }),
+            },
+          ],
+        },
+        { width: width, height: height },
       )
     } catch (err) {
       // The schema in words below still explains the domaiNN without the diagram.
-      if (typeof console !== 'undefined' && console.warn) console.warn('nn-console: schema diagram failed', err)
+      if (typeof console !== 'undefined' && console.warn)
+        console.warn('nn-console: schema diagram failed', err)
     }
     if (chart) {
       chart.on('click', function (params) {
-        if (params.dataType === 'node') revealInKnowledge(doc, formatFacetToken('concept', params.name))
+        if (params.dataType === 'node')
+          revealInKnowledge(doc, formatFacetToken('concept', params.name))
       })
     }
   }
@@ -7044,7 +7828,12 @@
       var head = el('div', 'nn-cite-head')
       if (head && tag) head.appendChild(tag)
       var prov = el('span', 'nn-cite-prov', labelText)
-      if (prov && typeof nnIcons !== 'undefined' && nnIcons && typeof nnIcons.getSvg === 'function') {
+      if (
+        prov &&
+        typeof nnIcons !== 'undefined' &&
+        nnIcons &&
+        typeof nnIcons.getSvg === 'function'
+      ) {
         prov.insertAdjacentHTML('afterbegin', nnIcons.getSvg('cite-' + variantKey, { size: 13 }))
       }
       if (head && prov) head.appendChild(prov)
@@ -7078,7 +7867,10 @@
       if (dl && dl.children.length && card) card.appendChild(dl)
 
       if (entry.href && !entry.error && card) {
-        var openHref = UI && typeof UI.safeHref === 'function' ? UI.safeHref(entry.href) : safeSourceHref(entry.href)
+        var openHref =
+          UI && typeof UI.safeHref === 'function'
+            ? UI.safeHref(entry.href)
+            : safeSourceHref(entry.href)
         var openLink = openHref ? el('a', 'nn-cite-open', 'Open original') : null
         if (openLink) {
           openLink.setAttribute('href', openHref)
@@ -7277,7 +8069,9 @@
       '<button class="nn-export-close" data-nn="close" type="button" aria-label="Close">\u00d7</button>' +
       '</header>' +
       '<div class="nn-export-body">' +
-      '<p class="nn-export-flow">' + UI.COPY.exportFlow + '</p>' +
+      '<p class="nn-export-flow">' +
+      UI.COPY.exportFlow +
+      '</p>' +
       '<div class="nn-export-field">' +
       '<label class="nn-edit-field-label" for="nn-export-identifier">Author / Reviewer identifier</label>' +
       '<input id="nn-export-identifier" class="nn-edit-input" data-nn="identifier" type="text" placeholder="e.g. round-2" />' +
@@ -7307,7 +8101,6 @@
       '</button>' +
       '</footer>'
 
-
     root.appendChild(modal)
 
     // Single-header layout: the feedback controls live inside the top navbar
@@ -7329,7 +8122,12 @@
   function formatChangesetValue(val) {
     if (val === undefined || val === null) return '""'
     var str = typeof val === 'object' ? JSON.stringify(val) : String(val)
-    if (str.indexOf('"') !== -1 || str.indexOf('\n') !== -1 || str.indexOf(':') !== -1 || str.indexOf(' ') !== -1) {
+    if (
+      str.indexOf('"') !== -1 ||
+      str.indexOf('\n') !== -1 ||
+      str.indexOf(':') !== -1 ||
+      str.indexOf(' ') !== -1
+    ) {
       return JSON.stringify(str)
     }
     return str
@@ -7369,7 +8167,10 @@
       // A scene verdict targets `<file stem>@<scene slug>`; a budget verdict targets the
       // episode model itself (there is no element_slug).
       var verdictTarget = oneLine(
-        d.target || (d.element_slug ? model + '@' + d.element_slug : d.knowledge_id || fallbackModel || 'model'),
+        d.target ||
+          (d.element_slug
+            ? model + '@' + d.element_slug
+            : d.knowledge_id || fallbackModel || 'model'),
       )
       var verdictLines = [
         '## NN Change: ' + id,
@@ -7389,7 +8190,8 @@
     var elementTarget = oneLine(d.element_slug || 'elem')
     var matrixName = d.matrix != null && d.matrix !== '' ? oneLine(d.matrix) : ''
     var isMatrix = !!matrixName
-    var canUpdate = (!!d.field && d.proposed !== undefined) || (isMatrix && d.proposed !== undefined)
+    var canUpdate =
+      (!!d.field && d.proposed !== undefined) || (isMatrix && d.proposed !== undefined)
     var isRename = !isMatrix && canUpdate && String(d.field).toLowerCase() === 'name'
     var isProse = !isMatrix && canUpdate && String(d.field).toLowerCase() === 'description'
     var op = isMatrix ? 'update_matrix_cell' : 'update_field'
@@ -7429,7 +8231,13 @@
     if (Array.isArray(ev)) ev = ev.join(', ')
     lines.push('evidence:: ' + oneLine(ev))
     // The engine rejects the change if the element's content hash moved on since the draft.
-    if ((op === 'update_field' || op === 'update_element_text' || op === 'remove_element' || op === 'rename_element') && d.base_hash) {
+    if (
+      (op === 'update_field' ||
+        op === 'update_element_text' ||
+        op === 'remove_element' ||
+        op === 'rename_element') &&
+      d.base_hash
+    ) {
       lines.push('base_hash:: ' + oneLine(d.base_hash))
     }
     if (op === 'rename_element') {
@@ -7439,7 +8247,8 @@
       if (d.original !== undefined) lines.push('from:: ' + formatChangesetValue(d.original))
       lines.push('to:: ' + formatChangesetValue(d.proposed))
     } else if (op === 'update_matrix_cell') {
-      if (d.original !== undefined && d.original !== '') lines.push('from:: ' + formatChangesetValue(d.original))
+      if (d.original !== undefined && d.original !== '')
+        lines.push('from:: ' + formatChangesetValue(d.original))
       lines.push('to:: ' + formatChangesetValue(d.proposed))
     } else if (op === 'add_element') {
       lines.push('concept:: ' + oneLine(d.concept))
@@ -7582,7 +8391,8 @@
   }
 
   function composeChangesetExport(state, identifier) {
-    var reviewer = identifier && String(identifier).trim() ? String(identifier).trim() : getReviewerName()
+    var reviewer =
+      identifier && String(identifier).trim() ? String(identifier).trim() : getReviewerName()
     var drafts = state && state.store ? state.store.drafts() : []
     var model = state && state.modelTitle ? state.modelTitle : 'Model'
     var reviewerSlug = slugify(reviewer) || 'reviewer'
@@ -7634,10 +8444,19 @@
       artifactName: String(meta.title || 'console') + '_console.html',
       modelId: meta.modelId || meta.model || meta.title || 'model',
       modelSlug: scope
-        ? modelSlugOf({ modelSlug: meta.knowledge_slug || meta.modelSlug, modelId: baseId, modelTitle: baseTitle }) + '-' + scope.view
+        ? modelSlugOf({
+            modelSlug: meta.knowledge_slug || meta.modelSlug,
+            modelId: baseId,
+            modelTitle: baseTitle,
+          }) +
+          '-' +
+          scope.view
         : meta.knowledge_slug || meta.modelSlug || meta.workspaceId || undefined,
       sourceSha256:
-        (Array.isArray(meta.models) && meta.models.length === 1 && meta.models[0] && meta.models[0].sha256) ||
+        (Array.isArray(meta.models) &&
+          meta.models.length === 1 &&
+          meta.models[0] &&
+          meta.models[0].sha256) ||
         meta.sha256 ||
         meta.source_sha256,
       // The changeset title comes from meta.title; a scoped export names its view there.
@@ -7667,7 +8486,8 @@
   }
 
   function composeExport(state, identifier) {
-    var reviewer = identifier && String(identifier).trim() ? String(identifier).trim() : getReviewerName()
+    var reviewer =
+      identifier && String(identifier).trim() ? String(identifier).trim() : getReviewerName()
     var drafts = state && state.store ? state.store.drafts() : []
     var model = state && state.modelTitle ? state.modelTitle : 'Model'
     var version = state && state.modelVersion ? state.modelVersion : '1-0-0'
@@ -7681,10 +8501,9 @@
     var exportMeta = Object.assign({}, (state && state.meta) || {}, {
       source_knowledge: model,
       source_knowledge_version: normVersion,
-      artifact: (state && state.artifactName) || (model + '_console.html'),
+      artifact: (state && state.artifactName) || model + '_console.html',
       artifact_version: CONSOLE_VERSION,
-      exported_at:
-        (state && state.exportedAt) || new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
+      exported_at: (state && state.exportedAt) || new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
       author: reviewer,
       feedback_slug: reviewerSlug,
       viewer: 'nn-console@' + CONSOLE_VERSION,
@@ -7704,7 +8523,9 @@
       return { ok: false, errors: [verdictProblem] }
     }
 
-    var stamp = changesetStampOf(state && state.exportedAt ? new Date(state.exportedAt) : new Date())
+    var stamp = changesetStampOf(
+      state && state.exportedAt ? new Date(state.exportedAt) : new Date(),
+    )
     var changesetMd = serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
     var modelSlug = modelSlugOf(state)
     var changesetFilename = modelSlug + '_' + reviewerSlug + '_' + stamp + '_changes_NN.md'
@@ -7727,9 +8548,11 @@
     }
     errorContainer.innerHTML =
       '<strong>Validation errors:</strong><ul>' +
-      errors.map(function (e) {
-        return '<li>' + escapeHtml(e) + '</li>'
-      }).join('') +
+      errors
+        .map(function (e) {
+          return '<li>' + escapeHtml(e) + '</li>'
+        })
+        .join('') +
       '</ul>'
     errorContainer.style.display = 'block'
   }
@@ -7762,7 +8585,8 @@
 
   function downloadChangesetExport(doc, state) {
     var identifierInput = doc.querySelector('#nn-feedback-modal [data-nn="identifier"]')
-    var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
+    var identifier =
+      identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
     var composed = composeExport(state, identifier)
     if (!composed.ok) {
       renderErrors(doc, composed.errors)
@@ -7823,7 +8647,8 @@
 
   function copyTextToClipboard(doc, text) {
     var win = (doc && doc.defaultView) || (typeof window !== 'undefined' ? window : null)
-    var nav = win && win.navigator ? win.navigator : (typeof navigator !== 'undefined' ? navigator : null)
+    var nav =
+      win && win.navigator ? win.navigator : typeof navigator !== 'undefined' ? navigator : null
     if (nav && nav.clipboard && typeof nav.clipboard.writeText === 'function') {
       return nav.clipboard.writeText(text).catch(function () {
         return execCopyFallback(doc, text)
@@ -7853,7 +8678,8 @@
   }
 
   function composeAgentPrompt(state) {
-    state = state || (typeof document !== 'undefined' && document.__nnConsoleState) || activeState || {}
+    state =
+      state || (typeof document !== 'undefined' && document.__nnConsoleState) || activeState || {}
     var drafts = state && state.store ? state.store.drafts() : []
     var domainOrModel = (state && state.modelTitle) || 'Domain Model'
     var version = (state && state.modelVersion) || 'V_1-0-0'
@@ -7862,7 +8688,12 @@
 
     var targetAddresses = []
     drafts.forEach(function (d) {
-      var addr = d.address || ((d.knowledge_id || slugOrId) + '@' + (d.element_slug || d.element || d.element_id || 'unit') + (d.field ? '&' + d.field : ''))
+      var addr =
+        d.address ||
+        (d.knowledge_id || slugOrId) +
+          '@' +
+          (d.element_slug || d.element || d.element_id || 'unit') +
+          (d.field ? '&' + d.field : '')
       if (targetAddresses.indexOf(addr) === -1) {
         targetAddresses.push(addr)
       }
@@ -7884,18 +8715,44 @@
     }
     lines.push('')
 
-    lines.push('## Changeset Summary (' + drafts.length + ' modification' + (drafts.length === 1 ? '' : 's') + ')')
+    lines.push(
+      '## Changeset Summary (' +
+        drafts.length +
+        ' modification' +
+        (drafts.length === 1 ? '' : 's') +
+        ')',
+    )
     if (drafts.length === 0) {
-      lines.push('No pending modifications recorded in the console snapshot. Domain state is current.')
+      lines.push(
+        'No pending modifications recorded in the console snapshot. Domain state is current.',
+      )
     } else {
       lines.push('| Kind | Target Address | Field | Proposed / Details | Notes |')
       lines.push('| :--- | :--- | :--- | :--- | :--- |')
       drafts.forEach(function (d) {
-        var addr = d.address || ((d.knowledge_id || slugOrId) + '@' + (d.element_slug || d.element || d.element_id || 'unit'))
+        var addr =
+          d.address ||
+          (d.knowledge_id || slugOrId) +
+            '@' +
+            (d.element_slug || d.element || d.element_id || 'unit')
         var field = d.field || '-'
-        var proposed = d.proposed !== undefined ? formatChangesetValue(d.proposed) : (d.comment || '-')
-        var note = d.comment && d.proposed !== undefined ? String(d.comment).replace(/\n/g, ' ') : '-'
-        lines.push('| `' + d.kind + '` | `' + addr + '` | `' + field + '` | ' + proposed + ' | ' + note + ' |')
+        var proposed =
+          d.proposed !== undefined ? formatChangesetValue(d.proposed) : d.comment || '-'
+        var note =
+          d.comment && d.proposed !== undefined ? String(d.comment).replace(/\n/g, ' ') : '-'
+        lines.push(
+          '| `' +
+            d.kind +
+            '` | `' +
+            addr +
+            '` | `' +
+            field +
+            '` | ' +
+            proposed +
+            ' | ' +
+            note +
+            ' |',
+        )
       })
     }
     lines.push('')
@@ -7908,7 +8765,8 @@
       source_knowledge: domainOrModel,
       title: 'Review Changes: ' + domainOrModel,
       author: reviewer,
-      changesBlueprintVersion: (state && state.meta && state.meta.changesBlueprintVersion) || 'V_0-1-0',
+      changesBlueprintVersion:
+        (state && state.meta && state.meta.changesBlueprintVersion) || 'V_0-1-0',
     }
     if (unnamed && drafts.length > 0) {
       lines.push('### Normative Changeset Document')
@@ -7918,7 +8776,9 @@
       lines.push('')
     }
     try {
-      var changesetDoc = unnamed ? '' : serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
+      var changesetDoc = unnamed
+        ? ''
+        : serializeChangesetMarkdown(exportMeta, drafts, state && state.modelId)
       if (changesetDoc && drafts.length > 0) {
         lines.push('### Normative Changeset Document (`_changes_NN.md`)')
         lines.push('```markdown')
@@ -7931,9 +8791,13 @@
     }
 
     lines.push('## Actionable Instructions for AI Assistant')
-    lines.push('1. Inspect and validate the requested modifications against the target domain blueprints and schemas.')
+    lines.push(
+      '1. Inspect and validate the requested modifications against the target domain blueprints and schemas.',
+    )
     lines.push('2. Apply each change to the authoritative knowledge files under `models/`:')
-    lines.push('   - Use the `nn-mcp` tool `apply_change` when connected, or directly update the Level 3 Markdown units.')
+    lines.push(
+      '   - Use the `nn-mcp` tool `apply_change` when connected, or directly update the Level 3 Markdown units.',
+    )
     lines.push('   - Ensure element frontmatter hashes and canonical addresses match.')
     lines.push('3. Verify integrity across the workspace and regenerate the console:')
     lines.push('   ```bash')
@@ -7960,7 +8824,10 @@
   function downloadFallback(doc, htmlContent, filename, draftsCount) {
     if (doc && doc.createElement && typeof Blob !== 'undefined') {
       var blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
-      var url = typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function' ? URL.createObjectURL(blob) : ''
+      var url =
+        typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function'
+          ? URL.createObjectURL(blob)
+          : ''
       if (url) {
         var anchor = doc.createElement('a')
         anchor.href = url
@@ -8006,24 +8873,32 @@
       return Promise.resolve({ ok: false, error: (err && err.message) || String(err) })
     }
     if (!isObject(currentModel)) {
-      return Promise.resolve({ ok: false, error: 'nn-console: the nn-model slot must decode to a JSON object' })
+      return Promise.resolve({
+        ok: false,
+        error: 'nn-console: the nn-model slot must decode to a JSON object',
+      })
     }
     var savedUiState = isObject(savedDrafts.uiState) ? savedDrafts.uiState : {}
 
-    var drafts = state && state.store
-      ? state.store.drafts()
-      : (Array.isArray(savedDrafts.drafts) ? savedDrafts.drafts : [])
+    var drafts =
+      state && state.store
+        ? state.store.drafts()
+        : Array.isArray(savedDrafts.drafts)
+          ? savedDrafts.drafts
+          : []
     currentModel.meta = Object.assign({}, currentModel.meta || {}, (state && state.meta) || {})
-    if (state && Array.isArray(state.elements)) currentModel.elements = state.elements.map(withoutRuntimeKeys)
+    if (state && Array.isArray(state.elements))
+      currentModel.elements = state.elements.map(withoutRuntimeKeys)
     if (state && Array.isArray(state.matrices)) currentModel.matrices = state.matrices
     if (state && Array.isArray(state.changes)) currentModel.changes = state.changes
 
     var searchEl = active.getElementById('nn-search')
     var currentQuery = searchEl ? searchEl.value : (state && state.activeSearchQuery) || ''
     var uiState = {
-      activeTab: (state && state.tabs && typeof state.tabs.current === 'function')
-        ? state.tabs.current()
-        : savedUiState.activeTab || 'explorer',
+      activeTab:
+        state && state.tabs && typeof state.tabs.current === 'function'
+          ? state.tabs.current()
+          : savedUiState.activeTab || 'explorer',
       searchQuery: currentQuery,
       reviewer: getReviewerName(),
       selectedElementId: (state && state.focusedElementId) || null,
@@ -8279,7 +9154,8 @@
     var changesButton = active.getElementById('nn-feedback-open')
     if (changesButton && changesButton.parentNode === target) target.removeChild(changesButton)
     var newElementButton = active.querySelector('[data-nn="new-element"]')
-    if (newElementButton && newElementButton.parentNode === target) target.removeChild(newElementButton)
+    if (newElementButton && newElementButton.parentNode === target)
+      target.removeChild(newElementButton)
     target.innerHTML = ''
     var draftsCount = state && state.store ? state.store.drafts().length : 0
     var actionsEl = UI.TopBarActions(
@@ -8307,7 +9183,11 @@
   function openSourceCitation(doc, source) {
     var text = String(source)
     var hash = text.indexOf('#')
-    var entry = { origin: 'document', unchecked: true, path: hash === -1 ? text : text.slice(0, hash) }
+    var entry = {
+      origin: 'document',
+      unchecked: true,
+      path: hash === -1 ? text : text.slice(0, hash),
+    }
     if (hash !== -1 && hash < text.length - 1) entry.anchor = text.slice(hash + 1)
     renderCitationDialog(doc, 'sources', [entry])
   }
@@ -8328,7 +9208,8 @@
     var modal = doc.getElementById('nn-feedback-modal')
     if (!modal) return { ok: false }
     var identifierInput = modal.querySelector('[data-nn="identifier"]')
-    var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
+    var identifier =
+      identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
     var drafts = state && state.store ? state.store.drafts() : []
     var byId = elementsByIdOf(state)
     var modelId = (state && state.meta && (state.meta.modelId || state.meta.model)) || ''
@@ -8340,14 +9221,14 @@
     }
     var countLabel = modal.querySelector('[data-nn="draft-count"]')
     if (countLabel) {
-      countLabel.textContent = drafts.length ? drafts.length + ' of ' + drafts.length + ' selected' : ''
+      countLabel.textContent = drafts.length
+        ? drafts.length + ' of ' + drafts.length + ' selected'
+        : ''
     }
     var instructions = modal.querySelector('[data-nn="instructions"]')
     if (instructions) {
       instructions.textContent =
-        'Review ' +
-        drafts.length +
-        ' unsent change(s), then download or copy the change document.'
+        'Review ' + drafts.length + ' unsent change(s), then download or copy the change document.'
     }
     var saveCount = modal.querySelector('[data-nn="save-snapshot-count"]')
     if (saveCount) {
@@ -8356,10 +9237,17 @@
     }
 
     var preview = modal.querySelector('[data-nn="preview"]')
-    if (preview) renderReviewTab(doc, state, null, function () {
-      if (state && typeof state.refreshUi === 'function') state.refreshUi()
-      updateExportPreview(doc, state)
-    }, preview)
+    if (preview)
+      renderReviewTab(
+        doc,
+        state,
+        null,
+        function () {
+          if (state && typeof state.refreshUi === 'function') state.refreshUi()
+          updateExportPreview(doc, state)
+        },
+        preview,
+      )
 
     var composed = composeExport(state, identifier)
     var downloadCsBtn = modal.querySelector('[data-nn="download-changeset"]')
@@ -8475,7 +9363,8 @@
     if (downloadCsBtn && !downloadCsBtn.getAttribute('data-nn-bound')) {
       downloadCsBtn.setAttribute('data-nn-bound', '1')
       downloadCsBtn.addEventListener('click', function () {
-        var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
+        var identifier =
+          identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
         if (!identifier || identifier === DEFAULT_REVIEWER_NAME) return
         setReviewerName(identifier)
         var res = downloadChangesetExport(doc, state)
@@ -8490,7 +9379,8 @@
     if (copyCsBtn && !copyCsBtn.getAttribute('data-nn-bound')) {
       copyCsBtn.setAttribute('data-nn-bound', '1')
       copyCsBtn.addEventListener('click', function () {
-        var identifier = identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
+        var identifier =
+          identifierInput && identifierInput.value ? String(identifierInput.value).trim() : ''
         if (identifier && identifier !== DEFAULT_REVIEWER_NAME) setReviewerName(identifier)
         copyChangesetPrompt(doc, state)
       })
@@ -8587,19 +9477,26 @@
         rootEl.classList.toggle('nn-paused', !!active.hidden)
       }
       applyPaused()
-      if (activeWindow && activeWindow.addEventListener) listen(activeWindow, 'visibilitychange', applyPaused)
+      if (activeWindow && activeWindow.addEventListener)
+        listen(activeWindow, 'visibilitychange', applyPaused)
     }
     var config = parseConfig(slotText(active, 'nn-config'))
     // The nn-model slot is compressed: autoBoot decodes it before this synchronous boot,
     // and a caller that decoded it itself passes the JSON text as `opts.modelText`.
-    if (opts && typeof opts.modelText === 'string' && decodedModels) decodedModels.set(active, opts.modelText)
-    var modelText = opts && typeof opts.modelText === 'string' ? opts.modelText : modelSlotText(active)
+    if (opts && typeof opts.modelText === 'string' && decodedModels)
+      decodedModels.set(active, opts.modelText)
+    var modelText =
+      opts && typeof opts.modelText === 'string' ? opts.modelText : modelSlotText(active)
     var slots = parseSlots(slotText(active, 'nn-schema'), modelText)
     var viewData = parseViewData(slotText(active, 'nn-view-data'))
     var savedDrafts = parseDraftsSlot(slotText(active, 'nn-drafts'))
     // Wire the procedure fold when the export shipped one, so a view can project a run from
     // the drafts it holds. Absent slot: views fall back to the exported state.
-    if (typeof nnProcedureCore !== 'undefined' && nnProcedureCore && typeof nnProcedureCore.useFromDocument === 'function') {
+    if (
+      typeof nnProcedureCore !== 'undefined' &&
+      nnProcedureCore &&
+      typeof nnProcedureCore.useFromDocument === 'function'
+    ) {
       nnProcedureCore.useFromDocument(active)
     }
     var uiState = isObject(savedDrafts.uiState) ? savedDrafts.uiState : null
@@ -8620,7 +9517,9 @@
       })
       modelList = modelList.filter(function (mm) {
         if (!mm) return false
-        var key = String(mm.id != null ? mm.id : mm.slug != null ? mm.slug : mm.title || '').toLowerCase()
+        var key = String(
+          mm.id != null ? mm.id : mm.slug != null ? mm.slug : mm.title || '',
+        ).toLowerCase()
         return wantedModels.indexOf(key) !== -1
       })
       // Every downstream consumer (picker, reference index, banner) sees the scope.
@@ -8643,15 +9542,22 @@
     // already holds, addressed the compact way (`<model-id>@<slug>`).
     var elements = Array.isArray(model.elements) ? model.elements : []
     var payloadCollections = isObject(model.collections) ? model.collections : {}
-    if (!Object.keys(payloadCollections).length) payloadCollections = collectionsFromElements(elements, meta)
+    if (!Object.keys(payloadCollections).length)
+      payloadCollections = collectionsFromElements(elements, meta)
     var referenceIndex =
       UI && typeof UI.buildReferenceIndex === 'function'
-        ? UI.buildReferenceIndex({ models: modelList, collections: payloadCollections, elements: elements })
+        ? UI.buildReferenceIndex({
+            models: modelList,
+            collections: payloadCollections,
+            elements: elements,
+          })
         : null
     var matrices = Array.isArray(model.matrices) ? model.matrices : []
-    var concepts = (Array.isArray(schema.concepts) ? schema.concepts.slice() : []).map(function (c) {
-      return typeof c === 'string' ? { name: c } : c
-    })
+    var concepts = (Array.isArray(schema.concepts) ? schema.concepts.slice() : []).map(
+      function (c) {
+        return typeof c === 'string' ? { name: c } : c
+      },
+    )
     var seenBootConceptNames = {}
     concepts.forEach(function (c) {
       if (c && c.name) seenBootConceptNames[c.name] = true
@@ -8677,38 +9583,44 @@
         if (node && node.parentNode) node.parentNode.removeChild(node)
       })
       var scopedToolbar = active.querySelector('.nn-toolbar')
-      if (scopedToolbar && scopedToolbar.parentNode) scopedToolbar.parentNode.removeChild(scopedToolbar)
+      if (scopedToolbar && scopedToolbar.parentNode)
+        scopedToolbar.parentNode.removeChild(scopedToolbar)
       if (active.documentElement) active.documentElement.setAttribute('data-nn-scope', scopedView)
     }
     var baseId = String(meta.modelId || meta.model || meta.title || 'model')
 
     var state = Object.assign(
-      exportStateOf(meta, scopedView ? { view: scopedView, label: scopedDef ? scopedDef.title : scopedView } : null),
-      {
-      elements: elements,
-      // The domain's changesets, newest first (export-console sorts them): the
-      // Changes tab's applied history.
-      changes: Array.isArray(model.changes) ? model.changes : [],
-      // Reference rendering/autocomplete index (collections + model titles).
-      referenceIndex: referenceIndex,
-      collections: payloadCollections,
-      schema: schema,
-      concepts: concepts,
-      store: Review.createDraftStore(
-        safeLocalStorage(),
-        // A domain console keys its drafts by the stable domain id, never by content.
-        String(meta.domainId || baseId) + (scopedView ? '::view:' + scopedView : '') + (consoleScope.models.length > 0 ? '::models:' + consoleScope.models.join(',') : ''),
-        {
-          initialDrafts: Array.isArray(savedDrafts.drafts) ? savedDrafts.drafts : [],
-          onError: function (err) {
-            notifyStoreError(active, err)
-          },
-          // Another tab changed the drafts: repaint from the merged store.
-          onRemoteChange: function () {
-            state.refreshUi()
-          },
-        },
+      exportStateOf(
+        meta,
+        scopedView ? { view: scopedView, label: scopedDef ? scopedDef.title : scopedView } : null,
       ),
+      {
+        elements: elements,
+        // The domain's changesets, newest first (export-console sorts them): the
+        // Changes tab's applied history.
+        changes: Array.isArray(model.changes) ? model.changes : [],
+        // Reference rendering/autocomplete index (collections + model titles).
+        referenceIndex: referenceIndex,
+        collections: payloadCollections,
+        schema: schema,
+        concepts: concepts,
+        store: Review.createDraftStore(
+          safeLocalStorage(),
+          // A domain console keys its drafts by the stable domain id, never by content.
+          String(meta.domainId || baseId) +
+            (scopedView ? '::view:' + scopedView : '') +
+            (consoleScope.models.length > 0 ? '::models:' + consoleScope.models.join(',') : ''),
+          {
+            initialDrafts: Array.isArray(savedDrafts.drafts) ? savedDrafts.drafts : [],
+            onError: function (err) {
+              notifyStoreError(active, err)
+            },
+            // Another tab changed the drafts: repaint from the merged store.
+            onRemoteChange: function () {
+              state.refreshUi()
+            },
+          },
+        ),
       },
     )
     state.refreshUi = function () {
@@ -8719,7 +9631,10 @@
       if (state.store && typeof state.store.destroy === 'function') state.store.destroy()
     })
     if (state.store && state.store.persistent === false) {
-      showToast(active, 'Browser storage is unavailable: drafts are kept in memory and will be lost on reload. Export your changes before leaving.')
+      showToast(
+        active,
+        'Browser storage is unavailable: drafts are kept in memory and will be lost on reload. Export your changes before leaving.',
+      )
     }
 
     var counts = {}
@@ -8940,7 +9855,8 @@
       })
       var filterCtx = {
         draftsById: draftsById,
-        reviewed: state.store && typeof state.store.reviewed === 'function' ? state.store.reviewed() : {},
+        reviewed:
+          state.store && typeof state.store.reviewed === 'function' ? state.store.reviewed() : {},
         schema: state.schema,
       }
 
@@ -8958,40 +9874,94 @@
       }
       var incomingById = incomingRelationsMap(elements)
       if (explorerView === 'table') {
-        mountElementTable(active, filteredElements, currentDrafts, concepts, sortState, schema, function (key) {
-          if (sortState.key === key) sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc'
-          else {
-            sortState.key = key
-            sortState.dir = 'asc'
-          }
-          refresh(activeSearchQuery)
-        }, (meta && (meta.modelId || meta.model)) || '')
+        mountElementTable(
+          active,
+          filteredElements,
+          currentDrafts,
+          concepts,
+          sortState,
+          schema,
+          function (key) {
+            if (sortState.key === key) sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc'
+            else {
+              sortState.key = key
+              sortState.dir = 'asc'
+            }
+            refresh(activeSearchQuery)
+          },
+          (meta && (meta.modelId || meta.model)) || '',
+        )
       } else if (explorerView === 'badges') {
-        mountElementBadges(active, filteredElements, currentDrafts, concepts, refs, (meta && (meta.modelId || meta.model)) || '', sortState)
+        mountElementBadges(
+          active,
+          filteredElements,
+          currentDrafts,
+          concepts,
+          refs,
+          (meta && (meta.modelId || meta.model)) || '',
+          sortState,
+        )
       } else if (explorerView === 'cards') {
-        mountElementMiniCards(active, filteredElements, currentDrafts, concepts, refs, incomingById, cardActions, (meta && (meta.modelId || meta.model)) || '', sortState)
+        mountElementMiniCards(
+          active,
+          filteredElements,
+          currentDrafts,
+          concepts,
+          refs,
+          incomingById,
+          cardActions,
+          (meta && (meta.modelId || meta.model)) || '',
+          sortState,
+        )
       } else {
-        mountElementCards(active, filteredElements, currentDrafts, refs, concepts, schema, incomingById, focusId, cardActions, (meta && (meta.modelId || meta.model)) || '', state.referenceIndex, sortState)
+        mountElementCards(
+          active,
+          filteredElements,
+          currentDrafts,
+          refs,
+          concepts,
+          schema,
+          incomingById,
+          focusId,
+          cardActions,
+          (meta && (meta.modelId || meta.model)) || '',
+          state.referenceIndex,
+          sortState,
+        )
         focusId = null
       }
-      renderFilterBar(active, state, function (nextQuery) {
-        var sBox = active.getElementById('nn-search')
-        if (sBox) sBox.value = nextQuery
-        refresh(nextQuery)
-      }, activeSearchQuery, sortState, function (nextKey, nextDir) {
-        if (nextKey === null) {
-          sortState.key = ''
-          sortState.dir = 'asc'
-        } else {
-          sortState.key = nextKey
-          if (nextDir) sortState.dir = nextDir
-          else if (!sortState.dir) sortState.dir = 'asc'
-        }
-        refresh(activeSearchQuery)
-      })
-      renderBanner(active, meta, config.needs, currentDrafts.length, function () {
-        refresh(activeSearchQuery)
-      }, state)
+      renderFilterBar(
+        active,
+        state,
+        function (nextQuery) {
+          var sBox = active.getElementById('nn-search')
+          if (sBox) sBox.value = nextQuery
+          refresh(nextQuery)
+        },
+        activeSearchQuery,
+        sortState,
+        function (nextKey, nextDir) {
+          if (nextKey === null) {
+            sortState.key = ''
+            sortState.dir = 'asc'
+          } else {
+            sortState.key = nextKey
+            if (nextDir) sortState.dir = nextDir
+            else if (!sortState.dir) sortState.dir = 'asc'
+          }
+          refresh(activeSearchQuery)
+        },
+      )
+      renderBanner(
+        active,
+        meta,
+        config.needs,
+        currentDrafts.length,
+        function () {
+          refresh(activeSearchQuery)
+        },
+        state,
+      )
       mountNavbarActions(active, state)
       renderRail(active, concepts, counts, draftCountsByConcept, selectRailToken, state)
       if (!scopedView) {
@@ -9016,20 +9986,31 @@
       })
       updateTabBadges(active, state)
 
-      var hist = active.defaultView && active.defaultView.history ? active.defaultView.history : typeof history !== 'undefined' ? history : null
+      var hist =
+        active.defaultView && active.defaultView.history
+          ? active.defaultView.history
+          : typeof history !== 'undefined'
+            ? history
+            : null
       if (hist && hist.replaceState && active.location) {
         var shownTab = tabs ? tabs.current() || tabs.hashTab() : ''
         var nextHash = buildViewHash(shownTab, activeSearchQuery)
         if (activeSearchQuery || parseViewHash(active.location.hash).q) {
           if (nextHash !== active.location.hash) {
-            hist.replaceState(null, '', nextHash || active.location.pathname + active.location.search)
+            hist.replaceState(
+              null,
+              '',
+              nextHash || active.location.pathname + active.location.search,
+            )
           }
         }
       }
 
       var content = active.getElementById('nn-content') || active.getElementById('content')
       if (content) {
-        var Evt = (active.defaultView && active.defaultView.CustomEvent) || (typeof CustomEvent !== 'undefined' ? CustomEvent : null)
+        var Evt =
+          (active.defaultView && active.defaultView.CustomEvent) ||
+          (typeof CustomEvent !== 'undefined' ? CustomEvent : null)
         if (Evt) {
           active.dispatchEvent(new Evt('nn:rendered', { detail: { root: content } }))
         }
@@ -9041,7 +10022,12 @@
     }
 
     var initialQuery = ''
-    if (!scopedView && typeof active.location !== 'undefined' && active.location && active.location.hash) {
+    if (
+      !scopedView &&
+      typeof active.location !== 'undefined' &&
+      active.location &&
+      active.location.hash
+    ) {
       initialQuery = parseViewHash(active.location.hash).q
     }
     if (!initialQuery && uiState && uiState.searchQuery) {
@@ -9090,7 +10076,10 @@
     refresh(initialQuery, !!(tabs && tabs.hashTab()))
 
     if (uiState && uiState.activeTab && tabs) {
-      var hasHashTab = (typeof active.location !== 'undefined' && active.location && active.location.hash) ? parseViewHash(active.location.hash).tab : ''
+      var hasHashTab =
+        typeof active.location !== 'undefined' && active.location && active.location.hash
+          ? parseViewHash(active.location.hash).tab
+          : ''
       if (!hasHashTab && typeof tabs.select === 'function') {
         tabs.select(uiState.activeTab)
       }
@@ -9120,7 +10109,11 @@
         onEvidence: function (citeData) {
           var entry = citeData && citeData.entry ? citeData.entry : null
           var ev = String(
-            entry ? entry.path || '' : typeof citeData === 'string' ? citeData : (citeData && citeData.value) || '',
+            entry
+              ? entry.path || ''
+              : typeof citeData === 'string'
+                ? citeData
+                : (citeData && citeData.value) || '',
           ).trim()
           var at = ev.indexOf('@')
           var target = at === -1 ? ev : ev.slice(0, at)
@@ -9129,7 +10122,12 @@
           if (target) {
             for (var i = 0; i < list.length; i++) {
               var cand = list[i]
-              if (cand && (cand.modelFile === target || cand.modelId === target || cand.canonicalUnit === target)) {
+              if (
+                cand &&
+                (cand.modelFile === target ||
+                  cand.modelId === target ||
+                  cand.canonicalUnit === target)
+              ) {
                 match = cand
                 break
               }
@@ -9140,7 +10138,13 @@
             return
           }
           renderCitationDialog(active, 'evidence', [
-            entry || { origin: 'document', path: ev, exists: true, field: 'evidence', ...(ev ? { href: ev } : {}) },
+            entry || {
+              origin: 'document',
+              path: ev,
+              exists: true,
+              field: 'evidence',
+              ...(ev ? { href: ev } : {}),
+            },
           ])
         },
       })
@@ -9198,7 +10202,11 @@
           }
           if (!handled && (action === 'info' || action === 'changes')) {
             var withFacts = Object.assign({}, descriptor, {
-              facts: Object.assign({}, (descriptor && descriptor.facts) || {}, unitFacts(descriptor)),
+              facts: Object.assign(
+                {},
+                (descriptor && descriptor.facts) || {},
+                unitFacts(descriptor),
+              ),
             })
             var panel = UI.KuInfoPanel(withFacts, {
               onReveal: function () {
@@ -9225,18 +10233,23 @@
         })
       )
       var docElements = hasProcTab
-        ? (Array.isArray(elements)
-            ? elements.filter(function (e) {
-                return !e || e.concept !== 'Work'
-              })
-            : [])
+        ? Array.isArray(elements)
+          ? elements.filter(function (e) {
+              return !e || e.concept !== 'Work'
+            })
+          : []
         : elements
-      renderDocumentView(active, docElements, concepts, (meta && (meta.modelId || meta.model)) || '')
+      renderDocumentView(
+        active,
+        docElements,
+        concepts,
+        (meta && (meta.modelId || meta.model)) || '',
+      )
     }
     renderMatrices(active, matrices, concepts, (meta && (meta.modelId || meta.model)) || '')
     renderFilesTab(active, model && model.files, {
       elements: elements,
-      changes: (model && Array.isArray(model.changes) ? model.changes : []),
+      changes: model && Array.isArray(model.changes) ? model.changes : [],
       onReveal: function (descriptor) {
         revealUnit(descriptor)
       },
@@ -9254,7 +10267,8 @@
     }
 
     if (hasNeed(config, 'feedback-export')) {
-      var exportBtn = active.getElementById('nn-feedback-open') || active.getElementById('nn-export-open')
+      var exportBtn =
+        active.getElementById('nn-feedback-open') || active.getElementById('nn-export-open')
       if (exportBtn && !exportBtn.getAttribute('data-nn-bound')) {
         exportBtn.setAttribute('data-nn-bound', '1')
         exportBtn.addEventListener('click', function () {
@@ -9299,7 +10313,12 @@
     function forgetDeepLink() {
       var loc = active.location
       if (!loc || !/^#el-/.test(String(loc.hash || ''))) return
-      var hist = active.defaultView && active.defaultView.history ? active.defaultView.history : typeof history !== 'undefined' ? history : null
+      var hist =
+        active.defaultView && active.defaultView.history
+          ? active.defaultView.history
+          : typeof history !== 'undefined'
+            ? history
+            : null
       if (!hist || typeof hist.replaceState !== 'function') return
       hist.replaceState(null, '', loc.pathname + loc.search)
     }
@@ -9325,7 +10344,10 @@
         if (!targetEl) return
         focusId = elemId
         var query = activeSearchQuery
-        var visible = filterElements([targetEl], activeSearchQuery, { draftsById: {}, reviewed: {} })
+        var visible = filterElements([targetEl], activeSearchQuery, {
+          draftsById: {},
+          reviewed: {},
+        })
         if (!visible.length) {
           query = 'concept:' + String(targetEl.concept || '')
           var searchInput = active.getElementById('nn-search')
@@ -9358,7 +10380,15 @@
 
     if (consoleScope.readOnly) applyReadOnlyControls(active)
 
-    return { ok: true, needs: config.needs, elements: elements.length, controller: state.controller, registry: registry, state: state, scope: consoleScope }
+    return {
+      ok: true,
+      needs: config.needs,
+      elements: elements.length,
+      controller: state.controller,
+      registry: registry,
+      state: state,
+      scope: consoleScope,
+    }
   }
 
   // Decodes the compressed nn-model slot, then runs the synchronous boot. A browser
@@ -9371,7 +10401,8 @@
       })
       .catch(function (err) {
         showBootError(doc, err)
-        if (typeof console !== 'undefined' && console.warn) console.warn('nn-console boot failed', err)
+        if (typeof console !== 'undefined' && console.warn)
+          console.warn('nn-console boot failed', err)
         return { ok: false, reason: 'boot-failed', error: err }
       })
   }
@@ -9386,7 +10417,11 @@
     try {
       if (typeof globalThis !== 'undefined' && globalThis.__innfoNoAutoBoot) return
       if (typeof document === 'undefined' || !document.getElementById) return
-      if (document.documentElement && document.documentElement.getAttribute('data-nn-console-booted') === 'true') return
+      if (
+        document.documentElement &&
+        document.documentElement.getAttribute('data-nn-console-booted') === 'true'
+      )
+        return
       if (!document.getElementById('nn-config')) return
       if (document.documentElement) {
         document.documentElement.setAttribute('data-nn-console-booted', 'true')
@@ -9484,7 +10519,8 @@
     copyAgentPrompt: copyAgentPrompt,
     composeAgentPrompt: composeAgentPrompt,
     mountNavbarActions: mountNavbarActions,
-    boot: boot,    fieldDefOf: fieldDefOf,
+    boot: boot,
+    fieldDefOf: fieldDefOf,
     resolveKnowledgeModel: resolveKnowledgeModel,
   }
 
