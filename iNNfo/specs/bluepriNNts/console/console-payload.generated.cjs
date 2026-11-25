@@ -12587,7 +12587,7 @@ function procedureGraph(model, container) {
   ) : typeof model.frontmatter["slots"] === "string" ? String(model.frontmatter["slots"]).replace(/^\[|\]$/g, "").split(",").map((s) => s.trim().replace(/^\{|\}$/g, "")) : [];
   const slots = [
     .../* @__PURE__ */ new Set([
-      ...declaredSlots.filter((s) => s !== ""),
+      ...containerSlug ? [] : declaredSlots.filter((s) => s !== ""),
       ...slotNames(
         ...Object.values(steps).map((s) => s.command),
         ...Object.values(artifacts).map((a) => a.at)
