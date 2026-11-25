@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-9-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-9-0_NN.md"
-blueprint_version: "V_0-6-1"
+blueprint_version: "V_0-7-0"
 title: "Executions App"
 description: "Level-2 blueprint recording runs of procedures as models with state: one instance model per run, holding its header, one row per step and one row per artifact; the history of the run is the change log of that model."
 relationship_types:
@@ -190,6 +190,11 @@ concept:: Step Request
 type:: string
 description:: The value the person attached to the request, such as who a step waits on or why it failed.
 
+## NN Field Definition: requested_outputs
+concept:: Step Request
+type:: string
+description:: The deliverables a person wrote for the step's file outputs, as one line of JSON: artifact slug -> { "name"?: string, "text": string }. Valid only with action complete; each text is UTF-8 and at most 256 KiB.
+
 ## NN Field Definition: kind
 concept:: Run Artifact
 type:: select
@@ -244,6 +249,8 @@ A person driving a run from the console cannot write the run: only the runner do
 
 `procedure_record` consumes a request by id: it plans exactly the action it names, then records the action and marks the request `done` in the same atomic changeset. A request whose `base_seq` no longer matches the run's `seq` is `stale`, one the planner refuses is `rejected` with the planner's reason, and neither is ever deleted. The queue is therefore both the human's intent and the record of what happened to it.
 
+A `complete` request may carry `requested_outputs`, the deliverable the person wrote for each `file` output of the step, stored as one line of JSON (`{ "<artifact-slug>": { "name"?: string, "text": string } }`). It is valid only with `action: complete`, and each text is UTF-8 of at most 256 KiB. The runner validates every entry before writing anything — the slug is an output of the step being completed, its artifact is a `file`, its text is a string within the limit — and rejects the request with `INVALID_OUTPUT` otherwise. `procedure_record` accepts the same map as its `outputs` argument, through the same path.
+
 `procedure_pending` lists that queue. Closing a run stays out of reach of a request on purpose: `finish` and `cancel` need `close_model`, which is a runner decision and not a requested action.
 
 ### Concurrency
@@ -262,6 +269,7 @@ A procedure may loop back to an earlier step when the loop is guarded: a decisio
 
 - A `file` artifact is a hash-verified reference, not frozen bytes: a file changed after it was recorded is detected (its rev no longer matches, so dependents go stale), not prevented.
 - An `element` artifact's `rev` is the element's origin change id, computed by the runner.
+- A private run output is a `file` artifact a person wrote in the console (`requested_outputs`). The runner writes it to `executions/<run>/outputs/<slug>/<name>`, where `name` is a basename of `[A-Za-z0-9._-]` (anything else becomes `-`, no leading dots) defaulting to `<slug>.md`, right before the atomic commit that completes the step, and removes it if that commit does not apply. The same changeset sets the artifact row `validated`, with that domain-relative path as `value`, its sha256 as `rev` and the completing step as `step`, so the step's required-output gate counts it as recorded by that step. Nothing is written outside `executions/<run>/` and `changes/`; publishing the output where the procedure declares it is a later decision of the person.
 - A `changeset` artifact is a multi-element output whose `value` is the changeset path: `produced` while it is proposed, `validated` when it is applied, `rejected` when it is rejected.
 
 ### Closing
@@ -281,7 +289,7 @@ level: 3
 parent_spec:
   name: executions
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/executions/spec_NN.md"
-blueprint_version: "V_0-6-1"
+blueprint_version: "V_0-7-0"
 status: active
 ---
 

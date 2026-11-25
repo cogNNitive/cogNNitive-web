@@ -21629,6 +21629,9 @@ if (typeof window !== 'undefined') {
     var startFormOpen = false
     var savedNote = null
     var actionError = ''
+    // What the person wrote for a step's outputs, by run, step and artifact: render() rebuilds
+    // the DOM, and an unsent deliverable must survive it.
+    var outputDrafts = {}
 
     function selectEntry(entry, run) {
       active = entry
@@ -23981,6 +23984,9 @@ if (typeof window !== 'undefined') {
         'import_console with apply records that choice once beside the run (executions/' +
           runId +
           '/handoff.json, which procedure_state shows as handoff). It adds nothing to the models of the domaiNN and does nothing else with the run.',
+        'The outputs written in this run are private to it, under executions/' +
+          runId +
+          '/outputs/. After the choice is recorded, publish them where the procedure declares them (the location of each output artifact). If that folder holds nothing, there is nothing to publish.',
         'Then tell me what import_console returned for the handoff, including any refusal (for example RUN_NOT_COMPLETED or HANDOFF_CONFLICT). If it asks who signs the changes, ask me for my name.',
       ].join('\n\n')
     }
@@ -24074,6 +24080,15 @@ if (typeof window !== 'undefined') {
             'p',
             'proc-hint',
             'When the administrator imports the saved file, your choice is recorded with the run. Nothing else is added to the domaiNN.',
+          ),
+        )
+        bodyEl.appendChild(
+          make(
+            'p',
+            'proc-hint',
+            'The outputs written in this run stay private to it, under executions/' +
+              activeRun.id +
+              '/outputs/: they travel with the run to the administrator.',
           ),
         )
       } else {
@@ -24409,6 +24424,13 @@ if (typeof window !== 'undefined') {
         }
         // The note travels with the decision: it stays on the request row as its reason.
         if (given) fields.requested_value = given
+        // The deliverables travel on the completion only, never on its start.
+        var outs = requestedOutputsOf(state, step)
+        if (outs.error) {
+          if (errorEl) errorEl.textContent = outs.error
+          return
+        }
+        if (outs.value) fields.requested_outputs = outs.value
       }
       var saved, startDraft
       try {
@@ -24440,6 +24462,201 @@ if (typeof window !== 'undefined') {
       selectedStep = null
       savedNote = null
       render()
+    }
+
+    // ---- Private run outputs: the deliverable a person writes for their step ----
+    // The completion carries it as `requested_outputs` (executions spec): the runner stores it
+    // under executions/<run>/outputs/ and validates it. Only `file` outputs can travel this way.
+    var OUTPUT_MAX_BYTES = 256 * 1024
+
+    function utf8Length(text) {
+      var s = String(text)
+      var n = 0
+      for (var i = 0; i < s.length; i++) {
+        var c = s.charCodeAt(i)
+        if (c < 0x80) n += 1
+        else if (c < 0x800) n += 2
+        else if (c >= 0xd800 && c <= 0xdbff && i + 1 < s.length) {
+          n += 4
+          i++
+        } else n += 3
+      }
+      return n
+    }
+
+    function outputDefOf(slug) {
+      var defs = (active.graph && active.graph.artifacts) || {}
+      return defs[slug] || null
+    }
+
+    function outputLabelOf(slug) {
+      var def = outputDefOf(slug)
+      return (def && def.name) || slug
+    }
+
+    /** The declared file outputs of a step that this step has not validated yet. */
+    function pendingOutputsOf(state, slug) {
+      var step = stepsOf(active)[slug]
+      var rows = (state && state.artifacts) || {}
+      return ((step && step.outputs) || []).filter(function (a) {
+        var def = outputDefOf(a)
+        if (!def || (def.kind && def.kind !== 'file')) return false
+        var row = rows[a]
+        return !(row && row.status === 'validated' && row.step === slug)
+      })
+    }
+
+    function outputKey(step, artifact) {
+      return [activeRun ? activeRun.id : '', step, artifact].join('\u0000')
+    }
+
+    function outputDraftOf(step, artifact) {
+      return outputDrafts[outputKey(step, artifact)] || { text: '', name: '' }
+    }
+
+    function setOutputDraft(step, artifact, patch) {
+      var key = outputKey(step, artifact)
+      var cur = outputDrafts[key] || { text: '', name: '' }
+      outputDrafts[key] = {
+        text: patch.text !== undefined ? patch.text : cur.text,
+        name: patch.name !== undefined ? patch.name : cur.name,
+      }
+    }
+
+    /** The required outputs of the step still empty: they block the completion. */
+    function missingOutputsOf(state, step) {
+      return pendingOutputsOf(state, step).filter(function (a) {
+        var def = outputDefOf(a)
+        return def.required !== false && !outputDraftOf(step, a).text.trim()
+      })
+    }
+
+    /**
+     * The `requested_outputs` value of a completion: the one-line JSON of the non-empty
+     * outputs, or an error that refuses the request. No output written means no field.
+     */
+    function requestedOutputsOf(state, step) {
+      var missing = missingOutputsOf(state, step)
+      if (missing.length) {
+        return {
+          error:
+            'Write or load the required deliverable before completing: ' +
+            missing.map(outputLabelOf).join(', ') +
+            '.',
+        }
+      }
+      var map = {}
+      var any = false
+      var tooBig = []
+      pendingOutputsOf(state, step).forEach(function (a) {
+        var draft = outputDraftOf(step, a)
+        if (!draft.text.trim()) return
+        if (utf8Length(draft.text) > OUTPUT_MAX_BYTES) tooBig.push(outputLabelOf(a))
+        var entry = {}
+        var name = draft.name.trim()
+        if (name) entry.name = name
+        entry.text = draft.text
+        map[a] = entry
+        any = true
+      })
+      if (tooBig.length) {
+        return {
+          error:
+            'A deliverable is larger than 256 KiB and cannot be sent from the console: ' +
+            tooBig.join(', ') +
+            '. Shorten it, or ask your agent to record it.',
+        }
+      }
+      return { value: any ? JSON.stringify(map) : null }
+    }
+
+    /**
+     * One editor per output the step still has to produce: the text, a text file to load it
+     * from, and an optional file name. What is typed lives in `outputDrafts`; `onChange` lets
+     * the caller enable the completion once every required output has text.
+     */
+    function renderOutputEditors(hostEl, state, step, errorEl, onChange) {
+      pendingOutputsOf(state, step).forEach(function (a) {
+        var def = outputDefOf(a)
+        var draft = outputDraftOf(step, a)
+        var label = outputLabelOf(a)
+        var box = make('div', 'proc-output proc-start-field')
+        box.setAttribute('data-proc-output-box', a)
+        box.appendChild(
+          make(
+            'div',
+            'proc-start-label',
+            'Your deliverable: ' + label + (def.required === false ? ' (optional)' : ''),
+          ),
+        )
+        var area = make('textarea', 'proc-action-value proc-output-text')
+        area.setAttribute('rows', '6')
+        area.setAttribute('data-proc-output', a)
+        area.setAttribute('aria-label', 'Your deliverable: ' + label)
+        area.setAttribute('placeholder', 'Write the deliverable here, or load a text file.')
+        area.value = draft.text
+        area.addEventListener('input', function () {
+          setOutputDraft(step, a, { text: area.value })
+          onChange()
+        })
+        box.appendChild(area)
+
+        var row = make('div', 'proc-output-file-row')
+        var pickLabel = make('label', 'proc-output-file')
+        pickLabel.appendChild(make('span', null, 'Load a text file '))
+        var picker = make('input')
+        picker.type = 'file'
+        picker.setAttribute('accept', '.md,.txt,.csv,.json,.yaml,.yml,text/*')
+        picker.setAttribute('data-proc-output-file', a)
+        pickLabel.appendChild(picker)
+        row.appendChild(pickLabel)
+        var nameInput = make('input', 'proc-action-value proc-output-name')
+        nameInput.type = 'text'
+        nameInput.value = draft.name
+        nameInput.setAttribute('data-proc-output-name', a)
+        nameInput.setAttribute('aria-label', 'File name (optional) for ' + label)
+        nameInput.setAttribute('placeholder', 'File name (optional), for example ' + a + '.md')
+        nameInput.addEventListener('input', function () {
+          setOutputDraft(step, a, { name: nameInput.value })
+        })
+        row.appendChild(nameInput)
+        box.appendChild(row)
+
+        picker.addEventListener('change', function () {
+          var file = picker.files && picker.files[0]
+          if (!file) return
+          if (typeof file.size === 'number' && file.size > OUTPUT_MAX_BYTES) {
+            if (errorEl)
+              errorEl.textContent =
+                'The file "' +
+                file.name +
+                '" is larger than 256 KiB and cannot be sent from the console.'
+            return
+          }
+          var win = document.defaultView || GLOBAL
+          var Reader = win && win.FileReader
+          if (typeof Reader !== 'function') {
+            if (errorEl)
+              errorEl.textContent =
+                'This browser cannot read the file here: paste its text instead.'
+            return
+          }
+          var reader = new Reader()
+          reader.onload = function () {
+            var text = String(reader.result || '')
+            area.value = text
+            nameInput.value = file.name || ''
+            setOutputDraft(step, a, { text: text, name: nameInput.value })
+            if (errorEl) errorEl.textContent = ''
+            onChange()
+          }
+          reader.onerror = function () {
+            if (errorEl) errorEl.textContent = 'The file "' + file.name + '" could not be read.'
+          }
+          reader.readAsText(file)
+        })
+        hostEl.appendChild(box)
+      })
     }
 
     function renderActions(hostEl, state) {
@@ -24497,7 +24714,29 @@ if (typeof window !== 'undefined') {
       var startFirst =
         askable.indexOf('start') !== -1 &&
         (outcomeChoices(state).length > 1 || (stepDef.stepType === 'task' && targets.length <= 1))
-      var choices = startFirst || askable.indexOf('complete') !== -1 ? outcomeChoices(state) : []
+      var completes = startFirst || askable.indexOf('complete') !== -1
+      var choices = completes ? outcomeChoices(state) : []
+      // The completion waits for every required deliverable: these buttons stay disabled
+      // until each one has text, and the hint names what is missing.
+      var gated = []
+      var outputHint = make('div', 'proc-hint proc-output-hint')
+      outputHint.setAttribute('data-proc-output-hint', '')
+      outputHint.setAttribute('aria-live', 'polite')
+      var syncOutputs = function () {
+        var missing = missingOutputsOf(state, state.currentStep)
+        gated.forEach(function (b) {
+          b.disabled = missing.length > 0
+        })
+        outputHint.textContent = missing.length
+          ? 'Write or load the required deliverable before completing: ' +
+            missing.map(outputLabelOf).join(', ') +
+            '.'
+          : ''
+      }
+      if (completes && pendingOutputsOf(state, state.currentStep).length) {
+        renderOutputEditors(box, state, state.currentStep, err, syncOutputs)
+        box.appendChild(outputHint)
+      }
       var primary = make('div', 'proc-branches')
       if (choices.length > 1) {
         // One primary button per branch: the person answers the question in one click.
@@ -24511,20 +24750,22 @@ if (typeof window !== 'undefined') {
             { 'data-proc-action': 'complete', 'data-proc-outcome': c.outcome },
           )
           b.setAttribute('title', c.label + ' → ' + stepName(c.next))
+          gated.push(b)
           primary.appendChild(b)
         })
-      } else if ((startFirst || askable.indexOf('complete') !== -1) && targets.length <= 1) {
-        primary.appendChild(
-          button(
-            'proc-action proc-branch-choice',
-            ACTION_LABEL.complete,
-            function () {
-              recordAction('complete', state, err, '', box, startFirst)
-            },
-            { 'data-proc-action': 'complete' },
-          ),
+      } else if (completes && targets.length <= 1) {
+        var done = button(
+          'proc-action proc-branch-choice',
+          ACTION_LABEL.complete,
+          function () {
+            recordAction('complete', state, err, '', box, startFirst)
+          },
+          { 'data-proc-action': 'complete' },
         )
+        gated.push(done)
+        primary.appendChild(done)
       }
+      syncOutputs()
       if (!startFirst && askable.indexOf('start') !== -1) {
         primary.appendChild(
           button(

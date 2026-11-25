@@ -12897,6 +12897,10 @@ function artifactStatusOf(v) {
   const text2 = str3(v);
   return text2 !== void 0 && ARTIFACT_STATES.has(text2) ? text2 : "expected";
 }
+function outputsTextOf(v) {
+  if (v !== null && typeof v === "object") return JSON.stringify(v);
+  return str3(v);
+}
 function requestRowOf(fields) {
   const action = str3(fields["action"]);
   const status = str3(fields["request_status"]);
@@ -12909,6 +12913,7 @@ function requestRowOf(fields) {
     ...str3(fields["step"]) !== void 0 ? { step: str3(fields["step"]) } : {},
     ...str3(fields["requested_outcome"]) !== void 0 ? { outcome: str3(fields["requested_outcome"]) } : {},
     ...str3(fields["requested_value"]) !== void 0 ? { value: str3(fields["requested_value"]) } : {},
+    ...outputsTextOf(fields["requested_outputs"]) !== void 0 ? { outputs: outputsTextOf(fields["requested_outputs"]) } : {},
     ...str3(fields["reason"]) !== void 0 ? { reason: str3(fields["reason"]) } : {},
     ...str3(fields["at"]) !== void 0 ? { at: str3(fields["at"]) } : {}
   };
