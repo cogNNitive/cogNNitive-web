@@ -5,8 +5,10 @@
  *
  * Deterministic TTS and media asset synthesis with content-addressed caching.
  * Every billable call is routed by its Model: the catalog names the Model's Provider and the
- * Provider declares its transport (lib/provider-transport.mjs). A model whose provider has no
- * credential in the environment gets a free local placeholder instead.
+ * Provider declares its transport (lib/provider-transport.mjs). A Model whose Provider names a
+ * credential that is unset gets a free local placeholder; a catalog whose Providers name no
+ * credential at all is refused before the placeholder, because silence there is not "offline",
+ * it is a broken catalog that renders as a delivered, voiceless video.
  * Measures audio duration via ffprobe (with a provider-reported duration fallback).
  *
  * Zero external mandatory runtime dependencies. ESM module.
@@ -17,7 +19,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { CacheManager } from './cache-manager.mjs';
 import { SpendGuard, loadGuard, isSystemVoice, assertModelAllowed } from './lib/video-guard.mjs';
-import { loadMergedCatalog, resolveModel } from './lib/catalog.mjs';
+import { loadMergedCatalog, resolveModel, assertCredentialResolvable } from './lib/catalog.mjs';
 import {
   providerRoute,
   envKeyFor,
@@ -193,6 +195,20 @@ export class AssetSynthesizer {
     if (envKey) return { envKey, value: this.env[envKey] };
     const any = declaredEnvKeys(this._catalog()).find((k) => this.env[k]);
     return { envKey: null, value: any ? this.env[any] : undefined };
+  }
+
+  /**
+   * Why no credential resolved, said plainly. Building the label from
+   * `envKey || 'no provider credential'` produced "no provider credential is not set", a double
+   * negative that hid which variable was actually missing.
+   * @private
+   */
+  _missingCredentialLabel(credential) {
+    if (credential.envKey) return `${credential.envKey} is not set`;
+    const declared = declaredEnvKeys(this._catalog());
+    return declared.length
+      ? `no provider credential is set (declare one of ${declared.join(', ')})`
+      : 'no provider credential is set';
   }
 
   /** The catalog Model a call names, or null when the catalog does not declare it. @private */
@@ -429,7 +445,11 @@ export class AssetSynthesizer {
     }
     if (!billable) {
       if (this.guard.dryRun) return this._skipped(sha256);
-      console.warn(`[asset-synthesizer] WARNING: ${credential.envKey || 'no provider credential'} is not set for ${model}. Generating silent synthetic audio placeholder for TTS (offline/test mode: zero voice content).`);
+      // A complete catalog whose key is merely unset gets the offline placeholder below. A
+      // catalog that cannot NAME a credential is a different failure and is refused: silence
+      // there looks delivered, and the run only dies later at caption alignment.
+      assertCredentialResolvable(this._catalog(), model);
+      console.warn(`[asset-synthesizer] WARNING: ${this._missingCredentialLabel(credential)} for ${model}. Generating silent synthetic audio placeholder for TTS (offline/test mode: zero voice content).`);
       // Stored under its own key, so a later keyed run never gets a hit on silence.
       // The logical hash stays the real one: callers key other artifacts by it.
       const stored = await this._storeTts(cacheKey, this._generateSyntheticAudio(cleanText, options));

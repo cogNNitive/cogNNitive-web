@@ -29,6 +29,11 @@ export const REFERENCE_CATALOG = path.resolve(
 export const OVERLAY_FILENAME = 'model-catalog_NN.md';
 export const DEFAULT_STALE_AFTER_DAYS = 90;
 
+/** The Provider field naming the environment variable that holds the credential. */
+export const PROVIDER_CREDENTIAL_FIELD = 'env_key';
+/** The catalog names no credential variable at all, so no provider call could ever be authorized. */
+export const CATALOG_NO_PROVIDER_CREDENTIAL = 'catalog-no-provider-credential';
+
 export class CatalogError extends Error {
   constructor(code, message) {
     super(message);
@@ -161,6 +166,63 @@ export function resolveModel(catalog, idOrSlug) {
     'unknown-model',
     `Model "${key}" is not in the merged catalog (known: ${Object.keys(catalog.models).sort().join(', ')}).`,
   );
+}
+
+const blank = (value) => value === undefined || value === null || String(value).trim() === '';
+
+/** Every credential variable the catalog's Providers name (a Provider that names none is skipped). */
+export function providerCredentialKeys(catalog) {
+  return Object.values(catalog?.providers || {})
+    .map((provider) => provider?.[PROVIDER_CREDENTIAL_FIELD])
+    .filter((key) => !blank(key))
+    .map(String);
+}
+
+/**
+ * Refuses, before any call, a catalog that cannot authorize one: no Provider names a
+ * credential, or the Model's Provider declares no complete transport (its `env_key`).
+ * Without this a stale catalog is indistinguishable from "the key happens to be unset", so a
+ * TTS run stores silence and the pipeline only fails later, at caption alignment.
+ *
+ * A complete catalog whose key is merely unset is NOT refused here: that is the documented
+ * offline placeholder. `sourcePath` is named because replacing that file is the repair.
+ *
+ * @param {{ providers?: object, models?: object }} catalog merged catalog
+ * @param {string} [idOrSlug] the Model the call names (a model the catalog omits is not refused)
+ * @param {string} [sourcePath] the catalog file the merged catalog was read from
+ * @returns {string | null} the credential variable the Model resolves, when it is declared
+ */
+export function assertCredentialResolvable(catalog, idOrSlug, sourcePath = REFERENCE_CATALOG) {
+  if (providerCredentialKeys(catalog).length === 0) {
+    const providers = Object.values(catalog?.providers || {});
+    const shape =
+      providers.length === 0
+        ? 'it declares no Provider element'
+        : `its ${providers.length} Provider element(s) name no ${PROVIDER_CREDENTIAL_FIELD}`;
+    throw new CatalogError(
+      CATALOG_NO_PROVIDER_CREDENTIAL,
+      `The reference catalog ${sourcePath} cannot authorize a provider call: ${shape}, so no credential ` +
+        `variable can resolve and every TTS call would store silence instead of speech. Replace that file ` +
+        `with the blueprint catalog (bluepriNNts/coNNtent/catalog/model-catalog_coNNtent_NN.md): an installed ` +
+        `skill can resolve a stale sibling copy under ~/.agents/catalog/.`,
+    );
+  }
+  let model = null;
+  try {
+    model = resolveModel(catalog, idOrSlug);
+  } catch {
+    return null;
+  }
+  const provider = (catalog.providers || {})[String(model.provider)];
+  if (!provider) return null;
+  if (blank(provider[PROVIDER_CREDENTIAL_FIELD])) {
+    throw new CatalogError(
+      'incomplete-provider',
+      `Provider "${provider.slug}" must declare ${PROVIDER_CREDENTIAL_FIELD} before any of its models is ` +
+        `called (catalog ${sourcePath}).`,
+    );
+  }
+  return String(provider[PROVIDER_CREDENTIAL_FIELD]);
 }
 
 /** Refuses a model the domaiNN does not allow, before any spend. */

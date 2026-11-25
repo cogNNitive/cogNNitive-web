@@ -19,7 +19,7 @@
  * Zero external dependencies. ESM module.
  */
 
-import { CatalogError, parseKeyedList, resolveModel } from './catalog.mjs'
+import { CatalogError, parseKeyedList, providerCredentialKeys, resolveModel } from './catalog.mjs'
 
 /** Transport fields a Provider must declare before any of its models can be called. */
 export const REQUIRED_TRANSPORT_FIELDS = [
@@ -126,10 +126,7 @@ export function envKeyFor(catalog, idOrSlug) {
 
 /** Every credential variable a declared Provider names (for "is any provider configured"). */
 export function declaredEnvKeys(catalog) {
-  return Object.values(catalog?.providers || {})
-    .map((p) => p.env_key)
-    .filter((k) => !blank(k))
-    .map(String)
+  return providerCredentialKeys(catalog)
 }
 
 /** Reads a provider response field tolerant of a `data` wrapper. */

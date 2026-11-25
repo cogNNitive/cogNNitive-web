@@ -36,6 +36,26 @@ export function setWhisperAvailable(available) {
   _whisperAvailableOverride = available;
 }
 
+/**
+ * True when the audio at `audioPath` is the synthesizer's offline placeholder
+ * (`<sha>-offline.<ext>`): silence stored because no provider credential resolved. Caption
+ * alignment then has nothing to match, and reporting a low ratio blames the script line for
+ * audio that never contained speech.
+ */
+function isOfflinePlaceholder(audioPath) {
+  return /-offline\.[a-z0-9]+$/i.test(path.basename(String(audioPath || '')));
+}
+
+/** The line that names a placeholder as the cause; empty when the audio is real. */
+function offlinePlaceholderNote(audioPath) {
+  if (!isOfflinePlaceholder(audioPath)) return '';
+  return (
+    ` The narration audio is the offline placeholder (${path.basename(audioPath)}): no provider ` +
+    'credential resolved when it was synthesized, so it holds silence. Set the provider key and ' +
+    're-synthesize this scene before aligning captions.'
+  );
+}
+
 /** Check whether whisper/transcribe is available. */
 export function isWhisperAvailable(deps = {}) {
   if (_whisperAvailableOverride !== null) return Boolean(_whisperAvailableOverride);
@@ -256,8 +276,15 @@ export async function alignEpisodeCaptions(options = {}) {
       if (!transcribeRes || transcribeRes.ok !== true) {
         throw new ProduceStop(
           'caption-alignment-failed',
-          `Caption alignment failed for scene "${sceneSlug}": transcribe failed (${transcribeRes?.reason || 'unknown'})`,
-          { exitCode: 1, details: { scene: sceneSlug, cause: transcribeRes?.reason } },
+          `Caption alignment failed for scene "${sceneSlug}": transcribe failed (${transcribeRes?.reason || 'unknown'}).${offlinePlaceholderNote(audioPath)}`,
+          {
+            exitCode: 1,
+            details: {
+              scene: sceneSlug,
+              cause: transcribeRes?.reason,
+              offlinePlaceholder: isOfflinePlaceholder(audioPath),
+            },
+          },
         );
       }
 
@@ -288,12 +315,22 @@ export async function alignEpisodeCaptions(options = {}) {
         const detail =
           (shown ? ` Unmatched from the script: ${shown}${unmatched.length > 8 ? ', …' : ''}.` : '') +
           (transcriptText ? ` Transcript: "${transcriptText}".` : ' No transcript was produced.') +
-          ' Short lines and words the synthesiser pronounces differently are the usual cause: ' +
-          'rewrite the line, or set `captions:: off` for the video.';
+          // Silent audio has one cause: naming it replaces advice that cannot work here.
+          (offlinePlaceholderNote(audioPath) ||
+            ' Short lines and words the synthesiser pronounces differently are the usual cause: ' +
+              'rewrite the line, or set `captions:: off` for the video.');
         throw new ProduceStop(
           'caption-alignment-failed',
           `Caption alignment failed for scene "${sceneSlug}": match ratio ${ratio} is below threshold ${CAPTION_MATCH_MIN}.${detail}`,
-          { exitCode: 1, details: { scene: sceneSlug, coverage: aligned?.coverage, cause: aligned?.reason } },
+          {
+            exitCode: 1,
+            details: {
+              scene: sceneSlug,
+              coverage: aligned?.coverage,
+              cause: aligned?.reason,
+              offlinePlaceholder: isOfflinePlaceholder(audioPath),
+            },
+          },
         );
       }
 

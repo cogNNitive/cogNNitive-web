@@ -110,6 +110,75 @@ w0 w1 w2 w3 w4 w5 w6 w7 w8 w9
   }
 });
 
+test('a silent offline placeholder is named as the cause, not blamed on the script line', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-captions-offline-'));
+  try {
+    const scriptPath = path.join(dir, 'test_coNNtent_NN.md');
+    const doc = `---
+level: 3
+parent_spec:
+  name: "coNNtent_V_0-17-0"
+  url: "https://example.invalid"
+knowledge_version: "V_0-1-0"
+blueprint_version: "V_0-17-0"
+title: "Offline Audio"
+---
+# NN Video
+## NN Video: Offline
+slug:: offline
+language:: en
+captions:: words
+output_formats:: [1920x1920]
+
+# NN Scene
+## NN Scene: Silent Placeholder
+slug:: silent_placeholder
+kind:: Libre
+w0 w1 w2 w3 w4 w5 w6 w7 w8 w9
+`;
+    fs.writeFileSync(scriptPath, doc, 'utf8');
+    // The synthesizer's keyless path stores silence under `<sha>-offline.mp3`.
+    const audioPath = path.join(dir, 'deadbeef-offline.mp3');
+    fs.writeFileSync(audioPath, 'fake-silence', 'utf8');
+
+    // Whisper over silence finds nothing to align.
+    const mockTranscribe = () => ({
+      ok: true,
+      engine: 'parakeet',
+      model: 'small.en',
+      durationSeconds: 5,
+      words: [],
+    });
+
+    await assert.rejects(
+      alignEpisodeCaptions({
+        scriptPath,
+        deps: {
+          runTranscribe: mockTranscribe,
+          audioAssets: { silent_placeholder: { assetPath: audioPath, sha256: 'deadbeef' } },
+          audioPath,
+        },
+      }),
+      (err) => {
+        assert.ok(err instanceof ProduceStop);
+        assert.equal(err.code, 'caption-alignment-failed');
+        assert.match(err.message, /offline placeholder/, 'the message names the placeholder');
+        assert.match(err.message, /holds silence/, 'it says the audio holds silence');
+        assert.match(err.message, /re-synthesize/, 'it says how to repair it');
+        assert.doesNotMatch(
+          err.message,
+          /rewrite the line/,
+          'rewriting the script cannot fix silent audio',
+        );
+        assert.equal(err.details?.offlinePlaceholder, true, 'the detail is machine-readable');
+        return true;
+      },
+    );
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('silent scene without narration is skipped without error', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nn-captions-silent-'));
   try {
