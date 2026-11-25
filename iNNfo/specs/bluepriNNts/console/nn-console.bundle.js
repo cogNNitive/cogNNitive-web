@@ -21231,12 +21231,31 @@ if (typeof window !== 'undefined') {
     }
   }
 
-  var INBOX_RANK = { waiting: 0, active: 1, pending: 2 }
+  var INBOX_RANK = { waiting: 0, active: 1, pending: 2, handoff: 3 }
+
+  /**
+   * A completed run a person took part in (a human step done on its path) whose final
+   * handoff nobody chose yet, neither recorded by an import nor drafted here: its last turn is
+   * theirs.
+   */
+  function awaitsHandoff(entry, run, drafts) {
+    var state = run && run.state
+    if (!state || state.status !== 'completed' || run.handoff) return false
+    var human = (state.path || []).some(function (slug) {
+      var row = state.steps && state.steps[slug]
+      return isHumanStep(entry.graph.steps[slug]) && !!row && row.status === 'done'
+    })
+    if (!human) return false
+    return !(Array.isArray(drafts) ? drafts : []).some(function (d) {
+      return d && d.kind === 'run_handoff' && String(d.run) === String(run.id)
+    })
+  }
 
   /**
    * "Your turn": every open run whose current step is a human step nobody answered yet,
-   * neither recorded nor drafted. Waiting steps first, then active, then not started; ties
-   * by procedure file, then run id.
+   * neither recorded nor drafted, then every completed run waiting on the person's handoff.
+   * Waiting steps first, then active, then not started, then handoffs; ties by procedure
+   * file, then run id.
    */
   function inboxOf(entries, drafts) {
     var items = []
@@ -21244,6 +21263,17 @@ if (typeof window !== 'undefined') {
       if (!entry || !entry.graph) return
       ;(Array.isArray(entry.runs) ? entry.runs : []).forEach(function (run) {
         var state = run && run.state
+        if (awaitsHandoff(entry, run, drafts)) {
+          items.push({
+            entry: entry,
+            run: run,
+            step: '',
+            stepName: 'Hand off this run',
+            status: 'handoff',
+            question: 'The run is complete. Choose what happens with its result.',
+          })
+          return
+        }
         if (!state || run.closed || TERMINAL_RUN[state.status] || state.drift || state.paused)
           return
         var slug = state.currentStep
@@ -23954,8 +23984,27 @@ if (typeof window !== 'undefined') {
       var box = make('section', 'exec-step-card nn-card proc-handoff')
       box.setAttribute('data-proc-handoff', activeRun.id)
       box.appendChild(make('h3', 'exec-step-title', 'Hand off this run'))
+      var recorded = activeRun.handoff
       var draft = handoffDraftOf(activeRun)
-      if (draft) {
+      if (recorded) {
+        // An import already recorded the choice: it is done, and it is never offered again.
+        var done = HANDOFF_CHOICES.filter(function (c) {
+          return c[0] === recorded.choice
+        })[0]
+        box.appendChild(
+          make(
+            'div',
+            'exec-step-fact',
+            'Handed off: ' +
+              (done ? done[1] : recorded.choice) +
+              ' (recorded by ' +
+              recorded.by +
+              ', ' +
+              dateText(recorded.at) +
+              ').',
+          ),
+        )
+      } else if (draft) {
         var label = HANDOFF_CHOICES.filter(function (c) {
           return c[0] === draft.choice
         })[0]

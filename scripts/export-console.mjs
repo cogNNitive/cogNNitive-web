@@ -1479,6 +1479,9 @@ export function collectProcedureRuns({
             activeStepIsStale: (slug, row) => helper.crashProbe(row, { now: Date.now() }),
           })
         : null,
+      // The person's final choice, once an import recorded it beside the run: the console then
+      // shows it as done instead of offering the choice again.
+      ...handoffOf(resolve(root, dirname(file), 'handoff.json'), id),
     })
   }
   return [...entries.values()].sort((a, b) => compare(a.file, b.file))
@@ -1525,6 +1528,28 @@ export function slotDeclarationsOf(frontmatter) {
 }
 
 /** The run rows the console projects onto: the header and one row per step and artifact. */
+/**
+ * The handoff an import recorded for a run (`executions/<run>/handoff.json`, written by nn-mcp
+ * `run-handoff-record.ts`), as `{ handoff }`, or `{}` when there is none or it is not a valid
+ * record. Read-only, like the rest of the export.
+ */
+function handoffOf(path, run) {
+  if (!existsSync(path)) return {}
+  try {
+    const o = JSON.parse(readFileSync(path, 'utf-8'))
+    if (
+      !o ||
+      !['administrator', 'agent'].includes(o.choice) ||
+      typeof o.by !== 'string' ||
+      typeof o.at !== 'string'
+    )
+      return {}
+    return { handoff: { run, choice: o.choice, by: o.by, at: o.at } }
+  } catch {
+    return {}
+  }
+}
+
 function runRowsOf(record) {
   return {
     state: record.state,

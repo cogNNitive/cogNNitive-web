@@ -17471,6 +17471,14 @@ var init_run = __esm({
   }
 });
 
+// iNNfo/packages/nn-core/dist/procedure/attempts.js
+var init_attempts = __esm({
+  "iNNfo/packages/nn-core/dist/procedure/attempts.js"() {
+    "use strict";
+    init_changelog();
+  }
+});
+
 // iNNfo/packages/nn-core/dist/procedure/transitions.js
 var init_transitions2 = __esm({
   "iNNfo/packages/nn-core/dist/procedure/transitions.js"() {
@@ -17492,6 +17500,7 @@ var init_procedure = __esm({
     init_graph2();
     init_fold2();
     init_run();
+    init_attempts();
     init_transitions2();
     init_fold2();
     init_crash();
