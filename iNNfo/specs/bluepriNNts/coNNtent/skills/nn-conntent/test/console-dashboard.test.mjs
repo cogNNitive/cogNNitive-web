@@ -54,15 +54,6 @@ function click(container, label) {
   button.click()
 }
 
-function openEpisodeTwo(container) {
-  click(container, 'Episodes')
-  const rows = container.querySelectorAll('.nn-pipeline-workspace > section .nn-pipeline-row')
-  const target = [...rows].find(row => row.textContent.includes('Episode two') && [...row.querySelectorAll('button')].some(b => b.textContent === 'Open episode'))
-  click(target, 'Open episode')
-  click(container, 'Script & review')
-  return container.querySelectorAll('[data-nn-episode-config]')
-}
-
 test('dashboard selects an episode, filters the list and exposes scene media', () => {
   const { container, dom } = fixture()
   assert.match(container.textContent, /Your production at a glance/)
@@ -246,41 +237,4 @@ test('the episode lists every output format, primary first, with its own QA verd
   assert.doesNotMatch(rows[1].textContent, /primary/)
   assert.deepEqual(rows.map((r) => r.querySelector('.nn-output-qa').textContent), ['QA passed', 'QA failed', 'QA pending'])
   assert.match(rows[2].textContent, /one_1080x1080\.mp4 \(not rendered\)/)
-})
-
-// A verdict authorises the content that will exist once the changeset is applied, and the
-// hash the payload published describes the scene on disk. Editing a scene and approving it
-// in one draft therefore signed the pre-edit hash and produce refused the episode.
-test('a scene edited in the same draft gets no verdict: the published hash predates the edit', () => {
-  const { container, drafts, dom } = fixture()
-  const cards = openEpisodeTwo(container)
-  const narration = cards[1].querySelector('[data-nn-scene-narration]')
-  narration.value = 'Revised narration'
-  narration.dispatchEvent(new dom.window.Event('change'))
-  assert.equal(drafts.at(-1).kind, 'correction', 'the narration edit is a draft')
-  assert.equal(drafts.at(-1).field, 'description')
-  click(cards[1], 'Approve')
-  assert.equal(drafts.filter(d => d.kind === 'verdict').length, 0, 'no verdict over a pre-edit hash')
-  assert.equal(cards[1].querySelector('[data-nn-verdict-pill]').textContent, 'open', 'the scene stays open')
-  assert.match(dom.window.document.body.textContent, /apply the edit first/i)
-  dom.window.close()
-})
-
-test('a layer or episode edit blocks the verdict; another scene edit does not', () => {
-  const seeded = (draft) => {
-    const view = fixture()
-    view.drafts.push(draft)
-    return view
-  }
-  const sibling = seeded({ kind: 'correction', elementId: 'one@shared', field: 'description', proposed: 'x' })
-  click(sibling.container.querySelectorAll('[data-nn-episode-config]')[1], 'Approve')
-  assert.equal(sibling.drafts.at(-1).kind, 'verdict', 'another scene edit does not block this scene')
-  sibling.dom.window.close()
-
-  for (const elementId of ['one@title', 'one@video']) {
-    const view = seeded({ kind: 'correction', elementId, field: 'text', proposed: 'x' })
-    click(view.container.querySelectorAll('[data-nn-episode-config]')[0], 'Approve')
-    assert.equal(view.drafts.filter(d => d.kind === 'verdict').length, 0, elementId + ' blocks the verdict')
-    view.dom.window.close()
-  }
 })

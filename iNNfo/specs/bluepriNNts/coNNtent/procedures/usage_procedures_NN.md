@@ -514,7 +514,7 @@ step_type:: decision
 tool:: human
 decision:: `approved` or `needs-change` with a reason for every scene
 scope:: internal
-The verdict is a `review_gate` changeset carrying the scene's `reviewed_hash`. Approvals happen in the console or by replying OK, and never by the agent. A verdict signs the scene on disk, so while a scene has a pending edit in the same draft the console offers no verdict for it: apply the edit first, reopen the console, then approve.
+The verdict is a `review_gate` changeset carrying the scene's `reviewed_hash`. Approvals happen in the console or by replying OK, and never by the agent.
 
 ## NN Work: Run produce to the preview gate
 slug:: run-produce-to-the-preview-gate

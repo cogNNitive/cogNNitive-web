@@ -6,9 +6,7 @@
    scene (still, narration audio, layer pills, inherited source line, narration), and the
    verdict controls. A verdict is a `review_gate` draft in the shared store: it names the
    gate, its outcome and the content hash the payload published — the view never computes a
-   hash and never writes the `review::` field. Because that hash describes the scene on
-   disk, a scene a pending draft would change gets no verdict: the human applies the edit
-   and approves in the next round, so a verdict always authorises the content it names.
+   hash and never writes the `review::` field.
 
    Every number, hash and source level comes from `ctx.viewData` (collected at export time by
    console-view-conntent.data.mjs); the view only groups and formats. There is no Deliver
@@ -45,39 +43,6 @@ registerView({
     function hashFor(scene, gate) {
       if (gate === 'preview') return scene.previewHash
       return scene.scriptHash
-    }
-
-    // Every draft that would move this scene's review subject once applied. The subject
-    // carries the scene's resolved properties and layers, and episode values resolve into
-    // them (the cascade), so an edit to the scene, to one of its layers or to the episode
-    // counts; another scene's edit does not. A comment never moves content.
-    function pendingSubjectEdits(episode, scene) {
-      var drafts = ctx.store && typeof ctx.store.drafts === 'function' ? ctx.store.drafts() : []
-      var targets = [scene.elementId, episode.elementId]
-      ;(scene.layers || []).forEach(function (layer) {
-        if (layer.elementId) targets.push(layer.elementId)
-      })
-      return drafts.filter(function (draft) {
-        if (draft.kind !== 'correction' && draft.kind !== 'delete') return false
-        var target = draft.elementId || draft.element_id
-        return !!target && targets.indexOf(target) !== -1
-      })
-    }
-
-    // A verdict signs the hash the payload published, which describes the scene on disk.
-    // With a pending edit that hash would authorise content the human is not approving, so
-    // the verdict waits for the next round instead of going stale in `produce`.
-    function verdictBlocked(episode, scene, gate) {
-      if (gate === 'budget') return false
-      return pendingSubjectEdits(episode, scene).length > 0
-    }
-
-    function editFirstMessage(scenes) {
-      showMessage(
-        'Apply the edit first',
-        (scenes.length === 1 ? scenes[0] + ' has' : scenes.join(', ') + ' have') +
-          ' pending edits in this draft. A verdict hashes the content on disk: apply the edit, reopen the console, then approve.',
-      )
     }
 
     function el(tag, className, text) {
@@ -141,10 +106,6 @@ registerView({
 
     /** A verdict for one scene on one gate, with the hash the payload published. */
     function proposeVerdict(episode, scene, gate, verdict, notes) {
-      if (verdictBlocked(episode, scene, gate)) {
-        editFirstMessage([scene.slug])
-        return false
-      }
       var hash = hashFor(scene, gate)
       if (!hash) {
         showMessage('No ' + gate + ' hash', scene.slug + ' has no ' + gate + ' hash: regenerate the console')
@@ -649,17 +610,12 @@ registerView({
             approveAll.type = 'button'
             approveAll.setAttribute('data-nn-approve-gate', currentGate)
             approveAll.addEventListener('click', function () {
-              var blocked = []
               openScenes.forEach(function (scene) {
-                if (verdictBlocked(episode, scene, currentGate)) {
-                  blocked.push(scene.slug)
-                  return
-                }
                 if (proposeVerdict(episode, scene, currentGate, 'approved')) {
                   markApproved(episode, scene.slug, currentGate)
                 }
               })
-              if (blocked.length > 0) editFirstMessage(blocked)
+
             })
             actions.appendChild(approveAll)
           }
@@ -795,12 +751,6 @@ registerView({
             verdictBox.appendChild(el('p', 'empty-state', 'Autopilot: this scene needs no verdict.'))
           } else if (gateState === 'approved') {
             verdictBox.appendChild(el('p', 'nn-verdict-approved', 'Approved for ' + displayGate + '.'))
-          } else if (verdictBlocked(episode, scene, displayGate)) {
-            // A draft from an earlier round still waits: approving now would sign the hash
-            // this pending edit replaces, so the controls stay away until it is applied.
-            var waiting = el('p', 'nn-verdict-pending', 'Pending edits: apply them, reopen the console, then approve. A verdict hashes the content on disk.')
-            waiting.setAttribute('data-nn-verdict-pending', '')
-            verdictBox.appendChild(waiting)
           } else {
             var line2 = el('div', 'nn-verdict-line')
             var approve = el('button', 'nn-verdict', 'Approve')
