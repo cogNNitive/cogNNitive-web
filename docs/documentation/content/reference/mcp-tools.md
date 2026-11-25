@@ -14,7 +14,7 @@ The table below is generated from the `nn-mcp` tool registry, so it always refle
 
 | Tool | Description |
 |------|-------------|
-| `list_knowledge` | Scan the knowledge directory and list every iNNfo knowledge document with its id, path, version, blueprint and storage. Pass `collection` to list one concept's members instead (it spans distributed instances and compact copies; each item then carries its placement finding, if any) |
+| `list_knowledge` | Scan the knowledge directory and list every iNNfo knowledge document with its id, path, version, blueprint and storage. Pass `collection` to list one concept's members instead (it spans distributed instances and compact copies; each item then carries its placement finding, if any). The result always states the resolved `root`; when that root holds no domaiNN_NN.md or no model document the call returns ok=false with code NO_DOMAIN_ROOT or NO_MODELS instead of a bare empty list, so an empty answer never silently reads as 'the model does not exist' |
 | `read_knowledge` | Parse and return an iNNfo knowledge document's full structure by its id. For surgical work prefer bounded slices: pass concept (+ element) with max_lines (default 150); slices over the cap truncate with truncated=true unless override_reason records a manual override |
 | `get_spec` | Resolve the iNNfo specification (level-1) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — the URL is never taken from an internal constant |
 | `get_blueprint` | Resolve an iNNfo blueprint (level-2) from an explicit url or from a loaded knowledge document. Provide either url or knowledge_id — blueprint names/URLs are never hardcoded |
