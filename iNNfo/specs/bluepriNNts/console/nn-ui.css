@@ -8988,6 +8988,30 @@ select {
 .nn-review-dock .nn-feedback-open:hover {
   background: #1d4ed8 !important;
 }
+/* Unsent changes are the one state a reader must not mistake for saved state: while
+   the shared draft store is non-empty the Changes button turns red, and it returns to
+   normal at zero. The pulse is decoration only — reduced motion keeps the red and
+   drops the animation, and `.nn-paused *` already parks it in a hidden tab. */
+#nn-feedback-open[data-nn-unsent='true'] {
+  background: #b91c1c !important;
+  border-color: #b91c1c !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+@keyframes nn-unsent-attention {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(185, 28, 28, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(185, 28, 28, 0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  #nn-feedback-open[data-nn-unsent='true'] {
+    animation: nn-unsent-attention 1.8s ease-in-out infinite;
+  }
+}
 .nn-dock-exit {
   appearance: none !important;
   border: 1px solid #e2e8f0 !important;

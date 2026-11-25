@@ -24,9 +24,9 @@ The console is where the review half of every change happens. When your agent pr
 
 The console is **static**: it cannot talk back to your agent on its own, so approvals always travel through the conversation. That is what makes it safe to archive.
 
-Open **Changes · N** in the top-right corner to review pending drafts and the applied history together. The counter follows your edits. You can discard a draft, return to its element, or propose a reversal of an applied field update.
+Open **Changes · N** in the top-right corner to review pending drafts and the applied history together. The counter follows your edits, and while any draft is unsent the button turns red and the browser warns before you close or reload the tab. You can discard a draft, return to its element, or propose a reversal of an applied field update.
 
-Enter your reviewer identifier to **Copy changes** or **Download changes**, then give the change document to your agent. Copying and downloading keep the pending drafts; they do not apply them. **Discard all** asks for confirmation. **Save Snapshot** saves a self-contained copy of the console, including its drafts.
+Enter your reviewer identifier to **Copy changeset doc** or **Download changes**, then give the change document to your agent. Both emit the same `_changes_NN.md` document, with no wrapper instructions. For a longer hand-off, the navbar action **Copy AI Prompt** composes the agent prompt instead: instructions plus that same changeset document embedded. Copying and downloading keep the pending drafts; they do not apply them. **Discard all** asks for confirmation. **Save Snapshot** saves a self-contained copy of the console, including its drafts.
 
 ## Works offline
 

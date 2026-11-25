@@ -3942,7 +3942,7 @@
             type="button"
             class="nn-navbar-action-btn nn-btn-copy-prompt"
             data-nn="copy-agent-prompt"
-            title="Copy structured changeset and instructions for AI assistant"
+            title="Copy the agent prompt: instructions plus the embedded changeset document"
             onClick=${function (e) {
               if (e && e.preventDefault) e.preventDefault()
               if (typeof onCopyPrompt === 'function') onCopyPrompt()
@@ -3982,7 +3982,7 @@
     var btnCopy = makeEl(doc, 'button', 'nn-navbar-action-btn nn-btn-copy-prompt')
     btnCopy.setAttribute('type', 'button')
     btnCopy.setAttribute('data-nn', 'copy-agent-prompt')
-    btnCopy.setAttribute('title', 'Copy structured changeset and instructions for AI assistant')
+    btnCopy.setAttribute('title', 'Copy the agent prompt: instructions plus the embedded changeset document')
     btnCopy.innerHTML = '<span class="nn-btn-icon">' + promptSvg + '</span><span>Copy AI Prompt</span>'
     btnCopy.addEventListener('click', function (e) {
       if (e && e.preventDefault) e.preventDefault()

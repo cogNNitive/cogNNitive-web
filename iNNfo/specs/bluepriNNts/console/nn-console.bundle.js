@@ -5244,7 +5244,7 @@ var yo={},mo={};var xo,_o=function(){function t(t,e,n){var i=this;this._sleepAft
             type="button"
             class="nn-navbar-action-btn nn-btn-copy-prompt"
             data-nn="copy-agent-prompt"
-            title="Copy structured changeset and instructions for AI assistant"
+            title="Copy the agent prompt: instructions plus the embedded changeset document"
             onClick=${function (e) {
               if (e && e.preventDefault) e.preventDefault()
               if (typeof onCopyPrompt === 'function') onCopyPrompt()
@@ -5284,7 +5284,7 @@ var yo={},mo={};var xo,_o=function(){function t(t,e,n){var i=this;this._sleepAft
     var btnCopy = makeEl(doc, 'button', 'nn-navbar-action-btn nn-btn-copy-prompt')
     btnCopy.setAttribute('type', 'button')
     btnCopy.setAttribute('data-nn', 'copy-agent-prompt')
-    btnCopy.setAttribute('title', 'Copy structured changeset and instructions for AI assistant')
+    btnCopy.setAttribute('title', 'Copy the agent prompt: instructions plus the embedded changeset document')
     btnCopy.innerHTML = '<span class="nn-btn-icon">' + promptSvg + '</span><span>Copy AI Prompt</span>'
     btnCopy.addEventListener('click', function (e) {
       if (e && e.preventDefault) e.preventDefault()
@@ -11602,6 +11602,55 @@ if (typeof window !== 'undefined') {
     return chip
   }
 
+  // A draft lives only in this console until it is exported: the count in the button
+  // label was a quiet number, and the toast is transient by design. While the store
+  // is non-empty the Changes button is the durable signal (red + pulse, the pulse is
+  // decoration) and `beforeunload` asks before the tab takes those drafts with it.
+  // Both read the store count, never a per-model flag, so every view that proposes
+  // through `ctx.store` gets the same treatment.
+  var UNSENT_GUARD_KEY = '__nnUnsentUnloadGuard'
+
+  function applyUnsentSignal(doc, count) {
+    var btn = doc && doc.getElementById ? doc.getElementById('nn-feedback-open') : null
+    if (!btn) return
+    if (count > 0) {
+      btn.setAttribute('data-nn-unsent', 'true')
+      btn.setAttribute(
+        'title',
+        count === 1
+          ? '1 unsent change lives only in this console until you export it. Changes · opens the export.'
+          : count +
+              ' unsent changes live only in this console until you export them. Changes · opens the export.',
+      )
+    } else {
+      btn.removeAttribute('data-nn-unsent')
+      btn.removeAttribute('title')
+    }
+  }
+
+  // Armed while the store is non-empty and released when it empties, so the warning
+  // describes the current state instead of staying latched on a stale count.
+  function setUnloadGuard(win, armed) {
+    if (!win || typeof win.addEventListener !== 'function') return
+    var current = win[UNSENT_GUARD_KEY]
+    if (armed && !current) {
+      current = function (ev) {
+        if (!ev) return ''
+        if (typeof ev.preventDefault === 'function') ev.preventDefault()
+        // Engines read `returnValue`; a programmatic dispatch in a test reads neither.
+        ev.returnValue = ''
+        return ''
+      }
+      win[UNSENT_GUARD_KEY] = current
+      win.addEventListener('beforeunload', current)
+      return
+    }
+    if (!armed && current) {
+      win.removeEventListener('beforeunload', current)
+      win[UNSENT_GUARD_KEY] = null
+    }
+  }
+
   function renderBanner(doc, meta, needs, draftCount, onReviewerChange, state) {
     var banner = doc.getElementById('nn-feedback-banner') || doc.getElementById('nn-banner')
     if (!banner) return
@@ -11658,6 +11707,7 @@ if (typeof window !== 'undefined') {
         banner.appendChild(openBtn)
       }
     }
+    applyUnsentSignal(doc, draftCount)
   }
 
   function renderFilterBar(doc, state, onQueryChange, activeQuery, sortState, onSortChange) {
@@ -18547,7 +18597,7 @@ if (typeof window !== 'undefined') {
       '<button class="nn-export-btn nn-export-discard" data-nn="discard-all" type="button">Discard all</button>' +
       '<span class="nn-export-spacer"></span>' +
       '<span data-nn="copy-status" role="status" aria-live="polite"></span>' +
-      '<button class="nn-export-btn nn-export-secondary" data-nn="copy-changeset-prompt" type="button">Copy changes</button>' +
+      '<button class="nn-export-btn nn-export-secondary" data-nn="copy-changeset-prompt" type="button" title="Copy the changeset document only: the same bytes Download changes writes, with no wrapper instructions">Copy changeset doc</button>' +
       '<button class="nn-export-btn nn-export-primary" data-nn="download-changeset" type="button">Download changes</button>' +
       '<button class="nn-navbar-action-btn nn-btn-save" data-nn="save-snapshot" type="button" title="Save a self-contained snapshot of this console">' +
       '<span class="nn-btn-icon" data-nn="save-snapshot-icon"></span><span>Save Snapshot</span>' +
@@ -20281,6 +20331,7 @@ if (typeof window !== 'undefined') {
     }
     cleanups.push(function () {
       if (state.store && typeof state.store.destroy === 'function') state.store.destroy()
+      setUnloadGuard(activeWindow, false)
     })
     if (state.store && state.store.persistent === false) {
       showToast(
@@ -20454,6 +20505,8 @@ if (typeof window !== 'undefined') {
       if (dialog && dialog.hasAttribute('open')) updateExportPreview(active, state)
       updateTabBadges(active, state)
       mountNavbarActions(active, state)
+      applyUnsentSignal(active, n)
+      setUnloadGuard(activeWindow, n > 0)
       renderReviewTab(active, state, config, function () {
         refresh(activeSearchQuery)
       })
@@ -20615,6 +20668,8 @@ if (typeof window !== 'undefined') {
         state,
       )
       mountNavbarActions(active, state)
+      applyUnsentSignal(active, currentDrafts.length)
+      setUnloadGuard(activeWindow, currentDrafts.length > 0)
       renderRail(active, concepts, counts, draftCountsByConcept, selectRailToken, state)
       if (!scopedView) {
         renderConceptGuide(
