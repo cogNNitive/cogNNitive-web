@@ -38,6 +38,26 @@ To inspect installed versions versus canonical releases without writing changes:
 node scripts/skills-manager.js status
 ```
 
+### Blueprint provenance
+
+A bluepriNNt does not carry its version in a catalog. The installed copy declares
+what it is — `blueprint.json` beside its `spec_NN.md`, holding `name`, `version`,
+`format_version` and `distribution_url` — and the installer records the resolved
+tag and commit, plus a digest of every installed file, in
+`<blueprints_dir>/.blueprint-lock.json`. That lock file lives inside the domain,
+so it is committed with it and a clone with no network still reads.
+
+`status` and `update` resolve a bluepriNNt's published version from
+`<distribution_url>/versions.json`, a list the publisher maintains in its own
+release pipeline. The list is only a hint: the commit it names is verified by
+fetching that commit's tree and comparing the `blueprint.json` shipped there. A
+channel entry carries `{ name, distribution_url }` and never a version.
+
+Every outcome is named — `current`, `update-available`, `unknown` (no provenance
+recorded), `unreachable` (the URL and the error are printed), `no-versions`,
+`unverifiable`, `ahead`. "Up to date" is never reported for a check that could
+not be performed.
+
 ---
 
 ## Release Channels

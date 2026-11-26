@@ -1218,6 +1218,391 @@ var require_mcp_config_adapter = __commonJS({
   }
 });
 
+// scripts/lib/blueprint-provenance.js
+var require_blueprint_provenance = __commonJS({
+  "scripts/lib/blueprint-provenance.js"(exports2, module2) {
+    "use strict";
+    var fs = require("fs");
+    var path2 = require("path");
+    var crypto = require("crypto");
+    var { fetchString } = require_github_client();
+    var { saveJsonAtomic } = require_atomic_fs();
+    var LOCK_FILE = ".blueprint-lock.json";
+    var LOCK_FORMAT_VERSION = 1;
+    var MANIFEST_FILE = "blueprint.json";
+    var MANIFEST_FIELDS = ["name", "version", "format_version", "distribution_url"];
+    function lockFilePath(blueprintsDir) {
+      return path2.join(blueprintsDir, LOCK_FILE);
+    }
+    function readLock(blueprintsDir) {
+      const file = lockFilePath(blueprintsDir);
+      if (!fs.existsSync(file)) return { ok: true, reason: null, blueprints: {} };
+      let parsed;
+      try {
+        parsed = JSON.parse(fs.readFileSync(file, "utf-8"));
+      } catch (err) {
+        return { ok: false, reason: `${file}: ${err.message}`, blueprints: {} };
+      }
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return { ok: false, reason: `${file}: not a JSON object`, blueprints: {} };
+      }
+      if (parsed.blueprints !== void 0 && (typeof parsed.blueprints !== "object" || Array.isArray(parsed.blueprints))) {
+        return { ok: false, reason: `${file}: "blueprints" is not an object`, blueprints: {} };
+      }
+      return { ok: true, reason: null, blueprints: parsed.blueprints || {} };
+    }
+    function writeLock(blueprintsDir, lock) {
+      saveJsonAtomic(lockFilePath(blueprintsDir), {
+        format_version: LOCK_FORMAT_VERSION,
+        blueprints: lock.blueprints || {}
+      });
+    }
+    function recordProvenance(blueprintsDir, name, entry) {
+      const lock = readLock(blueprintsDir);
+      const commit = typeof entry.commit === "string" && /^[0-9a-f]{40}$/i.test(entry.commit) ? entry.commit.toLowerCase() : null;
+      const record = {
+        version: entry.version || null,
+        tag: entry.tag || null,
+        commit,
+        distribution_url: entry.distribution_url || null,
+        digests: entry.digests || {}
+      };
+      lock.blueprints[name] = record;
+      writeLock(blueprintsDir, lock);
+      return record;
+    }
+    function readProvenance(blueprintsDir, name) {
+      const lock = readLock(blueprintsDir);
+      if (!lock.ok) return { ok: false, reason: lock.reason, entry: null };
+      const entry = lock.blueprints[name];
+      if (!entry || typeof entry !== "object") {
+        return { ok: true, reason: null, entry: null };
+      }
+      return { ok: true, reason: null, entry };
+    }
+    function readBlueprintManifest(installedDir) {
+      const file = path2.join(installedDir, MANIFEST_FILE);
+      if (!fs.existsSync(file)) {
+        return { ok: false, reason: `${file}: missing`, value: null };
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(fs.readFileSync(file, "utf-8"));
+      } catch (err) {
+        return { ok: false, reason: `${file}: ${err.message}`, value: null };
+      }
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return { ok: false, reason: `${file}: not a JSON object`, value: null };
+      }
+      const missing = MANIFEST_FIELDS.filter(
+        (field) => typeof parsed[field] !== "string" || parsed[field].trim() === ""
+      );
+      if (missing.length > 0) {
+        return { ok: false, reason: `${file}: missing ${missing.join(", ")}`, value: null };
+      }
+      return { ok: true, reason: null, value: parsed };
+    }
+    function digestTree(dir) {
+      const out = {};
+      const root = path2.resolve(dir);
+      if (!fs.existsSync(root)) return out;
+      const walk = (current) => {
+        for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+          const abs = path2.join(current, entry.name);
+          const rel = path2.relative(root, abs).split(path2.sep).join("/");
+          if (rel === LOCK_FILE) continue;
+          if (entry.isDirectory()) {
+            walk(abs);
+          } else if (entry.isSymbolicLink()) {
+            const target = fs.readlinkSync(abs);
+            out[rel] = crypto.createHash("sha256").update(`symlink:${target}`).digest("hex");
+          } else if (entry.isFile()) {
+            out[rel] = crypto.createHash("sha256").update(fs.readFileSync(abs)).digest("hex");
+          }
+        }
+      };
+      walk(root);
+      return out;
+    }
+    function parseVersion(value) {
+      if (typeof value !== "string") return null;
+      const match = /^V_(\d+)-(\d+)-(\d+)$/i.exec(value.trim());
+      if (!match) return null;
+      return [Number(match[1]), Number(match[2]), Number(match[3])];
+    }
+    function compareVersions(left, right) {
+      const a = parseVersion(left);
+      const b = parseVersion(right);
+      if (!a || !b) return null;
+      for (let i = 0; i < 3; i += 1) {
+        if (a[i] !== b[i]) return a[i] < b[i] ? -1 : 1;
+      }
+      return 0;
+    }
+    function distributionUrlParts(url) {
+      if (typeof url !== "string" || url.trim() === "") return null;
+      let parsed;
+      try {
+        parsed = new URL(url.trim());
+      } catch (_) {
+        return null;
+      }
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
+      const segments = parsed.pathname.split("/").filter(Boolean);
+      if (segments.length < 4) return null;
+      return {
+        origin: parsed.origin,
+        repo: `${segments[0]}/${segments[1]}`,
+        ref: segments[2],
+        blueprintPath: segments.slice(3).join("/")
+      };
+    }
+    function commitUrlFor(url, commit) {
+      const parts = distributionUrlParts(url);
+      if (!parts || !/^[0-9a-f]{40}$/i.test(String(commit || ""))) return null;
+      return `${parts.origin}/${parts.repo}/${String(commit).toLowerCase()}/${parts.blueprintPath}`;
+    }
+    async function fetchPublishedVersions(distributionUrl, deps) {
+      const url = `${String(distributionUrl).replace(/\/+$/, "")}/versions.json`;
+      let text;
+      try {
+        text = await deps.fetchString(url);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        const statusMatch = /status: (\d{3})/.exec(message);
+        if (statusMatch && statusMatch[1] === "404") {
+          return { ok: false, versions: [], reason: `${url}: versions.json is not published (404)` };
+        }
+        return { ok: false, versions: [], reason: `${url}: ${message}` };
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (err) {
+        return {
+          ok: false,
+          versions: [],
+          reason: `${url}: ${err instanceof Error ? err.message : String(err)}`
+        };
+      }
+      const list = Array.isArray(parsed) ? parsed : parsed && Array.isArray(parsed.versions) ? parsed.versions : null;
+      if (!list) {
+        return {
+          ok: false,
+          versions: [],
+          reason: `${url}: expected { "versions": [ { version, tag, commit } ] }`
+        };
+      }
+      const versions = list.filter(
+        (item) => item && typeof item.version === "string" && /^[0-9a-f]{40}$/i.test(String(item.commit || ""))
+      ).map((item) => ({
+        version: String(item.version).trim(),
+        tag: typeof item.tag === "string" && item.tag.trim() !== "" ? item.tag : null,
+        commit: String(item.commit).toLowerCase()
+      }));
+      if (versions.length === 0) {
+        return { ok: false, versions: [], reason: `${url}: no entry carries a verifiable commit` };
+      }
+      return { ok: true, versions, reason: null };
+    }
+    async function verifyCommit(candidate, deps) {
+      const base = commitUrlFor(candidate.distributionUrl, candidate.entry.commit);
+      if (!base) {
+        return {
+          ok: false,
+          reason: `${candidate.distributionUrl}: cannot address a commit's tree (expected <origin>/<owner>/<repo>/<ref>/<blueprint path>)`
+        };
+      }
+      const url = `${base}/${MANIFEST_FILE}`;
+      let text;
+      try {
+        text = await deps.fetchString(url);
+      } catch (err) {
+        return { ok: false, reason: `${url}: ${err instanceof Error ? err.message : String(err)}` };
+      }
+      let manifest;
+      try {
+        manifest = JSON.parse(text);
+      } catch (err) {
+        return { ok: false, reason: `${url}: ${err instanceof Error ? err.message : String(err)}` };
+      }
+      if (!manifest || typeof manifest !== "object") {
+        return { ok: false, reason: `${url}: not a JSON object` };
+      }
+      if (manifest.version !== candidate.entry.version) {
+        return {
+          ok: false,
+          reason: `${url}: declares version ${JSON.stringify(manifest.version)} but versions.json lists ${JSON.stringify(candidate.entry.version)}`
+        };
+      }
+      if (manifest.name !== candidate.name) {
+        return {
+          ok: false,
+          reason: `${url}: declares name ${JSON.stringify(manifest.name)} but the installed unit is ${JSON.stringify(candidate.name)}`
+        };
+      }
+      return { ok: true, reason: null };
+    }
+    async function resolvePublished(target, deps) {
+      const fetched = await fetchPublishedVersions(target.distributionUrl, deps);
+      if (!fetched.ok) return { ok: false, reason: fetched.reason, entry: null };
+      const ordered = fetched.versions.map((entry) => ({ entry, parts: parseVersion(entry.version) })).filter((item) => item.parts).sort((a, b) => {
+        for (let i = 0; i < 3; i += 1) {
+          if (a.parts[i] !== b.parts[i]) return b.parts[i] - a.parts[i];
+        }
+        return 0;
+      });
+      if (ordered.length === 0) {
+        return {
+          ok: false,
+          reason: `${target.distributionUrl}: versions.json lists no parsable version`,
+          entry: null
+        };
+      }
+      const rejected = [];
+      for (const item of ordered) {
+        const verified = await verifyCommit(
+          { distributionUrl: target.distributionUrl, name: target.name, entry: item.entry },
+          deps
+        );
+        if (verified.ok) return { ok: true, reason: null, entry: item.entry };
+        rejected.push(`${item.entry.version}: ${verified.reason}`);
+      }
+      return {
+        ok: false,
+        reason: `no published version could be verified \u2014 ${rejected.join("; ")}`,
+        entry: null
+      };
+    }
+    async function blueprintVerdict(target, deps = {}) {
+      const resolvedDeps = { fetchString: deps.fetchString || fetchString };
+      const provenance = readProvenance(target.blueprintsDir, target.name);
+      if (!provenance.ok) {
+        return {
+          status: "lock-unreadable",
+          recorded: false,
+          installed: null,
+          published: null,
+          commit: null,
+          tag: null,
+          detail: `the provenance lock could not be read: ${provenance.reason}`
+        };
+      }
+      if (!provenance.entry) {
+        return {
+          status: "unknown",
+          recorded: false,
+          installed: null,
+          published: null,
+          commit: null,
+          tag: null,
+          detail: `no provenance recorded for ${target.name} (installed before provenance was recorded); run: install --blueprint ${target.name} --yes or update --blueprint ${target.name}`
+        };
+      }
+      const entry = provenance.entry;
+      const installed = typeof entry.version === "string" ? entry.version : null;
+      const recordedTag = typeof entry.tag === "string" ? entry.tag : null;
+      if (!entry.distribution_url) {
+        return {
+          status: "unknown",
+          recorded: true,
+          installed,
+          published: null,
+          commit: entry.commit || null,
+          tag: recordedTag,
+          detail: `the installed copy declares no distribution_url (no ${MANIFEST_FILE} beside spec_NN.md), so there is nothing to check ${target.name} against`
+        };
+      }
+      const resolved = await resolvePublished(
+        { distributionUrl: entry.distribution_url, name: target.name },
+        resolvedDeps
+      );
+      if (!resolved.ok) {
+        const status = /versions\.json is not published|lists no parsable version|expected \{ "versions"/.test(
+          String(resolved.reason)
+        ) ? "no-versions" : /could be verified|declares (version|name)|not a JSON object|cannot address a commit/.test(
+          String(resolved.reason)
+        ) ? "unverifiable" : "unreachable";
+        return {
+          status,
+          recorded: true,
+          installed,
+          published: null,
+          commit: entry.commit || null,
+          tag: recordedTag,
+          detail: resolved.reason
+        };
+      }
+      const published = resolved.entry;
+      const comparison = installed ? compareVersions(installed, published.version) : null;
+      const executable = "update --blueprint " + target.name;
+      if (comparison === null) {
+        return {
+          status: "unverifiable",
+          recorded: true,
+          installed,
+          published: published.version,
+          commit: entry.commit || null,
+          tag: recordedTag,
+          detail: installed ? `the installed version ${JSON.stringify(installed)} is not a V_x-y-z version, so it cannot be compared with ${published.version}` : `the installed copy records no version, so it cannot be compared with ${published.version}; run: ${executable}`
+        };
+      }
+      if (comparison < 0) {
+        return {
+          status: "update-available",
+          recorded: true,
+          installed,
+          published: published.version,
+          commit: published.commit,
+          tag: published.tag,
+          detail: `installed ${installed}, published ${published.version} (${published.tag || published.commit.slice(0, 7)}); run: ${executable}`
+        };
+      }
+      if (comparison > 0) {
+        return {
+          status: "ahead",
+          recorded: true,
+          installed,
+          published: published.version,
+          commit: entry.commit || null,
+          tag: recordedTag,
+          detail: `installed ${installed} is newer than the highest published version (${published.version}) at ${entry.distribution_url}`
+        };
+      }
+      return {
+        status: "current",
+        recorded: true,
+        installed,
+        published: published.version,
+        commit: entry.commit || null,
+        tag: recordedTag,
+        detail: null
+      };
+    }
+    module2.exports = {
+      LOCK_FILE,
+      LOCK_FORMAT_VERSION,
+      MANIFEST_FILE,
+      MANIFEST_FIELDS,
+      lockFilePath,
+      readLock,
+      writeLock,
+      recordProvenance,
+      readProvenance,
+      readBlueprintManifest,
+      digestTree,
+      parseVersion,
+      compareVersions,
+      distributionUrlParts,
+      commitUrlFor,
+      fetchPublishedVersions,
+      verifyCommit,
+      resolvePublished,
+      blueprintVerdict
+    };
+  }
+});
+
 // scripts/lib/skills-commands.js
 var require_skills_commands = __commonJS({
   "scripts/lib/skills-commands.js"(exports2, module2) {
@@ -1246,13 +1631,22 @@ var require_skills_commands = __commonJS({
     var {
       fetchString,
       fetchJson,
-      downloadFile
+      downloadFile,
+      resolveRef
     } = require_github_client();
     var {
       parseManifest
     } = require_yaml_parser();
     var { parseFocusedYaml, parseFrontmatter } = require_yaml_lite2();
     var { registerMcpAuto } = require_mcp_config_adapter();
+    var {
+      recordProvenance,
+      readProvenance,
+      readBlueprintManifest,
+      digestTree,
+      distributionUrlParts,
+      blueprintVerdict
+    } = require_blueprint_provenance();
     var DEFAULT_MANIFEST_URL = "https://cognnitive.com/use/manifest.md";
     var FALLBACK_MANIFEST_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/docs/use/manifest.md";
     var RETIRED_SKILL_REPOS = ["cogNNitive/cogNNitive"];
@@ -1677,6 +2071,16 @@ ${RETIRED_REPO_NOTICE}`);
         path: recordedPath,
         updated_at: (/* @__PURE__ */ new Date()).toISOString()
       };
+      const installedDir = recordedPath === pkgDestPath ? pkgDestPath : null;
+      const shipped = installedDir ? readBlueprintManifest(installedDir) : { ok: false, value: null };
+      const isSha = /^[0-9a-f]{40}$/i.test(String(template.commit || ""));
+      recordProvenance(blueprintsDir, template.name, {
+        version: shipped.ok && shipped.value.version || template.version || null,
+        tag: isSha ? template.tag || template.ref || null : template.commit || null,
+        commit: isSha ? template.commit : null,
+        distribution_url: shipped.ok ? shipped.value.distribution_url : null,
+        digests: installedDir ? digestTree(installedDir) : {}
+      });
       return projected;
     }
     async function installMcpAtCommit(mcp, mcpDir, state) {
@@ -1758,6 +2162,15 @@ ${RETIRED_REPO_NOTICE}`);
       }
       return true;
     }
+    async function collectBlueprintVerdicts(blueprintsDir, names) {
+      const verdicts = /* @__PURE__ */ new Map();
+      for (const name of new Set([...names].filter(Boolean))) {
+        const installedDir = path2.join(blueprintsDir, name);
+        if (!fs.existsSync(installedDir) || !fs.statSync(installedDir).isDirectory()) continue;
+        verdicts.set(name, await blueprintVerdict({ blueprintsDir, installedDir, name }));
+      }
+      return verdicts;
+    }
     async function cmdStatus(args) {
       const manifestRaw = await fetchManifestString();
       const { skills, blueprints, consoleAssets, mcp } = parseManifest(manifestRaw);
@@ -1770,6 +2183,14 @@ ${RETIRED_REPO_NOTICE}`);
       const outdatedConsoleAssets = [];
       const outdatedMcp = [];
       const modifiedSkills = [];
+      const blueprintDetails = [];
+      const manifestNames = new Set(blueprints.map((t) => t.name));
+      const untracked = untrackedInstalledBlueprints(args.blueprintsDir, state, manifestNames);
+      const verdicts = await collectBlueprintVerdicts(args.blueprintsDir, [
+        ...manifestNames,
+        ...Object.keys(state.blueprints || {}),
+        ...untracked.map((item) => item.name)
+      ]);
       for (const skill of skills) {
         const dirPresent = fs.existsSync(path2.join(args.skillsDir, skill.name));
         const entry = state.skills[skill.name];
@@ -1804,22 +2225,26 @@ ${RETIRED_REPO_NOTICE}`);
         const fileName = template.name.endsWith(".md") ? template.name : `${template.name}.md`;
         const pathPresent = fs.existsSync(path2.join(args.blueprintsDir, fileName)) || fs.existsSync(path2.join(args.blueprintsDir, template.name));
         const entry = state.blueprints[template.name];
+        const verdict = verdicts.get(template.name);
         let status;
-        if (pathPresent) {
-          if (!entry) status = "untracked";
-          else if (entry.commit === template.commit) status = "up-to-date";
-          else status = "outdated";
-        } else {
+        if (!pathPresent) {
           status = entry ? "file-missing" : "missing";
+        } else if (verdict && verdict.recorded) {
+          status = verdict.status;
+        } else if (!entry) {
+          status = "untracked";
+        } else {
+          status = entry.commit === template.commit ? "up-to-date" : "outdated";
         }
         rows.push({
           type: "template",
           name: template.name,
-          pinned: statusRef(template.commit),
-          installed: statusRef(entry && entry.commit),
+          pinned: verdict && verdict.published ? verdict.published : statusRef(template.commit),
+          installed: verdict && verdict.installed ? verdict.installed : statusRef(entry && entry.commit),
           status
         });
-        if (status === "outdated") outdatedBlueprints.push(template);
+        if (status === "outdated" || status === "update-available") outdatedBlueprints.push(template);
+        if (verdict && verdict.detail && verdict.recorded) blueprintDetails.push(`${template.name}: ${verdict.detail}`);
       }
       for (const server of mcp || []) {
         const bundleName = `${server.name}.bundle.js`;
@@ -1871,46 +2296,44 @@ ${RETIRED_REPO_NOTICE}`);
       } catch (_) {
         catalog = null;
       }
-      const manifestNames = new Set(blueprints.map((t) => t.name));
       for (const [name, entry] of Object.entries(state.blueprints || {})) {
         if (manifestNames.has(name)) continue;
+        const verdict = verdicts.get(name);
         const catalogEntry = findCatalogEntry(catalog, name);
-        const installedTag = entry && entry.commit;
         let status;
-        if (!catalogEntry) status = unmatchedCatalogStatus(catalog);
-        else if (!catalogEntry.release_tag) status = "unreleased";
-        else if (installedTag === catalogEntry.release_tag) status = "up-to-date";
-        else status = "outdated";
+        if (verdict && verdict.recorded) status = verdict.status;
+        else if (!catalogEntry) status = unmatchedCatalogStatus(catalog);
+        else status = "unknown";
         rows.push({
           type: "catalog",
           name,
-          pinned: statusRef(catalogEntry && catalogEntry.release_tag),
-          installed: statusRef(installedTag),
+          pinned: verdict && verdict.published ? verdict.published : statusRef(catalogEntry && catalogEntry.release_tag),
+          installed: verdict && verdict.installed ? verdict.installed : statusRef(entry && entry.commit),
           status
         });
+        if (verdict && verdict.detail) blueprintDetails.push(`${name}: ${verdict.detail}`);
       }
-      const behindBlueprints = [];
-      for (const item of untrackedInstalledBlueprints(args.blueprintsDir, state, manifestNames)) {
+      for (const item of untracked) {
         const { name, version } = item;
+        const verdict = verdicts.get(name);
         const catalogEntry = item.kind === "dir" ? findCatalogEntry(catalog, name) : null;
         let status;
-        if (!catalogEntry) status = unmatchedCatalogStatus(catalog);
-        else if (!catalogEntry.adopted) status = "unreleased";
-        else if (compareBlueprintVersions(version, catalogEntry.adopted) < 0) status = "outdated";
-        else status = "up-to-date";
-        if (status === "outdated") behindBlueprints.push({ name: catalogEntry.name || name, version, adopted: catalogEntry.adopted });
+        if (verdict && verdict.recorded) status = verdict.status;
+        else if (!catalogEntry) status = unmatchedCatalogStatus(catalog);
+        else status = "unknown";
         rows.push({
           type: "catalog",
           name: untrackedDisplayName(item),
-          pinned: catalogEntry && catalogEntry.adopted ? String(catalogEntry.adopted) : "-",
-          installed: version || "-",
+          pinned: verdict && verdict.published ? verdict.published : catalogEntry && catalogEntry.adopted ? String(catalogEntry.adopted) : "-",
+          installed: verdict && verdict.installed ? verdict.installed : version || "-",
           status
         });
+        if (verdict && verdict.detail) blueprintDetails.push(`${untrackedDisplayName(item)}: ${verdict.detail}`);
       }
       printStatusTable(rows);
-      for (const bp of behindBlueprints) {
-        console.log(`
-bluepriNNt ${bp.name} ${bp.version || "(unknown version)"} is older than the catalog (${bp.adopted}). Run: ${blueprintInstallCommand(bp.name)}`);
+      if (blueprintDetails.length > 0) {
+        console.log("\nbluepriNNt provenance:");
+        for (const line of blueprintDetails) console.log(`  ${line}`);
       }
       const retired = rows.filter((r) => r.type === "catalog" && r.status === "retired");
       if (retired.length > 0) {
@@ -1927,8 +2350,9 @@ ${retired.length} installed bluepriNNt(s) are not in the catalog (retired). No u
           console.log(`  skill ${skill.name}: ${await fetchCompareSummary(skill, installed)}`);
         }
         for (const template of outdatedBlueprints) {
-          const installed = state.blueprints[template.name].commit;
-          console.log(`  template ${template.name}: ${await fetchCompareSummary(template, installed)}`);
+          const installed = state.blueprints[template.name];
+          const summary = await fetchCompareSummary(template, installed && installed.commit);
+          console.log(`  template ${template.name}: ${summary}`);
           console.log(`    repair: update --blueprint ${template.name}`);
         }
       }
@@ -2132,16 +2556,6 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
     function blueprintInstallCommand(name) {
       return `node ~/.agents/skills/nn-skills-lifecycle/scripts/skills-manager.js install --blueprint ${name} --yes`;
     }
-    function compareBlueprintVersions(a, b) {
-      const parse = (v) => {
-        const m = /^V_(\d+)-(\d+)-(\d+)$/i.exec(String(v || "").trim());
-        return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : [-1, -1, -1];
-      };
-      const pa = parse(a);
-      const pb = parse(b);
-      for (let i = 0; i < 3; i++) if (pa[i] !== pb[i]) return pa[i] - pb[i];
-      return 0;
-    }
     function unmatchedCatalogStatus(catalog) {
       return catalog ? "retired" : "catalog-unavailable";
     }
@@ -2250,13 +2664,19 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
       const version = entry.adopted;
       const entryName = entry.name || name;
       const embedded = Array.isArray(entry.embedded_skills) ? entry.embedded_skills : [];
+      let resolvedCommit = ref;
+      try {
+        const resolved = await resolveRef(repo, ref);
+        if (resolved && "sha" in resolved && resolved.sha) resolvedCommit = resolved.sha;
+      } catch (_) {
+      }
       const template = {
         name: entryName,
         repo,
         path: `iNNfo/specs/bluepriNNts/${entryName}/spec_NN.md`,
         version,
         ref,
-        commit: ref
+        commit: resolvedCommit
       };
       const summary = await describeBlueprintPackage(template);
       const summaryMenu = summary ? (summary.skills.length ? `  embedded skills: ${summary.skills.join(", ")}
@@ -2302,6 +2722,13 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
       const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
       const mcpDir = args.mcpDir || DEFAULT_MCP_DIR;
       migrateLegacyMcpState(state, mcpDir);
+      const manifestNames = new Set(blueprints.map((t) => t.name));
+      const untrackedUpdate = untrackedInstalledBlueprints(args.blueprintsDir, state, manifestNames);
+      const verdicts = await collectBlueprintVerdicts(args.blueprintsDir, [
+        ...manifestNames,
+        ...Object.keys(state.blueprints || {}),
+        ...untrackedUpdate.map((item) => item.name)
+      ]);
       const isOutdatedSkill = (skill) => {
         const dirPresent = fs.existsSync(path2.join(args.skillsDir, skill.name));
         const entry = state.skills[skill.name];
@@ -2310,8 +2737,11 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
       const isOutdatedBlueprint = (template) => {
         const fileName = template.name.endsWith(".md") ? template.name : `${template.name}.md`;
         const pathPresent = fs.existsSync(path2.join(args.blueprintsDir, fileName)) || fs.existsSync(path2.join(args.blueprintsDir, template.name));
+        if (!pathPresent) return false;
+        const verdict = verdicts.get(template.name);
+        if (verdict && verdict.recorded) return verdict.status === "update-available" || verdict.status === "unknown";
         const entry = state.blueprints[template.name];
-        return pathPresent && (!entry || entry.commit !== template.commit);
+        return !entry || entry.commit !== template.commit;
       };
       const isOutdatedMcp = (server) => {
         const bundleDest = path2.join(mcpDir, `${server.name}.bundle.js`);
@@ -2344,33 +2774,19 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
         selectedConsole = [];
         selectedMcp = [];
       }
-      let catalog = null;
-      try {
-        catalog = await loadBlueprintCatalog(args.catalogPath);
-      } catch (_) {
-        catalog = null;
-      }
-      const manifestNames = new Set(blueprints.map((t) => t.name));
       const selectedCatalog = [];
-      for (const [name, entry] of Object.entries(state.blueprints || {})) {
+      for (const name of /* @__PURE__ */ new Set([...Object.keys(state.blueprints || {}), ...untrackedUpdate.map((item) => item.name)])) {
         if (manifestNames.has(name)) continue;
         if (args.positional.length > 0 && !args.positional.includes(name)) continue;
-        const catalogEntry = findCatalogEntry(catalog, name);
-        if (!catalogEntry || !catalogEntry.release_tag) continue;
-        if (entry && entry.commit === catalogEntry.release_tag) continue;
-        selectedCatalog.push({ name, catalogEntry });
-      }
-      for (const { name, version, kind } of untrackedInstalledBlueprints(args.blueprintsDir, state, manifestNames)) {
-        if (kind !== "dir") continue;
-        if (args.positional.length > 0 && !args.positional.includes(name)) continue;
-        const catalogEntry = findCatalogEntry(catalog, name);
-        if (!catalogEntry || !catalogEntry.adopted) continue;
-        if (compareBlueprintVersions(version, catalogEntry.adopted) >= 0) continue;
-        if (!catalogEntry.release_tag) {
-          console.log(`bluepriNNt ${name} ${version || "(unknown version)"} is older than the catalog (${catalogEntry.adopted}), which is not released yet; nothing to install.`);
+        if (args.blueprint && name !== args.blueprint) continue;
+        const verdict = verdicts.get(name);
+        if (!verdict) continue;
+        if (!verdict.recorded) {
+          selectedCatalog.push({ name, verdict });
           continue;
         }
-        selectedCatalog.push({ name, catalogEntry });
+        if (verdict.status !== "update-available" && verdict.status !== "unknown") continue;
+        selectedCatalog.push({ name, verdict });
       }
       const modifiedSkills = selectedSkills.map((skill) => {
         const entry = state.skills[skill.name];
@@ -2457,19 +2873,25 @@ Overwrite with the catalog copy?
           console.error(`  FAIL template ${template.name}: ${err.message}`);
         }
       }
-      for (const { name, catalogEntry } of selectedCatalog) {
-        const entryName = catalogEntry.name || name;
+      for (const { name, verdict } of selectedCatalog) {
+        const recorded = readProvenance(args.blueprintsDir, name);
+        const parts = distributionUrlParts(recorded.entry && recorded.entry.distribution_url);
+        if (!parts || !verdict.commit) {
+          console.log(`  skipped catalog blueprint ${name}: ${verdict.detail || "no verifiable published version"}`);
+          continue;
+        }
         const template = {
-          name: entryName,
-          repo: args.repo || DEFAULT_BLUEPRINT_REPO,
-          path: `iNNfo/specs/bluepriNNts/${entryName}/spec_NN.md`,
-          version: catalogEntry.adopted,
-          ref: catalogEntry.release_tag,
-          commit: catalogEntry.release_tag
+          name,
+          repo: parts.repo,
+          path: `${parts.blueprintPath}/spec_NN.md`,
+          version: verdict.published,
+          tag: verdict.tag || null,
+          ref: verdict.tag || parts.ref,
+          commit: verdict.commit
         };
         try {
           embeddedSkillNames.push(...await installBlueprintAtCommit(template, args.blueprintsDir, state, args.skillsDir));
-          console.log(`  updated catalog blueprint ${name} -> ${catalogEntry.adopted} (${catalogEntry.release_tag})`);
+          console.log(`  updated catalog blueprint ${name} -> ${verdict.published} (${verdict.commit.slice(0, 7)})`);
         } catch (err) {
           failures++;
           if (err.projectedSkills) embeddedSkillNames.push(...err.projectedSkills);

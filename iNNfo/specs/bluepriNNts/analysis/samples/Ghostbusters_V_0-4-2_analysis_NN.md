@@ -1,5 +1,6 @@
 ---
 level: 3
+blueprint_version: "V_0-4-2"
 parent_spec:
   name: "analysis_V_0-4-2"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/analysis/spec_NN.md"
