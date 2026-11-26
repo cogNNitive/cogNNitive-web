@@ -1540,14 +1540,29 @@
     }
 
     /** Nodes get as wide as the host allows, up to the native 200, down to a readable 84. */
-    function flowGeometry(lay, widthPx) {
+    function flowGeometry(lay, widthPx, steps) {
       var widest = lay.rows.reduce(function (n, r) {
         return Math.max(n, r.length)
       }, 1)
       var nodeW = Math.max(84, Math.min(200, Math.floor(widthPx / widest) - 10))
       var compact = nodeW < 140
-      var nodeH = compact ? 50 : 52
-      var rowH = nodeH + 40
+      // The box has to hold the whole step name. Instead of cutting the name by a made-up
+      // characters-per-line ratio, wrap it and let the tallest name set the height of every
+      // box: rows stay aligned and no name is ever truncated on a short procedure.
+      var titleSize = compact ? 11 : 13
+      var inner = nodeW - 16
+      var perLine = Math.max(8, Math.floor(inner / (titleSize * 0.54)))
+      var lines = 1
+      Object.keys(steps || {}).forEach(function (slug) {
+        var name = String((steps[slug] && steps[slug].name) || slug)
+        var need = Math.ceil(name.length / perLine)
+        if (need > lines) lines = need
+      })
+      lines = Math.max(1, Math.min(4, lines))
+      var subLineH = 15
+      var titleLineH = 18
+      var nodeH = 9 + subLineH + lines * titleLineH + 9
+      var rowH = nodeH + 30
       var pos = {}
       lay.rows.forEach(function (row, r) {
         row.forEach(function (slug, i) {
@@ -1557,6 +1572,7 @@
       return {
         nodeW: nodeW,
         nodeH: nodeH,
+        lines: lines,
         compact: compact,
         pos: pos,
         rows: lay.rows.length,
@@ -1624,13 +1640,36 @@
           return String(s).replace(/[{}]/g, ' ')
         }
         var inner = w - 16
-        // Rich-text truncation does not hold in every renderer: cut by what fits instead.
+        // Rich-text truncation does not hold in every renderer: measure what fits instead.
         var subSize = geo.compact ? 9 : 10
         var titleSize = geo.compact ? 11 : 13
         // Upper-case bold text is wider per character than the title's mixed case.
         var cut = function (text, size, em) {
           var fit = Math.max(6, Math.floor(inner / (size * (em || 0.54))))
           return text.length > fit ? text.slice(0, fit - 1) + '…' : text
+        }
+        // The title wraps by word. Cutting it by character count broke names mid-word, and
+        // the box is already tall enough for `geo.lines` of them.
+        var wrap = function (text) {
+          var maxChars = Math.max(8, Math.floor(inner / (titleSize * 0.54)))
+          var words = String(text).split(/\s+/).filter(Boolean)
+          var out = []
+          var line = ''
+          words.forEach(function (word) {
+            var candidate = line ? line + ' ' + word : word
+            if (candidate.length <= maxChars) {
+              line = candidate
+              return
+            }
+            if (line) out.push(line)
+            line = word.length > maxChars ? word.slice(0, maxChars - 1) + '…' : word
+          })
+          if (line) out.push(line)
+          if (out.length > geo.lines) {
+            out = out.slice(0, geo.lines)
+            out[geo.lines - 1] = out[geo.lines - 1].slice(0, Math.max(4, maxChars - 1)) + '…'
+          }
+          return out.length ? out : ['']
         }
         return {
           id: slug,
@@ -1653,9 +1692,12 @@
             formatter:
               '{sub|' +
               cut(clean(sub.toUpperCase()), subSize, 0.68) +
-              '}\n{title|' +
-              cut(clean(step.name || slug), titleSize) +
-              '}',
+              '}\n' +
+              wrap(clean(step.name || slug))
+                .map(function (line) {
+                  return '{title|' + line + '}'
+                })
+                .join('\n'),
             rich: {
               sub: {
                 width: inner,
@@ -1845,7 +1887,7 @@
       var widthOf = function () {
         return chartHost.clientWidth || view.clientWidth || 320
       }
-      var geo = flowGeometry(lay, widthOf())
+      var geo = flowGeometry(lay, widthOf(), active.graph.steps)
       var hasFocus = false
       var firstStep = function () {
         return selectedStep || current || graph.start || Object.keys(graph.steps)[0]
@@ -1951,7 +1993,7 @@
           var now = Math.round(widthOf())
           if (g.disposed || !now || now === lastWidth) return
           lastWidth = now
-          geo = flowGeometry(lay, now)
+          geo = flowGeometry(lay, now, active.graph.steps)
           chartHost.style.height = geo.height + 'px'
           redraw()
           if (chart.resize) chart.resize({ width: 'auto', height: 'auto' })
@@ -1966,127 +2008,76 @@
     }
 
     /** The hand-drawn svg: what draws the flow when the page has no ECharts. */
+    /**
+     * The graph without a chart runtime: the same walk as a list of buttons. It used to be a
+     * hand-drawn svg, which meant a second layout engine, a second truncation rule and a second
+     * place for the node contract to drift. The list carries the same contract the svg did --
+     * `.dag-node`, data-step, data-status, data-layer, current/selected, role=button,
+     * Enter/Space -- so the view behaves the same either way, and the step name is never cut.
+     */
     function buildNativeGraph(lay, current) {
       var graph = active.graph
       var state = viewState()
-      var svgNS = 'http://www.w3.org/2000/svg'
-      var nodeW = 200
-      var nodeH = 52
-      var gapX = 24
-      var gapY = 84
-      var widest = lay.rows.reduce(function (n, r) {
-        return Math.max(n, r.length)
-      }, 1)
-      var width = widest * (nodeW + gapX) + gapX
-      var svg = document.createElementNS(svgNS, 'svg')
-      svg.setAttribute('class', 'dag-canvas')
-      svg.setAttribute('data-proc-graph', '')
-      svg.setAttribute('data-pulse', pulseOf(current))
-      svg.setAttribute('role', 'group')
-      svg.setAttribute('aria-label', graphSummary(state, current))
-      svg.setAttribute('viewBox', '0 0 ' + width + ' ' + (lay.rows.length * gapY + 20))
-      var pos = {}
-      lay.rows.forEach(function (row, r) {
-        var offset = (width - row.length * (nodeW + gapX) + gapX) / 2
-        row.forEach(function (slug, i) {
-          pos[slug] = { x: offset + i * (nodeW + gapX), y: 16 + r * gapY, layer: r }
-        })
-      })
-      Object.keys(graph.steps).forEach(function (slug) {
-        graph.steps[slug].next.forEach(function (t) {
-          if (!pos[t]) return
-          var edge = document.createElementNS(svgNS, 'path')
-          var x1 = pos[slug].x + nodeW / 2
-          var y1 = pos[slug].y + nodeH
-          var x2 = pos[t].x + nodeW / 2
-          var y2 = pos[t].y
-          var f = edgeFacts(state, current, slug, t)
-
-          var edgeClasses = ['dag-edge', f.status]
-          if (f.taken) edgeClasses.push('taken')
-          if (f.off) edgeClasses.push('off_path')
-          if (f.projected) edgeClasses.push('projected')
-          edge.setAttribute('d', 'M ' + x1 + ' ' + y1 + ' L ' + x2 + ' ' + y2)
-          edge.setAttribute('class', edgeClasses.join(' '))
-          edge.setAttribute('data-from', slug)
-          edge.setAttribute('data-to', t)
-          svg.appendChild(edge)
-          if (f.token) {
-            var label = document.createElementNS(svgNS, 'text')
-            var labelClasses = ['dag-edge-label', f.status]
-            if (f.taken) labelClasses.push('taken')
-            if (f.off) labelClasses.push('off_path')
-            if (f.projected) labelClasses.push('projected')
-            label.setAttribute('class', labelClasses.join(' '))
-            label.setAttribute('x', x2)
-            label.setAttribute('y', y2 - 6)
-            label.setAttribute('text-anchor', 'middle')
-            label.textContent = f.token.length > 24 ? f.token.substring(0, 22) + '…' : f.token
-            svg.appendChild(label)
-          }
-        })
-      })
-      Object.keys(graph.steps).forEach(function (slug) {
-        var step = graph.steps[slug]
-        var p = pos[slug]
-        var status = stepStatus(slug)
-        var g = document.createElementNS(svgNS, 'g')
-        g.setAttribute(
-          'class',
-          'dag-node ' +
-            status +
-            (step.stepType === 'decision' ? ' decision' : '') +
-            (slug === current ? ' current' : '') +
-            (isProjected(slug) ? ' projected' : '') +
-            (slug === selectedStep ? ' selected' : ''),
-        )
-        g.setAttribute('data-step', slug)
-        g.setAttribute('data-status', status)
-        g.setAttribute('data-layer', String(p.layer))
-        g.setAttribute('tabindex', '0')
-        g.setAttribute('role', 'button')
-        g.setAttribute('aria-label', announceStep(slug))
-        g.addEventListener('click', function () {
-          selectStep(slug)
-        })
-        g.addEventListener('keydown', function (ev) {
-          if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
-            if (ev.preventDefault) ev.preventDefault()
+      var box = document.createElement('div')
+      box.setAttribute('class', 'dag-canvas dag-list')
+      box.setAttribute('data-proc-graph', '')
+      box.setAttribute('data-pulse', pulseOf(current))
+      box.setAttribute('role', 'group')
+      box.setAttribute('aria-label', graphSummary(state, current))
+      lay.rows.forEach(function (row, layer) {
+        var rowEl = document.createElement('div')
+        rowEl.setAttribute('class', 'dag-layer')
+        row.forEach(function (slug) {
+          var step = graph.steps[slug]
+          var status = stepStatus(slug)
+          var node = document.createElement('button')
+          node.setAttribute('type', 'button')
+          node.setAttribute(
+            'class',
+            'dag-node ' +
+              status +
+              (step.stepType === 'decision' ? ' decision' : '') +
+              (slug === current ? ' current' : '') +
+              (isProjected(slug) ? ' projected' : '') +
+              (slug === selectedStep ? ' selected' : ''),
+          )
+          node.setAttribute('data-step', slug)
+          node.setAttribute('data-status', status)
+          node.setAttribute('data-layer', String(layer))
+          node.setAttribute('aria-label', announceStep(slug))
+          node.addEventListener('click', function () {
             selectStep(slug)
-          }
+          })
+          // jsdom does not turn Enter on a button into a click, so the key is handled here
+          // exactly as it was for the svg.
+          node.addEventListener('keydown', function (ev) {
+            if (ev.key === 'Enter' || ev.key === ' ' || ev.key === 'Spacebar') {
+              if (ev.preventDefault) ev.preventDefault()
+              selectStep(slug)
+            }
+          })
+          var dot = document.createElement('span')
+          dot.setAttribute('class', 'node-dot')
+          node.appendChild(dot)
+          var text = document.createElement('span')
+          text.setAttribute('class', 'node-text')
+          var sub = document.createElement('span')
+          sub.setAttribute('class', 'node-sub')
+          sub.textContent =
+            (step.stepType || 'task').toUpperCase() +
+            (step.executor ? ' · ' + step.executor : '') +
+            (status !== 'definition' ? ' · ' + status : '')
+          var title = document.createElement('span')
+          title.setAttribute('class', 'node-title')
+          title.textContent = step.name || slug
+          text.appendChild(sub)
+          text.appendChild(title)
+          node.appendChild(text)
+          rowEl.appendChild(node)
         })
-        var rect = document.createElementNS(svgNS, 'rect')
-        rect.setAttribute('x', p.x)
-        rect.setAttribute('y', p.y)
-        rect.setAttribute('width', nodeW)
-        rect.setAttribute('height', nodeH)
-        rect.setAttribute('rx', '8')
-        g.appendChild(rect)
-        var dot = document.createElementNS(svgNS, 'circle')
-        dot.setAttribute('cx', p.x + 16)
-        dot.setAttribute('cy', p.y + nodeH / 2)
-        dot.setAttribute('r', '6')
-        dot.setAttribute('class', 'node-dot')
-        g.appendChild(dot)
-        var sub = document.createElementNS(svgNS, 'text')
-        sub.setAttribute('x', p.x + 30)
-        sub.setAttribute('y', p.y + 20)
-        sub.setAttribute('class', 'node-sub')
-        sub.textContent =
-          (step.stepType || 'task').toUpperCase() +
-          (step.executor ? ' · ' + step.executor : '') +
-          (status !== 'definition' ? ' · ' + status : '')
-        g.appendChild(sub)
-        var title = document.createElementNS(svgNS, 'text')
-        title.setAttribute('x', p.x + 30)
-        title.setAttribute('y', p.y + 38)
-        title.setAttribute('class', 'node-title')
-        var name = step.name || slug
-        title.textContent = name.length > 24 ? name.substring(0, 22) + '…' : name
-        g.appendChild(title)
-        svg.appendChild(g)
+        box.appendChild(rowEl)
       })
-      return svg
+      return box
     }
 
     function renderGraph(hostEl) {
@@ -3687,7 +3678,7 @@
     }
 
     // ---- Run panel ----
-    function renderRunPanel(hostEl) {
+    function renderRunPanel(hostEl, headShown) {
       var col = make('div', 'exec-log-col')
       hostEl.appendChild(col)
       var panel = make('div', 'proc-run-state')
@@ -3704,13 +3695,18 @@
         return
       }
       var recorded = activeRun.state
-      panel.appendChild(
-        make(
-          'div',
-          'proc-run-title',
-          'Run ' + activeRun.id + (activeRun.closed ? ' (closed)' : ''),
-        ),
-      )
+      // The run bar above already names the run, its status, its current step and the path
+      // travelled. Only the degenerate path (the export carries no definition) has no bar,
+      // and there this head is the only thing that says which run is on screen.
+      if (!headShown) {
+        panel.appendChild(
+          make(
+            'div',
+            'proc-run-title',
+            'Run ' + activeRun.id + (activeRun.closed ? ' (closed)' : ''),
+          ),
+        )
+      }
       if (!recorded) {
         panel.appendChild(
           make(
@@ -3724,7 +3720,7 @@
       }
       var state = viewState()
       var projected = state !== recorded
-      if (projected) {
+      if (!headShown && projected) {
         var pending = make(
           'div',
           'proc-run-projected',
@@ -3733,17 +3729,6 @@
         pending.setAttribute('data-proc-projected', '')
         panel.appendChild(pending)
       }
-      panel.appendChild(make('div', 'proc-run-status', 'Status: ' + state.status))
-      panel.appendChild(
-        make(
-          'div',
-          'proc-run-current',
-          'Current step: ' + (state.currentStep ? stepName(state.currentStep) : 'none'),
-        ),
-      )
-      panel.appendChild(
-        make('div', 'proc-run-path', 'Path: ' + state.path.map(stepName).join(' → ')),
-      )
       if (state.blockedBy)
         panel.appendChild(make('div', 'proc-run-blocked', 'Blocked: ' + state.blockedBy))
       if (state.crashed)
@@ -3797,29 +3782,35 @@
       var details = detailsBox('proc-run-details')
       // "Allowed next" is what the step's guards permit, which is meaningless when the fold
       // says the run cannot advance. A blocked step would read as if its branches were open.
+      // It is the one line that answers "what happens next", so it stays outside the fold.
+      var allowedEl = null
       if (
         state.allowedNext.length &&
         !state.blockedBy &&
         !state.drift &&
         !TERMINAL_RUN[state.status]
       ) {
-        details.appendChild(
-          make(
-            'div',
-            'proc-run-allowed',
-            'Allowed next: ' +
-              state.allowedNext
-                .map(function (tr) {
-                  return stepName(tr.to) + ' (' + guardText(tr.guard) + ')'
-                })
-                .join(', '),
-          ),
+        allowedEl = make(
+          'div',
+          'proc-run-allowed',
+          'Allowed next: ' +
+            state.allowedNext
+              .map(function (tr) {
+                return stepName(tr.to) + ' (' + guardText(tr.guard) + ')'
+              })
+              .join(', '),
         )
       }
       details.appendChild(make('div', 'proc-run-seq', 'Run seq: ' + runSeq()))
+      // The path travelled is reference material, not a headline: it grows with the run and
+      // used to push the status badge off the bar.
+      details.appendChild(
+        make('div', 'proc-run-path', 'Path: ' + state.path.map(stepName).join(' → ')),
+      )
       if (!activeRun.closed && !TERMINAL_RUN[recorded.status]) {
         details.appendChild(make('div', 'proc-run-next', agentInstruction(recorded)))
       }
+      if (allowedEl) panel.appendChild(allowedEl)
       panel.appendChild(details)
       renderRequestQueue(col)
     }
@@ -3984,9 +3975,6 @@
         ),
       )
       bar.appendChild(make('span', 'sep'))
-      bar.appendChild(
-        make('span', 'path proc-run-path', 'Path: ' + state.path.map(stepName).join(' → ')),
-      )
       if (projected) {
         var pending = make(
           'span',
@@ -4017,9 +4005,9 @@
     // ---- BDE Tab Bar ----
     function renderBdeTabBar(hostEl) {
       var bar = make('div', 'proc-tabbar tabbar')
+      bar.setAttribute('role', 'tablist')
       var tabs = [
         { id: 'flow', label: 'Flow' },
-        { id: 'steps', label: 'Steps' },
         { id: 'requests', label: 'Requests', count: requestsOf(activeRun).length },
         {
           id: 'artifacts',
@@ -4028,14 +4016,22 @@
         },
       ]
       tabs.forEach(function (t) {
+        var isOn = activeTab === t.id
         var btn = button(
-          'proc-tab-btn' + (activeTab === t.id ? ' on' : ''),
+          'proc-tab-btn' + (isOn ? ' on' : ''),
           t.label,
           function () {
             activeTab = t.id
             render()
           },
-          { 'data-tab': t.id },
+          {
+            'data-tab': t.id,
+            role: 'tab',
+            'aria-selected': isOn ? 'true' : 'false',
+            // A tablist is one tab stop: the arrows move between tabs. No ids: the view
+            // must be mountable twice on one page (`no global ids` in its test).
+            tabindex: isOn ? '0' : '-1',
+          },
         )
         if (t.count !== undefined && t.count > 0) {
           btn.appendChild(make('span', 'faint count', ' ' + t.count))
@@ -4044,6 +4040,22 @@
           btn.hidden = true
         }
         bar.appendChild(btn)
+      })
+      bar.addEventListener('keydown', function (ev) {
+        var key = ev && ev.key
+        if (key !== 'ArrowRight' && key !== 'ArrowLeft' && key !== 'Home' && key !== 'End') return
+        var items = Array.prototype.filter.call(bar.children, function (el) {
+          return el && !el.hidden
+        })
+        var at = items.indexOf(document.activeElement)
+        if (at < 0) return
+        if (ev.preventDefault) ev.preventDefault()
+        var nextIdx
+        if (key === 'Home') nextIdx = 0
+        else if (key === 'End') nextIdx = items.length - 1
+        else if (key === 'ArrowRight') nextIdx = (at + 1) % items.length
+        else nextIdx = (at - 1 + items.length) % items.length
+        if (items[nextIdx] && items[nextIdx].focus) items[nextIdx].focus()
       })
       hostEl.appendChild(bar)
     }
@@ -4064,6 +4076,7 @@
         'proc-panel panel panel-flow' + (activeTab === 'flow' ? ' on' : ''),
       )
       pFlow.setAttribute('data-tab-panel', 'flow')
+      pFlow.setAttribute('role', 'tabpanel')
       var padFlow = make('div', 'pad')
       var branches = stepKeys.some(function (slug) {
         return Array.isArray(steps[slug].next) && steps[slug].next.length > 1
@@ -4118,103 +4131,13 @@
       pFlow.appendChild(padFlow)
       hostEl.appendChild(pFlow)
 
-      // Panel 2: Steps (Master table)
-      var pSteps = make(
-        'section',
-        'proc-panel panel panel-steps' + (activeTab === 'steps' ? ' on' : ''),
-      )
-      pSteps.setAttribute('data-tab-panel', 'steps')
-      var padSteps = make('div', 'pad')
-      var cardSteps = make('div', 'card')
-      var headSteps = make('div', 'col-head')
-      headSteps.appendChild(make('span', null, 'Steps'))
-      headSteps.appendChild(
-        make(
-          'span',
-          'count',
-          def
-            ? 'definición del documento · ' + stepKeys.length
-            : 'orden de ejecución · ' + stepKeys.length,
-        ),
-      )
-      cardSteps.appendChild(headSteps)
-      var table = make('table', 'proc-steps-table')
-      var thead = make('thead')
-      var htr = make('tr')
-      htr.appendChild(make('th', null))
-      htr.appendChild(make('th', null, 'Step'))
-      htr.appendChild(make('th', null, 'Type'))
-      htr.appendChild(make('th', null, 'Executor'))
-      if (def) {
-        htr.appendChild(make('th', null, 'Inputs'))
-        htr.appendChild(make('th', null, 'Outputs'))
-      } else {
-        var thDur = make('th', 'num', 'Attempt')
-        thDur.style.textAlign = 'right'
-        htr.appendChild(thDur)
-        htr.appendChild(make('th', null, 'Artifacts'))
-      }
-      thead.appendChild(htr)
-      table.appendChild(thead)
-      var tbody = make('tbody')
-      stepKeys.forEach(function (slug) {
-        var s = steps[slug]
-        var st = def ? 'definition' : stepStatus(slug)
-        var tr = make('tr', slug === selectedStep ? 'on' : '')
-        tr.setAttribute('data-step', slug)
-        var td1 = make('td')
-        var mark = make('span', 'dotmark ' + st, MARK_SYMBOLS[st] || '·')
-        td1.appendChild(mark)
-        tr.appendChild(td1)
-        var td2 = make('td')
-        if (slug === selectedStep) {
-          td2.appendChild(make('b', null, s.name || slug))
-        } else {
-          td2.textContent = s.name || slug
-        }
-        tr.appendChild(td2)
-        var td3 = make('td')
-        td3.appendChild(
-          make(
-            'span',
-            'pill' + (s.stepType === 'decision' ? ' decision' : ''),
-            s.stepType || 'task',
-          ),
-        )
-        tr.appendChild(td3)
-        tr.appendChild(make('td', 'dim', s.executor || '—'))
-        if (def) {
-          var inText = s.inputs && s.inputs.length ? s.inputs.join(', ') : '—'
-          var outText = s.outputs && s.outputs.length ? s.outputs.join(', ') : '—'
-          tr.appendChild(make('td', s.inputs && s.inputs.length ? 'faint' : 'dim', inText))
-          tr.appendChild(make('td', s.outputs && s.outputs.length ? 'faint' : 'dim', outText))
-        } else {
-          var stepState = state && state.steps ? state.steps[slug] : null
-          var attText = stepState && stepState.attempt ? String(stepState.attempt) : '—'
-          var artText = s.outputs && s.outputs.length ? s.outputs.length + ' out' : '—'
-          var tdAtt = make('td', 'num', attText)
-          tdAtt.style.textAlign = 'right'
-          tr.appendChild(tdAtt)
-          tr.appendChild(make('td', s.outputs && s.outputs.length ? 'faint' : 'dim', artText))
-        }
-        tr.addEventListener('click', function () {
-          selectedStep = slug
-          render()
-        })
-        tbody.appendChild(tr)
-      })
-      table.appendChild(tbody)
-      cardSteps.appendChild(table)
-      padSteps.appendChild(cardSteps)
-      pSteps.appendChild(padSteps)
-      hostEl.appendChild(pSteps)
-
       // Panel 3: Requests
       var pReqs = make(
         'section',
         'proc-panel panel panel-requests' + (activeTab === 'requests' ? ' on' : ''),
       )
       pReqs.setAttribute('data-tab-panel', 'requests')
+      pReqs.setAttribute('role', 'tabpanel')
       var padReqs = make('div', 'pad')
       renderRequestQueue(padReqs)
       pReqs.appendChild(padReqs)
@@ -4226,6 +4149,7 @@
         'proc-panel panel panel-artifacts' + (activeTab === 'artifacts' ? ' on' : ''),
       )
       pArts.setAttribute('data-tab-panel', 'artifacts')
+      pArts.setAttribute('role', 'tabpanel')
       renderArtifactPanel(pArts)
       hostEl.appendChild(pArts)
     }
@@ -4267,12 +4191,12 @@
       var ws = make('div', 'exec-workspace proc-bde-layout')
       body.appendChild(ws)
 
-      // Column 1: the flow graph. It is what the person reads first: where the run is.
+      // Right column: the flow graph, so the person reads what to do first and looks right
+      // for where that step sits in the procedure.
       var rail = make('aside', 'proc-rail rail')
       renderBdeRail(rail)
-      ws.appendChild(rail)
 
-      // Column 2: the runs, the run state and the step timeline, whose rows open in place.
+      // Left column: the runs, the run state and the step timeline, whose rows open in place.
       // The start form takes the column while it is open, so preparing a run never competes
       // with the steps of a run the person is answering.
       var main = make('div', 'proc-main main')
@@ -4287,9 +4211,10 @@
         renderBdeRunBar(main)
         renderBdeTabBar(main)
         renderBdePanels(main)
-        renderRunPanel(main)
+        renderRunPanel(main, true)
       }
       ws.appendChild(main)
+      ws.appendChild(rail)
     }
 
     // The inbox is the front door: open on the first run that waits on this person.

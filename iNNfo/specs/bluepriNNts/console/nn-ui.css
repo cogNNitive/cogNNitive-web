@@ -6003,6 +6003,95 @@ svg.dag-canvas {
   width: 100%;
   display: block;
 }
+/* The graph with no chart runtime: the same walk as a list of buttons. It carries the node
+   contract the svg had, so nothing downstream can tell them apart except by looking. */
+.dag-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 8px;
+}
+.dag-layer {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.dag-list .dag-node {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  max-width: 260px;
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.dag-list .dag-node.done {
+  border-color: var(--success);
+}
+.dag-list .dag-node.waiting {
+  border-color: var(--warning);
+}
+.dag-list .dag-node.failed {
+  border-color: var(--danger);
+}
+.dag-list .dag-node.pending {
+  border-style: dashed;
+}
+.dag-list .dag-node.current {
+  border-width: 2px;
+  border-color: var(--primary);
+}
+.dag-list .dag-node.decision {
+  border-left-width: 4px;
+}
+.dag-list .dag-node:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: -3px;
+}
+.dag-list .node-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  background: var(--faint);
+}
+.dag-list .dag-node.done .node-dot {
+  background: var(--success);
+}
+.dag-list .dag-node.waiting .node-dot {
+  background: var(--warning);
+}
+.dag-list .dag-node.failed .node-dot {
+  background: var(--danger);
+}
+.dag-list .dag-node.current .node-dot {
+  background: var(--primary);
+}
+.dag-list .node-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.dag-list .node-sub {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.dag-list .node-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+}
 .dag-node {
   cursor: pointer;
   transition: all 0.15s ease;
@@ -8207,14 +8296,14 @@ button.cite-icon,
   padding: 2px 0 !important;
 }
 .nn-qud-id {
-  color: var(--nn-muted, #64748b) !important;
+  color: var(--nn-muted) !important;
   font-family: var(--nn-mono), ui-monospace, monospace !important;
   font-size: 0.82rem !important;
 }
 .nn-qud-btn {
   background: transparent !important;
   border: none !important;
-  color: var(--nn-muted, #64748b) !important;
+  color: var(--nn-muted) !important;
   padding: 2px 4px !important;
 }
 .nn-qud-btn:hover {
@@ -8227,7 +8316,7 @@ button.cite-icon,
   padding: 0 0 6px 0 !important;
 }
 .nn-card-path {
-  color: var(--nn-muted, #64748b) !important;
+  color: var(--nn-muted) !important;
   background: transparent !important;
   border: none !important;
   border-radius: 0 !important;
@@ -8264,7 +8353,7 @@ button.cite-icon,
 .nn-strip-rel-group .nn-strip-rel-field,
 .nn-rel-list li.nn-rel-row .nn-rel-field {
   background-color: #f8fafc !important;
-  color: #64748b !important;
+  color: var(--muted) !important;
   font-family: var(--nn-mono), ui-monospace, monospace !important;
   font-size: 11px !important;
   font-weight: 400 !important;
@@ -8461,7 +8550,7 @@ button.cite-icon,
   font-family: var(--nn-mono), ui-monospace, monospace !important;
   font-size: 11px !important;
   font-weight: 400 !important;
-  color: #64748b !important;
+  color: var(--muted) !important;
   border: none !important;
   background: transparent !important;
   padding: 0 !important;
@@ -8622,7 +8711,7 @@ select {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  color: var(--nn-muted, #64748b) !important;
+  color: var(--nn-muted) !important;
   cursor: pointer !important;
   padding: 2px 6px !important;
   border-radius: 4px !important;
@@ -8849,7 +8938,7 @@ select {
 .nn-card-incoming-label {
   font-size: 11px !important;
   font-weight: 600 !important;
-  color: var(--nn-muted, #64748b) !important;
+  color: var(--nn-muted) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.04em !important;
   text-align: left !important;
@@ -8877,18 +8966,18 @@ select {
 .nn-modal-details > summary {
   cursor: pointer;
   font-weight: 600;
-  color: var(--muted, #64748b);
+  color: var(--muted);
   user-select: none;
 }
 .nn-modal-details h4 {
   margin: 8px 0 4px;
   font-size: 0.75rem;
   text-transform: uppercase;
-  color: var(--muted, #64748b);
+  color: var(--muted);
 }
 .nn-review-dock .nn-dock-drafts {
   font-size: 0.75rem;
-  color: var(--muted, #64748b);
+  color: var(--muted);
   white-space: nowrap;
 }
 
@@ -8949,7 +9038,7 @@ select {
   align-items: center !important;
   gap: 6px !important;
   font-size: 0.78rem !important;
-  color: #64748b !important;
+  color: var(--muted) !important;
 }
 .nn-review-dock .nn-reviewer-name {
   width: 7.5rem !important;
@@ -9022,7 +9111,7 @@ select {
   appearance: none !important;
   border: 1px solid #e2e8f0 !important;
   background: #ffffff !important;
-  color: #64748b !important;
+  color: var(--muted) !important;
   font: inherit !important;
   font-size: 0.75rem !important;
   padding: 3px 8px !important;
@@ -9085,7 +9174,7 @@ select {
   margin: 0;
   font-size: 0.82rem;
   line-height: 1.45;
-  color: var(--nn-muted, #64748b);
+  color: var(--nn-muted);
 }
 .nn-export-field {
   display: flex;
@@ -9108,7 +9197,7 @@ select {
 }
 .nn-export-list-head span {
   font-size: 0.78rem;
-  color: var(--nn-muted, #64748b);
+  color: var(--nn-muted);
 }
 /* One list container for every change list: the export modal's pending list and
    the review tab's unsent/applied sections. */
@@ -9124,7 +9213,7 @@ select {
   margin: 0;
   padding: 12px 0;
   font-size: 0.82rem;
-  color: var(--nn-muted, #64748b);
+  color: var(--nn-muted);
 }
 /* A stale draft says so in the sheet head, not as a body line. */
 .nn-change-sheet-stale {
@@ -9142,7 +9231,7 @@ select {
   appearance: none;
   border: 1px solid transparent;
   background: transparent;
-  color: var(--nn-muted, #64748b);
+  color: var(--nn-muted);
   font: inherit;
   font-size: 0.76rem;
   font-weight: 600;
@@ -9159,7 +9248,7 @@ select {
 .nn-change-sheet-state {
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--nn-muted, #64748b);
+  color: var(--nn-muted);
   white-space: nowrap;
 }
 .nn-change-sheet-discard:hover {
@@ -9215,7 +9304,7 @@ select {
 }
 [data-nn='copy-status'] {
   font-size: 0.8rem;
-  color: var(--nn-muted, #64748b);
+  color: var(--nn-muted);
 }
 /* Dock Changes button */
 .nn-dock-changes {
@@ -9317,7 +9406,7 @@ select {
 .nn-card-incoming-label {
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--nn-muted, #64748b);
+  color: var(--nn-muted);
   text-transform: none;
   letter-spacing: 0.02em;
 }
@@ -9384,7 +9473,7 @@ select {
 .nn-episode-cost {
   margin: 0;
   font-size: 12.5px;
-  color: #64748b;
+  color: var(--muted);
 }
 .nn-btn {
   font: inherit;
@@ -9658,7 +9747,7 @@ select {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: #64748b;
+  color: var(--muted);
 }
 .nn-conntent-section[data-nn-home] > h3 {
   margin-top: 8px;
@@ -9701,7 +9790,7 @@ select {
 .nn-gate-notes,
 .nn-gate-cause {
   font-size: 12px;
-  color: #64748b;
+  color: var(--muted);
 }
 .nn-series-board {
   list-style: none;
@@ -9765,7 +9854,7 @@ select {
 .nn-gate-protects {
   flex-basis: 100%;
   font-size: 11.5px;
-  color: #64748b;
+  color: var(--muted);
 }
 .nn-gate-actions {
   display: flex;
@@ -9777,7 +9866,7 @@ select {
 .nn-gate-hint {
   margin: 0;
   font-size: 12px;
-  color: #64748b;
+  color: var(--muted);
 }
 .nn-review-media {
   display: flex;
@@ -11043,8 +11132,8 @@ pre.nn-file-preview-code {
 .nn-ku[data-ku-kind='artifact'],
 [data-nn-component='ku-badge'][data-ku-kind='artifact'] {
   border: 1px solid var(--border, #cbd5e1);
-  background: color-mix(in srgb, var(--nn-slate, #64748b) 10%, var(--surface, #ffffff));
-  --c: var(--nn-slate, #64748b);
+  background: color-mix(in srgb, var(--muted) 10%, var(--surface, #ffffff));
+  --c: var(--muted);
 }
 .nn-ku[data-ku-kind='artifact'] > .nn-ku-icon,
 .nn-ku[data-ku-kind='artifact'] > .nn-ku-label {
@@ -12031,11 +12120,12 @@ button.proc-step-item-btn {
 }
 
 /* ---- Procedure Runner B+D+E integrated layout ---- */
-/* The flow graph keeps the wide left column; the run column carries the runs and, under the
-   graph, the step timeline, so a person reads where the run is before reading what to do. */
+/* The run column takes the wide left side: the runs, the run state and the step timeline
+   live there. The flow graph keeps its own narrower right column, so it stays visible as
+   the answer form scrolls. */
 .nn-procedure-view .exec-workspace.proc-bde-layout {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  grid-template-columns: minmax(0, 3fr) minmax(300px, 2fr);
   gap: 16px;
   align-items: start;
 }
@@ -12116,6 +12206,11 @@ button.proc-step-item-btn {
 }
 .proc-tabbar button:hover {
   color: var(--text);
+}
+/* The tablist is one tab stop and the arrows move inside it, so focus has to be visible. */
+.proc-tabbar button:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: -3px;
 }
 .proc-tabbar button.on {
   color: var(--text);
@@ -12259,12 +12354,10 @@ button.proc-step-item-btn {
 }
 
 /* E: Table */
-table.proc-steps-table,
 table.proc-artifacts-table {
   width: 100%;
   border-collapse: collapse;
 }
-table.proc-steps-table thead th,
 table.proc-artifacts-table thead th {
   text-align: left;
   font-size: 10.5px;
@@ -12276,59 +12369,20 @@ table.proc-artifacts-table thead th {
   border-bottom: 1px solid var(--border);
   background: var(--surface-2);
 }
-table.proc-steps-table tbody td,
 table.proc-artifacts-table tbody td {
   padding: 9px 10px;
   border-bottom: 1px solid var(--border);
   font-size: 12.5px;
 }
-table.proc-steps-table tbody tr {
-  cursor: pointer;
-}
-table.proc-steps-table tbody tr:hover,
 table.proc-artifacts-table tbody tr:hover {
   background: var(--surface-2);
 }
-table.proc-steps-table tbody tr.on {
-  background: var(--primary-light);
-}
-table.proc-steps-table tbody tr.on td:first-child {
-  box-shadow: inset 2px 0 0 var(--primary);
-}
-.dotmark {
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: 700;
-}
-.dotmark.done {
-  background: var(--success);
-  color: #fff;
-}
-.dotmark.failed {
-  background: var(--error);
-  color: #fff;
-}
-.dotmark.waiting {
-  border: 2px solid var(--warning);
-  color: var(--warning);
-  background: var(--warning-light);
-}
-.dotmark.pending {
-  border: 1.5px solid var(--border-strong);
-  color: var(--faint);
-}
-.dotmark.definition {
-  border: 1.5px solid var(--border-strong);
-  color: var(--muted);
-}
-
 /* Persistent Rail */
 .proc-rail {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 14px;

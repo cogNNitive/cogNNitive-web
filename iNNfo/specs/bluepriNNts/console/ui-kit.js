@@ -10,6 +10,14 @@
 
   var UI_VERSION = '0.1.0'
 
+  // Dialogs are named through `aria-labelledby`, so each instance needs its own id: a Ku
+  // info panel can open over an edit modal, and two dialogs must not share a heading id.
+  var modalSeq = 0
+  function nextModalId(prefix) {
+    modalSeq += 1
+    return prefix + '-' + modalSeq
+  }
+
   // ---- Design tokens (single source of truth) ----
   //
   // Status fg values are the lightest Tailwind step whose ratio against its own
@@ -472,6 +480,12 @@
       '[data-nn-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=concept] .nn-ku-icon,[data-nn-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=document] .nn-ku-icon{color:var(--nn-concept-' + kslot + ')}',
     )
   }
+  // Dialogs and their controls had no visible focus ring at all: tabbing through a modal
+  // showed nothing. Same ring as the rest of the kit.
+  COMPONENT_CSS.push(
+    '.nn-edit-modal-close:focus-visible,.nn-modal-tab-btn:focus-visible,.nn-btn:focus-visible{outline:2px solid var(--nn-focus);outline-offset:2px}',
+  )
+
   var COMPONENT_CSS_TEXT = COMPONENT_CSS.join('\n')
 
   // Light-only theme: pins color-scheme: light and never switches on OS dark mode.
@@ -2953,6 +2967,8 @@
 
     var head = makeEl(doc, 'div', 'nn-edit-modal-head')
     var title = makeEl(doc, 'h2', null, data.title || 'Edit Component')
+    title.id = nextModalId('nn-edit-modal-title')
+    modal.setAttribute('aria-labelledby', title.id)
     head.appendChild(title)
     var closeBtn = makeEl(doc, 'button', 'nn-edit-modal-close', '\u00D7')
     closeBtn.setAttribute('type', 'button')
@@ -3239,6 +3255,8 @@
     formComment.style.display = isComment ? 'block' : 'none'
     var commentLabel = makeEl(doc, 'label', 'nn-edit-field-label', 'Reviewer Notes / Comment')
     var commentTa = makeEl(doc, 'textarea', 'nn-edit-textarea')
+    commentTa.id = nextModalId('nn-edit-comment')
+    commentLabel.setAttribute('for', commentTa.id)
     commentTa.setAttribute('placeholder', 'Enter review comment or note...')
     if (data.comment != null) commentTa.value = String(data.comment)
     formComment.appendChild(commentLabel)
@@ -3508,10 +3526,20 @@
     }
 
     var head = makeEl(doc, 'div', 'nn-edit-modal-head')
-    head.appendChild(makeEl(doc, 'h2', null, data.title || 'New element'))
+    var newTitle = makeEl(doc, 'h2', null, data.title || 'New element')
+    newTitle.id = nextModalId('nn-new-element-title')
+    modal.setAttribute('aria-labelledby', newTitle.id)
+    head.appendChild(newTitle)
     var closeBtn = makeEl(doc, 'button', 'nn-edit-modal-close', '\u00D7')
     closeBtn.setAttribute('type', 'button')
+    closeBtn.setAttribute('aria-label', 'Close')
     closeBtn.addEventListener('click', cancel)
+    // Escape has to cancel the same way the close button does. Without this the dialog
+    // closed natively and `onCancel` never ran, unlike EditModal.
+    modal.addEventListener('cancel', function (ev) {
+      if (ev && ev.preventDefault) ev.preventDefault()
+      cancel()
+    })
     head.appendChild(closeBtn)
     modal.appendChild(head)
 
@@ -3519,6 +3547,8 @@
 
     var conceptLabel = makeEl(doc, 'label', 'nn-edit-field-label', 'Concept')
     var picker = makeEl(doc, 'select', 'nn-edit-select')
+    picker.id = nextModalId('nn-new-element-concept')
+    conceptLabel.setAttribute('for', picker.id)
     picker.setAttribute('data-nn-role', 'concept')
     picker.appendChild(makeEl(doc, 'option', null, ''))
     picker.firstChild.value = ''
@@ -3547,7 +3577,10 @@
         return String(m.id) === String(data.defaultModel)
       })[0]
       if (preset) modelPicker.value = String(preset.id)
-      body.appendChild(makeEl(doc, 'label', 'nn-edit-field-label', 'Model'))
+      var modelLabel = makeEl(doc, 'label', 'nn-edit-field-label', 'Model')
+      modelPicker.id = nextModalId('nn-new-element-model')
+      modelLabel.setAttribute('for', modelPicker.id)
+      body.appendChild(modelLabel)
       body.appendChild(modelPicker)
     }
     body.appendChild(conceptLabel)
@@ -3555,6 +3588,8 @@
 
     var nameLabel = makeEl(doc, 'label', 'nn-edit-field-label', 'Name')
     var nameInput = FieldInput('text', '', opts)
+    nameInput.id = nextModalId('nn-new-element-name')
+    nameLabel.setAttribute('for', nameInput.id)
     nameInput.setAttribute('data-nn-role', 'name')
     body.appendChild(nameLabel)
     body.appendChild(nameInput)
@@ -3619,7 +3654,10 @@
         if (!def || !def.name) return
         var w = widgetFor(def)
         current.push(w)
-        fieldsHost.appendChild(makeEl(doc, 'label', 'nn-edit-field-label', def.name))
+        if (!w.node.id) w.node.id = nextModalId('nn-new-element-field')
+        var fieldLabelEl = makeEl(doc, 'label', 'nn-edit-field-label', def.name)
+        fieldLabelEl.setAttribute('for', w.node.id)
+        fieldsHost.appendChild(fieldLabelEl)
         fieldsHost.appendChild(w.node)
       })
     }
@@ -4803,24 +4841,24 @@
       '.nn-ku-wrap{display:inline-flex;align-items:center;gap:.2em;position:relative;vertical-align:middle}',
       '.nn-ku{display:inline-flex;align-items:center;gap:.3em;border-radius:.4em;padding:.12em .5em;font-size:.82rem;line-height:1.4;background:var(--nn-surface-2,#f1f5f9);--c:var(--nn-concept-1,#3b82f6);--cb:var(--nn-concept-1-bg,#eff6ff)}',
       '.nn-ku[data-ku-nature=container]{border:2px solid var(--nn-accent,#0f172a);background:var(--nn-surface,#fff)}',
-      '.nn-ku[data-ku-nature=structure]{border:1.5px solid var(--c);font-family:ui-monospace,monospace;color:var(--nn-muted,#64748b);background:var(--nn-surface,#fff)}',
+      '.nn-ku[data-ku-nature=structure]{border:1.5px solid var(--c);font-family:ui-monospace,monospace;color:var(--nn-muted);background:var(--nn-surface,#fff)}',
       '.nn-ku[data-ku-nature=content]{border:0;background:var(--nn-surface-2,#f1f5f9)}',
       '.nn-ku[data-ku-nature=content]>.nn-ku-label,.nn-ku[data-ku-nature=content]>.nn-ku-value{color:var(--c)}',
       '.nn-ku[data-ku-nature=content]>.nn-ku-icon{color:var(--c)}',
       '.nn-ku[data-ku-home=source]{background:var(--nn-source-paper,#fff7e6)}',
-      '.nn-ku[data-ku-home=source]>.nn-ku-label,.nn-ku[data-ku-home=source] .nn-ku-icon{color:var(--nn-muted,#64748b)}',
+      '.nn-ku[data-ku-home=source]>.nn-ku-label,.nn-ku[data-ku-home=source] .nn-ku-icon{color:var(--nn-muted)}',
       '.nn-ku--block{display:flex;width:100%;padding:.5em .7em}',
-      '.nn-ku-more{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:0;border-radius:999px;background:transparent;color:var(--nn-muted,#64748b);cursor:pointer}',
+      '.nn-ku-more{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;padding:0;border:0;border-radius:999px;background:transparent;color:var(--nn-muted);cursor:pointer}',
       '.nn-ku-more:hover,.nn-ku-more[aria-expanded=true]{color:var(--nn-text,#0a0a0a);background:var(--nn-surface-2,#f1f5f9)}',
       '.nn-ku-actions{display:none !important}',
       '.nn-ku-wrap[data-ku-open=true]>.nn-ku-actions{display:none !important}',
-      '.nn-ku-action{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px;border:0;background:transparent;cursor:pointer;color:var(--nn-muted,#64748b)}',
+      '.nn-ku-action{display:inline-flex;align-items:center;justify-content:center;min-width:24px;min-height:24px;border:0;background:transparent;cursor:pointer;color:var(--nn-muted)}',
       '.nn-ku-action:hover{color:var(--nn-text,#0a0a0a);background:var(--nn-surface-2,#f1f5f9)}',
       '.nn-ku[data-ku-kind=change]{border:1.5px solid var(--nn-amber,#d97706);background:color-mix(in srgb,var(--nn-amber,#d97706) 12%,var(--nn-surface,#fff));--c:var(--nn-amber,#d97706)}',
       '.nn-ku[data-ku-kind=change]>.nn-ku-icon,.nn-ku[data-ku-kind=change]>.nn-ku-label{color:var(--nn-amber-text,#b45309)}',
       '.nn-ku[data-ku-kind=origin]{border:1.5px solid var(--nn-purple,#8b5cf6);background:color-mix(in srgb,var(--nn-purple,#8b5cf6) 12%,var(--nn-surface,#fff));--c:var(--nn-purple,#8b5cf6)}',
       '.nn-ku[data-ku-kind=origin]>.nn-ku-icon,.nn-ku[data-ku-kind=origin]>.nn-ku-label{color:var(--nn-purple-text,#7c3aed)}',
-      '.nn-ku[data-ku-kind=artifact]{border:1px solid var(--nn-border,#cbd5e1);background:color-mix(in srgb,var(--nn-slate,#64748b) 10%,var(--nn-surface,#fff));--c:var(--nn-slate,#64748b)}',
+      '.nn-ku[data-ku-kind=artifact]{border:1px solid var(--nn-border,#cbd5e1);background:color-mix(in srgb,var(--muted) 10%,var(--nn-surface,#fff));--c:var(--muted)}',
       '.nn-ku[data-ku-kind=artifact]>.nn-ku-icon,.nn-ku[data-ku-kind=artifact]>.nn-ku-label{color:var(--nn-slate-text,#475569)}',
       '.nn-ku[data-ku-kind=source]{border:1px solid color-mix(in srgb,var(--nn-cyan,#0284c7) 35%,var(--nn-border,#cbd5e1));background:color-mix(in srgb,var(--nn-cyan,#0284c7) 10%,var(--nn-surface,#fff));--c:var(--nn-cyan,#0284c7)}',
       '.nn-ku[data-ku-kind=source]>.nn-ku-icon,.nn-ku[data-ku-kind=source]>.nn-ku-label{color:var(--nn-cyan-text,#0369a1)}',
@@ -5100,7 +5138,9 @@
 
     var head = makeEl(doc, 'div', 'nn-edit-modal-head')
     var h = makeEl(doc, 'h2', 'nn-ku-info-title', descriptor.label || descriptor.address)
+    h.id = nextModalId('nn-ku-info-title')
     h.setAttribute('tabindex', '-1')
+    dlg.setAttribute('aria-labelledby', h.id)
     head.appendChild(h)
     var closeBtn = makeEl(doc, 'button', 'nn-edit-modal-close', '\u00D7')
     closeBtn.setAttribute('type', 'button')
@@ -5203,7 +5243,9 @@
     tabBtnHistory.addEventListener('click', function () { showTab('history') })
     tabBtnConnections.addEventListener('click', function () { showTab('connections') })
 
-    var foot = makeEl(doc, 'div', 'nn-edit-modal-foot')
+    // The same action bar as the other two dialogs. `nn-edit-modal-foot` had no rule at
+    // all, so this footer rendered unstyled.
+    var foot = makeEl(doc, 'div', 'nn-edit-modal-actions')
     if (typeof opts.onReveal === 'function') {
       var revBtn = makeEl(doc, 'button', 'nn-btn nn-btn-ghost', 'Reveal in context')
       revBtn.setAttribute('type', 'button')
