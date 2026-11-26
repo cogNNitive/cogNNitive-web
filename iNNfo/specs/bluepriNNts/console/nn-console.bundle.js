@@ -22291,7 +22291,7 @@ if (typeof window !== 'undefined') {
       )
       var shown = 0
       runs.forEach(function (run) {
-        if (!passesFilter(run) && run !== activeRun) return
+        if (!passesFilter(run)) return
         shown++
         var label = run.id + ' · ' + runStatus(run)
         var b = button('proc-run' + (run === activeRun ? ' active' : ''), label, function () {
@@ -22327,6 +22327,12 @@ if (typeof window !== 'undefined') {
       })
       if (!runs.length) list.appendChild(make('span', 'proc-runs-empty', 'No run recorded yet.'))
       else if (!shown) list.appendChild(make('span', 'proc-runs-empty', 'No run matches.'))
+      // The filter also owns the selection: a panel that keeps showing the run the list just
+      // hid is the same lie as a filter that does not filter.
+      if (activeRun && !passesFilter(activeRun)) {
+        activeRun = null
+        selectedStep = null
+      }
       bar.appendChild(list)
       if (store && active.graph && !/^bluepriNNt:/.test(active.file)) {
         bar.appendChild(
