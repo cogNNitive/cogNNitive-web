@@ -19,20 +19,20 @@
  * Zero external dependencies (nn-core via the shared mirror). ESM module.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
 
-const require = createRequire(import.meta.url);
-const { parseKnowledge } = require('./nn-core.generated.cjs');
+const require = createRequire(import.meta.url)
+const { parseKnowledge } = require('./nn-core.generated.cjs')
 
 /** The folder name of a Character. */
-export const CHARACTER_DIR = 'characters';
-export const CHARACTER_FILENAME = 'CHARACTER.md';
+export const CHARACTER_DIR = 'characters'
+export const CHARACTER_FILENAME = 'CHARACTER.md'
 
-const IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.webp'];
-const ISO_639_1 = /^[a-z]{2}$/;
+const IMAGE_EXT = ['.png', '.jpg', '.jpeg', '.webp']
+const ISO_639_1 = /^[a-z]{2}$/
 const KNOWN_KEYS = new Set([
   'name',
   'voices',
@@ -40,20 +40,22 @@ const KNOWN_KEYS = new Set([
   'avatar_model',
   'avatar_resolution',
   'default_background',
-]);
+])
 
 /** @param {string} name */
 function isSafeName(name) {
-  return typeof name === 'string' && /^[\p{L}\p{N}][\p{L}\p{N} _.-]*$/u.test(name) && name.length <= 64;
+  return (
+    typeof name === 'string' && /^[\p{L}\p{N}][\p{L}\p{N} _.-]*$/u.test(name) && name.length <= 64
+  )
 }
 
 function basenamesWithoutExt(dir) {
-  if (!fs.existsSync(dir)) return [];
+  if (!fs.existsSync(dir)) return []
   return fs
     .readdirSync(dir)
     .filter((f) => IMAGE_EXT.includes(path.extname(f).toLowerCase()))
     .map((f) => path.basename(f, path.extname(f)))
-    .sort();
+    .sort()
 }
 
 /**
@@ -64,72 +66,88 @@ function basenamesWithoutExt(dir) {
  *   defaultBackground: string|null }}
  */
 export function loadCharacter(dir) {
-  const file = path.join(dir, CHARACTER_FILENAME);
+  const file = path.join(dir, CHARACTER_FILENAME)
   if (!fs.existsSync(file)) {
-    const err = new Error(`character-invalid: no ${CHARACTER_FILENAME} in ${dir}; a Character needs that file.`);
-    err.code = 'character-invalid';
-    throw err;
+    const err = new Error(
+      `character-invalid: no ${CHARACTER_FILENAME} in ${dir}; a Character needs that file.`,
+    )
+    err.code = 'character-invalid'
+    throw err
   }
-  const text = fs.readFileSync(file, 'utf8');
-  const parsed = parseKnowledge(text);
-  const front = parsed.frontmatter || {};
+  const text = fs.readFileSync(file, 'utf8')
+  const parsed = parseKnowledge(text)
+  const front = parsed.frontmatter || {}
 
   for (const key of Object.keys(front)) {
     if (!KNOWN_KEYS.has(key)) {
-      const err = new Error(`character-invalid: ${CHARACTER_FILENAME} declares unknown key "${key}" in ${file}; allowed: ${[...KNOWN_KEYS].sort().join(', ')}`);
-      err.code = 'character-invalid';
-      throw err;
+      const err = new Error(
+        `character-invalid: ${CHARACTER_FILENAME} declares unknown key "${key}" in ${file}; allowed: ${[...KNOWN_KEYS].sort().join(', ')}`,
+      )
+      err.code = 'character-invalid'
+      throw err
     }
   }
 
-  const name = front.name === undefined ? '' : String(front.name);
-  const folderName = path.basename(dir);
+  const name = front.name === undefined ? '' : String(front.name)
+  const folderName = path.basename(dir)
   if (name !== folderName) {
-    const err = new Error(`character-invalid: ${file} names "${name}" but the folder is "${folderName}".`);
-    err.code = 'character-invalid';
-    throw err;
+    const err = new Error(
+      `character-invalid: ${file} names "${name}" but the folder is "${folderName}".`,
+    )
+    err.code = 'character-invalid'
+    throw err
   }
   if (!isSafeName(name)) {
-    const err = new Error(`character-invalid: ${file} has an unsafe name "${name}".`);
-    err.code = 'character-invalid';
-    throw err;
+    const err = new Error(`character-invalid: ${file} has an unsafe name "${name}".`)
+    err.code = 'character-invalid'
+    throw err
   }
 
-  const voicesRaw = front.voices;
-  const voices = {};
+  const voicesRaw = front.voices
+  const voices = {}
   if (voicesRaw && typeof voicesRaw === 'object' && !Array.isArray(voicesRaw)) {
     for (const [lang, slug] of Object.entries(voicesRaw)) {
       if (!ISO_639_1.test(lang)) {
-        const err = new Error(`character-invalid: ${file} voices key "${lang}" is not an ISO 639-1 lowercase two-letter code (voices.${lang}).`);
-        err.code = 'character-invalid';
-        throw err;
+        const err = new Error(
+          `character-invalid: ${file} voices key "${lang}" is not an ISO 639-1 lowercase two-letter code (voices.${lang}).`,
+        )
+        err.code = 'character-invalid'
+        throw err
       }
-      voices[lang] = String(slug);
+      voices[lang] = String(slug)
     }
   }
   if (Object.keys(voices).length === 0) {
-    const err = new Error(`character-invalid: ${file} must declare a non-empty "voices" map of language to Voice slug.`);
-    err.code = 'character-invalid';
-    throw err;
+    const err = new Error(
+      `character-invalid: ${file} must declare a non-empty "voices" map of language to Voice slug.`,
+    )
+    err.code = 'character-invalid'
+    throw err
   }
 
-  const poses = basenamesWithoutExt(path.join(dir, 'avatars'));
-  const backgrounds = basenamesWithoutExt(path.join(dir, 'backgrounds'));
-  const defaultPose = front.default_pose === undefined || front.default_pose === null ? null : String(front.default_pose);
+  const poses = basenamesWithoutExt(path.join(dir, 'avatars'))
+  const backgrounds = basenamesWithoutExt(path.join(dir, 'backgrounds'))
+  const defaultPose =
+    front.default_pose === undefined || front.default_pose === null
+      ? null
+      : String(front.default_pose)
   if (poses.length > 0 && (defaultPose === null || !poses.includes(defaultPose))) {
     const err = new Error(
       `character-invalid: ${file} default_pose "${defaultPose}" is not one of the avatars; available: ${poses.join(', ')}`,
-    );
-    err.code = 'character-invalid';
-    throw err;
+    )
+    err.code = 'character-invalid'
+    throw err
   }
-  const defaultBackground = front.default_background === undefined || front.default_background === null ? null : String(front.default_background);
+  const defaultBackground =
+    front.default_background === undefined || front.default_background === null
+      ? null
+      : String(front.default_background)
   if (defaultBackground !== null && !backgrounds.includes(defaultBackground)) {
     const err = new Error(
       `character-invalid: ${file} default_background "${defaultBackground}" is not one of the backgrounds; available: ${backgrounds.join(', ')}`,
-    );
-    err.code = 'character-invalid';
-    throw err;
+    )
+    err.code = 'character-invalid'
+    throw err
   }
 
   return {
@@ -138,10 +156,16 @@ export function loadCharacter(dir) {
     poses,
     backgrounds,
     defaultPose,
-    avatarModel: front.avatar_model === undefined || front.avatar_model === null ? null : String(front.avatar_model),
-    avatarResolution: front.avatar_resolution === undefined || front.avatar_resolution === null ? null : String(front.avatar_resolution),
+    avatarModel:
+      front.avatar_model === undefined || front.avatar_model === null
+        ? null
+        : String(front.avatar_model),
+    avatarResolution:
+      front.avatar_resolution === undefined || front.avatar_resolution === null
+        ? null
+        : String(front.avatar_resolution),
     defaultBackground,
-  };
+  }
 }
 
 /**
@@ -153,19 +177,26 @@ export function loadCharacter(dir) {
  * @param {string} name
  * @returns {string} The character folder path.
  */
-export function findCharacter(root, name) {
+export function findCharacter(root, name, packageFloor = null) {
   const candidates = [
     path.join(root, 'library', CHARACTER_DIR, name),
     path.join(root, 'media', CHARACTER_DIR, name),
-  ];
+  ]
+  if (packageFloor) {
+    const floorDir =
+      path.basename(packageFloor) === CHARACTER_DIR
+        ? path.join(packageFloor, name)
+        : path.join(packageFloor, 'library', CHARACTER_DIR, name)
+    candidates.push(floorDir)
+  }
   for (const dir of candidates) {
-    if (fs.existsSync(path.join(dir, CHARACTER_FILENAME))) return dir;
+    if (fs.existsSync(path.join(dir, CHARACTER_FILENAME))) return dir
   }
   const err = new Error(
     `character-not-found: no Character "${name}" (${CHARACTER_FILENAME}) in: ${candidates.join(' or ')}`,
-  );
-  err.code = 'character-not-found';
-  throw err;
+  )
+  err.code = 'character-not-found'
+  throw err
 }
 
 /**
@@ -178,14 +209,14 @@ export function findCharacter(root, name) {
  *   avatar_resolution: string|null, background: string|null }}
  */
 export function characterValues(character, language) {
-  const lang = String(language || '').toLowerCase();
+  const lang = String(language || '').toLowerCase()
   return {
     voice: character.voices[lang] || null,
     pose: character.defaultPose,
     avatar_model: character.avatarModel,
     avatar_resolution: character.avatarResolution,
     background: character.defaultBackground,
-  };
+  }
 }
 
 /**
@@ -199,22 +230,29 @@ export function characterValues(character, language) {
  * @returns {string}
  */
 export function assertCharacterVoice(character, language) {
-  const lang = String(language || '').toLowerCase();
-  const voice = character.voices?.[lang];
+  const lang = String(language || '').toLowerCase()
+  const voice = character.voices?.[lang]
   if (typeof voice !== 'string' || voice.trim() === '') {
     const err = new Error(
       `missing-character-voice: Character "${character.name}" has no voice for language "${lang}" ` +
         `(available: ${Object.keys(character.voices || {}).join(', ') || 'none'}); ` +
         `declare a Voice for that language instead of reusing another language's voice.`,
-    );
-    err.code = 'missing-character-voice';
-    throw err;
+    )
+    err.code = 'missing-character-voice'
+    throw err
   }
-  return voice;
+  return voice
 }
 
 /** The closed set of fields a Character supplies (capability conntent-character). */
-export const CHARACTER_FIELDS = ['voice', 'avatar', 'pose', 'background', 'avatar_model', 'avatar_resolution'];
+export const CHARACTER_FIELDS = [
+  'voice',
+  'avatar',
+  'pose',
+  'background',
+  'avatar_model',
+  'avatar_resolution',
+]
 
 /**
  * Reports `character-override` warnings: fields the active Character supplies whose
@@ -229,32 +267,35 @@ export const CHARACTER_FIELDS = ['voice', 'avatar', 'pose', 'background', 'avata
  * @returns {Array<{ code: 'character-override', field: string, source: string, character: string }>}
  */
 export function characterOverrides({ cascade, characterOf, position = {} }) {
-  const warnings = [];
-  const seen = new Set();
-  const at = cascade.at(position.scene ?? 'scene-1', position.layer);
+  const warnings = []
+  const seen = new Set()
+  const at = cascade.at(position.scene ?? 'scene-1', position.layer)
   for (const field of CHARACTER_FIELDS) {
-    const r = at.get(field);
-    if (!r || r.source == null) continue;
+    const r = at.get(field)
+    if (!r || r.source == null) continue
     // The Character node itself is `<level>:character:<name>` (source trace).
-    if (r.source.includes(':character:')) continue;
+    if (r.source.includes(':character:')) continue
     // The character whose values could have supplied this field: the active character
     // at the innermost level that declares `character`, or the resolution winner.
-    const active = activeCharacterName(cascade, characterOf, position);
-    if (!active) continue;
-    const key = `${field}|${r.source}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    warnings.push({ code: 'character-override', field, source: r.source, character: active });
+    const active = activeCharacterName(cascade, characterOf, position)
+    if (!active) continue
+    const key = `${field}|${r.source}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    warnings.push({ code: 'character-override', field, source: r.source, character: active })
   }
-  return warnings;
+  return warnings
 }
 
 /** The character named by the nearest scope bag that declares `character::`. */
 function activeCharacterName(cascade, characterOf, position = {}) {
   // Cheap and dependency-free: reuse the resolver's own trace for `character`.
-  const r = cascade.at(position.scene ?? 'scene-1', position.layer).get('character');
-  const name = r && r.source && r.source.includes(':character:')
-    ? r.source.split(':character:')[1]
-    : (r.source === 'scene' || r.source === 'series' || r.source === 'video' || r.source === 'kind' ? r.value : null);
-  return name && characterOf && characterOf(String(name)) ? String(name) : null;
+  const r = cascade.at(position.scene ?? 'scene-1', position.layer).get('character')
+  const name =
+    r && r.source && r.source.includes(':character:')
+      ? r.source.split(':character:')[1]
+      : r.source === 'scene' || r.source === 'series' || r.source === 'video' || r.source === 'kind'
+        ? r.value
+        : null
+  return name && characterOf && characterOf(String(name)) ? String(name) : null
 }

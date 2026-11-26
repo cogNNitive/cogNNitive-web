@@ -78,18 +78,33 @@ const asList = (value) =>
   Array.isArray(value) ? value.map(String) : value === undefined ? [] : [String(value)]
 
 /**
- * Where a workspace vendors the blueprint (`<root>/specs/bluepriNNts/coNNtent/catalog/...`).
+ * Where a workspace vendors the blueprint (`<root>/<blueprints_dir>/coNNtent/catalog/...`).
  * @param {string} domainRoot
  */
 function vendoredCatalogPath(domainRoot) {
-  return path.join(
-    domainRoot,
-    'specs',
-    'bluepriNNts',
-    'coNNtent',
-    'catalog',
-    REFERENCE_CATALOG_FILENAME,
-  )
+  const candidates = [
+    path.join(
+      domainRoot,
+      'specs',
+      'bluepriNNts',
+      'coNNtent',
+      'catalog',
+      REFERENCE_CATALOG_FILENAME,
+    ),
+    path.join(
+      domainRoot,
+      '.agents',
+      'bluepriNNts',
+      'coNNtent',
+      'catalog',
+      REFERENCE_CATALOG_FILENAME,
+    ),
+    path.join(domainRoot, 'bluepriNNts', 'coNNtent', 'catalog', REFERENCE_CATALOG_FILENAME),
+  ]
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c
+  }
+  return candidates[0]
 }
 
 /**

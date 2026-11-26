@@ -6,7 +6,7 @@ parent_spec:
   name: "iNNfo_V_0-7-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"
 blueprint_name: "coNNtent"
-blueprint_version: "V_0-32-4"
+blueprint_version: "V_0-32-5"
 title: "coNNtent App"
 catalog: catalog/model-catalog_coNNtent_NN.md
 procedures:
