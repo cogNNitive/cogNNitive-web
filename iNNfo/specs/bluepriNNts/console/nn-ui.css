@@ -6063,9 +6063,8 @@ svg.dag-canvas {
   fill: var(--warning-light);
 }
 .dag-node.waiting .node-dot {
-  fill: none;
+  fill: var(--warning);
   stroke: var(--warning);
-  stroke-width: 2;
 }
 .dag-node.pending rect {
   stroke-dasharray: 3 3;
@@ -6772,12 +6771,19 @@ button.proc-artifact-open:disabled {
 
 /* The opened artifact: read-only, and it says which file it came from */
 .proc-artifact-view {
-  margin-top: 16px;
+  margin: auto;
+  padding: 0;
+  width: min(760px, 92vw);
+  max-height: 84vh;
+  overflow: auto;
+  color: var(--text);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow-card);
-  overflow: hidden;
+}
+.proc-artifact-view::backdrop {
+  background: rgb(0 0 0 / 45%);
 }
 .proc-artifact-view-head {
   display: flex;
@@ -12025,30 +12031,19 @@ button.proc-step-item-btn {
 }
 
 /* ---- Procedure Runner B+D+E integrated layout ---- */
-.exec-workspace.proc-bde-layout {
+/* The flow graph keeps the wide left column; the run column carries the runs and, under the
+   graph, the step timeline, so a person reads where the run is before reading what to do. */
+.nn-procedure-view .exec-workspace.proc-bde-layout {
   display: grid;
-  grid-template-columns: 244px 1fr 342px;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
   gap: 16px;
-  align-items: stretch;
-}
-@media (max-width: 1240px) {
-  .exec-workspace.proc-bde-layout {
-    grid-template-columns: 244px 1fr;
-  }
-  .exec-workspace.proc-bde-layout .proc-rail {
-    grid-column: 1 / -1;
-    flex-direction: row;
-  }
+  align-items: start;
 }
 
-/* A phone has no room for three columns: stack them, the flow graph at full width. */
+/* A phone has no room for two columns: stack them, the flow graph at full width. */
 @media (max-width: 760px) {
-  .exec-workspace.proc-bde-layout {
+  .nn-procedure-view .exec-workspace.proc-bde-layout {
     grid-template-columns: minmax(0, 1fr);
-  }
-  .exec-workspace.proc-bde-layout .proc-rail {
-    flex-direction: column;
-    position: static;
   }
 }
 
@@ -12337,8 +12332,7 @@ table.proc-steps-table tbody tr.on td:first-child {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  position: sticky;
-  top: 0;
+  min-width: 0;
 }
 .flowcard .graphbox {
   padding: 10px 8px 4px;
@@ -12511,4 +12505,80 @@ table.proc-steps-table tbody tr.on td:first-child {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: #ffffff;
+}
+
+/* ---- Procedure step timeline (flow panel) ---- */
+/* One row per step: marker, toggle, and the step card opening in place. The accordion keeps
+   one step open so the flow graph, the timeline and the card never disagree. */
+.proc-stepper > .doc-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: start;
+}
+.proc-stepper > .doc-step:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  inset-block: calc(1rem + 12px) -16px;
+  inset-inline-start: 17px;
+  width: 1px;
+  background: var(--border-strong);
+  pointer-events: none;
+}
+.proc-timeline-marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 2rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.proc-timeline-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border: 2px solid var(--muted);
+  border-radius: 50%;
+  background: var(--surface);
+}
+.proc-timeline-marker.done {
+  color: var(--success);
+}
+.proc-timeline-marker.done .proc-timeline-dot {
+  border-color: var(--success);
+  background: var(--success);
+}
+.proc-timeline-marker.active .proc-timeline-dot {
+  border-color: var(--primary);
+}
+.proc-timeline-marker.waiting .proc-timeline-dot {
+  border-color: var(--warning);
+}
+.proc-timeline-marker.failed .proc-timeline-dot {
+  border-color: var(--danger);
+}
+.proc-timeline-content {
+  min-width: 0;
+}
+.proc-step-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-align: start;
+  cursor: pointer;
+}
+.proc-step-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm, 6px);
 }

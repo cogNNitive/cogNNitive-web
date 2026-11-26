@@ -22323,7 +22323,6 @@ if (typeof window !== 'undefined') {
         )
       }
       hostEl.appendChild(bar)
-      if (startFormOpen && store) renderStartForm(hostEl)
     }
 
     /** The slots a run of the active procedure needs, from its frontmatter declaration. */
@@ -23700,11 +23699,11 @@ if (typeof window !== 'undefined') {
       )
     }
 
-    /** Shows the file's content in a panel inside the view: it reads, it never writes. */
+    /** Shows the file's content in a modal dialog: it reads, it never writes. */
     function showArtifact(def, path, embed) {
       var panel = container.querySelector('.proc-artifact-view')
       if (!panel) {
-        panel = make('div', 'proc-artifact-view')
+        panel = make('dialog', 'proc-artifact-view')
         root.appendChild(panel)
       }
       panel.innerHTML = ''
@@ -23712,12 +23711,14 @@ if (typeof window !== 'undefined') {
       head.appendChild(make('span', 'proc-artifact-view-title', (def && def.name) || path))
       head.appendChild(
         button('proc-artifact-view-close', 'Close', function () {
+          if (typeof panel.close === 'function' && panel.open) panel.close()
           panel.remove()
         }),
       )
       panel.appendChild(head)
       panel.appendChild(make('div', 'proc-artifact-view-path', path))
       panel.appendChild(embedBody(embed || { kind: 'text', text: '' }, path))
+      if (typeof panel.showModal === 'function' && !panel.open) panel.showModal()
       if (panel.scrollIntoView) {
         try {
           panel.scrollIntoView({ block: 'nearest' })
@@ -25379,84 +25380,40 @@ if (typeof window !== 'undefined') {
       padFlow.appendChild(noteFlow)
 
       var stepperBox = make('div', 'proc-stepper')
-      if (def) {
-        stepKeys.forEach(function (slug, i) {
-          var s = steps[slug]
-          var row = make(
-            'div',
-            'doc-step' + (slug === (selectedStep || graph.start || stepKeys[0]) ? ' on' : ''),
-          )
-          row.setAttribute('data-step', slug)
-          var h3 = make('h3')
-          h3.appendChild(make('span', 'idx', String(i + 1).padStart(2, '0')))
-          h3.appendChild(document.createTextNode(' ' + (s.name || slug) + ' '))
-          h3.appendChild(
-            make(
-              'span',
-              'pill' + (s.stepType === 'decision' ? ' decision' : ''),
-              s.stepType || 'task',
-            ),
-          )
-          if (s.executor) h3.appendChild(make('span', 'pill', s.executor))
-          if (s.outputs && s.outputs.length) {
-            h3.appendChild(make('span', 'spacer'))
-            h3.appendChild(make('span', 'sub', s.outputs.length + ' out'))
-          }
-          row.appendChild(h3)
-          var el = elementOf(slug)
-          if (el && el.description) {
-            var inst = make('div', 'instructions')
-            appendMarkdown(inst, fillSlots(el.description, values()))
-            row.appendChild(inst)
-          }
-          row.addEventListener('click', function () {
+      // One row per step: a marker, a toggle and, for the open step, its card in place. The
+      // accordion keeps a single step open so the graph, the timeline and the card agree.
+      var shown = selectedStep || (state ? state.currentStep : null) || graph.start || stepKeys[0]
+      if (!shown || !steps[shown]) shown = stepKeys[0]
+      stepKeys.forEach(function (slug, index) {
+        var s = steps[slug]
+        var st = def ? 'definition' : stepStatus(slug)
+        var expanded = slug === shown
+        var row = make('div', 'doc-step' + (expanded ? ' on' : ''))
+        row.setAttribute('data-step', slug)
+        var marker = make('span', 'proc-timeline-marker ' + st)
+        marker.appendChild(make('span', 'proc-timeline-dot'))
+        marker.appendChild(make('span', 'proc-timeline-number', String(index + 1).padStart(2, '0')))
+        row.appendChild(marker)
+        var content = make('div', 'proc-timeline-content')
+        var toggle = button(
+          'proc-step-toggle',
+          s.name || slug,
+          function () {
             selectedStep = slug
             render()
-          })
-          stepperBox.appendChild(row)
-        })
-      } else {
-        stepKeys.forEach(function (slug, i) {
-          var s = steps[slug]
-          var st = stepStatus(slug)
-          var last = i === stepKeys.length - 1
-          var lineCls = st === 'done' ? 'done' : st === 'failed' ? 'failed' : ''
-          var row = make(
-            'div',
-            'step-row' +
-              (slug === (selectedStep || current || graph.start || stepKeys[0]) ? ' on' : ''),
-          )
-          row.setAttribute('data-step', slug)
-          var railCol = make('div', 'rail-col')
-          var dot = make('div', 'dot ' + (st === 'pending' ? '' : st), MARK_SYMBOLS[st] || '○')
-          railCol.appendChild(dot)
-          if (!last) {
-            var line = make('div', 'line ' + lineCls)
-            railCol.appendChild(line)
-          }
-          row.appendChild(railCol)
-          var bodyCol = make('div', 'body')
-          var compact = make('div', 'compact')
-          compact.appendChild(make('span', 't', s.name || slug))
-          compact.appendChild(
-            make(
-              'span',
-              'pill' + (s.stepType === 'decision' ? ' decision' : ''),
-              s.stepType || 'task',
-            ),
-          )
-          if (s.executor) compact.appendChild(make('span', 'pill', s.executor))
-          compact.appendChild(make('span', 'spacer'))
-          compact.appendChild(make('span', 'badge ' + st, st))
-          bodyCol.appendChild(compact)
-          row.appendChild(bodyCol)
-          row.addEventListener('click', function () {
-            selectedStep = slug
-            render()
-          })
-          stepperBox.appendChild(row)
-        })
-      }
+          },
+          { 'aria-expanded': String(expanded), 'data-proc-step-toggle': slug },
+        )
+        toggle.appendChild(make('span', 'badge ' + st, st))
+        content.appendChild(toggle)
+        row.appendChild(content)
+        if (expanded) {
+          var detail = make('div', 'proc-detail-card detail')
+          renderStepCard(detail)
+          content.appendChild(detail)
+        }
+        stepperBox.appendChild(row)
+      })
       padFlow.appendChild(stepperBox)
       pFlow.appendChild(padFlow)
       hostEl.appendChild(pFlow)
@@ -25573,13 +25530,11 @@ if (typeof window !== 'undefined') {
       hostEl.appendChild(pArts)
     }
 
-    // ---- Persistent Rail (Flow DAG + Step Detail + Run Panel) ----
+    // ---- Persistent Rail (Flow DAG) ----
+    // The graph keeps the column; the step card lives in the timeline row it belongs to, so
+    // the person reads a step beside the graph instead of in a second scroll box.
     function renderBdeRail(hostEl) {
       renderGraph(hostEl)
-      var detail = make('div', 'proc-detail-card detail')
-      renderStepCard(detail)
-      renderRunPanel(detail)
-      hostEl.appendChild(detail)
     }
 
     // ---- Render ----
@@ -25612,24 +25567,29 @@ if (typeof window !== 'undefined') {
       var ws = make('div', 'exec-workspace proc-bde-layout')
       body.appendChild(ws)
 
-      // Column 1: Nav (Procedures + Runs)
+      // Column 1: the flow graph. It is what the person reads first: where the run is.
+      var rail = make('aside', 'proc-rail rail')
+      renderBdeRail(rail)
+      ws.appendChild(rail)
+
+      // Column 2: the runs, the run state and the step timeline, whose rows open in place.
+      // The start form takes the column while it is open, so preparing a run never competes
+      // with the steps of a run the person is answering.
+      var main = make('div', 'proc-main main')
       var nav = make('nav', 'proc-nav nav')
       renderBlueprintList(nav)
       renderTabs(nav)
       renderRunList(nav)
-      ws.appendChild(nav)
-
-      // Column 2: Main (Runbar + Tabbar + Panels)
-      var main = make('div', 'proc-main main')
-      renderBdeRunBar(main)
-      renderBdeTabBar(main)
-      renderBdePanels(main)
+      main.appendChild(nav)
+      if (startFormOpen && store) {
+        renderStartForm(main)
+      } else {
+        renderBdeRunBar(main)
+        renderBdeTabBar(main)
+        renderBdePanels(main)
+        renderRunPanel(main)
+      }
       ws.appendChild(main)
-
-      // Column 3: Persistent Rail (Flow DAG + Step Detail + Run Panel)
-      var rail = make('aside', 'proc-rail rail')
-      ws.appendChild(rail)
-      renderBdeRail(rail)
     }
 
     // The inbox is the front door: open on the first run that waits on this person.
