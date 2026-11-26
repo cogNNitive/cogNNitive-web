@@ -1,5 +1,6 @@
 ---
 level: 3
+blueprint_version: "V_0-1-0"
 parent_spec:
   name: "domaiNN"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"
