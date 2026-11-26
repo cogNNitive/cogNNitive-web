@@ -180,6 +180,17 @@ tags:: [docs, how-to, storage, distributed, instance-model, move, extract]
 
 Declare storage on a concept, create instance models, move or rename them, and extract instances from a compact document.
 
+## NN Page: Compose distributed bluepriNNts
+slug:: compose-distributed-blueprints
+title:: Compose distributed bluepriNNts
+source:: content/how-to/compose-distributed-blueprints.md
+route:: content/how-to/compose-distributed-blueprints.md
+order:: 68
+parent:: [[How-To Guides]]
+tags:: [docs, how-to, bluepriNNts, composition, includes, distributed, packages]
+
+Compose distributed bluepriNNt packages using includes, avoiding the copy-paste trap, defining local concepts, and wiring cross-cutting matrices.
+
 ## NN Page: Sync lineage and back up a domaiNN
 slug:: sync-and-backup
 title:: Sync lineage and back up a domaiNN

@@ -37,8 +37,13 @@ Two bluepriNNts are **frozen**: they are pinned to a fixed version and no longer
 | `cogNNitive` | `V_0-5-0` | The root blueprint every other blueprint and kNNowledge document ultimately traces to. |
 | `workspace` | `V_0-10-0` | Frozen legacy blueprint for the domaiNN container. The container concept is now named `domaiNN`; the frozen `workspace` identifier is retained for legacy resolution only. |
 
+## Composing distributed bluepriNNts
+
+BluepriNNt packages living in independent repositories (such as `cogNNitive_blueprints`) can be composed additively using `includes:` in local bluepriNNts. This enables extending canonical schemas with local concepts, fields, and cross-cutting matrices without copying or forking the upstream package. See [Compose distributed bluepriNNts](../how-to/compose-distributed-blueprints.md) for the complete pattern and walkthrough.
+
 ## See also
 
 - [The four levels](../concepts/levels.md)
 - [The specification chain](../concepts/specifications.md)
+- [Compose distributed bluepriNNts](../how-to/compose-distributed-blueprints.md)
 - [MCP tools](mcp-tools.md)
