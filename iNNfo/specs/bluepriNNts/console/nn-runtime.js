@@ -8624,44 +8624,20 @@
     return lines.join('\n')
   }
 
+  /**
+   * Programmatic entry point for the changeset document. It is the same composer the download
+   * uses, with the fields under the names the tests and `window.nnConsole` already call them, so
+   * there is one set of checks (reviewer, blueprint version, verdicts, absent elements) and one
+   * serializer behind both.
+   */
   function composeChangesetExport(state, identifier) {
-    var reviewer =
-      identifier && String(identifier).trim() ? String(identifier).trim() : getReviewerName()
-    var drafts = state && state.store ? state.store.drafts() : []
-    var model = state && state.modelTitle ? state.modelTitle : 'Model'
-    var reviewerSlug = slugify(reviewer) || 'reviewer'
-    var stamp = changesetStampOf(new Date())
-
-    var exportMeta = {
-      source_knowledge: model,
-      title: 'Review Changes: ' + model,
-      author: reviewer,
-      changesBlueprintVersion: state && state.meta ? state.meta.changesBlueprintVersion : undefined,
-    }
-    if (!nonEmptyString(exportMeta.changesBlueprintVersion)) {
-      return { ok: false, errors: [CHANGES_VERSION_MISSING] }
-    }
-
-    if (!reviewer || reviewer === DEFAULT_REVIEWER_NAME) {
-      return { ok: false, errors: ['Reviewer identifier is required.'] }
-    }
-    var verdictProblem = verdictDraftProblem(drafts)
-    if (verdictProblem) {
-      return { ok: false, errors: [verdictProblem] }
-    }
-
-    var text = serializeChangesetMarkdown(
-      exportMeta,
-      drafts,
-      state && state.modelId,
-      state && state.elements,
-    )
-    var filename = modelSlugOf(state) + '_' + reviewerSlug + '_' + stamp + '_changes_NN.md'
+    var out = composeExport(state, identifier)
+    if (!out.ok) return out
     return {
       ok: true,
-      text: text,
-      filename: filename,
-      items: drafts.length,
+      text: out.changesetText,
+      filename: out.changesetFilename,
+      items: out.items,
     }
   }
 
@@ -9115,6 +9091,9 @@
     )
     lines.push(
       '3. If you edited the documents directly, regenerate the console with `regenerate_console`; `apply_change` already regenerates it for the domain it applied to.',
+    )
+    lines.push(
+      '4. Report every skipped change and its reason. If something was skipped, ask for a new export that carries only the skipped changes.',
     )
 
     return lines.join('\n')
@@ -9616,13 +9595,9 @@
       identifierInput.value = storedName === DEFAULT_REVIEWER_NAME ? '' : storedName
     }
     if (agentPrompt) {
-      var promptVersion = state && state.modelVersion ? String(state.modelVersion) : ''
-      agentPrompt.textContent =
-        'Apply the attached changeset to ' +
-        (state ? state.modelTitle : 'Model') +
-        (promptVersion ? ' (' + promptVersion + ')' : '') +
-        '. ' +
-        UI.COPY.agentPromptSkipped
+      // The preview is the prompt the export writes, byte for byte: one composer, so the modal
+      // and the file cannot disagree about what the agent is told.
+      agentPrompt.textContent = composeAgentPrompt(state)
     }
 
     updateExportPreview(doc, state)
