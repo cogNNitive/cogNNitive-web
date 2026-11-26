@@ -96,9 +96,15 @@ export const DEFAULT_GUARD = Object.freeze({
 })
 
 /**
+ * One warning per process when the shipped defaults are the allow list: an install with no
+ * catalog may still spend, but never silently.
+ */
+let warnedShippedDefaults = false
+
+/**
  * Model-alias normalization. A Template instance names models with a `replicate/` route prefix
- * (`replicate/minimax/speech-2.8-hd`), but calls go to WaveSpeed, whose id is the remainder
- * (`minimax/speech-2.8-hd`). A leading `replicate/` is stripped only when the remainder is a
+ * (`replicate/<vendor>/<model>`), but calls go to WaveSpeed, whose id is the remainder
+ * (`<vendor>/<model>`). A leading `replicate/` is stripped only when the remainder is a
  * `<vendor>/<model>` id; catalog-style ids such as `replicate/flux-schnell` are left alone.
  * The guard (allow/block, approval coverage), pricing, the request URL, the ledger and
  * plan_hash all use the normalized id; script property keys keep the ORIGINAL string.
@@ -240,7 +246,8 @@ function guardListsFromCatalog(root) {
  * The `video-guard.json` file still wins when present (an explicit workspace override), and
  * the shipped defaults only apply when neither the file nor the catalog declares a model: an
  * allow list that disagreed with the catalog is how a domain model got "not in allowedModels"
- * while the same catalog priced it.
+ * while the same catalog priced it. When the defaults are in force the user is told once, so an
+ * install that has not authored a catalog can still spend but never does so silently.
  * @param {string} [startDir]
  * @returns {{ config: Record<string, any>, source: string | null, root: string, allowSource: 'file'|'catalog'|'defaults' }}
  */
@@ -266,6 +273,16 @@ export function loadGuard(startDir = process.cwd()) {
       config = { ...config, ...derived }
       allowSource = 'catalog'
     }
+  }
+  if (allowSource === 'defaults' && !warnedShippedDefaults) {
+    warnedShippedDefaults = true
+    console.warn(
+      'nn-conntent: no merged model catalog and no ' +
+        GUARD_FILENAME +
+        ' — spending is limited to the shipped default allow list (' +
+        DEFAULT_GUARD.allowedModels.join(', ') +
+        '). Declare a model-catalog_NN.md so the catalog owns that decision.',
+    )
   }
   validateConfig(
     config,

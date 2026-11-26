@@ -27,26 +27,26 @@
  * Pure filesystem module: imports no provider and no HyperFrames module.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from 'node:fs'
+import path from 'node:path'
 
-import { resolveLibrary } from './library.mjs';
-import { readVariables } from '../overlay-blocks.mjs';
+import { resolveLibrary } from './library.mjs'
+import { readVariables } from '../overlay-blocks.mjs'
 
 /** Raised when an `animation` Layer's project directory has no readable project. */
 export class AnimationProjectError extends Error {
   constructor(message) {
-    super(message);
-    this.name = 'AnimationProjectError';
+    super(message)
+    this.name = 'AnimationProjectError'
   }
 }
 
 /** Raised when an `animation` Layer's inputs do not match what its project declares. */
 export class AnimationInputError extends Error {
   constructor(message) {
-    super(message);
-    this.name = 'AnimationInputError';
-    this.code = 'animation-input';
+    super(message)
+    this.name = 'AnimationInputError'
+    this.code = 'animation-input'
   }
 }
 
@@ -56,16 +56,16 @@ export class AnimationIdCollisionError extends Error {
    * @param {{ id: string, other: string, kind: string }} entry
    */
   constructor({ id, other, kind }) {
-    super(`animation id "${id}" collides with ${kind} "${other}"`);
-    this.name = 'AnimationIdCollisionError';
-    this.id = id;
-    this.other = other;
-    this.kind = kind;
+    super(`animation id "${id}" collides with ${kind} "${other}"`)
+    this.name = 'AnimationIdCollisionError'
+    this.id = id
+    this.other = other
+    this.kind = kind
   }
 }
 
-const ID_RE = /data-composition-id\s*=\s*["']([^"']+)["']/;
-const DURATION_RE = /data-duration\s*=\s*["']([0-9.]+)["']/;
+const ID_RE = /data-composition-id\s*=\s*["']([^"']+)["']/
+const DURATION_RE = /data-duration\s*=\s*["']([0-9.]+)["']/
 
 /**
  * Reads an authored project's root composition id and duration (seconds).
@@ -74,22 +74,22 @@ const DURATION_RE = /data-duration\s*=\s*["']([0-9.]+)["']/;
  *   null when `index.html` is absent or declares no `data-composition-id`.
  */
 export function readAuthoredProject(projectDir) {
-  const indexPath = path.join(projectDir, 'index.html');
-  if (!fs.existsSync(indexPath)) return null;
-  let html;
+  const indexPath = path.join(projectDir, 'index.html')
+  if (!fs.existsSync(indexPath)) return null
+  let html
   try {
-    html = fs.readFileSync(indexPath, 'utf8');
+    html = fs.readFileSync(indexPath, 'utf8')
   } catch {
-    return null;
+    return null
   }
-  const idMatch = ID_RE.exec(html);
-  if (!idMatch) return null;
-  const durMatch = DURATION_RE.exec(html);
-  const durationSeconds = durMatch ? Number(durMatch[1]) : 0;
-  return { id: idMatch[1], durationSeconds, indexPath, projectDir };
+  const idMatch = ID_RE.exec(html)
+  if (!idMatch) return null
+  const durMatch = DURATION_RE.exec(html)
+  const durationSeconds = durMatch ? Number(durMatch[1]) : 0
+  return { id: idMatch[1], durationSeconds, indexPath, projectDir }
 }
 
-const COMPONENT_RE = /^component:([A-Za-z0-9][A-Za-z0-9._-]*)$/;
+const COMPONENT_RE = /^component:([A-Za-z0-9][A-Za-z0-9._-]*)$/
 
 /**
  * Checks a Layer's inputs against the declared variables and types them for the mount.
@@ -102,44 +102,51 @@ const COMPONENT_RE = /^component:([A-Za-z0-9][A-Za-z0-9._-]*)$/;
  * @returns {Record<string, unknown>}
  */
 export function checkAnimationInputs(inputs, declared, where) {
-  const byId = new Map(declared.map((v) => [v.id, v]));
+  const byId = new Map(declared.map((v) => [v.id, v]))
   for (const name of Object.keys(inputs)) {
     if (!byId.has(name)) {
       throw new AnimationInputError(
         `${where}: input "${name}" is not declared (declared: ${declared.map((v) => v.id).join(', ') || 'none'})`,
-      );
+      )
     }
   }
-  const values = {};
+  const values = {}
   for (const variable of declared) {
     if (!Object.hasOwn(inputs, variable.id)) {
-      if (!Object.hasOwn(variable, 'default')) throw new AnimationInputError(`${where}: required input "${variable.id}" is not given`);
-      values[variable.id] = variable.default;
-      continue;
+      if (!Object.hasOwn(variable, 'default'))
+        throw new AnimationInputError(`${where}: required input "${variable.id}" is not given`)
+      values[variable.id] = variable.default
+      continue
     }
-    const raw = inputs[variable.id];
+    const raw = inputs[variable.id]
     if (variable.type === 'number') {
-      const n = Number(raw);
+      const n = Number(raw)
       if (raw.trim() === '' || !Number.isFinite(n)) {
-        throw new AnimationInputError(`${where}: input "${variable.id}" must be a number, got "${raw}"`);
+        throw new AnimationInputError(
+          `${where}: input "${variable.id}" must be a number, got "${raw}"`,
+        )
       }
-      values[variable.id] = n;
+      values[variable.id] = n
     } else if (variable.type === 'boolean') {
       if (raw !== 'true' && raw !== 'false') {
-        throw new AnimationInputError(`${where}: input "${variable.id}" must be true or false, got "${raw}"`);
+        throw new AnimationInputError(
+          `${where}: input "${variable.id}" must be true or false, got "${raw}"`,
+        )
       }
-      values[variable.id] = raw === 'true';
+      values[variable.id] = raw === 'true'
     } else if (variable.type === 'enum') {
-      const allowed = (variable.options || []).map((o) => String(o?.value));
+      const allowed = (variable.options || []).map((o) => String(o?.value))
       if (!allowed.includes(raw)) {
-        throw new AnimationInputError(`${where}: input "${variable.id}" must be one of ${allowed.join(', ')}, got "${raw}"`);
+        throw new AnimationInputError(
+          `${where}: input "${variable.id}" must be one of ${allowed.join(', ')}, got "${raw}"`,
+        )
       }
-      values[variable.id] = raw;
+      values[variable.id] = raw
     } else {
-      values[variable.id] = raw;
+      values[variable.id] = raw
     }
   }
-  return values;
+  return values
 }
 
 /**
@@ -155,24 +162,24 @@ export function checkAnimationInputs(inputs, declared, where) {
  * @returns {string[]} one problem per violation; empty means the project can be mounted
  */
 export function animationMountProblems(html) {
-  const text = String(html);
-  if (/<template[\s>]/i.test(text)) return [];
-  const problems = [];
-  const rootRule = /#root\s*\{([^}]*)\}/i.exec(text)?.[1] || '';
-  const rootTag = /<div\b[^>]*\bid\s*=\s*["']root["'][^>]*>/i.exec(text)?.[0] || '';
+  const text = String(html)
+  if (/<template[\s>]/i.test(text)) return []
+  const problems = []
+  const rootRule = /#root\s*\{([^}]*)\}/i.exec(text)?.[1] || ''
+  const rootTag = /<div\b[^>]*\bid\s*=\s*["']root["'][^>]*>/i.exec(text)?.[0] || ''
   const sizesRoot =
     /\bwidth\s*:\s*[0-9.]+px/i.test(rootRule) ||
     /\bheight\s*:\s*[0-9.]+px/i.test(rootRule) ||
-    /\bdata-width\s*=/i.test(rootTag);
+    /\bdata-width\s*=/i.test(rootTag)
   if (sizesRoot) {
     problems.push(
       'no <template> wrapper and #root is sized in pixels: mounted as a sub-composition the #root ' +
         'rules are dropped and the children resolve against the viewport. Wrap style, markup and ' +
         'scripts in <template> and anchor <div class="stage" style="position:absolute;left:0;top:0;' +
         'width:1920px;height:1080px"> inside it (references/overlay-slots.md).',
-    );
+    )
   }
-  return problems;
+  return problems
 }
 
 /**
@@ -180,9 +187,13 @@ export function animationMountProblems(html) {
  * script, or the folder of the library component `component:<name>` names.
  */
 function projectDirOf(layer, asset, { scriptDir, workspaceRoot, packageFloor }) {
-  const component = COMPONENT_RE.exec(String(asset).trim());
-  if (!component) return { projectDir: path.isAbsolute(asset) ? asset : path.resolve(scriptDir, asset), component: null };
-  const name = component[1];
+  const component = COMPONENT_RE.exec(String(asset).trim())
+  if (!component)
+    return {
+      projectDir: path.isAbsolute(asset) ? asset : path.resolve(scriptDir, asset),
+      component: null,
+    }
+  const name = component[1]
   const { file, searched } = resolveLibrary({
     kind: 'components',
     ref: `components/${name}`,
@@ -190,13 +201,16 @@ function projectDirOf(layer, asset, { scriptDir, workspaceRoot, packageFloor }) 
     root: workspaceRoot,
     packageFloor,
     throwOnMiss: false,
-  });
+  })
   if (!file) {
     throw new AnimationProjectError(
       `animation Layer "${layer.name}": component "${name}" not found; searched:\n${(searched || []).map((p) => `  - ${p}`).join('\n')}`,
-    );
+    )
   }
-  return { projectDir: fs.statSync(file).isDirectory() ? file : path.dirname(file), component: name };
+  return {
+    projectDir: fs.statSync(file).isDirectory() ? file : path.dirname(file),
+    component: name,
+  }
 }
 
 /**
@@ -209,31 +223,35 @@ function projectDirOf(layer, asset, { scriptDir, workspaceRoot, packageFloor }) 
  */
 export function resolveAnimations({ scenes, scriptDir, workspaceRoot, packageFloor }) {
   /** @type {Record<string, Array<{ id: string, durationSeconds: number, sourceDir: string, layerSlug: string }>>} */
-  const byScene = {};
+  const byScene = {}
   for (const sc of scenes || []) {
-    const layers = (sc.layers || []).filter((l) => l.type === 'animation');
-    if (layers.length === 0) continue;
-    const entries = [];
+    const layers = (sc.layers || []).filter((l) => l.type === 'animation')
+    if (layers.length === 0) continue
+    const entries = []
     for (const layer of layers) {
-      const asset = layer.properties?.layer_asset_source;
+      const asset = layer.properties?.layer_asset_source
       if (!asset) {
-        throw new AnimationProjectError(`animation Layer "${layer.name}" has no asset::`);
+        throw new AnimationProjectError(`animation Layer "${layer.name}" has no asset::`)
       }
-      const { projectDir, component } = projectDirOf(layer, asset, { scriptDir, workspaceRoot, packageFloor });
-      const project = readAuthoredProject(projectDir);
+      const { projectDir, component } = projectDirOf(layer, asset, {
+        scriptDir,
+        workspaceRoot,
+        packageFloor,
+      })
+      const project = readAuthoredProject(projectDir)
       if (!project) {
         throw new AnimationProjectError(
           `animation project not found for Layer "${layer.name}": expected ${path.join(projectDir, 'index.html')}`,
-        );
+        )
       }
-      const projectHtml = fs.readFileSync(project.indexPath, 'utf8');
-      const mountProblems = animationMountProblems(projectHtml);
+      const projectHtml = fs.readFileSync(project.indexPath, 'utf8')
+      const mountProblems = animationMountProblems(projectHtml)
       if (mountProblems.length > 0) {
         throw new AnimationProjectError(
           `animation Layer "${layer.name}" (${project.indexPath}) cannot be mounted: ${mountProblems.join(' ')}`,
-        );
+        )
       }
-      const inputs = layer.properties?.layer_inputs;
+      const inputs = layer.properties?.layer_inputs
       // A component is always checked; an authored project only when the Layer gives inputs,
       // so a Layer without inputs mounts its project exactly as before.
       const values =
@@ -243,18 +261,18 @@ export function resolveAnimations({ scenes, scriptDir, workspaceRoot, packageFlo
               readVariables(projectHtml),
               `animation Layer "${layer.name}" (${project.indexPath})`,
             )
-          : null;
+          : null
       entries.push({
         id: project.id,
         durationSeconds: project.durationSeconds,
         sourceDir: projectDir,
         layerSlug: layer.slug,
         ...(values ? { values } : {}),
-      });
+      })
     }
-    byScene[sc.id] = entries;
+    byScene[sc.id] = entries
   }
-  return byScene;
+  return byScene
 }
 
 /**
@@ -264,30 +282,42 @@ export function resolveAnimations({ scenes, scriptDir, workspaceRoot, packageFlo
  * @param {{ animations: Record<string, Array<{ id: string }>>, sceneSlugs?: string[], rootId?: string | null, componentIds?: string[] }} params
  * @returns {true}
  */
-export function assertAnimationIds({ animations, sceneSlugs = [], rootId = null, componentIds = [] }) {
-  const sceneSet = new Set(sceneSlugs);
-  const componentSet = new Set(componentIds);
-  const seen = new Map();
+export function assertAnimationIds({
+  animations,
+  sceneSlugs = [],
+  rootId = null,
+  componentIds = [],
+}) {
+  const sceneSet = new Set(sceneSlugs)
+  const componentSet = new Set(componentIds)
+  const seen = new Map()
   for (const [sceneId, entries] of Object.entries(animations || {})) {
     for (const entry of entries || []) {
-      const { id } = entry;
+      const { id } = entry
       if (rootId && id === rootId) {
-        throw new AnimationIdCollisionError({ id, other: rootId, kind: 'root composition' });
+        throw new AnimationIdCollisionError({ id, other: rootId, kind: 'root composition' })
       }
       if (sceneSet.has(id)) {
-        throw new AnimationIdCollisionError({ id, other: id, kind: 'scene slug' });
+        throw new AnimationIdCollisionError({ id, other: id, kind: 'scene slug' })
       }
       if (componentSet.has(id)) {
-        throw new AnimationIdCollisionError({ id, other: id, kind: 'component' });
+        throw new AnimationIdCollisionError({ id, other: id, kind: 'component' })
       }
       // The SAME project mounted by several scenes is one staged copy with one
       // namespaced host per mount; two DIFFERENT projects sharing an id collide.
-      const prior = seen.get(id);
-      if (prior && !(entry.sourceDir && prior.sourceDir && path.resolve(entry.sourceDir) === path.resolve(prior.sourceDir))) {
-        throw new AnimationIdCollisionError({ id, other: prior.sceneId, kind: 'animation' });
+      const prior = seen.get(id)
+      if (
+        prior &&
+        !(
+          entry.sourceDir &&
+          prior.sourceDir &&
+          path.resolve(entry.sourceDir) === path.resolve(prior.sourceDir)
+        )
+      ) {
+        throw new AnimationIdCollisionError({ id, other: prior.sceneId, kind: 'animation' })
       }
-      if (!prior) seen.set(id, { sceneId, sourceDir: entry.sourceDir });
+      if (!prior) seen.set(id, { sceneId, sourceDir: entry.sourceDir })
     }
   }
-  return true;
+  return true
 }

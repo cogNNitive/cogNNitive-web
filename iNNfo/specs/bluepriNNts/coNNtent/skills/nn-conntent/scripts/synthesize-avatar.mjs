@@ -26,65 +26,79 @@
  * Zero external dependencies. ESM module.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import crypto from 'node:crypto';
-import { fileURLToPath } from 'node:url';
-import { AssetSynthesizer, BillingFailureError, probeAudioDurationDetailed } from './asset-synthesizer.mjs';
-import { CacheManager } from './cache-manager.mjs';
-import { estimateCallUsd } from './asset-cost-estimator.mjs';
-import { loadCascadeBags } from './lib/video-scope.mjs';
-import { resolve } from './lib/cascade.mjs';
-import { SceneCompiler, ScriptValidationError } from './scene-compiler.mjs';
-import { loadKnowledgeModel } from './lib/knowledge-model.mjs';
-import { withScriptPresets } from './lib/video-scope.mjs';
-import { parseArgs, CliUsageError } from './lib/cli-args.mjs';
-import { LOCKS_RELATIVE_DIR, SpendGuard, normalizeModelId, resolveDefaultCacheDir } from './lib/video-guard.mjs';
-import { loadGuardWithVoices } from './lib/guard-config.mjs';
-import { loadMergedCatalog } from './lib/catalog.mjs';
-import { envKeyFor } from './lib/provider-transport.mjs';
-import { assertAvatarModelRunnable, collectAvatarJobs, checkAvatarAssetAspect, checkAvatarUpscale } from './lib/avatar-jobs.mjs';
-import { probeVideoSize } from './lib/media-duration.mjs';
-import { appendPending, findOutstanding, latestPending } from './lib/pending-predictions.mjs';
-import { acquireLock } from './lib/file-lock.mjs';
+import fs from 'node:fs'
+import path from 'node:path'
+import crypto from 'node:crypto'
+import { fileURLToPath } from 'node:url'
+import {
+  AssetSynthesizer,
+  BillingFailureError,
+  probeAudioDurationDetailed,
+} from './asset-synthesizer.mjs'
+import { CacheManager } from './cache-manager.mjs'
+import { estimateCallUsd } from './asset-cost-estimator.mjs'
+import { loadCascadeBags } from './lib/video-scope.mjs'
+import { resolve } from './lib/cascade.mjs'
+import { SceneCompiler, ScriptValidationError } from './scene-compiler.mjs'
+import { loadKnowledgeModel } from './lib/knowledge-model.mjs'
+import { withScriptPresets } from './lib/video-scope.mjs'
+import { parseArgs, CliUsageError } from './lib/cli-args.mjs'
+import {
+  LOCKS_RELATIVE_DIR,
+  SpendGuard,
+  normalizeModelId,
+  resolveDefaultCacheDir,
+} from './lib/video-guard.mjs'
+import { loadGuardWithVoices } from './lib/guard-config.mjs'
+import { loadMergedCatalog } from './lib/catalog.mjs'
+import { envKeyFor } from './lib/provider-transport.mjs'
+import {
+  assertAvatarModelRunnable,
+  collectAvatarJobs,
+  checkAvatarAssetAspect,
+  checkAvatarUpscale,
+} from './lib/avatar-jobs.mjs'
+import { probeVideoSize } from './lib/media-duration.mjs'
+import { appendPending, findOutstanding, latestPending } from './lib/pending-predictions.mjs'
+import { acquireLock } from './lib/file-lock.mjs'
 
-export const DEFAULT_POLL_WINDOW_MS = 20 * 60 * 1000;
-const SCRIPT_FILE = fileURLToPath(import.meta.url);
+export const DEFAULT_POLL_WINDOW_MS = 20 * 60 * 1000
+const SCRIPT_FILE = fileURLToPath(import.meta.url)
 
 /** One or more jobs failed. `failures` lists every one; `exitCode` is 3 when any is resumable, else 1. */
 export class AvatarBatchError extends Error {
   /** @param {{ sceneIds: string[], error: Error, resumeCommand?: string }[]} failures */
   constructor(failures) {
-    super(failures.map((f) => '[' + f.sceneIds.join(', ') + '] ' + f.error.message).join('\n'));
-    this.name = 'AvatarBatchError';
-    this.failures = failures;
-    this.exitCode = failures.some((f) => f.resumeCommand) ? 3 : 1;
+    super(failures.map((f) => '[' + f.sceneIds.join(', ') + '] ' + f.error.message).join('\n'))
+    this.name = 'AvatarBatchError'
+    this.failures = failures
+    this.exitCode = failures.some((f) => f.resumeCommand) ? 3 : 1
   }
 }
 
 /** A previous submit for the same job is still outstanding: a new submit would double-bill. */
 export class OutstandingJobError extends Error {
   constructor(message, outstanding) {
-    super(message);
-    this.name = 'OutstandingJobError';
-    this.outstanding = outstanding;
+    super(message)
+    this.name = 'OutstandingJobError'
+    this.outstanding = outstanding
   }
 }
 
-const quote = (a) => (/^[A-Za-z0-9_@%+=:,./\\-]+$/.test(a) ? a : '"' + a.replace(/"/g, '\\"') + '"');
+const quote = (a) => (/^[A-Za-z0-9_@%+=:,./\\-]+$/.test(a) ? a : '"' + a.replace(/"/g, '\\"') + '"')
 
 /**
  * The complete command to resume one task: absolute node, absolute script, absolute script
  * path and every flag the user gave.
  */
 function buildResumeCommand(o, sceneIds, taskId) {
-  const args = [process.execPath, SCRIPT_FILE, path.resolve(o.scriptPath)];
-  for (const id of sceneIds) args.push('--scene', id);
-  args.push('--resume', String(taskId));
-  if (o.cacheDir) args.push('--cache-dir', path.resolve(o.cacheDir));
-  for (const a of o.allowModels || []) args.push('--allow-model', a);
-  if (o.pollWindowMs) args.push('--poll-window', String(o.pollWindowMs / 60000));
-  return args.map(quote).join(' ');
+  const args = [process.execPath, SCRIPT_FILE, path.resolve(o.scriptPath)]
+  for (const id of sceneIds) args.push('--scene', id)
+  args.push('--resume', String(taskId))
+  if (o.cacheDir) args.push('--cache-dir', path.resolve(o.cacheDir))
+  for (const a of o.allowModels || []) args.push('--allow-model', a)
+  if (o.pollWindowMs) args.push('--poll-window', String(o.pollWindowMs / 60000))
+  return args.map(quote).join(' ')
 }
 
 /**
@@ -103,56 +117,79 @@ function buildResumeCommand(o, sceneIds, taskId) {
  * @param {Record<string, string | undefined>} [o.env] Test seams: env, fetch, sleep, now, measureDuration, warn.
  */
 export async function synthesizeAvatars(o) {
-  if (o.dryRun && o.resume) throw new Error('--dry-run cannot be combined with --resume (resume performs a real poll).');
-  const scriptPath = path.resolve(o.scriptPath);
-  if (!fs.existsSync(scriptPath)) throw new Error('Script file not found: ' + scriptPath);
-  const env = o.env || process.env;
-  const warn = o.warn || ((m) => console.warn(m));
+  if (o.dryRun && o.resume)
+    throw new Error('--dry-run cannot be combined with --resume (resume performs a real poll).')
+  const scriptPath = path.resolve(o.scriptPath)
+  if (!fs.existsSync(scriptPath)) throw new Error('Script file not found: ' + scriptPath)
+  const env = o.env || process.env
+  const warn = o.warn || ((m) => console.warn(m))
   const measure = o.measureDuration
     ? async (f) => ({ seconds: Number(await o.measureDuration(f)) })
-    : (f) => probeAudioDurationDetailed(f, o.probeDeps || {});
-  const allowModels = o.allowModels || [];
-  const windowMs = o.pollWindowMs ?? DEFAULT_POLL_WINDOW_MS;
-  const scriptContent = fs.readFileSync(scriptPath, 'utf8');
-  const scriptDir = path.dirname(scriptPath);
+    : (f) => probeAudioDurationDetailed(f, o.probeDeps || {})
+  const allowModels = o.allowModels || []
+  const windowMs = o.pollWindowMs ?? DEFAULT_POLL_WINDOW_MS
+  const scriptContent = fs.readFileSync(scriptPath, 'utf8')
+  const scriptDir = path.dirname(scriptPath)
   // No `cli` cascade level: the models come from the documents, never a flag.
-  const bags = o.bags || loadCascadeBags(scriptDir);
+  const bags = o.bags || loadCascadeBags(scriptDir)
   const models = o.models || {
     image: normalizeModelId(resolve('image_model', bags).value),
     tts: normalizeModelId(resolve('voice_model', bags).value),
     avatar: normalizeModelId(resolve('avatar_model', bags).value),
-  };
-  const loaded = loadGuardWithVoices(scriptDir);
-  const catalog = o.catalog || loadMergedCatalog({ domainRoot: loaded.root });
+  }
+  const loaded = loadGuardWithVoices(scriptDir)
+  const catalog = o.catalog || loadMergedCatalog({ domainRoot: loaded.root })
   // The same one-up-front verdict the plan builder makes: one message instead of the
   // resolutions/allowlist/price cascade from three different stages.
-  if (models.avatar) assertAvatarModelRunnable(models.avatar, { catalog, config: loaded.config, allowModels });
-  const cacheDir = o.cacheDir || resolveDefaultCacheDir(scriptDir);
+  if (models.avatar)
+    assertAvatarModelRunnable(models.avatar, { catalog, config: loaded.config, allowModels })
+  const cacheDir = o.cacheDir || resolveDefaultCacheDir(scriptDir)
   // Spending is authorized by `produce`; this guard enforces the caps and the model lists.
-  const checkNow = () => ({ ok: true });
-  const dailyBudgetRaw = resolve('daily_budget', bags).value;
+  const checkNow = () => ({ ok: true })
+  const dailyBudgetRaw = resolve('daily_budget', bags).value
   const dailyBudgetUsd =
-    dailyBudgetRaw === null || dailyBudgetRaw === undefined || dailyBudgetRaw === '' ? null : Number(dailyBudgetRaw);
-  const avatarStaleMs = windowMs + 10 * 60 * 1000;
+    dailyBudgetRaw === null || dailyBudgetRaw === undefined || dailyBudgetRaw === ''
+      ? null
+      : Number(dailyBudgetRaw)
+  const avatarStaleMs = windowMs + 10 * 60 * 1000
   const makeGuard = (dryRun) =>
-    new SpendGuard({ config: loaded.config, root: loaded.root, allowModels, dryRun, approval: checkNow, avatarStaleMs, dailyBudgetUsd });
+    new SpendGuard({
+      config: loaded.config,
+      root: loaded.root,
+      allowModels,
+      dryRun,
+      approval: checkNow,
+      avatarStaleMs,
+      dailyBudgetUsd,
+    })
 
-  const compiler = new SceneCompiler({});
-  const model = o.model || loadKnowledgeModel(scriptPath, { model: o.model, modelPath: o.modelPath });
+  const compiler = new SceneCompiler({})
+  const model =
+    o.model || loadKnowledgeModel(scriptPath, { model: o.model, modelPath: o.modelPath })
   // The script's own Presets shadow Series and domain ones (design D3).
-  const chainBags = withScriptPresets(bags, model, scriptPath);
-  const scriptGuard = compiler.checkScript(model, { ...o, bags: chainBags, scriptDir });
-  if (!scriptGuard.ok) throw new ScriptValidationError(scriptGuard.errors);
-  const parsed = compiler.lowerKnowledgeModel(model, { bags: chainBags, scriptDir });
-  const sceneFilter = o.scenes?.length ? [...new Set(o.scenes)] : undefined;
+  const chainBags = withScriptPresets(bags, model, scriptPath)
+  const scriptGuard = compiler.checkScript(model, { ...o, bags: chainBags, scriptDir })
+  if (!scriptGuard.ok) throw new ScriptValidationError(scriptGuard.errors)
+  const parsed = compiler.lowerKnowledgeModel(model, { bags: chainBags, scriptDir })
+  const sceneFilter = o.scenes?.length ? [...new Set(o.scenes)] : undefined
   if (sceneFilter) {
-    const unknown = sceneFilter.filter((id) => !parsed.scenes.some((s) => s.id === id));
-    if (unknown.length) throw new Error('Unknown scene id(s): ' + unknown.join(', ') + '. Known: ' + parsed.scenes.map((s) => s.id).join(', '));
+    const unknown = sceneFilter.filter((id) => !parsed.scenes.some((s) => s.id === id))
+    if (unknown.length)
+      throw new Error(
+        'Unknown scene id(s): ' +
+          unknown.join(', ') +
+          '. Known: ' +
+          parsed.scenes.map((s) => s.id).join(', '),
+      )
   }
 
   // 1. Collect and validate every job BEFORE any spend: image, audio (fresh), measurable, not too long.
-  const readCache = new CacheManager({ baseDir: cacheDir, readOnly: true });
-  const { jobs: raw, problems, skipped } = collectAvatarJobs({
+  const readCache = new CacheManager({ baseDir: cacheDir, readOnly: true })
+  const {
+    jobs: raw,
+    problems,
+    skipped,
+  } = collectAvatarJobs({
     parsed,
     scriptDir,
     cacheManager: readCache,
@@ -161,48 +198,60 @@ export async function synthesizeAvatars(o) {
     models,
     bags,
     catalog,
-  });
-  if (problems.length) throw new Error(problems.join('\n'));
+  })
+  if (problems.length) throw new Error(problems.join('\n'))
 
-  const byKey = new Map();
+  const byKey = new Map()
   // One ffprobe per distinct image, so a still reused across Scenes warns once.
-  const imageSizes = new Map();
+  const imageSizes = new Map()
   const sizeOf = async (file) => {
     if (!imageSizes.has(file)) {
-      const size = o.probeImageSize ? await o.probeImageSize(file) : await probeVideoSize(file, o.probeDeps || {});
-      imageSizes.set(file, size || null);
+      const size = o.probeImageSize
+        ? await o.probeImageSize(file)
+        : await probeVideoSize(file, o.probeDeps || {})
+      imageSizes.set(file, size || null)
     }
-    return imageSizes.get(file);
-  };
+    return imageSizes.get(file)
+  }
   for (const j of raw) {
-    const existing = byKey.get(j.cacheKey);
+    const existing = byKey.get(j.cacheKey)
     if (existing) {
-      if (!existing.sceneIds.includes(j.sceneId)) existing.sceneIds.push(j.sceneId);
-      continue;
+      if (!existing.sceneIds.includes(j.sceneId)) existing.sceneIds.push(j.sceneId)
+      continue
     }
-    const size = await sizeOf(j.imagePath);
+    const size = await sizeOf(j.imagePath)
     const aspectWarning = checkAvatarAssetAspect({
       width: size?.width,
       height: size?.height,
       label: 'Scene ' + j.sceneId + ': avatar image ' + path.basename(j.imagePath),
-    });
-    if (aspectWarning) warn(aspectWarning);
+    })
+    if (aspectWarning) warn(aspectWarning)
     const upscaleWarnings = checkAvatarUpscale({
       width: size?.width,
       height: size?.height,
       formats: parsed?.outputFormats,
       label: 'Scene ' + j.sceneId + ': avatar image ' + path.basename(j.imagePath),
-    });
-    for (const w of upscaleWarnings) warn(w);
-    const { seconds, error: probeError } = await measure(j.audioPath);
+    })
+    for (const w of upscaleWarnings) warn(w)
+    const { seconds, error: probeError } = await measure(j.audioPath)
     if (!Number.isFinite(seconds) || seconds <= 0) {
       throw new Error(
-        'Cannot measure the audio duration of ' + j.audioPath + (probeError ? ' (' + probeError + ')' : '') +
+        'Cannot measure the audio duration of ' +
+          j.audioPath +
+          (probeError ? ' (' + probeError + ')' : '') +
           ': refusing to price (or bill) an avatar on a guess.',
-      );
+      )
     }
     if (seconds > loaded.config.maxAvatarSeconds) {
-      throw new Error('Scene ' + j.sceneId + ': the audio is ' + seconds + 's, over maxAvatarSeconds (' + loaded.config.maxAvatarSeconds + 's) in video-guard.json: refusing to bill it.');
+      throw new Error(
+        'Scene ' +
+          j.sceneId +
+          ': the audio is ' +
+          seconds +
+          's, over maxAvatarSeconds (' +
+          loaded.config.maxAvatarSeconds +
+          's) in video-guard.json: refusing to bill it.',
+      )
     }
     byKey.set(j.cacheKey, {
       ...j,
@@ -210,9 +259,9 @@ export async function synthesizeAvatars(o) {
       seconds,
       estUsd: estimateCallUsd('avatar', j.model, { seconds }),
       cachedPath: readCache.getSync(j.cacheKey, 'mp4', 'temp'),
-    });
+    })
   }
-  const jobs = [...byKey.values()];
+  const jobs = [...byKey.values()]
   const view = (j, extra = {}) => ({
     sceneIds: j.sceneIds,
     layerName: j.layerName,
@@ -224,15 +273,15 @@ export async function synthesizeAvatars(o) {
     status: j.cachedPath ? 'cached' : 'planned',
     assetPath: j.cachedPath || null,
     ...extra,
-  });
-  const refOf = (j) => j.sceneIds[0] + '/' + (j.layerName || 'avatar');
-  const outstandingOf = (j) => (j.cachedPath ? null : findOutstanding(loaded.root, j.cacheKey));
+  })
+  const refOf = (j) => j.sceneIds[0] + '/' + (j.layerName || 'avatar')
+  const outstandingOf = (j) => (j.cachedPath ? null : findOutstanding(loaded.root, j.cacheKey))
 
   // 2. Plan through a dry-run guard (same authorize path as a real run).
-  const planGuard = makeGuard(true);
+  const planGuard = makeGuard(true)
   if (!o.resume) {
     for (const j of jobs.filter((x) => !x.cachedPath)) {
-      await planGuard.authorize({ kind: 'avatar', model: j.model, estUsd: j.estUsd, ref: refOf(j) });
+      await planGuard.authorize({ kind: 'avatar', model: j.model, estUsd: j.estUsd, ref: refOf(j) })
     }
   }
   const plan = () => ({
@@ -242,55 +291,74 @@ export async function synthesizeAvatars(o) {
     dailyCapUsd: loaded.config.dailyCapUsd,
     dailySpentUsd: planGuard.dailySpentUsd,
     withinBudget: planGuard.plannedTotalUsd <= loaded.config.budgetPerRunUsd,
-  });
+  })
   // Nothing to synthesize. A Layer skipped for lack of narration is not a failure: it renders
   // as its still image, and the pre-compile guard already named the type that draws it.
   if (jobs.length === 0) {
     if (skipped.length > 0) {
-      const which = skipped.map((s) => s.sceneId + '/' + (s.layerName || 'avatar')).join(', ');
+      const which = skipped.map((s) => s.sceneId + '/' + (s.layerName || 'avatar')).join(', ')
       warn(
-        'Nothing to synthesize: ' + skipped.length + ' avatar Layer(s) sit in Scenes with no narration (' + which + '). ' +
+        'Nothing to synthesize: ' +
+          skipped.length +
+          ' avatar Layer(s) sit in Scenes with no narration (' +
+          which +
+          '). ' +
           'A paid lip-sync clip is driven by the Scene narration, so these Layers render as their still image. ' +
           'A presenter that does not speak is type:: media with placement:: full and timing:: scene.',
-      );
-      return { dryRun: Boolean(o.dryRun), jobs: [], plan: plan(), skipped };
+      )
+      return { dryRun: Boolean(o.dryRun), jobs: [], plan: plan(), skipped }
     }
-    throw new Error('No talking-avatar layers (layer_type: talking_avatar) found in ' + scriptPath + (sceneFilter ? ' for the selected scenes.' : '.'));
+    throw new Error(
+      'No talking-avatar layers (layer_type: talking_avatar) found in ' +
+        scriptPath +
+        (sceneFilter ? ' for the selected scenes.' : '.'),
+    )
   }
   if (o.dryRun) {
     return {
       dryRun: true,
       jobs: jobs.map((j) => view(j, { outstanding: outstandingOf(j)?.status || null })),
       plan: plan(),
-    };
+    }
   }
 
   // 3. Real run. Resume polls an existing task (no submit, no charge). A normal run refuses to
   //    submit while the journal shows an outstanding job for the same key.
-  let todo = jobs.filter((j) => !j.cachedPath);
+  let todo = jobs.filter((j) => !j.cachedPath)
   if (o.resume) {
-    const record = latestPending(loaded.root, String(o.resume));
-    if (!record) throw new Error('Unknown task id ' + o.resume + ': it is not in .cognnitive/pending-predictions.jsonl.');
-    todo = jobs.filter((j) => j.cacheKey === record.cacheKey && !j.cachedPath);
+    const record = latestPending(loaded.root, String(o.resume))
+    if (!record)
+      throw new Error(
+        'Unknown task id ' + o.resume + ': it is not in .cognnitive/pending-predictions.jsonl.',
+      )
+    todo = jobs.filter((j) => j.cacheKey === record.cacheKey && !j.cachedPath)
     if (todo.length === 0 && !jobs.some((j) => j.cacheKey === record.cacheKey)) {
-      throw new Error('Task ' + o.resume + ' belongs to a different scene or script (cache key mismatch).');
+      throw new Error(
+        'Task ' + o.resume + ' belongs to a different scene or script (cache key mismatch).',
+      )
     }
   } else if (!o.forceResubmit) {
-    const blocked = todo.map((j) => ({ job: j, rec: outstandingOf(j) })).filter((x) => x.rec);
-    if (blocked.length > 0) throw new OutstandingJobError(outstandingMessage(blocked), blocked);
+    const blocked = todo.map((j) => ({ job: j, rec: outstandingOf(j) })).filter((x) => x.rec)
+    if (blocked.length > 0) throw new OutstandingJobError(outstandingMessage(blocked), blocked)
   }
   for (const j of todo) {
-    const envKey = envKeyFor(catalog, j.model);
-    if (!envKey) continue; // an undeclared model is refused by the synthesizer, before any spend
+    const envKey = envKeyFor(catalog, j.model)
+    if (!envKey) continue // an undeclared model is refused by the synthesizer, before any spend
     if (!env[envKey]) {
-      throw new Error(envKey + ' is not set: avatar synthesis with ' + j.model + ' needs its provider key (no placeholder clip is ever produced).');
+      throw new Error(
+        envKey +
+          ' is not set: avatar synthesis with ' +
+          j.model +
+          ' needs its provider key (no placeholder clip is ever produced).',
+      )
     }
   }
-  if (!o.resume) planGuard.assertPlanAffordable(); // refuses the WHOLE batch before the first charge
-  await o.onPreflightPassed?.();
+  if (!o.resume) planGuard.assertPlanAffordable() // refuses the WHOLE batch before the first charge
+  await o.onPreflightPassed?.()
 
-  const guard = makeGuard(false);
-  for (const j of jobs.filter((x) => x.cachedPath)) guard.recordCacheHit({ kind: 'avatar', ref: refOf(j) });
+  const guard = makeGuard(false)
+  for (const j of jobs.filter((x) => x.cachedPath))
+    guard.recordCacheHit({ kind: 'avatar', ref: refOf(j) })
   const synth = new AssetSynthesizer({
     cacheManager: new CacheManager({ baseDir: cacheDir }),
     guard,
@@ -300,47 +368,82 @@ export async function synthesizeAvatars(o) {
     now: o.now,
     defaultModels: models,
     catalog,
-  });
+  })
 
   function outstandingMessage(blocked) {
     return blocked
       .map(({ job, rec }) => {
-        const cmd = rec.taskId ? buildResumeCommand(o, job.sceneIds, rec.taskId) : null;
+        const cmd = rec.taskId ? buildResumeCommand(o, job.sceneIds, rec.taskId) : null
         return (
-          'Scene(s) ' + job.sceneIds.join(', ') + ': a previous submit for this exact job is still outstanding (journal status "' + rec.status + '"' +
-          (rec.taskId ? ', task ' + rec.taskId : ', no task id recorded') + '); it may still be running or may already have been billed. ' +
-          (cmd ? 'Resume it instead (no new charge):\n  ' + cmd : 'Check the WaveSpeed dashboard.') +
+          'Scene(s) ' +
+          job.sceneIds.join(', ') +
+          ': a previous submit for this exact job is still outstanding (journal status "' +
+          rec.status +
+          '"' +
+          (rec.taskId ? ', task ' + rec.taskId : ', no task id recorded') +
+          '); it may still be running or may already have been billed. ' +
+          (cmd
+            ? 'Resume it instead (no new charge):\n  ' + cmd
+            : 'Check the WaveSpeed dashboard.') +
           '\nOnly --force-resubmit submits again, and that COSTS MONEY.'
-        );
+        )
       })
-      .join('\n');
+      .join('\n')
   }
 
   const runJob = async (j) => {
-    const lockPath = path.join(loaded.root, LOCKS_RELATIVE_DIR, 'avatar-key-' + j.cacheKey + '.lock');
-    const release = await acquireLock(lockPath, { staleMs: avatarStaleMs, timeoutMs: avatarStaleMs });
+    const lockPath = path.join(
+      loaded.root,
+      LOCKS_RELATIVE_DIR,
+      'avatar-key-' + j.cacheKey + '.lock',
+    )
+    const release = await acquireLock(lockPath, {
+      staleMs: avatarStaleMs,
+      timeoutMs: avatarStaleMs,
+    })
     try {
       // Re-check under the per-job lock: another process may have finished or started this job meanwhile.
-      const nowCached = readCache.getSync(j.cacheKey, 'mp4', 'temp');
+      const nowCached = readCache.getSync(j.cacheKey, 'mp4', 'temp')
       if (nowCached) {
-        guard.recordCacheHit({ kind: 'avatar', ref: refOf(j) });
-        return view(j, { status: 'cached', assetPath: nowCached });
+        guard.recordCacheHit({ kind: 'avatar', ref: refOf(j) })
+        return view(j, { status: 'cached', assetPath: nowCached })
       }
       if (!o.resume && !o.forceResubmit) {
-        const rec = findOutstanding(loaded.root, j.cacheKey);
-        if (rec) throw new OutstandingJobError(outstandingMessage([{ job: j, rec }]), [{ job: j, rec }]);
+        const rec = findOutstanding(loaded.root, j.cacheKey)
+        if (rec)
+          throw new OutstandingJobError(outstandingMessage([{ job: j, rec }]), [{ job: j, rec }])
       }
-      const intentId = crypto.randomBytes(6).toString('hex');
-      let taskId = o.resume ? String(o.resume) : undefined;
-      const base = { kind: 'avatar', model: j.model, ref: refOf(j), cacheKey: j.cacheKey, sceneIds: j.sceneIds, script: scriptPath, intentId };
+      const intentId = crypto.randomBytes(6).toString('hex')
+      let taskId = o.resume ? String(o.resume) : undefined
+      const base = {
+        kind: 'avatar',
+        model: j.model,
+        ref: refOf(j),
+        cacheKey: j.cacheKey,
+        sceneIds: j.sceneIds,
+        script: scriptPath,
+        intentId,
+      }
       const pending = {
-        onSubmitting: ({ estUsd }) => appendPending(loaded.root, { ...base, status: 'submitting', estUsd, seconds: j.seconds }),
+        onSubmitting: ({ estUsd }) =>
+          appendPending(loaded.root, { ...base, status: 'submitting', estUsd, seconds: j.seconds }),
         onSubmitted: (id) => {
-          taskId = String(id);
-          appendPending(loaded.root, { ...base, taskId, status: 'submitted', command: buildResumeCommand(o, j.sceneIds, taskId) });
+          taskId = String(id)
+          appendPending(loaded.root, {
+            ...base,
+            taskId,
+            status: 'submitted',
+            command: buildResumeCommand(o, j.sceneIds, taskId),
+          })
         },
-        onResult: (status, detail) => appendPending(loaded.root, { ...base, ...(taskId ? { taskId } : {}), status, ...(detail ? { detail } : {}) }),
-      };
+        onResult: (status, detail) =>
+          appendPending(loaded.root, {
+            ...base,
+            ...(taskId ? { taskId } : {}),
+            status,
+            ...(detail ? { detail } : {}),
+          }),
+      }
       const res = await synth.resolveTalkingAvatar(
         j.imagePath,
         j.audioPath,
@@ -356,38 +459,45 @@ export async function synthesizeAvatars(o) {
           warn,
           pending,
         },
-      );
+      )
       return view(j, {
         status: res.fromCache ? 'cached' : o.resume ? 'resumed' : 'synthesized',
         assetPath: res.assetPath,
         ...(res.width ? { width: res.width, height: res.height } : {}),
-      });
+      })
     } finally {
-      release();
+      release()
     }
-  };
+  }
 
   // Collect EVERY failure. A failed billed job does not stop the others (each was approved);
   // a guard refusal or any non-billing error stops further launches.
-  const results = jobs.map((j) => view(j));
-  const queue = todo.slice();
-  const failures = [];
-  let stop = false;
+  const results = jobs.map((j) => view(j))
+  const queue = todo.slice()
+  const failures = []
+  let stop = false
   const worker = async () => {
     while (!stop && queue.length > 0) {
-      const j = queue.shift();
+      const j = queue.shift()
       try {
-        results[jobs.indexOf(j)] = await runJob(j);
+        results[jobs.indexOf(j)] = await runJob(j)
       } catch (err) {
-        const resumable = err instanceof BillingFailureError && err.taskId && (err.timedOut || err.retryable);
-        failures.push({ sceneIds: j.sceneIds, error: err, ...(resumable ? { resumeCommand: buildResumeCommand(o, j.sceneIds, err.taskId) } : {}) });
-        if (!(err instanceof BillingFailureError)) stop = true;
+        const resumable =
+          err instanceof BillingFailureError && err.taskId && (err.timedOut || err.retryable)
+        failures.push({
+          sceneIds: j.sceneIds,
+          error: err,
+          ...(resumable ? { resumeCommand: buildResumeCommand(o, j.sceneIds, err.taskId) } : {}),
+        })
+        if (!(err instanceof BillingFailureError)) stop = true
       }
     }
-  };
-  await Promise.all(Array.from({ length: Math.min(loaded.config.maxAvatarConcurrency, todo.length) }, worker));
-  if (failures.length > 0) throw new AvatarBatchError(failures);
-  return { dryRun: false, jobs: results, plan: plan() };
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(loaded.config.maxAvatarConcurrency, todo.length) }, worker),
+  )
+  if (failures.length > 0) throw new AvatarBatchError(failures)
+  return { dryRun: false, jobs: results, plan: plan() }
 }
 
 export const USAGE = [
@@ -403,32 +513,33 @@ export const USAGE = [
   'Run compile first (it populates the TTS cache this reads; no staged audio file; an entry for older narration is not served). Needs the credential variable (env_key) of the catalog Provider of the avatar model.',
   'Billed seconds = ceil(measured audio seconds); audio over maxAvatarSeconds is refused.',
   'Exit codes: 0 ok, 1 refused or failed, 3 resumable (timeout or recoverable failure; the exact command is printed).',
-].join('\n');
+].join('\n')
 
 async function main() {
-  let parsed;
+  let parsed
   try {
     parsed = parseArgs(process.argv.slice(2), {
       boolean: ['dry-run', 'force-resubmit'],
       value: ['resume', 'poll-window', 'cache-dir'],
       repeatable: ['scene', 'allow-model'],
-    });
-    if (parsed.flags['dry-run'] && parsed.flags.resume) throw new CliUsageError('--dry-run cannot be combined with --resume');
+    })
+    if (parsed.flags['dry-run'] && parsed.flags.resume)
+      throw new CliUsageError('--dry-run cannot be combined with --resume')
   } catch (err) {
-    if (!(err instanceof CliUsageError)) throw err;
-    console.error('Error: ' + err.message + '\n' + USAGE);
-    process.exit(1);
+    if (!(err instanceof CliUsageError)) throw err
+    console.error('Error: ' + err.message + '\n' + USAGE)
+    process.exit(1)
   }
-  const f = parsed.flags;
-  const scriptPath = parsed._[0];
+  const f = parsed.flags
+  const scriptPath = parsed._[0]
   if (!scriptPath) {
-    console.error(USAGE);
-    process.exit(1);
+    console.error(USAGE)
+    process.exit(1)
   }
-  const windowMin = f['poll-window'] === undefined ? 20 : Number(f['poll-window']);
+  const windowMin = f['poll-window'] === undefined ? 20 : Number(f['poll-window'])
   if (!Number.isFinite(windowMin) || windowMin <= 0) {
-    console.error('Error: --poll-window must be a positive number of minutes.\n' + USAGE);
-    process.exit(1);
+    console.error('Error: --poll-window must be a positive number of minutes.\n' + USAGE)
+    process.exit(1)
   }
   try {
     const res = await synthesizeAvatars({
@@ -440,34 +551,77 @@ async function main() {
       allowModels: f['allow-model'],
       cacheDir: f['cache-dir'],
       pollWindowMs: Math.round(windowMin * 60000),
-    });
+    })
     if (res.dryRun) {
-      console.log('Dry run: nothing was synthesized, spent or written. Billed seconds are ceil(measured audio seconds).');
+      console.log(
+        'Dry run: nothing was synthesized, spent or written. Billed seconds are ceil(measured audio seconds).',
+      )
       for (const j of res.jobs) {
-        const ref = j.sceneIds[0] + '/' + (j.layerName || 'avatar');
-        const blocked = res.plan.items.find((i) => i.ref === ref)?.blocked;
-        console.log('   - ' + j.sceneIds.join(', ') + ': ' + j.seconds + 's audio, ' + j.model + ' ~$' + j.estUsd.toFixed(4) + ' [' + j.status + ']' +
-          (j.outstanding ? ' [OUTSTANDING previous submit: ' + j.outstanding + '; use --resume]' : '') + (blocked ? ' [BLOCKED: ' + blocked + ']' : ''));
+        const ref = j.sceneIds[0] + '/' + (j.layerName || 'avatar')
+        const blocked = res.plan.items.find((i) => i.ref === ref)?.blocked
+        console.log(
+          '   - ' +
+            j.sceneIds.join(', ') +
+            ': ' +
+            j.seconds +
+            's audio, ' +
+            j.model +
+            ' ~$' +
+            j.estUsd.toFixed(4) +
+            ' [' +
+            j.status +
+            ']' +
+            (j.outstanding
+              ? ' [OUTSTANDING previous submit: ' + j.outstanding + '; use --resume]'
+              : '') +
+            (blocked ? ' [BLOCKED: ' + blocked + ']' : ''),
+        )
       }
-      const p = res.plan;
-      console.log('   Estimated total: $' + p.totalUsd.toFixed(4) + ' (budget per run: $' + p.budgetUsd.toFixed(2) + (p.withinBudget ? '' : ' - OVER BUDGET') + ')');
-      console.log('   Spent in the last 24h: $' + p.dailySpentUsd.toFixed(4) + ' (daily cap: $' + p.dailyCapUsd.toFixed(2) + ')');
-      return;
+      const p = res.plan
+      console.log(
+        '   Estimated total: $' +
+          p.totalUsd.toFixed(4) +
+          ' (budget per run: $' +
+          p.budgetUsd.toFixed(2) +
+          (p.withinBudget ? '' : ' - OVER BUDGET') +
+          ')',
+      )
+      console.log(
+        '   Spent in the last 24h: $' +
+          p.dailySpentUsd.toFixed(4) +
+          ' (daily cap: $' +
+          p.dailyCapUsd.toFixed(2) +
+          ')',
+      )
+      return
     }
-    for (const j of res.jobs) console.log(j.status + ': ' + j.sceneIds.join(', ') + ' -> ' + j.assetPath + (j.width ? ' (' + j.width + 'x' + j.height + ', declared ' + j.resolution + ')' : ''));
-    if (res.jobs.length > 0) console.log('Run compile again to pick the clips up (zero extra spend).');
+    for (const j of res.jobs)
+      console.log(
+        j.status +
+          ': ' +
+          j.sceneIds.join(', ') +
+          ' -> ' +
+          j.assetPath +
+          (j.width ? ' (' + j.width + 'x' + j.height + ', declared ' + j.resolution + ')' : ''),
+      )
+    if (res.jobs.length > 0)
+      console.log('Run compile again to pick the clips up (zero extra spend).')
   } catch (err) {
     if (err instanceof AvatarBatchError) {
       for (const fl of err.failures) {
-        console.error('Error [' + fl.sceneIds.join(', ') + ']: ' + fl.error.message);
-        if (fl.resumeCommand) console.error('  The task may still finish (and is billed). Resume without re-submitting:\n  ' + fl.resumeCommand);
+        console.error('Error [' + fl.sceneIds.join(', ') + ']: ' + fl.error.message)
+        if (fl.resumeCommand)
+          console.error(
+            '  The task may still finish (and is billed). Resume without re-submitting:\n  ' +
+              fl.resumeCommand,
+          )
       }
-      process.exit(err.exitCode);
+      process.exit(err.exitCode)
     }
-    console.error('Error: ' + err.message);
-    process.exit(1);
+    console.error('Error: ' + err.message)
+    process.exit(1)
   }
 }
 
-const isMain = process.argv[1] && fs.realpathSync(process.argv[1]) === fs.realpathSync(SCRIPT_FILE);
-if (isMain) await main();
+const isMain = process.argv[1] && fs.realpathSync(process.argv[1]) === fs.realpathSync(SCRIPT_FILE)
+if (isMain) await main()

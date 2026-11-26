@@ -10,23 +10,28 @@
  * into a loud named error (never a silent mock unless `--allow-mock`).
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { emitHyperframesProject, HYPERFRAMES_PIN, resolveHyperframesCli } from './scene-project.mjs';
-import { runEnsureHyperframes } from './ensure-hyperframes.mjs';
-import { SLOT_OF } from './overlay-blocks.mjs';
-import { assertGsapPresent } from './lib/stage-assets.mjs';
-import { emitHyperframesFrame } from './lib/frame-tokens.mjs';
-import { spawnTool } from './lib/spawn-tool.mjs';
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { emitHyperframesProject, HYPERFRAMES_PIN, resolveHyperframesCli } from './scene-project.mjs'
+import { runEnsureHyperframes } from './ensure-hyperframes.mjs'
+import { SLOT_OF } from './overlay-blocks.mjs'
+import { assertGsapPresent } from './lib/stage-assets.mjs'
+import { emitHyperframesFrame } from './lib/frame-tokens.mjs'
+import { spawnTool } from './lib/spawn-tool.mjs'
 
 /** Default runner: the pinned CLI through `spawnTool` (the Windows `.cmd` shim runs safely). */
 function defaultRun(cmd, args, opts = {}) {
-  const res = spawnTool(cmd, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...opts });
-  return { status: res.status, stdout: res.stdout || '', stderr: res.stderr || '', error: res.error };
+  const res = spawnTool(cmd, args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, ...opts })
+  return {
+    status: res.status,
+    stdout: res.stdout || '',
+    stderr: res.stderr || '',
+    error: res.error,
+  }
 }
 
-const DETAIL_MAX = 2000;
+const DETAIL_MAX = 2000
 
 /**
  * Raised when a declared authored project's staged copy is not the source: a missing
@@ -39,9 +44,9 @@ export class AuthoredStaleError extends Error {
     super(
       `authored-stale: ${problems.length} staged authored project(s) do not match their source ` +
         `(refusing to render a project that is not the source):\n  ${problems.join('\n  ')}`,
-    );
-    this.name = 'AuthoredStaleError';
-    this.problems = problems;
+    )
+    this.name = 'AuthoredStaleError'
+    this.problems = problems
   }
 }
 
@@ -52,25 +57,28 @@ export class AuthoredStaleError extends Error {
  * @returns {Promise<{ ok: boolean, reason?: string, detail?: string }>}
  */
 async function ensurePinnedRuntime({ skillDir, deps }) {
-  const verify = deps.ensureRuntime || runEnsureHyperframes;
-  const quiet = () => {};
-  const autoInstall = deps.autoInstall ?? process.env.INNFO_RENDER_AUTOINSTALL !== '0';
+  const verify = deps.ensureRuntime || runEnsureHyperframes
+  const quiet = () => {}
+  const autoInstall = deps.autoInstall ?? process.env.INNFO_RENDER_AUTOINSTALL !== '0'
 
-  if ((await verify({ skillDir, print: quiet })) === 0) return { ok: true };
+  if ((await verify({ skillDir, print: quiet })) === 0) return { ok: true }
   if (!autoInstall) {
     return {
       ok: false,
       reason: 'hyperframes-missing',
-      detail: 'auto-install disabled by INNFO_RENDER_AUTOINSTALL=0; run: node scripts/ensure-hyperframes.mjs --install',
-    };
+      detail:
+        'auto-install disabled by INNFO_RENDER_AUTOINSTALL=0; run: node scripts/ensure-hyperframes.mjs --install',
+    }
   }
-  if ((await verify({ skillDir, install: true, print: quiet })) === 0) return { ok: true };
-  return { ok: false, reason: 'hyperframes-missing' };
+  if ((await verify({ skillDir, install: true, print: quiet })) === 0) return { ok: true }
+  return { ok: false, reason: 'hyperframes-missing' }
 }
 
 /** Last `DETAIL_MAX` chars of a captured stream, trimmed; '' when there is nothing. */
 function outputTail(text) {
-  return String(text || '').trim().slice(-DETAIL_MAX);
+  return String(text || '')
+    .trim()
+    .slice(-DETAIL_MAX)
 }
 
 /**
@@ -85,38 +93,47 @@ function outputTail(text) {
  * @param {{ gsapPath?: string }} [opts]
  */
 export function buildHyperframesProject(manifest, projectDir, opts = {}) {
-  const narrationCaptions = opts.narrationCaptions ?? manifest?.metadata?.narrationCaptions ?? manifest?.captions;
-  const built = emitHyperframesProject(manifest, { projectDir, narrationCaptions, ...opts });
+  const narrationCaptions =
+    opts.narrationCaptions ?? manifest?.metadata?.narrationCaptions ?? manifest?.captions
+  const built = emitHyperframesProject(manifest, { projectDir, narrationCaptions, ...opts })
   // GSAP is a 70 KB library, not a provider cache entry: it is copied. Copying it never
   // changes `link_mode`, which describes how the staged ASSETS were made available.
-  const gsap = opts.gsapPath || assertGsapPresent();
-  const vendorDir = path.join(projectDir, 'vendor');
-  fs.mkdirSync(vendorDir, { recursive: true });
-  fs.copyFileSync(gsap, path.join(vendorDir, 'gsap.min.js'));
-  const publicDir = manifest?.metadata?.publicDir;
-  const assetsDir = path.join(projectDir, 'assets');
-  fs.mkdirSync(assetsDir, { recursive: true });
+  const gsap = opts.gsapPath || assertGsapPresent()
+  const vendorDir = path.join(projectDir, 'vendor')
+  fs.mkdirSync(vendorDir, { recursive: true })
+  fs.copyFileSync(gsap, path.join(vendorDir, 'gsap.min.js'))
+  const publicDir = manifest?.metadata?.publicDir
+  const assetsDir = path.join(projectDir, 'assets')
+  fs.mkdirSync(assetsDir, { recursive: true })
   // When the staging layer IS the asset dir there is nothing to copy (design D2).
-  if (publicDir && path.resolve(publicDir) !== path.resolve(assetsDir) && fs.existsSync(publicDir)) {
+  if (
+    publicDir &&
+    path.resolve(publicDir) !== path.resolve(assetsDir) &&
+    fs.existsSync(publicDir)
+  ) {
     for (const entry of fs.readdirSync(publicDir)) {
-      const src = path.join(publicDir, entry);
-      if (fs.statSync(src).isFile()) fs.copyFileSync(src, path.join(assetsDir, entry));
+      const src = path.join(publicDir, entry)
+      if (fs.statSync(src).isFile()) fs.copyFileSync(src, path.join(assetsDir, entry))
     }
   }
-  stageComponents(manifest, projectDir);
-  stageAuthoredProjects(manifest, projectDir);
+  stageComponents(manifest, projectDir)
+  stageAuthoredProjects(manifest, projectDir)
   // Staging itself always rewrites (copyDir has no cache), so this is the invariant that
   // makes "the render used a project that is not the source" impossible: every declared
   // authored project must have a staged copy that matches its source bytes. A skipped
   // source, a partial copy or a leftover copy from an earlier compile is refused here,
   // before `hyperframes render` can mount it (defect: a stale staged project used to
   // reach the render and the QA that follows it with no diagnostic at all).
-  const unstageable = assertAuthoredStaged(manifest, projectDir);
-  if (unstageable.length > 0) throw new AuthoredStaleError(unstageable);
+  const unstageable = assertAuthoredStaged(manifest, projectDir)
+  if (unstageable.length > 0) throw new AuthoredStaleError(unstageable)
   if (manifest?.metadata?.frame?.path) {
-    emitHyperframesFrame({ frameDir: path.dirname(manifest.metadata.frame.path), projectDir, outDir: projectDir });
+    emitHyperframesFrame({
+      frameDir: path.dirname(manifest.metadata.frame.path),
+      projectDir,
+      outDir: projectDir,
+    })
   }
-  return built;
+  return built
 }
 
 /**
@@ -138,16 +155,20 @@ export function buildHyperframesProject(manifest, projectDir, opts = {}) {
  * @param {string} projectDir
  */
 export function stageAuthoredProjects(manifest, projectDir) {
-  const scenes = manifest?.tracks?.scenes || [];
-  const entries = scenes.flatMap((scene) => scene.animations || []);
-  const staged = new Set();
+  const scenes = manifest?.tracks?.scenes || []
+  const entries = scenes.flatMap((scene) => scene.animations || [])
+  const staged = new Set()
   for (const entry of entries) {
-    if (!entry?.id || !entry?.sourceDir || !fs.existsSync(entry.sourceDir) || staged.has(entry.id)) continue;
-    staged.add(entry.id);
-    const prefix = `authored/${entry.id}/`;
-    copyDir(entry.sourceDir, path.join(projectDir, 'authored', entry.id), new Set(['.hyperframes']), (name, text) =>
-      /\.html?$/i.test(name) ? rerootCompositionSrc(text, prefix) : null,
-    );
+    if (!entry?.id || !entry?.sourceDir || !fs.existsSync(entry.sourceDir) || staged.has(entry.id))
+      continue
+    staged.add(entry.id)
+    const prefix = `authored/${entry.id}/`
+    copyDir(
+      entry.sourceDir,
+      path.join(projectDir, 'authored', entry.id),
+      new Set(['.hyperframes']),
+      (name, text) => (/\.html?$/i.test(name) ? rerootCompositionSrc(text, prefix) : null),
+    )
   }
 }
 
@@ -157,11 +178,16 @@ export function stageAuthoredProjects(manifest, projectDir) {
  * @param {string} html
  * @param {string} prefix e.g. `authored/rig/`
  */
-export function rerootCompositionSrc(html, prefix) {  return String(html).replace(/(data-composition-src\s*=\s*)(["'])([^"']*)\2/g, (match, attr, quote, value) => {
-    const src = value.trim();
-    if (!src || /^[a-z][a-z0-9+.-]*:/i.test(src) || src.startsWith('/') || src.startsWith(prefix)) return match;
-    return `${attr}${quote}${prefix}${src.replace(/^\.\//, '')}${quote}`;
-  });
+export function rerootCompositionSrc(html, prefix) {
+  return String(html).replace(
+    /(data-composition-src\s*=\s*)(["'])([^"']*)\2/g,
+    (match, attr, quote, value) => {
+      const src = value.trim()
+      if (!src || /^[a-z][a-z0-9+.-]*:/i.test(src) || src.startsWith('/') || src.startsWith(prefix))
+        return match
+      return `${attr}${quote}${prefix}${src.replace(/^\.\//, '')}${quote}`
+    },
+  )
 }
 
 /**
@@ -169,16 +195,18 @@ export function rerootCompositionSrc(html, prefix) {  return String(html).replac
  * may return new text for a file (null keeps the bytes as they are).
  */
 function copyDir(src, dest, skip, transform = () => null) {
-  fs.mkdirSync(dest, { recursive: true });
+  fs.mkdirSync(dest, { recursive: true })
   for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-    if (skip.has(entry.name)) continue;
-    const from = path.join(src, entry.name);
-    const to = path.join(dest, entry.name);
-    if (entry.isDirectory()) copyDir(from, to, skip, transform);
+    if (skip.has(entry.name)) continue
+    const from = path.join(src, entry.name)
+    const to = path.join(dest, entry.name)
+    if (entry.isDirectory()) copyDir(from, to, skip, transform)
     else if (entry.isFile()) {
-      const text = /\.html?$/i.test(entry.name) ? transform(entry.name, fs.readFileSync(from, 'utf8')) : null;
-      if (text === null) fs.copyFileSync(from, to);
-      else fs.writeFileSync(to, text, 'utf8');
+      const text = /\.html?$/i.test(entry.name)
+        ? transform(entry.name, fs.readFileSync(from, 'utf8'))
+        : null
+      if (text === null) fs.copyFileSync(from, to)
+      else fs.writeFileSync(to, text, 'utf8')
     }
   }
 }
@@ -192,21 +220,26 @@ function copyDir(src, dest, skip, transform = () => null) {
  * @returns {Map<string, Buffer>}
  */
 function stagedFileBytes(src, prefix) {
-  const out = new Map();
+  const out = new Map()
   const walk = (dir, rel) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      if (entry.name === '.hyperframes') continue;
-      const from = path.join(dir, entry.name);
-      const name = rel ? `${rel}/${entry.name}` : entry.name;
-      if (entry.isDirectory()) walk(from, name);
+      if (entry.name === '.hyperframes') continue
+      const from = path.join(dir, entry.name)
+      const name = rel ? `${rel}/${entry.name}` : entry.name
+      if (entry.isDirectory()) walk(from, name)
       else if (entry.isFile()) {
-        const raw = fs.readFileSync(from);
-        out.set(name, /\.html?$/i.test(entry.name) ? Buffer.from(rerootCompositionSrc(raw.toString('utf8'), prefix), 'utf8') : raw);
+        const raw = fs.readFileSync(from)
+        out.set(
+          name,
+          /\.html?$/i.test(entry.name)
+            ? Buffer.from(rerootCompositionSrc(raw.toString('utf8'), prefix), 'utf8')
+            : raw,
+        )
       }
     }
-  };
-  walk(src, '');
-  return out;
+  }
+  walk(src, '')
+  return out
 }
 
 /**
@@ -224,39 +257,39 @@ function stagedFileBytes(src, prefix) {
  * @returns {string[]}
  */
 export function assertAuthoredStaged(manifest, projectDir) {
-  const scenes = manifest?.tracks?.scenes || [];
-  const entries = scenes.flatMap((scene) => scene.animations || []);
-  const problems = [];
-  const seen = new Set();
+  const scenes = manifest?.tracks?.scenes || []
+  const entries = scenes.flatMap((scene) => scene.animations || [])
+  const problems = []
+  const seen = new Set()
   for (const entry of entries) {
-    if (!entry?.id || seen.has(entry.id)) continue;
-    seen.add(entry.id);
-    const dest = path.join(projectDir, 'authored', entry.id);
+    if (!entry?.id || seen.has(entry.id)) continue
+    seen.add(entry.id)
+    const dest = path.join(projectDir, 'authored', entry.id)
     if (!entry.sourceDir || !fs.existsSync(entry.sourceDir)) {
       if (fs.existsSync(dest)) {
         problems.push(
           `"${entry.id}": declared by the manifest but its source directory is missing (${entry.sourceDir || 'no sourceDir'}); ` +
             'the staged copy from an earlier compile would be rendered. Restore the source, or remove the Layer.',
-        );
+        )
       }
-      continue;
+      continue
     }
-    const expected = stagedFileBytes(entry.sourceDir, `authored/${entry.id}/`);
+    const expected = stagedFileBytes(entry.sourceDir, `authored/${entry.id}/`)
     for (const [rel, bytes] of expected) {
-      const staged = path.join(dest, rel);
+      const staged = path.join(dest, rel)
       if (!fs.existsSync(staged)) {
-        problems.push(`"${entry.id}/${rel}": exists in the source but was not staged (${dest}).`);
-        continue;
+        problems.push(`"${entry.id}/${rel}": exists in the source but was not staged (${dest}).`)
+        continue
       }
       if (!fs.readFileSync(staged).equals(bytes)) {
         problems.push(
           `"${entry.id}/${rel}": the staged copy is not the source (${bytes.length} source bytes, ` +
             `${fs.statSync(staged).size} staged). Delete ${dest} and re-run to restage it.`,
-        );
+        )
       }
     }
   }
-  return problems;
+  return problems
 }
 
 /**
@@ -265,27 +298,32 @@ export function assertAuthoredStaged(manifest, projectDir) {
  * skill's neutral fallback for every slot its overlays use.
  */
 function stageComponents(manifest, projectDir) {
-  const overlays = manifest?.tracks?.overlays || [];
-  const resolved = manifest?.metadata?.components || {};
-  const slots = new Set(overlays.map((o) => SLOT_OF[o.type]).filter(Boolean));
+  const overlays = manifest?.tracks?.overlays || []
+  const resolved = manifest?.metadata?.components || {}
+  const slots = new Set(overlays.map((o) => SLOT_OF[o.type]).filter(Boolean))
   // `fit:: component:<name>` components, resolved before spend by compile.
-  const fitComponents = Object.values(manifest?.metadata?.fitComponents || {});
-  if (slots.size === 0 && fitComponents.length === 0) return;
-  const componentsDir = path.join(projectDir, 'components');
-  fs.mkdirSync(componentsDir, { recursive: true });
+  const fitComponents = Object.values(manifest?.metadata?.fitComponents || {})
+  if (slots.size === 0 && fitComponents.length === 0) return
+  const componentsDir = path.join(projectDir, 'components')
+  fs.mkdirSync(componentsDir, { recursive: true })
   for (const entry of fitComponents) {
-    if (entry?.path && fs.existsSync(entry.path)) fs.copyFileSync(entry.path, path.join(componentsDir, `${entry.name}.html`));
+    if (entry?.path && fs.existsSync(entry.path))
+      fs.copyFileSync(entry.path, path.join(componentsDir, `${entry.name}.html`))
   }
-  const skillDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const skillDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
   for (const slot of slots) {
-    const entry = resolved[slot];
-    const name = entry?.name || slot;
+    const entry = resolved[slot]
+    const name = entry?.name || slot
     // The resolved component path is the folder's index.html (folder-form
     // components); the fallback is the packaged slot contract.
-    const src = entry?.path || path.join(skillDir, 'slots', `${name}.html`);
-    if (!fs.existsSync(src)) continue;
-    const html = fs.readFileSync(src, 'utf8');
-    fs.writeFileSync(path.join(componentsDir, `${name}.html`), stampCanvas(html, manifest.width, manifest.height), 'utf8');
+    const src = entry?.path || path.join(skillDir, 'slots', `${name}.html`)
+    if (!fs.existsSync(src)) continue
+    const html = fs.readFileSync(src, 'utf8')
+    fs.writeFileSync(
+      path.join(componentsDir, `${name}.html`),
+      stampCanvas(html, manifest.width, manifest.height),
+      'utf8',
+    )
   }
 }
 
@@ -298,12 +336,15 @@ function stageComponents(manifest, projectDir) {
  * @param {number} height
  */
 export function stampCanvas(html, width, height) {
-  if (!(Number(width) > 0) || !(Number(height) > 0)) return html;
+  if (!(Number(width) > 0) || !(Number(height) > 0)) return html
   return String(html).replace(/<div\b[^>]*\bid="root"[^>]*>/, (tag) =>
     tag
       .replace(/\s+data-(?:width|height)="[^"]*"/g, '')
-      .replace(/\bid="root"/, `id="root" data-width="${Number(width)}" data-height="${Number(height)}"`),
-  );
+      .replace(
+        /\bid="root"/,
+        `id="root" data-width="${Number(width)}" data-height="${Number(height)}"`,
+      ),
+  )
 }
 
 /**
@@ -313,77 +354,88 @@ export function stampCanvas(html, width, height) {
  * @returns {Promise<{ rendered: true } | { rendered: false, reason: string, detail?: string }>}
  */
 export async function tryHyperframesRender(input, deps = {}) {
-  const { manifest, outputPath } = input;
-  const pin = input.pin || HYPERFRAMES_PIN;
-  if (!input.projectDir) throw new Error('tryHyperframesRender: projectDir is required (compile sets manifest.metadata.hyperframesDir)');
-  const projectDir = path.resolve(input.projectDir);
-  const run = deps.run || defaultRun;
+  const { manifest, outputPath } = input
+  const pin = input.pin || HYPERFRAMES_PIN
+  if (!input.projectDir)
+    throw new Error(
+      'tryHyperframesRender: projectDir is required (compile sets manifest.metadata.hyperframesDir)',
+    )
+  const projectDir = path.resolve(input.projectDir)
+  const run = deps.run || defaultRun
 
-  if (process.env.NN_HYPERFRAMES_DISABLE === '1') return { rendered: false, reason: 'disabled' };
+  if (process.env.NN_HYPERFRAMES_DISABLE === '1') return { rendered: false, reason: 'disabled' }
 
-  const skillDir = deps.skillDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+  const skillDir = deps.skillDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
   // The pinned runtime must exist before anything is emitted: the emitter vendors GSAP and the
   // renderer runs the pinned CLI. Checking here turns "emit-failed: gsap is not installed" — which
   // arrived after the caller had already paid for synthesis — into a one-time provision instead.
-  const injectedRuntime = deps.cliPath !== undefined || deps.run !== undefined;
+  const injectedRuntime = deps.cliPath !== undefined || deps.run !== undefined
   if (!injectedRuntime) {
-    const ensured = await ensurePinnedRuntime({ skillDir, deps });
+    const ensured = await ensurePinnedRuntime({ skillDir, deps })
     if (!ensured.ok) {
       return {
         rendered: false,
         reason: ensured.reason,
         ...(ensured.detail ? { detail: ensured.detail } : {}),
-      };
+      }
     }
   }
 
   try {
-    buildHyperframesProject(manifest, projectDir, { gsapPath: input.gsapPath });
+    buildHyperframesProject(manifest, projectDir, { gsapPath: input.gsapPath })
   } catch (err) {
-    return { rendered: false, reason: `emit-failed: ${err?.message || String(err)}` };
+    return { rendered: false, reason: `emit-failed: ${err?.message || String(err)}` }
   }
 
   // Resolve the pinned CLI from this skill's node_modules/.bin. A missing CLI or a
   // version different from the pin is returned as a named reason — never a silent
   // `npx` install. The caller raises a loud named error; there is no FFmpeg fallback.
-  const injectedCli = deps.cliPath !== undefined;
-  const cliPath = deps.cliPath || resolveHyperframesCli({ skillDir });
-  const installedPkgPath = path.join(skillDir, 'node_modules', 'hyperframes', 'package.json');
-  let installedPin = deps.installedPin !== undefined ? deps.installedPin : null;
+  const injectedCli = deps.cliPath !== undefined
+  const cliPath = deps.cliPath || resolveHyperframesCli({ skillDir })
+  const installedPkgPath = path.join(skillDir, 'node_modules', 'hyperframes', 'package.json')
+  let installedPin = deps.installedPin !== undefined ? deps.installedPin : null
   // An injected runner (tests) owns CLI resolution; otherwise verify the real pin.
   if (!injectedCli && !deps.run) {
     if (!fs.existsSync(cliPath) || !fs.existsSync(installedPkgPath)) {
-      return { rendered: false, reason: 'hyperframes-missing' };
+      return { rendered: false, reason: 'hyperframes-missing' }
     }
     try {
-      installedPin = JSON.parse(fs.readFileSync(installedPkgPath, 'utf8')).version;
+      installedPin = JSON.parse(fs.readFileSync(installedPkgPath, 'utf8')).version
     } catch (_) {
-      installedPin = null;
+      installedPin = null
     }
   }
   if (installedPin && installedPin !== pin) {
-    return { rendered: false, reason: `hyperframes-version-mismatch: ${installedPin}≠${pin}` };
+    return { rendered: false, reason: `hyperframes-version-mismatch: ${installedPin}≠${pin}` }
   }
 
-  const extra = (input.extraArgs || []).map(String);
-  const cmd = [cliPath, ['render', projectDir, '--output', path.resolve(outputPath), ...extra]];
+  const extra = (input.extraArgs || []).map(String)
+  const cmd = [cliPath, ['render', projectDir, '--output', path.resolve(outputPath), ...extra]]
   try {
-    const res = await run(cmd[0], cmd[1], { cwd: projectDir });
+    const res = await run(cmd[0], cmd[1], { cwd: projectDir })
     // Keep the CLI's own words: the exit code alone says nothing about why it failed.
-    const detail = res ? outputTail(res.stderr) || outputTail(res.stdout) : '';
+    const detail = res ? outputTail(res.stderr) || outputTail(res.stdout) : ''
     if (res?.error) {
-      return { rendered: false, reason: `error: ${res.error.message || String(res.error)}`, ...(detail && { detail }) };
+      return {
+        rendered: false,
+        reason: `error: ${res.error.message || String(res.error)}`,
+        ...(detail && { detail }),
+      }
     }
     if (res && typeof res.status === 'number' && res.status !== 0) {
-      return { rendered: false, reason: `hyperframes-exit-${res.status}`, ...(detail && { detail }) };
+      return {
+        rendered: false,
+        reason: `hyperframes-exit-${res.status}`,
+        ...(detail && { detail }),
+      }
     }
   } catch (err) {
-    return { rendered: false, reason: `error: ${err?.message || String(err)}` };
+    return { rendered: false, reason: `error: ${err?.message || String(err)}` }
   }
 
-  if (!fs.existsSync(outputPath)) return { rendered: false, reason: 'no-output' };
-  return { rendered: true };
+  if (!fs.existsSync(outputPath)) return { rendered: false, reason: 'no-output' }
+  return { rendered: true }
 }
 
 /**
@@ -396,22 +448,33 @@ export async function tryHyperframesRender(input, deps = {}) {
  * @returns {Promise<{ ok: boolean, reason?: string, detail?: string }>}
  */
 export async function runHyperframesCheck({ projectDir }, deps = {}) {
-  const skillDir = deps.skillDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-  const cliPath = deps.cliPath || resolveHyperframesCli({ skillDir });
-  const run = deps.run || defaultRun;
-  if (!deps.run && !fs.existsSync(cliPath)) return { ok: false, reason: 'hyperframes-missing' };
+  const skillDir = deps.skillDir || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+  const cliPath = deps.cliPath || resolveHyperframesCli({ skillDir })
+  const run = deps.run || defaultRun
+  if (!deps.run && !fs.existsSync(cliPath)) return { ok: false, reason: 'hyperframes-missing' }
   if (!projectDir || !fs.existsSync(path.join(projectDir, 'index.html'))) {
-    return { ok: false, reason: 'project-missing', detail: `no index.html in ${projectDir}` };
+    return { ok: false, reason: 'project-missing', detail: `no index.html in ${projectDir}` }
   }
   try {
-    const res = await run(cliPath, ['check', '--json', path.resolve(projectDir)], { cwd: projectDir });
-    const detail = res ? outputTail(res.stdout) || outputTail(res.stderr) : '';
-    if (res?.error) return { ok: false, reason: `error: ${res.error.message || String(res.error)}`, ...(detail && { detail }) };
+    const res = await run(cliPath, ['check', '--json', path.resolve(projectDir)], {
+      cwd: projectDir,
+    })
+    const detail = res ? outputTail(res.stdout) || outputTail(res.stderr) : ''
+    if (res?.error)
+      return {
+        ok: false,
+        reason: `error: ${res.error.message || String(res.error)}`,
+        ...(detail && { detail }),
+      }
     if (res && typeof res.status === 'number' && res.status !== 0) {
-      return { ok: false, reason: `hyperframes-check-exit-${res.status}`, ...(detail && { detail }) };
+      return {
+        ok: false,
+        reason: `hyperframes-check-exit-${res.status}`,
+        ...(detail && { detail }),
+      }
     }
-    return { ok: true };
+    return { ok: true }
   } catch (err) {
-    return { ok: false, reason: `error: ${err?.message || String(err)}` };
+    return { ok: false, reason: `error: ${err?.message || String(err)}` }
   }
 }
