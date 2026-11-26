@@ -669,6 +669,8 @@ Open **Changes · N** in the top-right corner to review pending drafts and the a
 
 Enter your reviewer identifier to **Copy changeset doc** or **Download changes**, then give the change document to your agent. Both emit the same `_changes_NN.md` document, with no wrapper instructions. For a longer hand-off, the navbar action **Copy AI Prompt** composes the agent prompt instead: instructions plus that same changeset document embedded. Copying and downloading keep the pending drafts; they do not apply them. **Discard all** asks for confirmation. **Save Snapshot** saves a self-contained copy of the console, including its drafts.
 
+A draft that names an element the console's payload does not hold makes both actions refuse, with the reason shown in the modal: the file would be rejected on apply, so it is never produced. **Copy AI Prompt** still lists that draft under **Blocking Problems**, next to the changeset it embeds, so you can correct it before copying.
+
 ## Works offline
 
 Because the page is self-contained, you can open it directly from disk — no web server required — and it keeps working with no toolchain installed. That is also what makes it a durable deliverable you can hand to someone else.
