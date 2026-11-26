@@ -1929,6 +1929,7 @@ ${retired.length} installed bluepriNNt(s) are not in the catalog (retired). No u
         for (const template of outdatedBlueprints) {
           const installed = state.blueprints[template.name].commit;
           console.log(`  template ${template.name}: ${await fetchCompareSummary(template, installed)}`);
+          console.log(`    repair: update --blueprint ${template.name}`);
         }
       }
       if (modifiedSkills.length > 0) {
@@ -2336,6 +2337,12 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
         selectedBlueprints = blueprints.filter((t) => args.positional.includes(t.name) && isOutdatedBlueprint(t));
         selectedConsole = (consoleAssets || []).filter((a) => args.positional.includes(path2.basename(a.file || a.url)) && isOutdatedConsole(a));
         selectedMcp = (mcp || []).filter((m) => (args.positional.includes(m.name) || args.positional.includes("mcp")) && isOutdatedMcp(m));
+      }
+      if (args.blueprint) {
+        selectedSkills = [];
+        selectedBlueprints = blueprints.filter((t) => t.name === args.blueprint && isOutdatedBlueprint(t));
+        selectedConsole = [];
+        selectedMcp = [];
       }
       let catalog = null;
       try {
