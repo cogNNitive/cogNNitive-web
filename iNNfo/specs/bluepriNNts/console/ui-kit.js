@@ -242,7 +242,8 @@
     '.nn-ku .nn-ku-icon{display:inline-flex;color:var(--nn-muted);flex:0 0 auto}',
     // Content badges: NO border; the concept colour rides on the label/value and on
     // the concept icon (the icon of the concept the unit belongs to).
-    '.nn-ku[data-ku-nature=content]>.nn-ku-label,.nn-ku[data-ku-nature=content]>.nn-ku-value{color:var(--c)}',
+    '.nn-ku[data-ku-nature=content]>.nn-ku-label{color:var(--nn-text)}',
+  '.nn-ku[data-ku-nature=content]>.nn-ku-value{color:var(--c)}',
     '.nn-ku[data-ku-nature=content]>.nn-ku-icon{color:var(--c)}',
     // A Source is cited evidence: paper fill and neutral ink. It is never tinted by
     // the concept colour, even though it is a content unit.
@@ -4843,7 +4844,8 @@
       '.nn-ku[data-ku-nature=container]{border:2px solid var(--nn-accent,#0f172a);background:var(--nn-surface,#fff)}',
       '.nn-ku[data-ku-nature=structure]{border:1.5px solid var(--c);font-family:ui-monospace,monospace;color:var(--nn-muted);background:var(--nn-surface,#fff)}',
       '.nn-ku[data-ku-nature=content]{border:0;background:var(--nn-surface-2,#f1f5f9)}',
-      '.nn-ku[data-ku-nature=content]>.nn-ku-label,.nn-ku[data-ku-nature=content]>.nn-ku-value{color:var(--c)}',
+      '.nn-ku[data-ku-nature=content]>.nn-ku-label{color:var(--nn-text)}',
+  '.nn-ku[data-ku-nature=content]>.nn-ku-value{color:var(--c)}',
       '.nn-ku[data-ku-nature=content]>.nn-ku-icon{color:var(--c)}',
       '.nn-ku[data-ku-home=source]{background:var(--nn-source-paper,#fff7e6)}',
       '.nn-ku[data-ku-home=source]>.nn-ku-label,.nn-ku[data-ku-home=source] .nn-ku-icon{color:var(--nn-muted)}',
