@@ -1619,7 +1619,7 @@ var require_blueprint_channels = __commonJS({
     var DEFAULT_CHANNELS = [
       {
         name: "official",
-        distribution_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive_blueprints/main/iNNfo/specs/bluepriNNts"
+        distribution_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts"
       }
     ];
     var FORBIDDEN_CHANNEL_KEYS = ["version", "versions", "latest", "tag", "release_tag", "adopted"];
