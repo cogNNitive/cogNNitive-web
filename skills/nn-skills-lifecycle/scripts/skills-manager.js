@@ -1311,6 +1311,7 @@ var require_blueprint_provenance = __commonJS({
           const abs = path2.join(current, entry.name);
           const rel = path2.relative(root, abs).split(path2.sep).join("/");
           if (rel === LOCK_FILE) continue;
+          if (entry.name.includes(".tmp-") || entry.name.includes(".staging-")) continue;
           if (entry.isDirectory()) {
             walk(abs);
           } else if (entry.isSymbolicLink()) {
@@ -1323,6 +1324,32 @@ var require_blueprint_provenance = __commonJS({
       };
       walk(root);
       return out;
+    }
+    function diffBlueprintTree(installedDir, recordedDigests) {
+      if (!installedDir || !fs.existsSync(installedDir) || !recordedDigests || typeof recordedDigests !== "object") {
+        return { modified: false, differing: [] };
+      }
+      const recordedKeys = Object.keys(recordedDigests);
+      if (recordedKeys.length === 0) return { modified: false, differing: [] };
+      const current = digestTree(installedDir);
+      const differing = [];
+      for (const rel of recordedKeys) {
+        if (!(rel in current)) {
+          differing.push(`${rel} (missing)`);
+        } else if (current[rel] !== recordedDigests[rel]) {
+          differing.push(`${rel} (modified)`);
+        }
+      }
+      for (const rel of Object.keys(current)) {
+        if (!(rel in recordedDigests)) {
+          differing.push(`${rel} (added)`);
+        }
+      }
+      differing.sort();
+      return {
+        modified: differing.length > 0,
+        differing
+      };
     }
     function parseVersion(value) {
       if (typeof value !== "string") return null;
@@ -1502,6 +1529,36 @@ var require_blueprint_provenance = __commonJS({
       const entry = provenance.entry;
       const installed = typeof entry.version === "string" ? entry.version : null;
       const recordedTag = typeof entry.tag === "string" ? entry.tag : null;
+      const localDiff = diffBlueprintTree(target.installedDir, entry.digests);
+      if (localDiff.modified) {
+        let publishedVersion = null;
+        let publishedCommit = entry.commit || null;
+        let publishedTag = recordedTag;
+        if (entry.distribution_url) {
+          try {
+            const resolved2 = await resolvePublished(
+              { distributionUrl: entry.distribution_url, name: target.name },
+              resolvedDeps
+            );
+            if (resolved2.ok && resolved2.entry) {
+              publishedVersion = resolved2.entry.version;
+              publishedCommit = resolved2.entry.commit;
+              publishedTag = resolved2.entry.tag || recordedTag;
+            }
+          } catch (_) {
+          }
+        }
+        return {
+          status: "modified-locally",
+          recorded: true,
+          installed,
+          published: publishedVersion,
+          commit: publishedCommit,
+          tag: publishedTag,
+          detail: `the installed unit has been modified locally: ${localDiff.differing.join(", ")}; update is refused to protect local edits`,
+          differing: localDiff.differing
+        };
+      }
       if (!entry.distribution_url) {
         return {
           status: "unknown",
@@ -1591,6 +1648,7 @@ var require_blueprint_provenance = __commonJS({
       readProvenance,
       readBlueprintManifest,
       digestTree,
+      diffBlueprintTree,
       parseVersion,
       compareVersions,
       distributionUrlParts,
@@ -1780,15 +1838,8 @@ var require_skills_commands = __commonJS({
     } = require_projection();
     var { skillTreeDigest } = require_skill_tree_digest();
     var { hashSkillDir, diffSkillDir } = require_skill_content_hash2();
-    var {
-      fetchString,
-      fetchJson,
-      downloadFile,
-      resolveRef
-    } = require_github_client();
-    var {
-      parseManifest
-    } = require_yaml_parser();
+    var { fetchString, fetchJson, downloadFile, resolveRef } = require_github_client();
+    var { parseManifest } = require_yaml_parser();
     var { parseFocusedYaml, parseFrontmatter } = require_yaml_lite2();
     var { registerMcpAuto } = require_mcp_config_adapter();
     var {
@@ -1796,6 +1847,7 @@ var require_skills_commands = __commonJS({
       readProvenance,
       readBlueprintManifest,
       digestTree,
+      diffBlueprintTree,
       distributionUrlParts,
       blueprintVerdict
     } = require_blueprint_provenance();
@@ -1822,7 +1874,9 @@ var require_skills_commands = __commonJS({
           try {
             return await fetchString(FALLBACK_MANIFEST_URL);
           } catch (fallbackErr) {
-            throw new Error(`Failed to fetch manifest from ${primaryUrl} (${err.message}) and fallback ${FALLBACK_MANIFEST_URL} (${fallbackErr.message})`);
+            throw new Error(
+              `Failed to fetch manifest from ${primaryUrl} (${err.message}) and fallback ${FALLBACK_MANIFEST_URL} (${fallbackErr.message})`
+            );
           }
         }
         throw err;
@@ -1832,7 +1886,15 @@ var require_skills_commands = __commonJS({
       return url.startsWith("https:") ? https.request : http.request;
     }
     function emptyState() {
-      return { manifest: getManifestUrl(), skills: {}, blueprints: {}, mcp: {}, console: {}, projections: {}, cli: {} };
+      return {
+        manifest: getManifestUrl(),
+        skills: {},
+        blueprints: {},
+        mcp: {},
+        console: {},
+        projections: {},
+        cli: {}
+      };
     }
     function migrateLegacyMcpState(state, mcpDir) {
       let changed = false;
@@ -1983,7 +2045,9 @@ ${RETIRED_REPO_NOTICE}`);
         const url = `https://api.github.com/repos/${item.repo}/compare/${installedCommit}...${item.commit}`;
         const data = await fetchJson(url);
         const prefix = item.path + "/";
-        const files = (data.files || []).filter((f) => f.filename && (f.filename.startsWith(prefix) || f.filename === item.path));
+        const files = (data.files || []).filter(
+          (f) => f.filename && (f.filename.startsWith(prefix) || f.filename === item.path)
+        );
         if (files.length === 0) return `0 files changed under ${item.path}`;
         const first = files.slice(0, 3).map((f) => f.filename);
         const more = files.length > 3 ? ` (+${files.length - 3} more)` : "";
@@ -2081,7 +2145,8 @@ ${RETIRED_REPO_NOTICE}`);
     function validateDependsOn(dependsOn, pkg) {
       const errors = [];
       if (dependsOn == null) return errors;
-      if (typeof dependsOn !== "object" || Array.isArray(dependsOn)) return ["depends_on must be a mapping"];
+      if (typeof dependsOn !== "object" || Array.isArray(dependsOn))
+        return ["depends_on must be a mapping"];
       for (const key of Object.keys(dependsOn)) {
         if (!DEPENDS_ON_KEYS.has(key)) errors.push(`unknown depends_on key: ${key}`);
       }
@@ -2112,18 +2177,29 @@ ${RETIRED_REPO_NOTICE}`);
         const exe = process.platform === "win32" && fs.existsSync(binWin) ? binWin : binPosix;
         if (fs.existsSync(binPosix) || fs.existsSync(binWin)) {
           try {
-            spawnSync(exe, ["skills", "update"], { cwd: skillDir, encoding: "utf-8", shell: true, timeout: 6e4 });
+            spawnSync(exe, ["skills", "update"], {
+              cwd: skillDir,
+              encoding: "utf-8",
+              shell: true,
+              timeout: 6e4
+            });
           } catch (_) {
           }
         }
         let version;
         try {
-          version = JSON.parse(fs.readFileSync(path2.join(skillDir, "node_modules", item.name, "package.json"), "utf8")).version;
+          version = JSON.parse(
+            fs.readFileSync(path2.join(skillDir, "node_modules", item.name, "package.json"), "utf8")
+          ).version;
         } catch (_) {
           version = void 0;
         }
         state.cli = state.cli || {};
-        state.cli[item.name] = { version, source_skill: skillName, updated_at: (/* @__PURE__ */ new Date()).toISOString() };
+        state.cli[item.name] = {
+          version,
+          source_skill: skillName,
+          updated_at: (/* @__PURE__ */ new Date()).toISOString()
+        };
       }
     }
     function installEmbeddedSkills(pkgDir, skillsDir, template, state) {
@@ -2132,7 +2208,8 @@ ${RETIRED_REPO_NOTICE}`);
       const names = [];
       try {
         for (const entry of fs.readdirSync(embeddedRoot, { withFileTypes: true })) {
-          if (!entry.isDirectory() || entry.name.startsWith(".") || entry.name === "node_modules") continue;
+          if (!entry.isDirectory() || entry.name.startsWith(".") || entry.name === "node_modules")
+            continue;
           const src = path2.join(embeddedRoot, entry.name);
           const skillFile = path2.join(src, "SKILL.md");
           if (!fs.existsSync(skillFile)) continue;
@@ -2168,6 +2245,17 @@ ${RETIRED_REPO_NOTICE}`);
       fs.mkdirSync(blueprintsDir, { recursive: true });
       let recordedPath = isMdFile ? flatDestPath : pkgDestPath;
       const pkgExistedBefore = fs.existsSync(pkgDestPath);
+      if (pkgExistedBefore && fs.existsSync(pkgDestPath)) {
+        const prov = readProvenance(blueprintsDir, template.name);
+        if (prov.ok && prov.entry && prov.entry.digests) {
+          const diff = diffBlueprintTree(pkgDestPath, prov.entry.digests);
+          if (diff.modified) {
+            throw new Error(
+              `refusing to update blueprint '${template.name}': locally modified (${diff.differing.join(", ")}). Update will not overwrite hand edits.`
+            );
+          }
+        }
+      }
       const tmpRoot = fs.mkdtempSync(path2.join(os.tmpdir(), "actioNN-blueprints-"));
       try {
         const tarball = await fetchRepoCommitTarball(template);
@@ -2176,7 +2264,9 @@ ${RETIRED_REPO_NOTICE}`);
         const repoRoot = findRepoRoot(extractDir);
         const src = path2.join(repoRoot, template.path);
         if (!fs.existsSync(src)) {
-          throw new Error(`template path ${template.path} not found in ${template.repo} at ${template.commit}`);
+          throw new Error(
+            `template path ${template.path} not found in ${template.repo} at ${template.commit}`
+          );
         }
         if (fs.statSync(src).isDirectory()) {
           if (fs.existsSync(pkgDestPath)) replaceDirAtomic(src, pkgDestPath);
@@ -2188,10 +2278,6 @@ ${RETIRED_REPO_NOTICE}`);
           if (hasPackageSubdirs) {
             if (fs.existsSync(pkgDestPath)) replaceDirAtomic(srcParentDir, pkgDestPath);
             else copyDirAtomic(srcParentDir, pkgDestPath);
-            try {
-              fs.copyFileSync(src, flatDestPath);
-            } catch (_) {
-            }
             recordedPath = pkgDestPath;
           } else {
             fs.copyFileSync(src, flatDestPath);
@@ -2242,7 +2328,9 @@ ${RETIRED_REPO_NOTICE}`);
       await downloadFile(mcp.url, bundleDest);
       if (fs.existsSync(bundleDest)) {
         const bundleContent = fs.readFileSync(bundleDest, "utf-8");
-        const chunkMatches = [...bundleContent.matchAll(/from\s*["']\.\/([^"']+\.js)["']/g)].map((m) => m[1]);
+        const chunkMatches = [...bundleContent.matchAll(/from\s*["']\.\/([^"']+\.js)["']/g)].map(
+          (m) => m[1]
+        );
         const baseUrl = mcp.url.substring(0, mcp.url.lastIndexOf("/"));
         for (const chunkFile of chunkMatches) {
           const chunkDest = path2.join(mcpDir, chunkFile);
@@ -2286,7 +2374,8 @@ ${RETIRED_REPO_NOTICE}`);
       const format = (r) => r.map((c, ci) => c.padEnd(widths[ci])).join(" | ");
       console.log(format(headers));
       console.log(headers.map((_, ci) => "-".repeat(widths[ci])).join(" | "));
-      for (const row of rows) console.log(format([row.type, row.name, row.pinned, row.installed, row.status]));
+      for (const row of rows)
+        console.log(format([row.type, row.name, row.pinned, row.installed, row.status]));
     }
     function promptChoice(promptText) {
       const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -2397,7 +2486,8 @@ ${RETIRED_REPO_NOTICE}`);
           status
         });
         if (status === "outdated" || status === "update-available") outdatedBlueprints.push(template);
-        if (verdict && verdict.detail && verdict.recorded) blueprintDetails.push(`${template.name}: ${verdict.detail}`);
+        if (verdict && verdict.detail && verdict.recorded)
+          blueprintDetails.push(`${template.name}: ${verdict.detail}`);
       }
       for (const server of mcp || []) {
         const bundleName = `${server.name}.bundle.js`;
@@ -2481,7 +2571,8 @@ ${RETIRED_REPO_NOTICE}`);
           installed: verdict && verdict.installed ? verdict.installed : version || "-",
           status
         });
-        if (verdict && verdict.detail) blueprintDetails.push(`${untrackedDisplayName(item)}: ${verdict.detail}`);
+        if (verdict && verdict.detail)
+          blueprintDetails.push(`${untrackedDisplayName(item)}: ${verdict.detail}`);
       }
       printStatusTable(rows);
       if (blueprintDetails.length > 0) {
@@ -2490,11 +2581,15 @@ ${RETIRED_REPO_NOTICE}`);
       }
       const retired = rows.filter((r) => r.type === "catalog" && r.status === "retired");
       if (retired.length > 0) {
-        console.log(`
-${retired.length} installed bluepriNNt(s) are not in the catalog (retired). No update will ever touch them; nothing deletes them either. Remove them by hand from ${args.blueprintsDir} if no domaiNN uses them: ${retired.map((r) => r.name).join(", ")}`);
+        console.log(
+          `
+${retired.length} installed bluepriNNt(s) are not in the catalog (retired). No update will ever touch them; nothing deletes them either. Remove them by hand from ${args.blueprintsDir} if no domaiNN uses them: ${retired.map((r) => r.name).join(", ")}`
+        );
       }
       if (!catalog) {
-        console.log("\nThe bluepriNNt catalog could not be read, so catalog bluepriNNts were not compared (catalog-unavailable). Re-run status when the catalog is reachable.");
+        console.log(
+          "\nThe bluepriNNt catalog could not be read, so catalog bluepriNNts were not compared (catalog-unavailable). Re-run status when the catalog is reachable."
+        );
       }
       if (outdatedSkills.length > 0 || outdatedBlueprints.length > 0 || outdatedConsoleAssets.length > 0 || outdatedMcp.length > 0) {
         console.log("\nDiff previews for outdated items:");
@@ -2510,8 +2605,10 @@ ${retired.length} installed bluepriNNt(s) are not in the catalog (retired). No u
         }
       }
       if (modifiedSkills.length > 0) {
-        console.log(`
-modified locally (hand-edited copy, version unchanged): ${modifiedSkills.join(", ")}`);
+        console.log(
+          `
+modified locally (hand-edited copy, version unchanged): ${modifiedSkills.join(", ")}`
+        );
       }
     }
     async function cmdInstall(args) {
@@ -2521,7 +2618,9 @@ modified locally (hand-edited copy, version unchanged): ${modifiedSkills.join(",
       const consoleDir = args.consoleDir || DEFAULT_CONSOLE_DIR;
       const mcpDir = args.mcpDir || DEFAULT_MCP_DIR;
       migrateLegacyMcpState(state, mcpDir);
-      const toInstallSkills = skills.filter((skill) => !fs.existsSync(path2.join(args.skillsDir, skill.name)));
+      const toInstallSkills = skills.filter(
+        (skill) => !fs.existsSync(path2.join(args.skillsDir, skill.name))
+      );
       const toInstallBlueprints = blueprints.filter((template) => {
         const fileName = template.name.endsWith(".md") ? template.name : `${template.name}.md`;
         return !fs.existsSync(path2.join(args.blueprintsDir, fileName)) && !fs.existsSync(path2.join(args.blueprintsDir, template.name));
@@ -2556,14 +2655,21 @@ modified locally (hand-edited copy, version unchanged): ${modifiedSkills.join(",
 [a] Install all missing (Recommended)
 [b] Skip
 `;
-      const proceed = await consentOrAbort("install missing skills, templates, console assets, and MCP servers", names, menu, args.yes);
+      const proceed = await consentOrAbort(
+        "install missing skills, templates, console assets, and MCP servers",
+        names,
+        menu,
+        args.yes
+      );
       if (!proceed) return;
       let failures = 0;
       const embeddedSkillNames = [];
       for (const skill of toInstallSkills) {
         try {
           await installSkillAtCommit(skill, args.skillsDir, state);
-          console.log(`  installed skill ${skill.name} (${skill.version}) @ ${skill.commit.slice(0, 7)}`);
+          console.log(
+            `  installed skill ${skill.name} (${skill.version}) @ ${skill.commit.slice(0, 7)}`
+          );
         } catch (err) {
           failures++;
           console.error(`  FAIL skill ${skill.name}: ${err.message}`);
@@ -2571,8 +2677,12 @@ modified locally (hand-edited copy, version unchanged): ${modifiedSkills.join(",
       }
       for (const template of toInstallBlueprints) {
         try {
-          embeddedSkillNames.push(...await installBlueprintAtCommit(template, args.blueprintsDir, state, args.skillsDir));
-          console.log(`  installed template ${template.name} (${template.version}) @ ${template.commit.slice(0, 7)}`);
+          embeddedSkillNames.push(
+            ...await installBlueprintAtCommit(template, args.blueprintsDir, state, args.skillsDir)
+          );
+          console.log(
+            `  installed template ${template.name} (${template.version}) @ ${template.commit.slice(0, 7)}`
+          );
         } catch (err) {
           failures++;
           if (err.projectedSkills) embeddedSkillNames.push(...err.projectedSkills);
@@ -2582,7 +2692,9 @@ modified locally (hand-edited copy, version unchanged): ${modifiedSkills.join(",
       for (const asset of toInstallConsole) {
         try {
           await installConsoleAssetAtCommit(asset, consoleDir, state);
-          console.log(`  installed console ${path2.basename(asset.file || asset.url)} (${asset.version}) @ ${asset.commit.slice(0, 7)}`);
+          console.log(
+            `  installed console ${path2.basename(asset.file || asset.url)} (${asset.version}) @ ${asset.commit.slice(0, 7)}`
+          );
         } catch (err) {
           failures++;
           console.error(`  FAIL console ${path2.basename(asset.file || asset.url)}: ${err.message}`);
@@ -2596,7 +2708,9 @@ modified locally (hand-edited copy, version unchanged): ${modifiedSkills.join(",
             serverName: server.name,
             targetAgent: args.agent
           });
-          console.log(`  installed MCP ${server.name} (${server.version}) @ ${server.commit.slice(0, 7)}`);
+          console.log(
+            `  installed MCP ${server.name} (${server.version}) @ ${server.commit.slice(0, 7)}`
+          );
         } catch (err) {
           failures++;
           console.error(`  FAIL MCP ${server.name}: ${err.message}`);
@@ -2615,8 +2729,10 @@ modified locally (hand-edited copy, version unchanged): ${modifiedSkills.join(",
 ${failures} item(s) failed to install.`);
         process.exit(1);
       }
-      console.log(`
-Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} template(s), ${toInstallConsole.length} console asset(s), and ${toInstallMcp.length} MCP server(s).`);
+      console.log(
+        `
+Installed ${toInstallSkills.length} skill(s), ${toInstallBlueprints.length} template(s), ${toInstallConsole.length} console asset(s), and ${toInstallMcp.length} MCP server(s).`
+      );
     }
     var THIRD_PARTY_SKILL_DOC_URL = "https://cognnitive.com/skills/documentation/#/skills/installing-third-party-skills";
     function buildExternalSkillNotice({ name, repo, path: skillPath, commit, sha256 }) {
@@ -2653,7 +2769,12 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
         commit,
         sha256: args.sha256
       });
-      const proceed = await consentOrAbort(`install external skill ${name}`, [`external-skill:${name}`], menu, args.yes);
+      const proceed = await consentOrAbort(
+        `install external skill ${name}`,
+        [`external-skill:${name}`],
+        menu,
+        args.yes
+      );
       if (!proceed) return;
       await installSkillAtCommit(
         { name, repo, path: skillPath, commit, sha256: args.sha256 },
@@ -2671,7 +2792,15 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
       console.log(`installed referenced external skill ${name} @ ${String(commit).slice(0, 7)}`);
     }
     var DEFAULT_BLUEPRINT_REPO = "cogNNitive/cogNNitive-web";
-    var DEFAULT_CATALOG_PATH = path2.join(__dirname, "..", "..", "iNNfo", "specs", "bluepriNNts", "catalog.json");
+    var DEFAULT_CATALOG_PATH = path2.join(
+      __dirname,
+      "..",
+      "..",
+      "iNNfo",
+      "specs",
+      "bluepriNNts",
+      "catalog.json"
+    );
     var DEFAULT_CATALOG_URL = "https://cognnitive.com/innfo/blueprints/catalog.json";
     var FALLBACK_CATALOG_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/catalog.json";
     var isUrl = (value) => /^https?:\/\//i.test(String(value));
@@ -2782,7 +2911,9 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
               const pkgJsonPath = path2.join(skillsDir, entry.name, "package.json");
               if (fs.existsSync(pkgJsonPath)) {
                 try {
-                  out.npmDeps.push(...Object.keys(JSON.parse(fs.readFileSync(pkgJsonPath, "utf8")).dependencies || {}));
+                  out.npmDeps.push(
+                    ...Object.keys(JSON.parse(fs.readFileSync(pkgJsonPath, "utf8")).dependencies || {})
+                  );
                 } catch (_) {
                 }
               }
@@ -2813,7 +2944,9 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
       let plan;
       if (entry) {
         if (!entry.release_tag) {
-          throw new Error(`blueprint '${name}' is not yet released (no matching blueprints-v* tag); update the catalog`);
+          throw new Error(
+            `blueprint '${name}' is not yet released (no matching blueprints-v* tag); update the catalog`
+          );
         }
         const repo = args.repo || DEFAULT_BLUEPRINT_REPO;
         const ref = entry.release_tag;
@@ -2896,7 +3029,12 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
 [a] Install
 [b] Skip
 `;
-      const proceed = await consentOrAbort(`install catalog blueprint ${entryName}`, [`blueprint:${entryName}`], menu, args.yes);
+      const proceed = await consentOrAbort(
+        `install catalog blueprint ${entryName}`,
+        [`blueprint:${entryName}`],
+        menu,
+        args.yes
+      );
       if (!proceed) return;
       const state = loadState(args.stateFile);
       let projected = [];
@@ -2942,7 +3080,8 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
         const pathPresent = fs.existsSync(path2.join(args.blueprintsDir, fileName)) || fs.existsSync(path2.join(args.blueprintsDir, template.name));
         if (!pathPresent) return false;
         const verdict = verdicts.get(template.name);
-        if (verdict && verdict.recorded) return verdict.status === "update-available" || verdict.status === "unknown";
+        if (verdict && verdict.recorded)
+          return verdict.status === "update-available" || verdict.status === "unknown";
         const entry = state.blueprints[template.name];
         return !entry || entry.commit !== template.commit;
       };
@@ -2953,7 +3092,9 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
         if (!pathPresent) return true;
         return !entry || entry.commit !== server.commit;
       };
-      const consoleSetInstalled = (consoleAssets || []).some((asset) => fs.existsSync(path2.join(consoleDir, path2.basename(asset.file || asset.url))));
+      const consoleSetInstalled = (consoleAssets || []).some(
+        (asset) => fs.existsSync(path2.join(consoleDir, path2.basename(asset.file || asset.url)))
+      );
       const isOutdatedConsole = (asset) => {
         const fileName = path2.basename(asset.file || asset.url);
         const pathPresent = fs.existsSync(path2.join(consoleDir, fileName));
@@ -2966,19 +3107,50 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
       let selectedConsole = (consoleAssets || []).filter(isOutdatedConsole);
       let selectedMcp = (mcp || []).filter(isOutdatedMcp);
       if (args.positional.length > 0) {
+        for (const pos of args.positional) {
+          const verdict = verdicts.get(pos);
+          if (verdict && verdict.status === "modified-locally") {
+            const detail = verdict.differing && verdict.differing.length > 0 ? verdict.differing.join(", ") : verdict.detail;
+            console.error(
+              `refusing to update blueprint '${pos}': locally modified (${detail}). Update will not overwrite hand edits.`
+            );
+            throw new Error(`refusing to update blueprint '${pos}': locally modified (${detail})`);
+          }
+        }
         selectedSkills = skills.filter((s) => args.positional.includes(s.name) && isOutdatedSkill(s));
-        selectedBlueprints = blueprints.filter((t) => args.positional.includes(t.name) && isOutdatedBlueprint(t));
-        selectedConsole = (consoleAssets || []).filter((a) => args.positional.includes(path2.basename(a.file || a.url)) && isOutdatedConsole(a));
-        selectedMcp = (mcp || []).filter((m) => (args.positional.includes(m.name) || args.positional.includes("mcp")) && isOutdatedMcp(m));
+        selectedBlueprints = blueprints.filter(
+          (t) => args.positional.includes(t.name) && isOutdatedBlueprint(t)
+        );
+        selectedConsole = (consoleAssets || []).filter(
+          (a) => args.positional.includes(path2.basename(a.file || a.url)) && isOutdatedConsole(a)
+        );
+        selectedMcp = (mcp || []).filter(
+          (m) => (args.positional.includes(m.name) || args.positional.includes("mcp")) && isOutdatedMcp(m)
+        );
       }
       if (args.blueprint) {
+        const verdict = verdicts.get(args.blueprint);
+        if (verdict && verdict.status === "modified-locally") {
+          const detail = verdict.differing && verdict.differing.length > 0 ? verdict.differing.join(", ") : verdict.detail;
+          console.error(
+            `refusing to update blueprint '${args.blueprint}': locally modified (${detail}). Update will not overwrite hand edits.`
+          );
+          throw new Error(
+            `refusing to update blueprint '${args.blueprint}': locally modified (${detail})`
+          );
+        }
         selectedSkills = [];
-        selectedBlueprints = blueprints.filter((t) => t.name === args.blueprint && isOutdatedBlueprint(t));
+        selectedBlueprints = blueprints.filter(
+          (t) => t.name === args.blueprint && isOutdatedBlueprint(t)
+        );
         selectedConsole = [];
         selectedMcp = [];
       }
       const selectedCatalog = [];
-      for (const name of /* @__PURE__ */ new Set([...Object.keys(state.blueprints || {}), ...untrackedUpdate.map((item) => item.name)])) {
+      for (const name of /* @__PURE__ */ new Set([
+        ...Object.keys(state.blueprints || {}),
+        ...untrackedUpdate.map((item) => item.name)
+      ])) {
         if (manifestNames.has(name)) continue;
         if (args.positional.length > 0 && !args.positional.includes(name)) continue;
         if (args.blueprint && name !== args.blueprint) continue;
@@ -3068,8 +3240,12 @@ Overwrite with the catalog copy?
       }
       for (const template of selectedBlueprints) {
         try {
-          embeddedSkillNames.push(...await installBlueprintAtCommit(template, args.blueprintsDir, state, args.skillsDir));
-          console.log(`  updated template ${template.name} -> ${template.version} (${template.commit.slice(0, 7)})`);
+          embeddedSkillNames.push(
+            ...await installBlueprintAtCommit(template, args.blueprintsDir, state, args.skillsDir)
+          );
+          console.log(
+            `  updated template ${template.name} -> ${template.version} (${template.commit.slice(0, 7)})`
+          );
         } catch (err) {
           failures++;
           if (err.projectedSkills) embeddedSkillNames.push(...err.projectedSkills);
@@ -3080,7 +3256,9 @@ Overwrite with the catalog copy?
         const recorded = readProvenance(args.blueprintsDir, name);
         const parts = distributionUrlParts(recorded.entry && recorded.entry.distribution_url);
         if (!parts || !verdict.commit) {
-          console.log(`  skipped catalog blueprint ${name}: ${verdict.detail || "no verifiable published version"}`);
+          console.log(
+            `  skipped catalog blueprint ${name}: ${verdict.detail || "no verifiable published version"}`
+          );
           continue;
         }
         const template = {
@@ -3093,8 +3271,12 @@ Overwrite with the catalog copy?
           commit: verdict.commit
         };
         try {
-          embeddedSkillNames.push(...await installBlueprintAtCommit(template, args.blueprintsDir, state, args.skillsDir));
-          console.log(`  updated catalog blueprint ${name} -> ${verdict.published} (${verdict.commit.slice(0, 7)})`);
+          embeddedSkillNames.push(
+            ...await installBlueprintAtCommit(template, args.blueprintsDir, state, args.skillsDir)
+          );
+          console.log(
+            `  updated catalog blueprint ${name} -> ${verdict.published} (${verdict.commit.slice(0, 7)})`
+          );
         } catch (err) {
           failures++;
           if (err.projectedSkills) embeddedSkillNames.push(...err.projectedSkills);
@@ -3104,7 +3286,9 @@ Overwrite with the catalog copy?
       for (const asset of selectedConsole) {
         try {
           await installConsoleAssetAtCommit(asset, consoleDir, state);
-          console.log(`  updated console ${path2.basename(asset.file || asset.url)} -> ${asset.version} (${asset.commit.slice(0, 7)})`);
+          console.log(
+            `  updated console ${path2.basename(asset.file || asset.url)} -> ${asset.version} (${asset.commit.slice(0, 7)})`
+          );
         } catch (err) {
           failures++;
           console.error(`  FAIL console ${path2.basename(asset.file || asset.url)}: ${err.message}`);
@@ -3119,7 +3303,9 @@ Overwrite with the catalog copy?
             serverName: server.name,
             targetAgent: args.agent
           });
-          console.log(`  updated MCP ${server.name} -> ${server.version} (${server.commit.slice(0, 7)})`);
+          console.log(
+            `  updated MCP ${server.name} -> ${server.version} (${server.commit.slice(0, 7)})`
+          );
         } catch (err) {
           failures++;
           console.error(`  FAIL MCP ${server.name}: ${err.message}`);
@@ -3140,14 +3326,18 @@ Overwrite with the catalog copy?
 ${failures} item(s) failed to update.`);
         process.exit(1);
       }
-      console.log(`
-Updated ${skillsToUpdate.length} skill(s), ${selectedBlueprints.length} template(s), ${selectedConsole.length} console asset(s), ${selectedMcp.length} MCP server(s), and ${selectedCatalog.length} catalog blueprint(s).`);
+      console.log(
+        `
+Updated ${skillsToUpdate.length} skill(s), ${selectedBlueprints.length} template(s), ${selectedConsole.length} console asset(s), ${selectedMcp.length} MCP server(s), and ${selectedCatalog.length} catalog blueprint(s).`
+      );
     }
     async function cmdSync(args) {
       const localSkillsDir = args.localSkillsDir || path2.resolve(__dirname, "../../skills");
       const direction = args.direction || "local-to-global";
       if (direction !== "local-to-global" && direction !== "global-to-local") {
-        throw new Error(`Invalid sync direction: ${direction}. Expected local-to-global or global-to-local.`);
+        throw new Error(
+          `Invalid sync direction: ${direction}. Expected local-to-global or global-to-local.`
+        );
       }
       const srcDir = direction === "local-to-global" ? localSkillsDir : args.skillsDir;
       const destDir = direction === "local-to-global" ? args.skillsDir : localSkillsDir;
@@ -3257,7 +3447,9 @@ Installing/verifying ${mcpList.length} MCP server(s)...`);
             targetAgent: args.agent
           });
           for (const reg of mcpRegistrations) {
-            console.log(`  \u2713 MCP registered for ${reg.agent}: ${reg.file} (${reg.updated ? "configured" : "already configured"})`);
+            console.log(
+              `  \u2713 MCP registered for ${reg.agent}: ${reg.file} (${reg.updated ? "configured" : "already configured"})`
+            );
           }
         }
       }
@@ -3304,8 +3496,10 @@ Available workflows:`);
     }) {
       if (scope === "workspace") {
         if (!silent) {
-          console.log(`
-Skipping skill projection: workspace scope does not project to global editor directories.`);
+          console.log(
+            `
+Skipping skill projection: workspace scope does not project to global editor directories.`
+          );
         }
         return [];
       }
@@ -3370,7 +3564,10 @@ Skipping skill projection: workspace scope does not project to global editor dir
       for (const target of agentTargets) {
         fs.mkdirSync(target.dir, { recursive: true });
         if (state) {
-          state.projections[target.agent] = state.projections[target.agent] || { dir: target.dir, skills: {} };
+          state.projections[target.agent] = state.projections[target.agent] || {
+            dir: target.dir,
+            skills: {}
+          };
           state.projections[target.agent].dir = target.dir;
           state.projections[target.agent].skills = state.projections[target.agent].skills || {};
         }
@@ -3437,24 +3634,54 @@ Skipping skill projection: workspace scope does not project to global editor dir
               recordState(method);
               projections.push({ agent: target.agent, targetDir: target.dir, skill, method, action });
             } else {
-              projections.push({ agent: target.agent, targetDir: target.dir, skill, method: "symlink", action: "skip" });
+              projections.push({
+                agent: target.agent,
+                targetDir: target.dir,
+                skill,
+                method: "symlink",
+                action: "skip"
+              });
             }
           } else if (classification === "dir") {
             if (recorded && recorded.method === "copy") {
               mirrorDir(src, dest, isProjectableName);
               recordState("copy");
-              projections.push({ agent: target.agent, targetDir: target.dir, skill, method: "copy", action: "mirror" });
+              projections.push({
+                agent: target.agent,
+                targetDir: target.dir,
+                skill,
+                method: "copy",
+                action: "mirror"
+              });
             } else if (!recorded) {
               const srcHash = hashTree(src, isProjectableName);
               const destHash = hashTree(dest, isProjectableName);
               if (srcHash && destHash && srcHash === destHash) {
                 recordState("copy");
-                projections.push({ agent: target.agent, targetDir: target.dir, skill, method: "copy", action: "adopt" });
+                projections.push({
+                  agent: target.agent,
+                  targetDir: target.dir,
+                  skill,
+                  method: "copy",
+                  action: "adopt"
+                });
               } else {
-                projections.push({ agent: target.agent, targetDir: target.dir, skill, method: "copy", action: "skip" });
+                projections.push({
+                  agent: target.agent,
+                  targetDir: target.dir,
+                  skill,
+                  method: "copy",
+                  action: "skip"
+                });
               }
             } else {
-              projections.push({ agent: target.agent, targetDir: target.dir, skill, method: "copy", action: "skip" });
+              projections.push({
+                agent: target.agent,
+                targetDir: target.dir,
+                skill,
+                method: "copy",
+                action: "skip"
+              });
             }
           }
         }
