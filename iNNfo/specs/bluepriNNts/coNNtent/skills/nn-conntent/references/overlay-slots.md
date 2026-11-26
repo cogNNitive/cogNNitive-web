@@ -43,6 +43,29 @@ fixed `data-width`/`data-height`, and the render driver stamps the root with the
 project it is staged into. QA measures each overlay inside the same rectangle. Authored
 animations read the same variables.
 
+## The authored-animation mount contract
+
+An authored project mounted by an `animation` Layer is a **sub-composition**, not a page: the
+engine mounts it with `data-composition-src="authored/<id>/index.html"`. In that mount every rule
+scoped to `#root` is dropped, so absolutely positioned children resolve against the viewport
+instead of the composition. A project written as a standalone document — `#root { width: 1920px;
+height: 1080px }` and markup inside it — therefore renders displaced and clipped, and nothing says
+so until the QA layout check reports `text_occluded` or `content_overlap` after a full render.
+
+The contract, which `resolveAnimations` checks before anything is spent:
+
+- wrap the whole project in `<template>`: style, markup and scripts;
+- anchor one explicit stage inside the template with a fixed pixel size and an absolute position,
+  e.g. `<div class="stage" style="position:absolute;left:0;top:0;width:1920px;height:1080px">`;
+- keep `data-composition-id`, `data-width`, `data-height`, `data-duration` and `data-fps` on the
+  composition root — `resolveAnimations` reads the id and duration from there, and a project without
+  them reports `animation project not found`.
+
+A project with no `<template>` that sizes `#root` in pixels is refused by name
+(`animation-mount-invalid`) instead of being rendered and diagnosed as a layout failure. A project
+that declares no fixed size at all keeps working: a component-shaped project reads the canvas from
+the `--safe-*` variables of the project it is staged into.
+
 ## Where a component lives
 
 A component is a **folder**: `library/components/<name>/index.html`. The folder is named by the

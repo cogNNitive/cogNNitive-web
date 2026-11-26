@@ -143,6 +143,39 @@ export function checkAnimationInputs(inputs, declared, where) {
 }
 
 /**
+ * The mount problems of an authored project, checked before anything is spent.
+ *
+ * An authored project is mounted as a SUB-COMPOSITION (`data-composition-src`). In that mount
+ * the rules scoped to `#root` are dropped, so a document that sizes `#root` in pixels and puts
+ * its markup inside it renders against the viewport instead of the composition: displaced and
+ * clipped, and only reported later as a layout QA failure (`text_occluded` / `content_overlap`).
+ * The working shape is a `<template>` wrapping style, markup and scripts, with an explicit
+ * absolutely positioned stage of a fixed pixel size inside it.
+ * @param {string} html
+ * @returns {string[]} one problem per violation; empty means the project can be mounted
+ */
+export function animationMountProblems(html) {
+  const text = String(html);
+  if (/<template[\s>]/i.test(text)) return [];
+  const problems = [];
+  const rootRule = /#root\s*\{([^}]*)\}/i.exec(text)?.[1] || '';
+  const rootTag = /<div\b[^>]*\bid\s*=\s*["']root["'][^>]*>/i.exec(text)?.[0] || '';
+  const sizesRoot =
+    /\bwidth\s*:\s*[0-9.]+px/i.test(rootRule) ||
+    /\bheight\s*:\s*[0-9.]+px/i.test(rootRule) ||
+    /\bdata-width\s*=/i.test(rootTag);
+  if (sizesRoot) {
+    problems.push(
+      'no <template> wrapper and #root is sized in pixels: mounted as a sub-composition the #root ' +
+        'rules are dropped and the children resolve against the viewport. Wrap style, markup and ' +
+        'scripts in <template> and anchor <div class="stage" style="position:absolute;left:0;top:0;' +
+        'width:1920px;height:1080px"> inside it (references/overlay-slots.md).',
+    );
+  }
+  return problems;
+}
+
+/**
  * The project directory an `animation` Layer mounts: an authored directory relative to the
  * script, or the folder of the library component `component:<name>` names.
  */
@@ -193,6 +226,13 @@ export function resolveAnimations({ scenes, scriptDir, workspaceRoot, packageFlo
           `animation project not found for Layer "${layer.name}": expected ${path.join(projectDir, 'index.html')}`,
         );
       }
+      const projectHtml = fs.readFileSync(project.indexPath, 'utf8');
+      const mountProblems = animationMountProblems(projectHtml);
+      if (mountProblems.length > 0) {
+        throw new AnimationProjectError(
+          `animation Layer "${layer.name}" (${project.indexPath}) cannot be mounted: ${mountProblems.join(' ')}`,
+        );
+      }
       const inputs = layer.properties?.layer_inputs;
       // A component is always checked; an authored project only when the Layer gives inputs,
       // so a Layer without inputs mounts its project exactly as before.
@@ -200,7 +240,7 @@ export function resolveAnimations({ scenes, scriptDir, workspaceRoot, packageFlo
         inputs || component
           ? checkAnimationInputs(
               inputs || {},
-              readVariables(fs.readFileSync(project.indexPath, 'utf8')),
+              readVariables(projectHtml),
               `animation Layer "${layer.name}" (${project.indexPath})`,
             )
           : null;

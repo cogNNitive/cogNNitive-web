@@ -13,6 +13,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { acquireSlot, withFileLock } from './file-lock.mjs'
 import { findDomainRoot } from './nn-core.generated.cjs'
+import { loadMergedCatalog } from './catalog.mjs'
 import {
   ledgerPath,
   appendLedgerRow,
@@ -205,13 +206,48 @@ export function validateConfig(config, source) {
 }
 
 /**
+ * The allow list the merged catalog declares: every Model whose `allowed::` is not `false`
+ * is allowed, every Model that says `allowed:: false` is blocked, keyed by `api_id` (the id
+ * a call names; `normalizeModelId` compares against these). The catalog is the author of the
+ * allow list — a Model declared only by the domaiNN overlay is therefore allowed there, which
+ * is the half-support this closes: the overlay could price a model the guard still refused.
+ * @param {string} root the domain root
+ * @returns {{ allowedModels: string[], blockedModels: string[] } | null} null when nothing is declared
+ */
+function guardListsFromCatalog(root) {
+  const catalog = loadMergedCatalog({ domainRoot: root })
+  const idOf = (m) => String(m.api_id || m.slug || '').trim()
+  const entries = Object.values(catalog.models || {})
+  const denied = (m) => m.allowed === false || m.allowed === 'false'
+  const catalogAllowed = entries
+    .filter((m) => !denied(m))
+    .map(idOf)
+    .filter(Boolean)
+  if (catalogAllowed.length === 0) return null
+  const catalogDenied = entries.filter(denied).map(idOf).filter(Boolean)
+  // The shipped blocklist is a safety default, not a model claim: it survives the catalog
+  // taking authorship of the allow list unless the catalog explicitly allows that id.
+  const allowedSet = new Set(catalogAllowed)
+  const blockedModels = [...new Set([...DEFAULT_GUARD.blockedModels, ...catalogDenied])].filter(
+    (id) => !allowedSet.has(id),
+  )
+  return { allowedModels: catalogAllowed, blockedModels }
+}
+
+/**
  * Loads and validates the guard config for the workspace containing `startDir`.
+ *
+ * The `video-guard.json` file still wins when present (an explicit workspace override), and
+ * the shipped defaults only apply when neither the file nor the catalog declares a model: an
+ * allow list that disagreed with the catalog is how a domain model got "not in allowedModels"
+ * while the same catalog priced it.
  * @param {string} [startDir]
- * @returns {{ config: Record<string, any>, source: string | null, root: string }}
+ * @returns {{ config: Record<string, any>, source: string | null, root: string, allowSource: 'file'|'catalog'|'defaults' }}
  */
 export function loadGuard(startDir = process.cwd()) {
   const { root, guardFile } = resolveWorkspace(startDir)
   let config = structuredClone(DEFAULT_GUARD)
+  let allowSource = 'defaults'
   if (guardFile) {
     let parsed
     try {
@@ -223,9 +259,19 @@ export function loadGuard(startDir = process.cwd()) {
       throw new Error('Invalid ' + GUARD_FILENAME + ' at ' + guardFile + ': expected a JSON object')
     }
     config = { ...config, ...parsed }
+    allowSource = 'file'
+  } else {
+    const derived = guardListsFromCatalog(root)
+    if (derived) {
+      config = { ...config, ...derived }
+      allowSource = 'catalog'
+    }
   }
-  validateConfig(config, guardFile || 'defaults')
-  return { config, source: guardFile, root }
+  validateConfig(
+    config,
+    guardFile || (allowSource === 'catalog' ? 'the merged catalog' : 'defaults'),
+  )
+  return { config, source: guardFile, root, allowSource }
 }
 
 /**
@@ -242,35 +288,27 @@ export function resolveDefaultCacheDir(startDir = process.cwd()) {
  * wins, then the allowlist applies; `allowBlocked` lists the models explicitly
  * unlocked for this run (`--allow-model <name>`).
  * @param {string} model
- * @param {{ config: { allowedModels?: string[], blockedModels?: string[] }, allowBlocked?: string[] }} opts
+ * @param {{ config: { allowedModels?: string[], blockedModels?: string[] }, allowBlocked?: string[], allowSource?: 'file'|'catalog'|'defaults' }} opts
  */
-export function assertModelAllowed(rawModel, { config, allowBlocked = [] }) {
+export function assertModelAllowed(rawModel, { config, allowBlocked = [], allowSource = null }) {
   const model = normalizeModelId(rawModel)
   if (allowBlocked.map(normalizeModelId).includes(model)) return
+  const where =
+    allowSource === 'file'
+      ? `allowedModels of ${GUARD_FILENAME}`
+      : allowSource === 'catalog'
+        ? 'the Models the merged catalog allows'
+        : 'allowedModels'
+  const unlock =
+    allowSource === 'catalog'
+      ? `Add the Model to the domaiNN catalog (or set allowed:: true on it), or pass --allow-model ${model} for this run.`
+      : `Add it there, or pass --allow-model ${model} for this run.`
   if ((config.blockedModels || []).map(normalizeModelId).includes(model)) {
-    throw new ModelBlockedError(
-      'Model "' +
-        model +
-        '" is blocked by ' +
-        GUARD_FILENAME +
-        ' (blockedModels). ' +
-        'Pass --allow-model ' +
-        model +
-        ' to override for this run.',
-    )
+    throw new ModelBlockedError('Model "' + model + '" is blocked (' + where + '). ' + unlock)
   }
   const allowed = (config.allowedModels || []).map(normalizeModelId)
   if (!allowed.includes(model)) {
-    throw new ModelBlockedError(
-      'Model "' +
-        model +
-        '" is not in allowedModels of ' +
-        GUARD_FILENAME +
-        '. ' +
-        'Add it there, or pass --allow-model ' +
-        model +
-        ' for this run.',
-    )
+    throw new ModelBlockedError('Model "' + model + '" is not in ' + where + '. ' + unlock)
   }
 }
 

@@ -29,6 +29,23 @@ function defaultRun(cmd, args, opts = {}) {
 const DETAIL_MAX = 2000;
 
 /**
+ * Raised when a declared authored project's staged copy is not the source: a missing
+ * source directory, a partially copied tree, or a leftover copy from an earlier compile.
+ * Rendering it would put old bytes into the video with no diagnostic, so the build stops.
+ */
+export class AuthoredStaleError extends Error {
+  /** @param {string[]} problems one line per refusal, each naming the id and the file */
+  constructor(problems) {
+    super(
+      `authored-stale: ${problems.length} staged authored project(s) do not match their source ` +
+        `(refusing to render a project that is not the source):\n  ${problems.join('\n  ')}`,
+    );
+    this.name = 'AuthoredStaleError';
+    this.problems = problems;
+  }
+}
+
+/**
  * Verifies the pinned runtime and installs it once when it is missing, unless the caller opted out.
  * Auto-install is on by default because a render cannot start without it and the failure otherwise
  * lands after synthesis has been paid for; `INNFO_RENDER_AUTOINSTALL=0` keeps a machine hermetic.
@@ -88,6 +105,14 @@ export function buildHyperframesProject(manifest, projectDir, opts = {}) {
   }
   stageComponents(manifest, projectDir);
   stageAuthoredProjects(manifest, projectDir);
+  // Staging itself always rewrites (copyDir has no cache), so this is the invariant that
+  // makes "the render used a project that is not the source" impossible: every declared
+  // authored project must have a staged copy that matches its source bytes. A skipped
+  // source, a partial copy or a leftover copy from an earlier compile is refused here,
+  // before `hyperframes render` can mount it (defect: a stale staged project used to
+  // reach the render and the QA that follows it with no diagnostic at all).
+  const unstageable = assertAuthoredStaged(manifest, projectDir);
+  if (unstageable.length > 0) throw new AuthoredStaleError(unstageable);
   if (manifest?.metadata?.frame?.path) {
     emitHyperframesFrame({ frameDir: path.dirname(manifest.metadata.frame.path), projectDir, outDir: projectDir });
   }
@@ -132,8 +157,7 @@ export function stageAuthoredProjects(manifest, projectDir) {
  * @param {string} html
  * @param {string} prefix e.g. `authored/rig/`
  */
-export function rerootCompositionSrc(html, prefix) {
-  return String(html).replace(/(data-composition-src\s*=\s*)(["'])([^"']*)\2/g, (match, attr, quote, value) => {
+export function rerootCompositionSrc(html, prefix) {  return String(html).replace(/(data-composition-src\s*=\s*)(["'])([^"']*)\2/g, (match, attr, quote, value) => {
     const src = value.trim();
     if (!src || /^[a-z][a-z0-9+.-]*:/i.test(src) || src.startsWith('/') || src.startsWith(prefix)) return match;
     return `${attr}${quote}${prefix}${src.replace(/^\.\//, '')}${quote}`;
@@ -160,8 +184,83 @@ function copyDir(src, dest, skip, transform = () => null) {
 }
 
 /**
- * Stages each resolved slot component into `<project>/components/<name>.html`
- * (design D5), so no `src` in the emitted tree climbs (`..`). A manifest that
+ * The files staging writes for one authored project, relative to its staged root, with
+ * the bytes staging would write for each (`transform` applied the same way `copyDir` does).
+ * `.hyperframes` is machine state and is never staged.
+ * @param {string} src
+ * @param {string} prefix the staged root every relative `data-composition-src` is re-rooted to
+ * @returns {Map<string, Buffer>}
+ */
+function stagedFileBytes(src, prefix) {
+  const out = new Map();
+  const walk = (dir, rel) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === '.hyperframes') continue;
+      const from = path.join(dir, entry.name);
+      const name = rel ? `${rel}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) walk(from, name);
+      else if (entry.isFile()) {
+        const raw = fs.readFileSync(from);
+        out.set(name, /\.html?$/i.test(entry.name) ? Buffer.from(rerootCompositionSrc(raw.toString('utf8'), prefix), 'utf8') : raw);
+      }
+    }
+  };
+  walk(src, '');
+  return out;
+}
+
+/**
+ * The invalidation invariant of the staged authored projects: every project the manifest
+ * declares must have a staged copy that matches its source bytes right now. Returns one
+ * problem line per violation (an empty list means the staged tree IS the source), so the
+ * caller refuses before `hyperframes render` mounts anything.
+ *
+ * `stageAuthoredProjects` rewrites on every call, so a violation here cannot come from a
+ * skipped rewrite of an existing file: it comes from a source that no longer resolves
+ * (the previous copy is then left in place and would be rendered), from a partial copy,
+ * or from a staged file edited by hand between the copy and the render.
+ * @param {object} manifest
+ * @param {string} projectDir
+ * @returns {string[]}
+ */
+export function assertAuthoredStaged(manifest, projectDir) {
+  const scenes = manifest?.tracks?.scenes || [];
+  const entries = scenes.flatMap((scene) => scene.animations || []);
+  const problems = [];
+  const seen = new Set();
+  for (const entry of entries) {
+    if (!entry?.id || seen.has(entry.id)) continue;
+    seen.add(entry.id);
+    const dest = path.join(projectDir, 'authored', entry.id);
+    if (!entry.sourceDir || !fs.existsSync(entry.sourceDir)) {
+      if (fs.existsSync(dest)) {
+        problems.push(
+          `"${entry.id}": declared by the manifest but its source directory is missing (${entry.sourceDir || 'no sourceDir'}); ` +
+            'the staged copy from an earlier compile would be rendered. Restore the source, or remove the Layer.',
+        );
+      }
+      continue;
+    }
+    const expected = stagedFileBytes(entry.sourceDir, `authored/${entry.id}/`);
+    for (const [rel, bytes] of expected) {
+      const staged = path.join(dest, rel);
+      if (!fs.existsSync(staged)) {
+        problems.push(`"${entry.id}/${rel}": exists in the source but was not staged (${dest}).`);
+        continue;
+      }
+      if (!fs.readFileSync(staged).equals(bytes)) {
+        problems.push(
+          `"${entry.id}/${rel}": the staged copy is not the source (${bytes.length} source bytes, ` +
+            `${fs.statSync(staged).size} staged). Delete ${dest} and re-run to restage it.`,
+        );
+      }
+    }
+  }
+  return problems;
+}
+
+/**
+ * Stages each resolved slot component into `<project>/components/<name>.html` * (design D5), so no `src` in the emitted tree climbs (`..`). A manifest that
  * carries no resolved component map (a raw manifest.json) falls back to the
  * skill's neutral fallback for every slot its overlays use.
  */

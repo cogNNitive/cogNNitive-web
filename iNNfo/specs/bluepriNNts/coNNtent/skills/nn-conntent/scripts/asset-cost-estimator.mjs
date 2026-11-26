@@ -19,7 +19,7 @@ import { computePlanHash, formatStamp } from './lib/plan.mjs';
 import { normalizeModelId } from './lib/video-guard.mjs';
 import { loadCascadeBags, withScriptPresets } from './lib/video-scope.mjs';
 import { resolve } from './lib/cascade.mjs';
-import { isAvatarLayer, collectAvatarJobs, ttsCachePathFor, AVATAR_CACHE_EXT, AVATAR_CACHE_CATEGORY } from './lib/avatar-jobs.mjs';
+import { isAvatarLayer, collectAvatarJobs, ttsCachePathFor, AVATAR_CACHE_EXT, AVATAR_CACHE_CATEGORY, assertAvatarModelRunnable } from './lib/avatar-jobs.mjs';
 import { layerPrompt, imageCachePathFor } from './lib/image-options.mjs';
 import { imageModelsFor } from './lib/image-options.mjs';
 import { loadMergedCatalog, assertImageSize, isPriceStale, DEFAULT_STALE_AFTER_DAYS } from './lib/catalog.mjs';
@@ -35,10 +35,19 @@ export function resolveModelId(prop, fallback) {
 /** Conservative fallback rates (USD) for models missing from the catalog: never under-estimate. No video-clip rate exists: video capability is unsupported. */
 const FALLBACK_RATES = { image: 0.025, ttsPer1kChars: 0.02, avatarPerSecond: 0.018 };
 
-export function findCatalogEntry(category, model) {
+/**
+ * The catalog entry for a provider model id, in the merged catalog. `catalog` is the
+ * domain-merged catalog when the caller has one (`loadMergedCatalog({ domainRoot })`); the
+ * process default carries no overlay and therefore cannot price a Model that only the
+ * domaiNN declares, which is the documented place for domain models.
+ * @param {'image' | 'tts' | 'avatar'} category
+ * @param {string} model
+ * @param {{ models?: object } | null} [catalog]
+ */
+export function findCatalogEntry(category, model, catalog = null) {
   const id = normalizeModelId(model);
   if (!id) return null;
-  const models = Object.values(mergedCatalog().models);
+  const models = Object.values((catalog || mergedCatalog()).models);
   const entry = models.find(
     (m) =>
       String(m.capability) === category &&
@@ -97,14 +106,18 @@ export function stalePricesOf(modelIds, now, catalog = mergedCatalog()) {
 
 /**
  * Allowed model ids that have no price in any catalog category, deduplicated and normalized.
+ * `catalog` must be the domain-merged one when the caller has it: a Model declared only by
+ * the domaiNN is priced there and nowhere else, so the reference-only default would report
+ * it as unpriced.
  * @param {{ allowedModels?: string[] }} config
+ * @param {{ models?: object } | null} [catalog]
  * @returns {string[]}
  */
-export function unpricedAllowedModels(config) {
+export function unpricedAllowedModels(config, catalog = null) {
   const out = [];
   for (const raw of config?.allowedModels || []) {
     const id = normalizeModelId(raw);
-    const entry = Object.values(mergedCatalog().models).find(
+    const entry = Object.values((catalog || mergedCatalog()).models).find(
       (m) => String(m.api_id) === id || String(m.api_id).endsWith('/' + id) || id.endsWith('/' + String(m.api_id)),
     );
     const priced = entry && entry.price !== undefined && entry.price !== null && String(entry.price).trim() !== '';
@@ -119,10 +132,11 @@ export function unpricedAllowedModels(config) {
  * Be Priced"). Returns the warned models so a caller can assert or report them.
  * @param {{ allowedModels?: string[] }} config
  * @param {(message: string) => void} [warn]
+ * @param {{ models?: object } | null} [catalog]
  * @returns {string[]}
  */
-export function warnUnpricedAllowedModels(config, warn = console.warn) {
-  const models = unpricedAllowedModels(config);
+export function warnUnpricedAllowedModels(config, warn = console.warn, catalog = null) {
+  const models = unpricedAllowedModels(config, catalog);
   for (const model of models) {
     warn(
       '[video-engine] warning: allowed model "' + model + '" has no price in the catalog; ' +
@@ -137,10 +151,11 @@ export function warnUnpricedAllowedModels(config, warn = console.warn) {
  * @param {'image' | 'tts' | 'avatar'} kind
  * @param {string} model Provider model id
  * @param {{ chars?: number, seconds?: number }} [units]
+ * @param {{ models?: object } | null} [catalog] the domain-merged catalog, when the caller has one
  * @returns {number}
  */
-export function estimateCallUsd(kind, model, units = {}) {
-  const entry = findCatalogEntry(kind, normalizeModelId(model));
+export function estimateCallUsd(kind, model, units = {}, catalog = null) {
+  const entry = findCatalogEntry(kind, normalizeModelId(model), catalog);
 
   let usd;
   if (kind === 'tts') usd = ((units.chars || 0) / 1000) * (entry?.unitPricePer1kChars ?? FALLBACK_RATES.ttsPer1kChars);
@@ -185,6 +200,17 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
   const catalog = loadMergedCatalog({ domainRoot: loaded.root });
   const { image: defaultImageModel, imageSize: defaultImageSize, imageSizing } = imageModelsFor({ bags, parsed, catalog });
   const defaultAvatarModel = normalizeModelId(resolve('avatar_model', bags).value);
+  // One up-front verdict on the avatar model, before any spend: the catalog entry must be
+  // complete and the guard must allow it. Without it the same misconfiguration surfaced as
+  // three errors from three stages (resolutions, allowedModels, unpriced).
+  const usesAvatars = (parsed.scenes || []).some((scene) => (scene.layers || []).some(isAvatarLayer))
+  if (usesAvatars && defaultAvatarModel) {
+    assertAvatarModelRunnable(defaultAvatarModel, {
+      catalog,
+      config: loaded.config,
+      allowModels: options.allowModels || [],
+    })
+  }
   const defaultTtsModel = normalizeModelId(resolve('voice_model', bags).value);
   const planModels = new Set();
   const noteModel = (model) => {
@@ -199,7 +225,7 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
   const cache = cacheDir ? new CacheManager({ baseDir: cacheDir, readOnly: true }) : null;
   const models = { image: defaultImageModel, imageSize: defaultImageSize, tts: defaultTtsModel, avatar: defaultAvatarModel };
   const config = loaded.config;
-  warnUnpricedAllowedModels(config);
+  warnUnpricedAllowedModels(config, console.warn, catalog);
   const cachedAvatarLayers = new Set();
   if (cache && scriptDir) {
     try {
@@ -244,15 +270,15 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
         imageCached++;
         continue;
       }
-      sceneImageCost += estimateCallUsd('image', defaultImageModel);
+      sceneImageCost += estimateCallUsd('image', defaultImageModel, {}, catalog);
     }
-    const imagePricing = findCatalogEntry('image', defaultImageModel) || { modelName: defaultImageModel, provider: 'Unlisted (fallback rate)' };
+    const imagePricing = findCatalogEntry('image', defaultImageModel, catalog) || { modelName: defaultImageModel, provider: 'Unlisted (fallback rate)' };
 
     // 2. TTS
     const ttsModelKey = normalizeModelId(scene.properties?.scene_voice_model);
-    const ttsPricing = findCatalogEntry('tts', ttsModelKey) || { modelName: ttsModelKey, provider: 'Unlisted (fallback rate)' };
+    const ttsPricing = findCatalogEntry('tts', ttsModelKey, catalog) || { modelName: ttsModelKey, provider: 'Unlisted (fallback rate)' };
     const ttsCached = Boolean(cache && charCount > 0 && ttsCachePathFor(scene, { cacheManager: cache, config, models, bags: bags }));
-    const sceneTtsCost = ttsCached ? 0 : estimateCallUsd('tts', ttsModelKey, { chars: charCount });
+    const sceneTtsCost = ttsCached ? 0 : estimateCallUsd('tts', ttsModelKey, { chars: charCount }, catalog);
     if (charCount > 0) noteModel(ttsModelKey);
 
     // 3. Talking avatars: priced per layer by seconds
@@ -265,10 +291,10 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
       noteModel(m);
       if (cachedAvatarLayers.has(l)) return;
       avatarCached = false;
-      sceneAvatarCost += estimateCallUsd('avatar', m, { seconds: estimatedDurationSec });
+      sceneAvatarCost += estimateCallUsd('avatar', m, { seconds: estimatedDurationSec }, catalog);
     });
     sceneAvatarCost = Math.round(sceneAvatarCost * 10000) / 10000;
-    const avatarPricing = findCatalogEntry('avatar', avatarModelKey) || { modelName: avatarModelKey };
+    const avatarPricing = findCatalogEntry('avatar', avatarModelKey, catalog) || { modelName: avatarModelKey };
 
     const sceneTotalCost = Math.round((sceneImageCost + sceneTtsCost + sceneAvatarCost) * 10000) / 10000;
 
@@ -343,7 +369,7 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
     ['avatar', defaultAvatarModel],
   ]) {
     const model = normalizeModelId(id);
-    if (model && allowedIds.has(model) && !findCatalogEntry(kind, model)) {
+    if (model && allowedIds.has(model) && !findCatalogEntry(kind, model, catalog)) {
       throw new Error(`unpriced-model: "${model}" is allowed but has no price in the merged catalog. Nothing was spent.`);
     }
   }
@@ -354,14 +380,14 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
       image: defaultImageModel,
       tts: defaultTtsModel,
       avatar: defaultAvatarModel,
-    }),
+    }, catalog),
   );
 
   return {
     planHash,
     planModels: [...planModels].sort(),
     imageSizing,
-    stalePrices: stalePricesOf([...planModels], options.now instanceof Date ? options.now : new Date()),
+    stalePrices: stalePricesOf([...planModels], options.now instanceof Date ? options.now : new Date(), catalog),
     scenes: sceneEstimates,
     summary: {
       sceneCount: sceneEstimates.length,
@@ -386,9 +412,9 @@ export function estimateScriptCost(scriptContentOrPath, options = {}) {
  * @returns {string} Markdown text
  */
 /** Resolved unit prices for the chosen models, so a price change invalidates an approval. */
-function resolvedPrices(models) {
+function resolvedPrices(models, catalog = null) {
   const priceOf = (kind, id) => {
-    const entry = findCatalogEntry(kind, id);
+    const entry = findCatalogEntry(kind, id, catalog);
     if (!entry) return undefined;
     return entry.unitPrice ?? entry.unitPricePer1kChars ?? entry.unitPricePerSecond;
   };

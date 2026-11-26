@@ -189,6 +189,63 @@ function declaredResolutions(model) {
 }
 
 /**
+ * The ONE up-front check that an `avatar_model` is runnable, before any spend and before the
+ * avatar stage: the model exists as an avatar Model in the merged catalog, its entry is
+ * complete (provider, api_id, price, price_unit, and resolutions when it declares the
+ * resolution control), and the guard allows it (or `--allow-model` unlocks it this run).
+ *
+ * These were three errors from three stages, each looking like a different problem — the
+ * catalog demanding `resolutions`, the guard refusing the id, and the estimator calling it
+ * unpriced. One check, one message naming the model and the actual cause.
+ * @param {string} modelId
+ * @param {{ catalog: object, config?: { allowedModels?: string[], blockedModels?: string[] }, allowModels?: string[] }} opts
+ * @returns {object} the catalog Model
+ */
+export function assertAvatarModelRunnable(
+  modelId,
+  { catalog, config = {}, allowModels = [] } = {},
+) {
+  const id = normalizeModelId(modelId)
+  const models = Object.values(catalog?.models || {})
+  const nameOf = (m) => String(m.api_id || m.slug || '').trim()
+  if (!id) {
+    throw new Error(
+      'avatar-model-missing: no avatar model resolved for this episode; declare avatar_model at the domain, series or video level.',
+    )
+  }
+  const entry = models.find((m) => nameOf(m) === id || String(m.slug) === id) || null
+  if (!entry || String(entry.capability) !== 'avatar') {
+    const known = models
+      .filter((m) => String(m.capability) === 'avatar')
+      .map(nameOf)
+      .filter(Boolean)
+    throw new Error(
+      `avatar-model-unknown: "${id}" is not an avatar Model in the merged catalog (avatar models: ${known.join(', ') || 'none'}).`,
+    )
+  }
+  const missing = ['provider', 'api_id', 'price', 'price_unit'].filter(
+    (field) => String(entry[field] ?? '').trim() === '',
+  )
+  if (
+    (entry.controls || []).map(String).includes('resolution') &&
+    resolutionsOf(entry).length === 0
+  )
+    missing.push('resolutions')
+  if (missing.length > 0) {
+    throw new Error(
+      `avatar-model-incomplete: "${id}" is missing ${missing.join(', ')} in the merged catalog; a Model must be complete before it can be priced and run.`,
+    )
+  }
+  const allowed = [...(config.allowedModels || []), ...(allowModels || [])].map(normalizeModelId)
+  if (!allowed.includes(id)) {
+    throw new Error(
+      `avatar-model-blocked: "${id}" is not allowed (the merged catalog is the author of the allow list). Set allowed:: true on the Model, or pass --allow-model ${id} for this run.`,
+    )
+  }
+  return entry
+}
+
+/**
  * Validates a requested resolution against the catalog Model's declared `resolutions` (fail
  * closed, before any spend). A requested value needs the `resolution` control; a Model that
  * declares no values is not constrained beyond that.

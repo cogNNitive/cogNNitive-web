@@ -17,6 +17,14 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const { parseKnowledge } = require('./nn-core.generated.cjs');
 
+/**
+ * The packaged layout's catalog: `<blueprint package>/catalog/model-catalog_coNNtent_NN.md`,
+ * four directories above this file. That is only one of the layouts a skill can be installed
+ * in (`<root>/skills/<name>/`); an install elsewhere (`~/.config/opencode/skills/nn-conntent/`)
+ * resolves four directories above to a tree with no `catalog/` at all. Resolution therefore
+ * goes through `resolveReferenceCatalog()`, which anchors on the environment, then on the
+ * domaiNN that vendors the blueprint, then on this packaged path — and fails loudly.
+ */
 export const REFERENCE_CATALOG = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
@@ -26,6 +34,9 @@ export const REFERENCE_CATALOG = path.resolve(
   'catalog',
   'model-catalog_coNNtent_NN.md',
 );
+export const REFERENCE_CATALOG_FILENAME = 'model-catalog_coNNtent_NN.md';
+/** The explicit anchor: an absolute path to the blueprint's reference catalog. */
+export const REFERENCE_CATALOG_ENV = 'NN_CONTENT_CATALOG';
 export const OVERLAY_FILENAME = 'model-catalog_NN.md';
 export const DEFAULT_STALE_AFTER_DAYS = 90;
 
@@ -56,6 +67,63 @@ export function parseKeyedList(value, what) {
 }
 
 const asList = (value) => (Array.isArray(value) ? value.map(String) : value === undefined ? [] : [String(value)]);
+
+/**
+ * Where a workspace vendors the blueprint (`<root>/specs/bluepriNNts/coNNtent/catalog/...`).
+ * @param {string} domainRoot
+ */
+function vendoredCatalogPath(domainRoot) {
+  return path.join(domainRoot, 'specs', 'bluepriNNts', 'coNNtent', 'catalog', REFERENCE_CATALOG_FILENAME);
+}
+
+/**
+ * Locates the blueprint's reference catalog, in order: the explicit `NN_CONTENT_CATALOG`
+ * anchor, the domaiNN's own vendored copy, then the packaged layout. A skill installed
+ * outside the blueprint package has no packaged catalog four directories above it, so the
+ * first two anchors are what make it usable there — and when none resolves, this throws
+ * instead of letting a caller run against an empty catalog.
+ * @param {{ domainRoot?: string|null }} [options]
+ * @returns {string} an existing absolute path
+ */
+export function resolveReferenceCatalog({ domainRoot = null } = {}) {
+  const env = process.env[REFERENCE_CATALOG_ENV];
+  /** @type {Array<{ anchor: string, path: string }>} */
+  const candidates = [];
+  if (env && String(env).trim() !== '') candidates.push({ anchor: REFERENCE_CATALOG_ENV, path: path.resolve(String(env)) });
+  if (domainRoot) candidates.push({ anchor: 'domaiNN', path: vendoredCatalogPath(domainRoot) });
+  candidates.push({ anchor: 'package', path: REFERENCE_CATALOG });
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate.path)) return candidate.path;
+  }
+  throw new CatalogError(
+    'reference-catalog-missing',
+    'The blueprint reference catalog was not found, and an empty catalog is never used ' +
+      '(every provider credential and price would silently resolve to nothing). Tried:\n' +
+      candidates.map((c) => `  - ${c.anchor}: ${c.path}`).join('\n') +
+      `\nSet ${REFERENCE_CATALOG_ENV} to the blueprint's ${REFERENCE_CATALOG_FILENAME}, ` +
+      'or install this skill inside the blueprint package.',
+  );
+}
+
+/**
+ * Reads and parses one catalog document. An unreadable or empty document is a named error:
+ * a catalog that parses to no Models would authorize no price and no credential.
+ * @param {string} file
+ * @param {string} what
+ */
+function readCatalogDocument(file, what) {
+  let text;
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch (err) {
+    throw new CatalogError('reference-catalog-missing', `Cannot read the ${what} at ${file}: ${err.message}`);
+  }
+  const parsed = parseCatalog(text);
+  if (Object.keys(parsed.models).length === 0) {
+    throw new CatalogError('reference-catalog-empty', `The ${what} at ${file} declares no Model; refusing to run against an empty catalog.`);
+  }
+  return parsed;
+}
 
 /** Parses a catalog document into `{ providers, models, voices }`, keyed by slug. */
 export function parseCatalog(text) {
@@ -278,8 +346,8 @@ export function loadOverlay(domainRoot) {
  * Loads the merged catalog for a workspace.
  * @param {{ domainRoot?: string, referencePath?: string, overlay?: object|null }} [options]
  */
-export function loadMergedCatalog({ domainRoot, referencePath = REFERENCE_CATALOG, overlay } = {}) {
-  const reference = parseCatalog(fs.readFileSync(referencePath, 'utf8'));
+export function loadMergedCatalog({ domainRoot, referencePath, overlay } = {}) {
+  const reference = readCatalogDocument(referencePath || resolveReferenceCatalog({ domainRoot }), 'reference catalog');
   const overlayDoc = overlay === undefined ? loadOverlay(domainRoot) : overlay;
   return mergeCatalog(reference, overlayDoc);
 }

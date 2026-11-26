@@ -43,7 +43,7 @@ import { LOCKS_RELATIVE_DIR, SpendGuard, normalizeModelId, resolveDefaultCacheDi
 import { loadGuardWithVoices } from './lib/guard-config.mjs';
 import { loadMergedCatalog } from './lib/catalog.mjs';
 import { envKeyFor } from './lib/provider-transport.mjs';
-import { collectAvatarJobs, checkAvatarAssetAspect, checkAvatarUpscale } from './lib/avatar-jobs.mjs';
+import { assertAvatarModelRunnable, collectAvatarJobs, checkAvatarAssetAspect, checkAvatarUpscale } from './lib/avatar-jobs.mjs';
 import { probeVideoSize } from './lib/media-duration.mjs';
 import { appendPending, findOutstanding, latestPending } from './lib/pending-predictions.mjs';
 import { acquireLock } from './lib/file-lock.mjs';
@@ -123,6 +123,10 @@ export async function synthesizeAvatars(o) {
     avatar: normalizeModelId(resolve('avatar_model', bags).value),
   };
   const loaded = loadGuardWithVoices(scriptDir);
+  const catalog = o.catalog || loadMergedCatalog({ domainRoot: loaded.root });
+  // The same one-up-front verdict the plan builder makes: one message instead of the
+  // resolutions/allowlist/price cascade from three different stages.
+  if (models.avatar) assertAvatarModelRunnable(models.avatar, { catalog, config: loaded.config, allowModels });
   const cacheDir = o.cacheDir || resolveDefaultCacheDir(scriptDir);
   // Spending is authorized by `produce`; this guard enforces the caps and the model lists.
   const checkNow = () => ({ ok: true });
@@ -148,7 +152,6 @@ export async function synthesizeAvatars(o) {
 
   // 1. Collect and validate every job BEFORE any spend: image, audio (fresh), measurable, not too long.
   const readCache = new CacheManager({ baseDir: cacheDir, readOnly: true });
-  const catalog = o.catalog || loadMergedCatalog({ domainRoot: loaded.root });
   const { jobs: raw, problems, skipped } = collectAvatarJobs({
     parsed,
     scriptDir,

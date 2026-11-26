@@ -8975,10 +8975,20 @@
     lines.push('## Target Domain & Entity')
     lines.push('- **Domain / Model**: ' + domainOrModel)
     // The declared `workspace_id` is the domain's own identity, readable in its
-    // `domaiNN_NN.md`. The console's draft-store key (`meta.domainId`) is a local storage
-    // name derived from the path, not a domain identifier, so it is never presented as one.
+    // `domaiNN_NN.md`.
     if (nonEmptyString(meta.workspaceId))
       lines.push('- **Workspace ID**: `' + meta.workspaceId + '`')
+    // `meta.domainId` is not fabricated: it is the console's own identity. The exporter
+    // stamps the base and the shell appends the scope to key its draft store
+    // (`draftStoreId`), and by design it is never written into the domain documents. So it
+    // is emitted as what it is — the console scope — and never as the domain's identity.
+    if (nonEmptyString(meta.domainId)) {
+      lines.push(
+        '- **Console Scope**: `' +
+          draftStoreId(meta.domainId, consoleScopeMeta(meta)) +
+          '` — the id this console keys its draft store by; it identifies the console, not the domain',
+      )
+    }
     if (version) {
       lines.push('- **Version**: ' + version)
     } else if (models.length > 1) {

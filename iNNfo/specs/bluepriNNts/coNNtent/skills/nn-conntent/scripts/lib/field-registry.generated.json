@@ -1,6 +1,6 @@
 {
   "blueprint": "coNNtent",
-  "blueprint_version": "V_0-32-2",
+  "blueprint_version": "V_0-32-3",
   "generated_from": "spec_NN.md",
   "fields": {
     "allowed": {

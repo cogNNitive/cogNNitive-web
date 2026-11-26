@@ -403,7 +403,7 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
   }
 
   // 4. Estimate and the spend decision (before any provider call).
-  const estimate = (deps.estimate || estimateScriptCost)(scriptPath)
+  const estimate = (deps.estimate || estimateScriptCost)(scriptPath, options.allowModels?.length ? { allowModels: options.allowModels } : {})
   const planHash = estimate.planHash
   const total = estimate.summary.grandTotalCost
   const budget = resolveForEpisode(episode.model, scriptPath, 'budget').value
@@ -568,6 +568,7 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
     const sync = deps.synthesizeAvatars || synthesizeAvatars
     await sync({
       scriptPath,
+      ...(options.allowModels?.length ? { allowModels: options.allowModels } : {}),
       ...(cacheDir ? { cacheDir } : {}),
       ...(synthOptions?.env ? { env: synthOptions.env } : {}),
       ...(synthOptions?.fetch ? { fetch: synthOptions.fetch } : {}),
@@ -582,6 +583,7 @@ async function runStages({ scriptPath, rootDir, options, deps, log }) {
   const render = deps.render || renderVideo
   const rendered = await render({
     scriptPath,
+    ...(options.allowModels?.length ? { allowModels: options.allowModels } : {}),
     facts,
     gsapPath: deps.gsapPath,
     stageDeps: deps.stageDeps,

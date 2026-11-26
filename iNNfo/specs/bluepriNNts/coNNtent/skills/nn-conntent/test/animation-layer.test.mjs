@@ -38,12 +38,11 @@ function tmp(prefix = 'nn-animation-') {
 }
 
 /** A minimal authored HyperFrames project root: id + duration + a nested asset. */
-const AUTHED = `<!doctype html>
-<html lang="en">
-  <body>
+const AUTHED = `<template>
+  <div class="stage" style="position:absolute;left:0;top:0;width:1080px;height:1080px">
     <div id="root" data-composition-id="demo-anim" data-start="0" data-duration="6" data-width="1080" data-height="1080"></div>
-  </body>
-</html>
+  </div>
+</template>
 `;
 
 function model({ layers = [], scenes = [] } = {}) {

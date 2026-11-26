@@ -23,12 +23,19 @@ const USAGE = [
   'Usage: node produce.mjs <episode-doc-or-folder> [options]',
   '  --dry-run               estimate and stop before any spend',
   '  --no-open               regenerate the console without opening a browser tab',
+  '  --allow-model <name>    unlock a guard-blocked model for this run (repeatable)',
   '',
   'Exit codes: 0 done, 10 a gate is open, 11 a spend stop no verdict can satisfy, 12 failed QA, 1 error.',
 ].join('\n');
 
-function parseFlags(argv) {
-  const out = { _: [] };
+/**
+ * The flags `produce` accepts. `--allow-model` is the flag the guard and the avatar stage tell
+ * the reader to pass; rejecting it here made their advice a dead end (produce printed usage
+ * and exited 1), so it is parsed and forwarded to the same stages that mention it.
+ * @param {string[]} argv
+ */
+export function parseFlags(argv) {
+  const out = { _: [], allowModels: [] };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (!arg.startsWith('--')) {
@@ -38,7 +45,13 @@ function parseFlags(argv) {
     const key = arg.slice(2);
     if (key === 'dry-run') out.dryRun = true;
     else if (key === 'no-open') out.noOpen = true;
-    else throw new ProduceStop('unknown-option', `Unknown option --${key}`);
+    else if (key === 'allow-model' || key.startsWith('allow-model=')) {
+      const value = key.startsWith('allow-model=') ? key.slice('allow-model='.length) : argv[++i];
+      if (!value || String(value).startsWith('--')) {
+        throw new ProduceStop('unknown-option', '--allow-model needs a model id');
+      }
+      out.allowModels.push(String(value));
+    } else throw new ProduceStop('unknown-option', `Unknown option --${key}`);
   }
   return out;
 }
@@ -56,7 +69,7 @@ async function main() {
     process.exit(EXIT_ERROR);
   }
   try {
-    const result = await produce({ episodePath: flags._[0], dryRun: flags.dryRun, noOpen: flags.noOpen });
+    const result = await produce({ episodePath: flags._[0], dryRun: flags.dryRun, noOpen: flags.noOpen, allowModels: flags.allowModels });
     if (result.summary && result.summary.stages) {
       for (const stage of result.summary.stages) {
         console.log(
