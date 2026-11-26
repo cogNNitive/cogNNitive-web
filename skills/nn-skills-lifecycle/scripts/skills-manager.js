@@ -1603,6 +1603,158 @@ var require_blueprint_provenance = __commonJS({
   }
 });
 
+// scripts/lib/blueprint-channels.js
+var require_blueprint_channels = __commonJS({
+  "scripts/lib/blueprint-channels.js"(exports2, module2) {
+    "use strict";
+    var fs = require("fs");
+    var os = require("os");
+    var path2 = require("path");
+    var { resolvePublished } = require_blueprint_provenance();
+    var { fetchString } = require_github_client();
+    var CHANNELS_FILE = "channels.json";
+    function defaultChannelsFile(home = os.homedir()) {
+      return path2.join(home, ".agents", CHANNELS_FILE);
+    }
+    var DEFAULT_CHANNELS = [
+      {
+        name: "official",
+        distribution_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive_blueprints/main/iNNfo/specs/bluepriNNts"
+      }
+    ];
+    var FORBIDDEN_CHANNEL_KEYS = ["version", "versions", "latest", "tag", "release_tag", "adopted"];
+    var CHANNEL_URL_HELP = "a channel distribution_url must be <origin>/<owner>/<repo>/<ref>/<path>, e.g. https://raw.githubusercontent.com/owner/repo/main/iNNfo/specs/bluepriNNts";
+    function parseChannelEntry(entry, index, source = CHANNELS_FILE) {
+      const where = `channels[${index}]`;
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) {
+        throw new Error(`${source}: ${where} must be an object with name and distribution_url`);
+      }
+      const raw = (
+        /** @type {Record<string, unknown>} */
+        entry
+      );
+      const forbidden = FORBIDDEN_CHANNEL_KEYS.filter((key) => raw[key] !== void 0);
+      if (forbidden.length > 0) {
+        throw new Error(
+          `${source}: ${where} ("${typeof raw.name === "string" && raw.name ? raw.name : "unnamed"}") carries ${forbidden.join(", ")}. A channel never restates versions (D4): it is { name, distribution_url } and nothing else. The version belongs to the unit's own blueprint.json.`
+        );
+      }
+      const unknown = Object.keys(raw).filter((key) => !["name", "distribution_url"].includes(key));
+      if (unknown.length > 0) {
+        throw new Error(
+          `${source}: ${where} carries unknown field(s) ${unknown.join(", ")}. A channel entry is { name, distribution_url } and nothing else.`
+        );
+      }
+      const name = typeof raw.name === "string" ? raw.name.trim() : "";
+      if (!name) {
+        throw new Error(`${source}: ${where} needs a non-empty name`);
+      }
+      const url = typeof raw.distribution_url === "string" ? raw.distribution_url.trim() : "";
+      if (!url) {
+        throw new Error(`${source}: ${where} ("${name}") needs a non-empty distribution_url`);
+      }
+      const segments = (() => {
+        try {
+          return new URL(url).pathname.split("/").filter(Boolean);
+        } catch (_) {
+          return [];
+        }
+      })();
+      if (segments.length < 4) {
+        throw new Error(
+          `${source}: ${where} ("${name}") distribution_url is unusable \u2014 ${CHANNEL_URL_HELP}`
+        );
+      }
+      return { name, distribution_url: url };
+    }
+    function parseChannels(raw, source = CHANNELS_FILE) {
+      const doc = raw;
+      const list = Array.isArray(doc) ? doc : doc && Array.isArray(doc.channels) ? doc.channels : null;
+      if (!list) {
+        throw new Error(
+          `${source}: expected { "channels": [ { "name": "...", "distribution_url": "..." } ] }`
+        );
+      }
+      if (list.length === 0) {
+        throw new Error(`${source}: declares no channels, so nothing can be resolved by name`);
+      }
+      const channels = list.map((entry, index) => parseChannelEntry(entry, index, source));
+      const seen = /* @__PURE__ */ new Set();
+      for (const channel of channels) {
+        const key = channel.name.toLowerCase();
+        if (seen.has(key)) {
+          throw new Error(`${source}: duplicate channel name ${JSON.stringify(channel.name)}`);
+        }
+        seen.add(key);
+      }
+      return { channels };
+    }
+    function unitDistributionUrl(channel, name) {
+      return `${String(channel.distribution_url).replace(/\/+$/, "")}/${String(name).trim()}`;
+    }
+    async function loadChannels(options = {}) {
+      const env = options.env || process.env;
+      const deps = { fetchString: options.deps && options.deps.fetchString || fetchString };
+      const homeFile = defaultChannelsFile(options.home);
+      const explicit = options.override || env.COGNNITIVE_CHANNELS;
+      const candidate = explicit || options.file || (fs.existsSync(homeFile) ? homeFile : null);
+      if (!candidate) {
+        return { channels: DEFAULT_CHANNELS.map((c) => ({ ...c })), source: "built-in defaults" };
+      }
+      const isUrl = /^https?:\/\//i.test(candidate);
+      let text;
+      if (isUrl) {
+        text = await deps.fetchString(candidate);
+      } else {
+        if (!fs.existsSync(candidate)) {
+          throw new Error(`channels file not found: ${candidate}`);
+        }
+        text = fs.readFileSync(candidate, "utf-8");
+      }
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (err) {
+        throw new Error(`${candidate}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+      return { ...parseChannels(parsed, candidate), source: candidate };
+    }
+    async function resolveBlueprintInChannels(request, deps = {}) {
+      const resolvedDeps = { fetchString: deps.fetchString || fetchString };
+      const name = String(request.name || "").trim();
+      if (!name) throw new Error("resolveBlueprintInChannels: a blueprint name is required");
+      const tried = [];
+      for (const channel of request.channels || []) {
+        const distributionUrl = unitDistributionUrl(channel, name);
+        const published = await resolvePublished({ distributionUrl, name }, resolvedDeps);
+        if (published.ok && published.entry) {
+          return {
+            ok: true,
+            channel,
+            distribution_url: distributionUrl,
+            entry: published.entry,
+            tried
+          };
+        }
+        tried.push({ channel: channel.name, reason: published.reason });
+      }
+      return { ok: false, channel: null, distribution_url: null, entry: null, tried };
+    }
+    module2.exports = {
+      CHANNELS_FILE,
+      CHANNEL_URL_HELP,
+      DEFAULT_CHANNELS,
+      FORBIDDEN_CHANNEL_KEYS,
+      defaultChannelsFile,
+      loadChannels,
+      parseChannelEntry,
+      parseChannels,
+      resolveBlueprintInChannels,
+      unitDistributionUrl
+    };
+  }
+});
+
 // scripts/lib/skills-commands.js
 var require_skills_commands = __commonJS({
   "scripts/lib/skills-commands.js"(exports2, module2) {
@@ -1647,6 +1799,7 @@ var require_skills_commands = __commonJS({
       distributionUrlParts,
       blueprintVerdict
     } = require_blueprint_provenance();
+    var { loadChannels, resolveBlueprintInChannels } = require_blueprint_channels();
     var DEFAULT_MANIFEST_URL = "https://cognnitive.com/use/manifest.md";
     var FALLBACK_MANIFEST_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/docs/use/manifest.md";
     var RETIRED_SKILL_REPOS = ["cogNNitive/cogNNitive"];
@@ -2647,37 +2800,89 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
       const name = args.blueprint;
       if (!name) throw new Error("install --blueprint requires a blueprint name");
       const catalogPath = args.catalogPath;
-      const catalog = await loadBlueprintCatalog(catalogPath);
-      const entry = findCatalogEntry(catalog, name);
-      if (!entry) {
-        throw new Error(
-          `blueprint '${name}' is not in the catalog (${catalogPath || DEFAULT_CATALOG_PATH}); check the name or refresh catalog.json`
-        );
-      }
-      if (!entry.release_tag) {
-        throw new Error(`blueprint '${name}' is not yet released (no matching blueprints-v* tag); update the catalog`);
-      }
       const blueprintsDir = args.blueprintsDir || DEFAULT_BLUEPRINTS_DIR;
       const skillsDir = args.skillsDir || DEFAULT_SKILLS_DIR;
-      const repo = args.repo || DEFAULT_BLUEPRINT_REPO;
-      const ref = entry.release_tag;
-      const version = entry.adopted;
-      const entryName = entry.name || name;
-      const embedded = Array.isArray(entry.embedded_skills) ? entry.embedded_skills : [];
-      let resolvedCommit = ref;
+      let entry = null;
+      let catalogError = null;
       try {
-        const resolved = await resolveRef(repo, ref);
-        if (resolved && "sha" in resolved && resolved.sha) resolvedCommit = resolved.sha;
-      } catch (_) {
+        const catalog = await loadBlueprintCatalog(catalogPath);
+        entry = findCatalogEntry(catalog, name);
+      } catch (err) {
+        catalogError = err;
       }
-      const template = {
-        name: entryName,
-        repo,
-        path: `iNNfo/specs/bluepriNNts/${entryName}/spec_NN.md`,
-        version,
-        ref,
-        commit: resolvedCommit
-      };
+      let plan;
+      if (entry) {
+        if (!entry.release_tag) {
+          throw new Error(`blueprint '${name}' is not yet released (no matching blueprints-v* tag); update the catalog`);
+        }
+        const repo = args.repo || DEFAULT_BLUEPRINT_REPO;
+        const ref = entry.release_tag;
+        const version = entry.adopted;
+        const entryName2 = entry.name || name;
+        let resolvedCommit = ref;
+        try {
+          const resolved = await resolveRef(repo, ref);
+          if (resolved && "sha" in resolved && resolved.sha) resolvedCommit = resolved.sha;
+        } catch (_) {
+        }
+        plan = {
+          template: {
+            name: entryName2,
+            repo,
+            path: `iNNfo/specs/bluepriNNts/${entryName2}/spec_NN.md`,
+            version,
+            tag: ref,
+            ref,
+            commit: resolvedCommit
+          },
+          header: [
+            "Optional catalog blueprint (on demand):",
+            `  - ${entryName2} (${version}) from ${repo} @ ${ref}`,
+            `  tier: ${entry.tier || "free"} \xB7 access: ${entry.access || "public"}`
+          ]
+        };
+      } else {
+        const loaded = await loadChannels({ file: args.channelsPath, env: process.env });
+        const resolved = await resolveBlueprintInChannels(
+          { name, channels: loaded.channels },
+          { fetchString: args.fetchString }
+        );
+        if (!resolved.ok) {
+          const tried = resolved.tried.map((t) => `${t.channel}: ${t.reason}`).join("; ");
+          throw new Error(
+            `blueprint '${name}' is not in the catalog ` + (catalogError ? `(${catalogError.message})` : `(${catalogPath || DEFAULT_CATALOG_PATH})`) + ` and no channel carries it. channels (${loaded.source}): ${tried}`
+          );
+        }
+        const hit = (
+          /** @type {{ channel: { name: string, distribution_url: string }, distribution_url: string, entry: { version: string, tag: string | null, commit: string } }} */
+          resolved
+        );
+        const parts = distributionUrlParts(hit.distribution_url);
+        if (!parts) {
+          throw new Error(
+            `blueprint '${name}' resolved in channel '${hit.channel.name}' but ${hit.distribution_url} cannot address a commit's tree`
+          );
+        }
+        plan = {
+          template: {
+            name,
+            repo: parts.repo,
+            path: `${parts.blueprintPath}/spec_NN.md`,
+            version: hit.entry.version,
+            tag: hit.entry.tag,
+            ref: hit.entry.commit,
+            commit: hit.entry.commit
+          },
+          header: [
+            "Optional channel blueprint (on demand):",
+            `  - ${name} (${hit.entry.version}) from ${parts.repo} @ ${hit.entry.commit.slice(0, 7)}`,
+            `  channel: ${hit.channel.name} \xB7 ${hit.channel.distribution_url}`
+          ]
+        };
+      }
+      const { template } = plan;
+      const entryName = template.name;
+      const embedded = Array.isArray(entry && entry.embedded_skills) ? entry.embedded_skills : [];
       const summary = await describeBlueprintPackage(template);
       const summaryMenu = summary ? (summary.skills.length ? `  embedded skills: ${summary.skills.join(", ")}
 ` : "") + (summary.cli.length ? `  CLI: ${summary.cli.join(", ")} (agent skills)
@@ -2686,9 +2891,7 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
 ` : "") + (summary.env.length ? `  env keys: ${summary.env.join(", ")}
 ` : "") : embedded.length ? `  embedded skills: ${embedded.join(", ")}
 ` : "";
-      const menu = `Optional catalog blueprint (on demand):
-  - ${entryName} (${version}) from ${repo} @ ${ref}
-  tier: ${entry.tier || "free"} \xB7 access: ${entry.access || "public"}
+      const menu = `${plan.header.join("\n")}
 ` + summaryMenu + `
 [a] Install
 [b] Skip
@@ -2712,7 +2915,7 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
       });
       saveState(args.stateFile, state);
       console.log(
-        `installed catalog blueprint ${entryName} (${version}) @ ${ref}` + (projected.length ? ` and projected ${projected.length} skill(s): ${projected.join(", ")}` : "")
+        `installed blueprint ${entryName} (${template.version}) @ ${template.ref}` + (projected.length ? ` and projected ${projected.length} skill(s): ${projected.join(", ")}` : "")
       );
     }
     async function cmdUpdate(args) {
