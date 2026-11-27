@@ -223,18 +223,18 @@
     '.nn-card-fields>.nn-ku-unit,.nn-card-fields>.nn-ku{flex:1 1 16rem;min-width:0}',
     '.nn-card-fields>.nn-ku[data-field-wide=true],.nn-card-fields>.nn-ku-unit:has([data-field-wide=true]){flex-basis:100%}',
     '.nn-ku{position:relative;display:inline-flex;align-items:center;gap:.35em;font:inherit;font-size:.82rem;line-height:1.2;border:0;border-radius:var(--nn-radius-sm);padding:.12em .5em;background:var(--nn-surface-2);color:var(--nn-text);max-width:100%;--c:var(--nn-concept-1);--cb:var(--nn-concept-1-bg)}',
-    // Nature grammar (approved 2026-10-18): container = ONE border at 2x the line
-    // width (no double border); structure = SOLID concept-coloured border + mono
-    // (no dashed); content = NO border, the concept colour rides on the label and
-    // the concept icon.
-    '.nn-ku[data-ku-nature=container]{border:2px solid var(--nn-accent);background:var(--nn-surface)}',
-    '.nn-ku[data-ku-nature=structure]{border:1.5px solid var(--c);font-family:ui-monospace,monospace;color:var(--nn-muted);background:var(--nn-surface)}',
+    // Nature grammar (approved 2026-10-18, borders thinned 2026-11-27): container =
+    // ONE 1px border (no double border); structure = SOLID 1px concept-coloured
+    // border + mono (no dashed); content = NO border, the concept colour rides on
+    // the label and the concept icon.
+    '.nn-ku[data-ku-nature=container]{border:1px solid var(--nn-accent);background:var(--nn-surface)}',
+    '.nn-ku[data-ku-nature=structure]{border:1px solid var(--c);font-family:ui-monospace,monospace;color:var(--nn-muted);background:var(--nn-surface)}',
     '.nn-ku[data-ku-nature=content]{border:0;background:var(--nn-surface-2)}',
     '.nn-ku-wrap{display:inline-flex;align-items:center;gap:.2em;position:relative;vertical-align:middle;max-width:100%}',
     '.nn-ku[data-ku-kind=field],.nn-ku[data-ku-kind=cell]{background:var(--nn-surface-2)}',
-    // Element + concept/document badges read as card titles: slightly larger and
-    // semibold so they anchor the hierarchy above their muted field rows.
-    '.nn-ku[data-ku-kind=element],.nn-ku[data-ku-kind=concept],.nn-ku[data-ku-kind=document]{font-weight:600}',
+    // Element badges read as card titles by size alone (never bold: a page of
+    // them is heavy); concept/document badges stay semibold as the hierarchy above.
+    '.nn-ku[data-ku-kind=concept],.nn-ku[data-ku-kind=document]{font-weight:600}',
     '.nn-ku[data-ku-kind=element]{font-size:.9rem}',
     '.nn-ku .nn-ku-label{color:var(--nn-muted)}',
     '.nn-ku .nn-ku-value{color:var(--nn-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',

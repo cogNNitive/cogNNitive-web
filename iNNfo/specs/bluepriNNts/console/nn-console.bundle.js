@@ -1525,18 +1525,18 @@ var yo={},mo={};var xo,_o=function(){function t(t,e,n){var i=this;this._sleepAft
     '.nn-card-fields>.nn-ku-unit,.nn-card-fields>.nn-ku{flex:1 1 16rem;min-width:0}',
     '.nn-card-fields>.nn-ku[data-field-wide=true],.nn-card-fields>.nn-ku-unit:has([data-field-wide=true]){flex-basis:100%}',
     '.nn-ku{position:relative;display:inline-flex;align-items:center;gap:.35em;font:inherit;font-size:.82rem;line-height:1.2;border:0;border-radius:var(--nn-radius-sm);padding:.12em .5em;background:var(--nn-surface-2);color:var(--nn-text);max-width:100%;--c:var(--nn-concept-1);--cb:var(--nn-concept-1-bg)}',
-    // Nature grammar (approved 2026-10-18): container = ONE border at 2x the line
-    // width (no double border); structure = SOLID concept-coloured border + mono
-    // (no dashed); content = NO border, the concept colour rides on the label and
-    // the concept icon.
-    '.nn-ku[data-ku-nature=container]{border:2px solid var(--nn-accent);background:var(--nn-surface)}',
-    '.nn-ku[data-ku-nature=structure]{border:1.5px solid var(--c);font-family:ui-monospace,monospace;color:var(--nn-muted);background:var(--nn-surface)}',
+    // Nature grammar (approved 2026-10-18, borders thinned 2026-11-27): container =
+    // ONE 1px border (no double border); structure = SOLID 1px concept-coloured
+    // border + mono (no dashed); content = NO border, the concept colour rides on
+    // the label and the concept icon.
+    '.nn-ku[data-ku-nature=container]{border:1px solid var(--nn-accent);background:var(--nn-surface)}',
+    '.nn-ku[data-ku-nature=structure]{border:1px solid var(--c);font-family:ui-monospace,monospace;color:var(--nn-muted);background:var(--nn-surface)}',
     '.nn-ku[data-ku-nature=content]{border:0;background:var(--nn-surface-2)}',
     '.nn-ku-wrap{display:inline-flex;align-items:center;gap:.2em;position:relative;vertical-align:middle;max-width:100%}',
     '.nn-ku[data-ku-kind=field],.nn-ku[data-ku-kind=cell]{background:var(--nn-surface-2)}',
-    // Element + concept/document badges read as card titles: slightly larger and
-    // semibold so they anchor the hierarchy above their muted field rows.
-    '.nn-ku[data-ku-kind=element],.nn-ku[data-ku-kind=concept],.nn-ku[data-ku-kind=document]{font-weight:600}',
+    // Element badges read as card titles by size alone (never bold: a page of
+    // them is heavy); concept/document badges stay semibold as the hierarchy above.
+    '.nn-ku[data-ku-kind=concept],.nn-ku[data-ku-kind=document]{font-weight:600}',
     '.nn-ku[data-ku-kind=element]{font-size:.9rem}',
     '.nn-ku .nn-ku-label{color:var(--nn-muted)}',
     '.nn-ku .nn-ku-value{color:var(--nn-text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
@@ -7773,6 +7773,60 @@ var yo={},mo={};var xo,_o=function(){function t(t,e,n){var i=this;this._sleepAft
       return openEdit(Object.assign({}, anchorData, { info: true }))
     }
 
+    // Adding a tag is one word typed in place: the "+ tag" button turns into a small
+    // input. Enter (or leaving the field with a word in it) proposes the tag, Escape
+    // cancels. It used to open the element's modal, which has no list editor.
+    function startTagAdd(add, anchorData) {
+      closePopover()
+      lastAnchor = add
+      if (!add.parentNode) return
+      var input = makeEl(doc, 'input', 'nn-tag-input')
+      input.setAttribute('type', 'text')
+      input.setAttribute('aria-label', 'New tag')
+      input.setAttribute('placeholder', 'tag')
+      input.setAttribute('data-nn-ctl', 'tag-input')
+      input.setAttribute('data-nn-review-ctl', '1')
+      var done = false
+      function finish(commit) {
+        if (done) return
+        done = true
+        var text = String(input.value || '').trim()
+        if (commit && text) {
+          var elTag = resolveElement(anchorData.elementId, anchorData.modelId)
+          var cur = effectiveTagsOf(elTag)
+          var known = cur.some(function (t) {
+            return valueKeyOf(t) === valueKeyOf(text)
+          })
+          if (!known) {
+            // The draft re-renders the card, which drops this input with it.
+            saveDraft(anchorData, {
+              kind: 'correction',
+              field: 'tags',
+              original: cur,
+              proposed: cur.concat([text]),
+            })
+            return
+          }
+        }
+        if (input.parentNode) input.parentNode.replaceChild(add, input)
+      }
+      input.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter') {
+          if (ev.preventDefault) ev.preventDefault()
+          finish(true)
+        } else if (ev.key === 'Escape') {
+          if (ev.preventDefault) ev.preventDefault()
+          finish(false)
+          if (typeof add.focus === 'function') add.focus()
+        }
+      })
+      input.addEventListener('blur', function () {
+        finish(true)
+      })
+      add.parentNode.replaceChild(input, add)
+      if (typeof input.focus === 'function') input.focus()
+    }
+
     function openFor(anchor, anchorData) {
       closePopover()
       lastAnchor = anchor
@@ -8113,7 +8167,7 @@ var yo={},mo={};var xo,_o=function(){function t(t,e,n){var i=this;this._sleepAft
         add.setAttribute('type', 'button')
         add.setAttribute('aria-label', 'Propose a new tag')
         add.addEventListener('click', function () {
-          openFor(add, { elementId: elId, tagAdd: true })
+          startTagAdd(add, { elementId: elId, tagAdd: true })
         })
         row.appendChild(add)
       }
@@ -11553,13 +11607,17 @@ if (typeof window !== 'undefined') {
         parts.push('Generated ' + stamp + ' UTC')
       }
       host.textContent = ''
-      if (parts.length) {
+      // A scoped console shows one view, not the domaiNN, so it skips the glossary.
+      var showVocabulary = !consoleScopeOf(meta)
+      if (parts.length || showVocabulary) {
         var infoBtn = doc.createElement('button')
-        infoBtn.className = 'nn-navbar-info-btn'
+        // The same button as Save Snapshot and Copy AI Prompt, icon only, so the
+        // header reads as one family instead of a stray glyph beside the title.
+        infoBtn.className = 'nn-navbar-action-btn nn-navbar-info-btn'
         infoBtn.type = 'button'
         infoBtn.setAttribute('aria-label', 'Domain info')
-        infoBtn.innerHTML =
-          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
+        infoBtn.setAttribute('title', 'About this domain: template, version and vocabulary')
+        infoBtn.innerHTML = '<span class="nn-btn-icon">' + UI.icon('info', 15) + '</span>'
 
         var popover = doc.createElement('div')
         popover.className = 'nn-navbar-info-popover'
@@ -11578,6 +11636,7 @@ if (typeof window !== 'undefined') {
             .trim()
           popoverLines.push('<div><strong>Generated:</strong> ' + stamp + ' UTC</div>')
         }
+        if (showVocabulary) popoverLines.push(vocabularyLegendHtml())
         popover.innerHTML = popoverLines.join('')
 
         infoBtn.addEventListener('click', function (ev) {
@@ -14441,6 +14500,31 @@ if (typeof window !== 'undefined') {
             var cellUnit = cellBadge.querySelector('[data-nn-component="ku-unit"]')
             if (!isEmpty && cellUnit) cellUnit.setAttribute('data-cell-value', value.toLowerCase())
             td.appendChild(cellBadge)
+            if (isEmpty) {
+              // An empty cell shows nothing; the cell itself is the control and does what
+              // the cell's edit anchor does (the edit modal), or opens the unit's details
+              // when there is no edit anchor (a console that is not in review mode).
+              td.setAttribute('role', 'button')
+              td.setAttribute('tabindex', '0')
+              td.setAttribute('aria-label', 'Set a value for ' + rowLabel + ' and ' + c)
+              var openEmptyCell = function () {
+                var anchor =
+                  td.querySelector('[data-nn-ctl="matrix-cell-anchor"]') ||
+                  td.querySelector('[data-ku-more]')
+                if (anchor && typeof anchor.click === 'function') anchor.click()
+              }
+              td.addEventListener('click', function (ev) {
+                // A visible control inside the cell handles its own click.
+                var inControl = ev && ev.target && ev.target.closest && ev.target.closest('button')
+                if (!inControl) openEmptyCell()
+              })
+              td.addEventListener('keydown', function (ev) {
+                if (ev.key === 'Enter' || ev.key === ' ') {
+                  if (ev.preventDefault) ev.preventDefault()
+                  openEmptyCell()
+                }
+              })
+            }
           }
           tr.appendChild(td)
         })
@@ -14726,7 +14810,8 @@ if (typeof window !== 'undefined') {
     })
   }
 
-  // One line under the tabs that translates the iNNfo vocabulary for a newcomer.
+  // Translates the iNNfo vocabulary for a newcomer. It lives in the header's info
+  // popover: a permanent line under the tabs cost every tab a row of chrome.
   var VOCABULARY_LEGEND = [
     ['bluepriNNt', 'the template a model follows'],
     ['concept', 'a type of card'],
@@ -14734,16 +14819,14 @@ if (typeof window !== 'undefined') {
     ['field', 'one piece of data on a card'],
   ]
 
-  function ensureVocabularyLegend(doc, nav) {
-    if (!nav || !nav.parentNode || doc.querySelector('.nn-vocab-legend')) return
-    var legend = el('p', 'nn-vocab-legend')
-    legend.setAttribute('aria-label', 'Vocabulary')
-    VOCABULARY_LEGEND.forEach(function (pair, i) {
-      if (i) legend.appendChild(doc.createTextNode(' · '))
-      legend.appendChild(el('strong', null, pair[0]))
-      legend.appendChild(doc.createTextNode(' = ' + pair[1]))
-    })
-    nav.parentNode.insertBefore(legend, nav.nextSibling)
+  function vocabularyLegendHtml() {
+    return (
+      '<div class="nn-vocab-legend" role="group" aria-label="Vocabulary">' +
+      VOCABULARY_LEGEND.map(function (pair) {
+        return '<div><strong>' + pair[0] + '</strong><span>' + pair[1] + '</span></div>'
+      }).join('') +
+      '</div>'
+    )
   }
 
   // Switches to the Knowledge tab with `token` (a facet such as `concept:Deal`) in
@@ -15067,7 +15150,6 @@ if (typeof window !== 'undefined') {
       if (firstPanel) shell.main.insertBefore(subnav, firstPanel)
       else nav.parentNode.insertBefore(subnav, nav.nextSibling)
     }
-    if (!scopedView) ensureVocabularyLegend(doc, nav)
     updateTabBadges(doc, opts.state)
 
     var current = ''
@@ -15425,6 +15507,16 @@ if (typeof window !== 'undefined') {
       }
     }
 
+    // True when the mounted view reacts to the global filter, so the bar is its control too.
+    function usesFilter(id) {
+      var m = mounted[id]
+      if (!m || m.failed) return false
+      return (
+        (Array.isArray(m.filterListeners) && m.filterListeners.length > 0) ||
+        (!!m.api && typeof m.api.onFilter === 'function')
+      )
+    }
+
     function notifyFilter(filteredElements, query) {
       tabs.forEach(function (t) {
         var m = mounted[t.id]
@@ -15506,6 +15598,14 @@ if (typeof window !== 'undefined') {
       if (next.external) {
         if (mounted[tabId]) hook(tabId, 'onShow')
         else mountView(next)
+      }
+      if (!scopedView && doc.querySelector) {
+        // The search/filter bar acts on the Knowledge explorer and on any view that
+        // subscribes to the global filter (ctx.filter.onChange / onFilter). On every
+        // other tab it is a control that does nothing, so it is not drawn there.
+        // Decided after the mount, because a view subscribes while it mounts.
+        var toolbar = doc.querySelector('.nn-toolbar')
+        if (toolbar) toolbar.style.display = tabId === 'explorer' || usesFilter(tabId) ? '' : 'none'
       }
       var nextHash = buildViewHash(tabId, opts.getQuery ? opts.getQuery() : '')
       if (!fromHash && doc.location && doc.location.hash !== nextHash) {
@@ -15688,6 +15788,18 @@ if (typeof window !== 'undefined') {
 
   function round1(n) {
     return Math.round(n * 10) / 10
+  }
+
+  // The console's own icon set, not a unicode square: an artifact is a package, a
+  // table reads as a table, a text document as a page, anything else as a file.
+  function filesIconName(entry) {
+    if (entry.category === 'artifact') return 'package'
+    var ext = String(entry.path || '')
+      .toLowerCase()
+      .replace(/^.*\./, '')
+    if (ext === 'csv' || ext === 'xlsx' || ext === 'tsv') return 'table'
+    if (ext === 'md' || ext === 'txt' || ext === 'pdf' || ext === 'docx') return 'file-text'
+    return 'file'
   }
 
   function filesBaseName(p) {
@@ -15906,7 +16018,8 @@ if (typeof window !== 'undefined') {
         head.setAttribute('tabindex', '0')
         head.setAttribute('aria-expanded', collapsed ? 'false' : 'true')
         var headMain = el('span', 'nn-category-header-main')
-        var chevron = el('span', 'chevron', collapsed ? '\u25B8' : '\u25BE')
+        var chevron = el('span', 'chevron')
+        chevron.innerHTML = UI.icon(collapsed ? 'chevron-right' : 'chevron-down', 14)
         chevron.setAttribute('aria-hidden', 'true')
         headMain.appendChild(chevron)
         headMain.appendChild(el('span', null, cat.title))
@@ -15933,11 +16046,8 @@ if (typeof window !== 'undefined') {
             row.setAttribute('tabindex', '0')
             row.setAttribute('data-path', entry.path)
             row.setAttribute('title', entry.path)
-            var icon = el(
-              'span',
-              'nn-file-icon',
-              entry.category === 'artifact' ? '\u25A0' : '\u25A1',
-            )
+            var icon = el('span', 'nn-file-icon')
+            icon.innerHTML = UI.icon(filesIconName(entry), 14)
             icon.setAttribute('aria-hidden', 'true')
             row.appendChild(icon)
             row.appendChild(el('span', 'nn-file-name', filesBaseName(entry.path)))
@@ -17538,6 +17648,14 @@ if (typeof window !== 'undefined') {
     return 'Published by cogNNitive'
   }
 
+  // The iNNfo spec files spell a version V_0-6-1; every release number is 0.6.1.
+  // Shown one way in the tab, the stored value is untouched.
+  var VERSION_COLUMNS = { Version: 1, Pinned: 1, Latest: 1 }
+  function versionText(raw) {
+    var m = /^V_(\d+)-(\d+)-(\d+)$/.exec(String(raw))
+    return m ? m[1] + '.' + m[2] + '.' + m[3] : String(raw)
+  }
+
   function versionsTable(cls, headers, rows) {
     var table = el('table', 'nn-versions-table ' + cls)
     // Software versions, not kNNowledge: no cell is an addressable unit.
@@ -17552,13 +17670,15 @@ if (typeof window !== 'undefined') {
     var tbody = el('tbody')
     rows.forEach(function (cells) {
       var tr = el('tr')
-      cells.forEach(function (cell) {
+      cells.forEach(function (cell, i) {
         if (cell && cell.nodeType) {
           var td = el('td')
           td.appendChild(cell)
           tr.appendChild(td)
         } else {
-          tr.appendChild(el('td', null, cell == null || cell === '' ? '—' : String(cell)))
+          var text = cell == null || cell === '' ? '—' : String(cell)
+          if (VERSION_COLUMNS[headers[i]]) text = versionText(text)
+          tr.appendChild(el('td', null, text))
         }
       })
       tbody.appendChild(tr)
@@ -18247,13 +18367,14 @@ if (typeof window !== 'undefined') {
                     y: n.y,
                     symbol: 'rect',
                     symbolSize: [SCHEMA_BOX_WIDTH, n.h],
-                    itemStyle: { color: '#ffffff', borderColor: color, borderWidth: 2 },
+                    itemStyle: { color: '#ffffff', borderColor: color, borderWidth: 1 },
                     label: {
                       show: true,
-                      position: [8, 8],
+                      // Inside the 1px border, so the header band is flush with the box.
+                      position: [1, 1],
                       align: 'left',
                       verticalAlign: 'top',
-                      width: SCHEMA_BOX_WIDTH - 16,
+                      width: SCHEMA_BOX_WIDTH - 2,
                       overflow: 'truncate',
                       formatter:
                         '{t|' +
@@ -18264,15 +18385,20 @@ if (typeof window !== 'undefined') {
                         lines.join('\n'),
                       rich: {
                         t: {
-                          width: SCHEMA_BOX_WIDTH - 16,
+                          // The 8px side padding adds to the width, so take it off here.
+                          width: SCHEMA_BOX_WIDTH - 2 - 16,
                           backgroundColor: color,
                           color: '#ffffff',
-                          fontWeight: 'bold',
+                          fontWeight: 600,
                           fontSize: 12,
-                          padding: [5, 6],
-                          borderRadius: 3,
+                          padding: [5, 8],
                         },
-                        f: { fontSize: 11, color: '#1f2937', lineHeight: SCHEMA_LINE },
+                        f: {
+                          fontSize: 11,
+                          color: '#1f2937',
+                          lineHeight: SCHEMA_LINE,
+                          padding: [0, 0, 0, 8],
+                        },
                         k: { fontSize: 10, color: '#6b7280', lineHeight: SCHEMA_LINE },
                       },
                     },
@@ -18297,16 +18423,19 @@ if (typeof window !== 'undefined') {
                   target: e.target,
                   lineStyle: {
                     type: e.kind === 'matrix' ? 'solid' : 'dashed',
-                    width: 1.5,
+                    width: 1,
                     color: '#64748b',
                   },
+                  // The name rides just above the line instead of cutting through it.
                   label: {
                     show: !!e.label,
                     formatter: e.label,
+                    position: 'middle',
+                    align: 'center',
+                    verticalAlign: 'bottom',
+                    distance: 4,
                     fontSize: 10,
-                    color: '#334155',
-                    backgroundColor: '#ffffff',
-                    padding: [1, 3],
+                    color: '#475569',
                   },
                 }
               }),
@@ -21734,8 +21863,15 @@ if (typeof window !== 'undefined') {
       return n + (Array.isArray(e.runs) ? e.runs.length : 0)
     }, 0)
     var strip = make('div', 'proc-structure-strip')
+    var plural = function (n, noun) {
+      return n + ' ' + noun + (n === 1 ? '' : 's')
+    }
     strip.appendChild(
-      make('div', 'proc-structure-summary', entries.length + ' procedures · ' + runCount + ' runs'),
+      make(
+        'div',
+        'proc-structure-summary',
+        plural(entries.length, 'procedure') + ' · ' + plural(runCount, 'run'),
+      ),
     )
     root.appendChild(strip)
     var defectsEl = make('div', 'proc-structure-defects')
@@ -21875,7 +22011,7 @@ if (typeof window !== 'undefined') {
       })
       var listEl = make('div', 'proc-blueprint-list')
       listEl.setAttribute('data-nn-procedures', 'blueprint')
-      listEl.appendChild(make('span', 'proc-blueprint-label', 'Procedures'))
+      listEl.appendChild(make('span', 'proc-blueprint-label', 'In the bluepriNNt'))
       list.forEach(function (p) {
         // A pill that looks selectable must select something: when this export carries the
         // definition document, clicking opens it; when it does not, the pill is a plain label
@@ -22265,7 +22401,10 @@ if (typeof window !== 'undefined') {
     function renderRunList(hostEl) {
       var runs = Array.isArray(active.runs) ? active.runs : []
       var bar = make('div', 'proc-runs')
-      bar.appendChild(make('span', 'proc-runs-label', 'Runs'))
+      // Three jobs, three places: the head holds the filter and the one action, the list below
+      // is the choice between the definition and a run. They used to wrap as one row of chips.
+      var head = make('div', 'proc-runs-head')
+      head.appendChild(make('span', 'proc-runs-label', 'Runs'))
       if (runs.length) {
         var filters = make('div', 'proc-run-filters')
         FILTERS.forEach(function (f) {
@@ -22281,8 +22420,9 @@ if (typeof window !== 'undefined') {
             ),
           )
         })
-        bar.appendChild(filters)
+        head.appendChild(filters)
       }
+      bar.appendChild(head)
       var list = make('div', 'proc-run-list')
       list.appendChild(
         button(
@@ -22341,7 +22481,7 @@ if (typeof window !== 'undefined') {
       }
       bar.appendChild(list)
       if (store && active.graph && !/^bluepriNNt:/.test(active.file)) {
-        bar.appendChild(
+        head.appendChild(
           button(
             'proc-start-run' + (startFormOpen ? ' active' : ''),
             'Start a run',
@@ -22917,8 +23057,9 @@ if (typeof window !== 'undefined') {
       var state = viewState()
       var w = geo.nodeW
       var h = geo.nodeH
+      // A faint wash, not a fill: a flow of green and amber slabs was the heaviest thing on the page.
       var tint = function (c) {
-        return blend(c, pal.surface, 0.14)
+        return blend(c, pal.surface, 0.07)
       }
       var data = Object.keys(graph.steps).map(function (slug) {
         var step = graph.steps[slug]
@@ -22928,7 +23069,7 @@ if (typeof window !== 'undefined') {
         var projected = isProjected(slug)
         var border = step.stepType === 'decision' ? pal.warning : pal.border
         var fill = pal.surface
-        var width = 1.5
+        var width = 1
         var type = 'solid'
         var opacity = 1
         if (status === 'done') {
@@ -22936,11 +23077,9 @@ if (typeof window !== 'undefined') {
           fill = tint(pal.success)
         } else if (status === 'failed') {
           border = pal.danger
-          width = 2
           fill = tint(pal.danger)
         } else if (status === 'waiting') {
           border = pal.warning
-          width = 2
           fill = tint(pal.warning)
         } else if (status === 'active') {
           border = pal.primary
@@ -22953,7 +23092,7 @@ if (typeof window !== 'undefined') {
         }
         if (isCurrent) {
           border = pal.primary
-          width = 3.5
+          width = 2
           type = 'solid'
         }
         if (projected) type = 'dotted'
@@ -23006,7 +23145,9 @@ if (typeof window !== 'undefined') {
           id: slug,
           name: step.name || slug,
           value: [geo.pos[slug].x, geo.pos[slug].y],
-          symbol: 'roundRect',
+          // 'roundRect' rounds by a fixed fraction of the box, which on these wide boxes
+          // made pills; a plain rectangle matches the metamodel boxes.
+          symbol: 'rect',
           symbolSize: [w, h],
           status: status,
           current: isCurrent,
@@ -23038,7 +23179,7 @@ if (typeof window !== 'undefined') {
                 fontSize: subSize,
                 lineHeight: 15,
                 color: isCurrent ? pal.primary : pal.muted,
-                fontWeight: 600,
+                fontWeight: 400,
               },
               title: {
                 width: inner,
@@ -23048,7 +23189,7 @@ if (typeof window !== 'undefined') {
                 fontSize: titleSize,
                 lineHeight: 18,
                 color: isCurrent ? pal.primary : pal.text,
-                fontWeight: isCurrent ? 700 : 600,
+                fontWeight: isCurrent ? 600 : 500,
               },
             },
           },
@@ -23079,7 +23220,7 @@ if (typeof window !== 'undefined') {
           var dashed = f.off || f.projected || f.status === 'waiting' || f.status === 'pending'
           var stroke = {
             color: color,
-            width: f.taken ? 3 : 1.5,
+            width: f.taken ? 2 : 1,
             type: dashed ? 'dashed' : 'solid',
             opacity: f.off ? 0.5 : 1,
           }
@@ -23104,7 +23245,7 @@ if (typeof window !== 'undefined') {
                   formatter: f.token.length > 24 ? f.token.substring(0, 22) + '…' : f.token,
                   color: f.taken ? pal.success : pal.muted,
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 500,
                   backgroundColor: pal.surface,
                   padding: [1, 4],
                   position: 'middle',
@@ -23144,7 +23285,7 @@ if (typeof window !== 'undefined') {
           coordinateSystem: 'cartesian2d',
           silent: true,
           z: 1,
-          symbol: 'roundRect',
+          symbol: 'rect',
           symbolSize: [w, h],
           showEffectOn: 'render',
           rippleEffect: { period: 3, scale: 1.2, brushType: 'stroke', color: pal.primary },
@@ -23158,9 +23299,9 @@ if (typeof window !== 'undefined') {
           coordinateSystem: 'cartesian2d',
           silent: true,
           z: 4,
-          symbol: 'roundRect',
+          symbol: 'rect',
           symbolSize: [w + 12, h + 12],
-          itemStyle: { color: 'rgba(0,0,0,0)', borderColor: pal.text, borderWidth: 3 },
+          itemStyle: { color: 'rgba(0,0,0,0)', borderColor: pal.text, borderWidth: 2 },
           data: [{ id: focusSlug, value: at(focusSlug) }],
         })
       }
@@ -23426,7 +23567,6 @@ if (typeof window !== 'undefined') {
       col.appendChild(head)
       var view = make('div', 'exec-dag-view graphbox')
       col.appendChild(view)
-      col.appendChild(stepList(lay, current))
       var hint = make(
         'div',
         'rail-hint hint',
@@ -23441,56 +23581,6 @@ if (typeof window !== 'undefined') {
         view.className += ' exec-dag-view-native'
         view.appendChild(buildNativeGraph(lay, current))
       }
-    }
-
-    /** The same walk as a vertical list: the graph's text alternative, with each status in words. */
-    var stepListOpen = null
-
-    function stepList(lay, current) {
-      var ol = make('ol', 'proc-step-list')
-      ol.setAttribute('data-proc-step-list', '')
-      lay.rows.forEach(function (row) {
-        row.forEach(function (slug) {
-          var step = active.graph.steps[slug]
-          var status = stepStatus(slug)
-          var li = make(
-            'li',
-            'proc-step-item ' +
-              status +
-              (slug === current ? ' current' : '') +
-              (slug === selectedStep ? ' selected' : ''),
-          )
-          li.setAttribute('data-step', slug)
-          var b = button('proc-step-item-btn', null, function () {
-            selectStep(slug)
-          })
-          b.appendChild(make('span', 'proc-step-item-name', step.name || slug))
-          var token = outcomeTokenOf(slug)
-          b.appendChild(
-            make(
-              'span',
-              'proc-step-item-meta',
-              (token ? 'if ' + token + ' · ' : '') +
-                (status === 'definition' ? step.executor || 'task' : status),
-            ),
-          )
-          li.appendChild(b)
-          ol.appendChild(li)
-        })
-      })
-      // A disclosure: in the tab order at every width, open by default only on a phone.
-      var box = make('details', 'proc-step-list-box')
-      var open =
-        stepListOpen === null
-          ? !!(host.matchMedia && host.matchMedia('(max-width: 640px)').matches)
-          : stepListOpen
-      if (open) box.setAttribute('open', '')
-      box.appendChild(make('summary', 'proc-step-list-summary', 'Steps as a list'))
-      box.addEventListener('toggle', function () {
-        stepListOpen = box.open
-      })
-      box.appendChild(ol)
-      return box
     }
 
     // ---- Step card ----
@@ -25419,7 +25509,7 @@ if (typeof window !== 'undefined') {
           ? 'The document as defined: each step with its instructions. No run state, no executed sequence.'
           : branches
             ? 'Steps in the order of progress. The branches and where each one leads are drawn in the flow graph.'
-            : 'A straight chain with no branches, in the order of progress. The flow graph shows the same steps.',
+            : 'A straight chain with no branches, in the order of progress.',
       )
       padFlow.appendChild(noteFlow)
 

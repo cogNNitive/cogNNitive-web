@@ -1124,6 +1124,60 @@
       return openEdit(Object.assign({}, anchorData, { info: true }))
     }
 
+    // Adding a tag is one word typed in place: the "+ tag" button turns into a small
+    // input. Enter (or leaving the field with a word in it) proposes the tag, Escape
+    // cancels. It used to open the element's modal, which has no list editor.
+    function startTagAdd(add, anchorData) {
+      closePopover()
+      lastAnchor = add
+      if (!add.parentNode) return
+      var input = makeEl(doc, 'input', 'nn-tag-input')
+      input.setAttribute('type', 'text')
+      input.setAttribute('aria-label', 'New tag')
+      input.setAttribute('placeholder', 'tag')
+      input.setAttribute('data-nn-ctl', 'tag-input')
+      input.setAttribute('data-nn-review-ctl', '1')
+      var done = false
+      function finish(commit) {
+        if (done) return
+        done = true
+        var text = String(input.value || '').trim()
+        if (commit && text) {
+          var elTag = resolveElement(anchorData.elementId, anchorData.modelId)
+          var cur = effectiveTagsOf(elTag)
+          var known = cur.some(function (t) {
+            return valueKeyOf(t) === valueKeyOf(text)
+          })
+          if (!known) {
+            // The draft re-renders the card, which drops this input with it.
+            saveDraft(anchorData, {
+              kind: 'correction',
+              field: 'tags',
+              original: cur,
+              proposed: cur.concat([text]),
+            })
+            return
+          }
+        }
+        if (input.parentNode) input.parentNode.replaceChild(add, input)
+      }
+      input.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter') {
+          if (ev.preventDefault) ev.preventDefault()
+          finish(true)
+        } else if (ev.key === 'Escape') {
+          if (ev.preventDefault) ev.preventDefault()
+          finish(false)
+          if (typeof add.focus === 'function') add.focus()
+        }
+      })
+      input.addEventListener('blur', function () {
+        finish(true)
+      })
+      add.parentNode.replaceChild(input, add)
+      if (typeof input.focus === 'function') input.focus()
+    }
+
     function openFor(anchor, anchorData) {
       closePopover()
       lastAnchor = anchor
@@ -1464,7 +1518,7 @@
         add.setAttribute('type', 'button')
         add.setAttribute('aria-label', 'Propose a new tag')
         add.addEventListener('click', function () {
-          openFor(add, { elementId: elId, tagAdd: true })
+          startTagAdd(add, { elementId: elId, tagAdd: true })
         })
         row.appendChild(add)
       }

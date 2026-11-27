@@ -409,8 +409,15 @@
       return n + (Array.isArray(e.runs) ? e.runs.length : 0)
     }, 0)
     var strip = make('div', 'proc-structure-strip')
+    var plural = function (n, noun) {
+      return n + ' ' + noun + (n === 1 ? '' : 's')
+    }
     strip.appendChild(
-      make('div', 'proc-structure-summary', entries.length + ' procedures · ' + runCount + ' runs'),
+      make(
+        'div',
+        'proc-structure-summary',
+        plural(entries.length, 'procedure') + ' · ' + plural(runCount, 'run'),
+      ),
     )
     root.appendChild(strip)
     var defectsEl = make('div', 'proc-structure-defects')
@@ -550,7 +557,7 @@
       })
       var listEl = make('div', 'proc-blueprint-list')
       listEl.setAttribute('data-nn-procedures', 'blueprint')
-      listEl.appendChild(make('span', 'proc-blueprint-label', 'Procedures'))
+      listEl.appendChild(make('span', 'proc-blueprint-label', 'In the bluepriNNt'))
       list.forEach(function (p) {
         // A pill that looks selectable must select something: when this export carries the
         // definition document, clicking opens it; when it does not, the pill is a plain label
@@ -940,7 +947,10 @@
     function renderRunList(hostEl) {
       var runs = Array.isArray(active.runs) ? active.runs : []
       var bar = make('div', 'proc-runs')
-      bar.appendChild(make('span', 'proc-runs-label', 'Runs'))
+      // Three jobs, three places: the head holds the filter and the one action, the list below
+      // is the choice between the definition and a run. They used to wrap as one row of chips.
+      var head = make('div', 'proc-runs-head')
+      head.appendChild(make('span', 'proc-runs-label', 'Runs'))
       if (runs.length) {
         var filters = make('div', 'proc-run-filters')
         FILTERS.forEach(function (f) {
@@ -956,8 +966,9 @@
             ),
           )
         })
-        bar.appendChild(filters)
+        head.appendChild(filters)
       }
+      bar.appendChild(head)
       var list = make('div', 'proc-run-list')
       list.appendChild(
         button(
@@ -1016,7 +1027,7 @@
       }
       bar.appendChild(list)
       if (store && active.graph && !/^bluepriNNt:/.test(active.file)) {
-        bar.appendChild(
+        head.appendChild(
           button(
             'proc-start-run' + (startFormOpen ? ' active' : ''),
             'Start a run',
@@ -1592,8 +1603,9 @@
       var state = viewState()
       var w = geo.nodeW
       var h = geo.nodeH
+      // A faint wash, not a fill: a flow of green and amber slabs was the heaviest thing on the page.
       var tint = function (c) {
-        return blend(c, pal.surface, 0.14)
+        return blend(c, pal.surface, 0.07)
       }
       var data = Object.keys(graph.steps).map(function (slug) {
         var step = graph.steps[slug]
@@ -1603,7 +1615,7 @@
         var projected = isProjected(slug)
         var border = step.stepType === 'decision' ? pal.warning : pal.border
         var fill = pal.surface
-        var width = 1.5
+        var width = 1
         var type = 'solid'
         var opacity = 1
         if (status === 'done') {
@@ -1611,11 +1623,9 @@
           fill = tint(pal.success)
         } else if (status === 'failed') {
           border = pal.danger
-          width = 2
           fill = tint(pal.danger)
         } else if (status === 'waiting') {
           border = pal.warning
-          width = 2
           fill = tint(pal.warning)
         } else if (status === 'active') {
           border = pal.primary
@@ -1628,7 +1638,7 @@
         }
         if (isCurrent) {
           border = pal.primary
-          width = 3.5
+          width = 2
           type = 'solid'
         }
         if (projected) type = 'dotted'
@@ -1681,7 +1691,9 @@
           id: slug,
           name: step.name || slug,
           value: [geo.pos[slug].x, geo.pos[slug].y],
-          symbol: 'roundRect',
+          // 'roundRect' rounds by a fixed fraction of the box, which on these wide boxes
+          // made pills; a plain rectangle matches the metamodel boxes.
+          symbol: 'rect',
           symbolSize: [w, h],
           status: status,
           current: isCurrent,
@@ -1713,7 +1725,7 @@
                 fontSize: subSize,
                 lineHeight: 15,
                 color: isCurrent ? pal.primary : pal.muted,
-                fontWeight: 600,
+                fontWeight: 400,
               },
               title: {
                 width: inner,
@@ -1723,7 +1735,7 @@
                 fontSize: titleSize,
                 lineHeight: 18,
                 color: isCurrent ? pal.primary : pal.text,
-                fontWeight: isCurrent ? 700 : 600,
+                fontWeight: isCurrent ? 600 : 500,
               },
             },
           },
@@ -1754,7 +1766,7 @@
           var dashed = f.off || f.projected || f.status === 'waiting' || f.status === 'pending'
           var stroke = {
             color: color,
-            width: f.taken ? 3 : 1.5,
+            width: f.taken ? 2 : 1,
             type: dashed ? 'dashed' : 'solid',
             opacity: f.off ? 0.5 : 1,
           }
@@ -1779,7 +1791,7 @@
                   formatter: f.token.length > 24 ? f.token.substring(0, 22) + '…' : f.token,
                   color: f.taken ? pal.success : pal.muted,
                   fontSize: 11,
-                  fontWeight: 700,
+                  fontWeight: 500,
                   backgroundColor: pal.surface,
                   padding: [1, 4],
                   position: 'middle',
@@ -1819,7 +1831,7 @@
           coordinateSystem: 'cartesian2d',
           silent: true,
           z: 1,
-          symbol: 'roundRect',
+          symbol: 'rect',
           symbolSize: [w, h],
           showEffectOn: 'render',
           rippleEffect: { period: 3, scale: 1.2, brushType: 'stroke', color: pal.primary },
@@ -1833,9 +1845,9 @@
           coordinateSystem: 'cartesian2d',
           silent: true,
           z: 4,
-          symbol: 'roundRect',
+          symbol: 'rect',
           symbolSize: [w + 12, h + 12],
-          itemStyle: { color: 'rgba(0,0,0,0)', borderColor: pal.text, borderWidth: 3 },
+          itemStyle: { color: 'rgba(0,0,0,0)', borderColor: pal.text, borderWidth: 2 },
           data: [{ id: focusSlug, value: at(focusSlug) }],
         })
       }
@@ -2101,7 +2113,6 @@
       col.appendChild(head)
       var view = make('div', 'exec-dag-view graphbox')
       col.appendChild(view)
-      col.appendChild(stepList(lay, current))
       var hint = make(
         'div',
         'rail-hint hint',
@@ -2116,56 +2127,6 @@
         view.className += ' exec-dag-view-native'
         view.appendChild(buildNativeGraph(lay, current))
       }
-    }
-
-    /** The same walk as a vertical list: the graph's text alternative, with each status in words. */
-    var stepListOpen = null
-
-    function stepList(lay, current) {
-      var ol = make('ol', 'proc-step-list')
-      ol.setAttribute('data-proc-step-list', '')
-      lay.rows.forEach(function (row) {
-        row.forEach(function (slug) {
-          var step = active.graph.steps[slug]
-          var status = stepStatus(slug)
-          var li = make(
-            'li',
-            'proc-step-item ' +
-              status +
-              (slug === current ? ' current' : '') +
-              (slug === selectedStep ? ' selected' : ''),
-          )
-          li.setAttribute('data-step', slug)
-          var b = button('proc-step-item-btn', null, function () {
-            selectStep(slug)
-          })
-          b.appendChild(make('span', 'proc-step-item-name', step.name || slug))
-          var token = outcomeTokenOf(slug)
-          b.appendChild(
-            make(
-              'span',
-              'proc-step-item-meta',
-              (token ? 'if ' + token + ' · ' : '') +
-                (status === 'definition' ? step.executor || 'task' : status),
-            ),
-          )
-          li.appendChild(b)
-          ol.appendChild(li)
-        })
-      })
-      // A disclosure: in the tab order at every width, open by default only on a phone.
-      var box = make('details', 'proc-step-list-box')
-      var open =
-        stepListOpen === null
-          ? !!(host.matchMedia && host.matchMedia('(max-width: 640px)').matches)
-          : stepListOpen
-      if (open) box.setAttribute('open', '')
-      box.appendChild(make('summary', 'proc-step-list-summary', 'Steps as a list'))
-      box.addEventListener('toggle', function () {
-        stepListOpen = box.open
-      })
-      box.appendChild(ol)
-      return box
     }
 
     // ---- Step card ----
@@ -4094,7 +4055,7 @@
           ? 'The document as defined: each step with its instructions. No run state, no executed sequence.'
           : branches
             ? 'Steps in the order of progress. The branches and where each one leads are drawn in the flow graph.'
-            : 'A straight chain with no branches, in the order of progress. The flow graph shows the same steps.',
+            : 'A straight chain with no branches, in the order of progress.',
       )
       padFlow.appendChild(noteFlow)
 

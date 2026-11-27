@@ -7242,21 +7242,25 @@ button.btn-primary:hover:not(:disabled) {
   color: var(--nn-accent, #171717) !important;
 }
 #nn-rail details.collapse > summary.collapse-title {
-  padding: 8px 30px 8px 10px !important;
+  padding: 8px 10px 8px 30px !important;
   min-height: 2.25rem !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   border-radius: 6px;
 }
+/* The toggle sits before the name, the way a tree draws it: a chevron pointing
+   right when closed and down when open. */
 #nn-rail .collapse-arrow > .collapse-title:after {
   top: 50% !important;
-  right: 10px !important;
-  transform: translateY(-50%) rotate(45deg) !important;
+  left: 12px !important;
+  right: auto !important;
+  inset-inline-end: auto !important;
+  transform: translateY(-50%) rotate(-45deg) !important;
   box-shadow: 1.5px 1.5px 0 0 var(--nn-muted, #666666) !important;
 }
 #nn-rail details.collapse[open] > .collapse-title:after {
-  transform: translateY(-50%) rotate(225deg) !important;
+  transform: translateY(-65%) rotate(45deg) !important;
 }
 
 /* P1.5: Document view heading brand color */
@@ -7886,18 +7890,26 @@ button.btn-primary:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.18);
   color: #ffffff;
 }
-/* Blueprint accordion sections (the rail's top level): the same black bar and
-   white text the design system already uses for a selected model, so a group
-   reads as a section header instead of another model row. The chevron is drawn
-   with box-shadow in a fixed colour, so it needs its own override. */
+/* Blueprint accordion sections (the rail's top level): a quiet section header,
+   not a bar. The black fill is reserved for the one selected model, so a group
+   no longer outweighs the rows it contains. The chevron is drawn with
+   box-shadow in a fixed colour, so it needs its own override. */
 #nn-rail details.collapse.nn-rail-blueprint > summary.collapse-title {
-  background: var(--nn-accent, #171717);
-  color: #ffffff;
-  border-color: var(--nn-accent, #171717);
-  font-weight: 600;
+  background: transparent;
+  color: var(--muted, #52525b);
+  border-color: transparent;
+  border-bottom-color: #e5e5e5;
+  border-radius: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+#nn-rail details.collapse.nn-rail-blueprint > summary.collapse-title:hover {
+  color: var(--text, #0a0a0a);
 }
 #nn-rail details.collapse.nn-rail-blueprint > summary.collapse-title:after {
-  box-shadow: 1.5px 1.5px 0 0 #ffffff !important;
+  box-shadow: 1.5px 1.5px 0 0 currentColor !important;
 }
 
 #nn-rail .menu ul {
@@ -7919,7 +7931,11 @@ button.btn-primary:hover:not(:disabled) {
     background 0.12s ease,
     border-color 0.12s ease;
 }
-#nn-rail .menu li > a[data-concept] .nn-ku {
+/* The concept badge, one look everywhere: the tinted pill the rail always had.
+   The card header and the "What to look at" list used a black outlined box
+   for the same thing. The rail sets --rail-concept-color; elsewhere the badge
+   carries data-concept-slot, which sets --concept-slot-fg. */
+.nn-ku[data-ku-kind='section'][data-ku-nature='container'] {
   color: var(--rail-concept-color, var(--concept-slot-fg, #0a0a0a));
   font-weight: 700;
   font-size: 0.78rem;
@@ -8399,7 +8415,7 @@ button.cite-icon,
   margin-bottom: 14px !important;
 }
 #nn-rail details.collapse > summary.collapse-title {
-  padding: 8px 12px !important;
+  padding: 8px 12px 8px 30px !important;
   border-radius: 8px !important;
   margin-bottom: 6px !important;
 }
@@ -8706,22 +8722,10 @@ select {
   color: #fecdd3 !important;
 }
 
-/* 11. Domain Navbar Info Popover & Borderless Button */
+/* 11. Domain Navbar Info Popover & Icon Button */
+/* Look comes from .nn-navbar-action-btn (ui-kit); this only squares it to the icon. */
 .nn-navbar-info-btn {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  color: var(--nn-muted) !important;
-  cursor: pointer !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  font-size: 12px !important;
-}
-.nn-navbar-info-btn:hover {
-  background: #f1f5f9 !important;
-  color: #0f172a !important;
+  padding: 5px 7px;
 }
 .nn-navbar-info-popover {
   position: absolute !important;
@@ -9717,14 +9721,22 @@ select {
   margin-top: 4px;
 }
 
-/* ---- Vocabulary legend (under the tabs) ---- */
+/* ---- Vocabulary legend (inside the header info popover) ---- */
 .nn-vocab-legend {
-  margin: -8px 0 14px;
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
   font-size: 0.78rem;
   color: var(--muted);
 }
 
+.nn-vocab-legend div {
+  display: flex;
+  gap: 6px;
+}
+
 .nn-vocab-legend strong {
+  flex: 0 0 5.5em;
   color: var(--text);
   font-weight: 700;
 }
@@ -9755,7 +9767,6 @@ select {
 
 .nn-summary-attention {
   border: 1px solid var(--border);
-  border-left: 4px solid #f59e0b;
   border-radius: var(--radius);
   background: var(--surface);
   padding: 12px 16px;
@@ -10150,7 +10161,7 @@ select {
 }
 
 .nn-pipeline-node:hover .nn-ku {
-  background: color-mix(in srgb, var(--primary) 8%, var(--surface-2));
+  background: var(--surface-2);
 }
 
 .nn-pipeline-node:focus-visible {
@@ -10158,15 +10169,17 @@ select {
   outline-offset: 2px;
 }
 
+/* Selected = a crisp 1px outline on a white badge. The old 2px translucent ring
+   over a tinted fill read as a grey smudge, because --primary is near black. */
 .nn-pipeline-node.nn-pipeline-highlight .nn-ku,
 .nn-pipeline-node.nn-pipeline-selected .nn-ku {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent);
-  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+  box-shadow: 0 0 0 1px var(--primary);
+  background: var(--surface);
 }
 
 .nn-pipeline-node.nn-pipeline-connected .nn-ku {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent);
-  background: color-mix(in srgb, var(--primary) 6%, var(--surface-2));
+  background: var(--surface-2);
 }
 
 .nn-pipeline-node.dimmed {
@@ -10683,6 +10696,9 @@ button.proc-inbox-open:hover {
 .proc-runs {
   flex-wrap: wrap;
   row-gap: 8px;
+  /* The bar sits inside a bordered card: without side padding the "Runs" label
+     touched that border and read as clipped. 16px matches the card's other rows. */
+  padding: 0 16px;
 }
 .proc-run-filters,
 .proc-run-list {
@@ -10777,27 +10793,6 @@ button.proc-run.proc-run-unsent {
   font-weight: 700;
   fill: var(--muted);
 }
-/* The step list is the flow graph's text alternative: a disclosure, so it is in the tab
-   order at every width and opening or closing it never moves the graph under the pointer. */
-.proc-step-list {
-  list-style: none;
-  margin: 0;
-  padding: 8px;
-}
-.proc-step-list-box {
-  border-top: 1px solid var(--border);
-}
-.proc-step-list-summary {
-  cursor: pointer;
-  padding: 8px 13px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-}
-.proc-step-list-summary:focus-visible {
-  outline: 3px solid var(--primary);
-  outline-offset: -3px;
-}
 .dag-graph {
   position: relative;
   border-radius: var(--radius-sm);
@@ -10845,38 +10840,6 @@ button.proc-run.proc-run-unsent {
   .dag-node {
     transition: none;
   }
-}
-.proc-step-item + .proc-step-item {
-  margin-top: 6px;
-}
-button.proc-step-item-btn {
-  appearance: none;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-  text-align: left;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-  padding: 8px 10px;
-  cursor: pointer;
-}
-.proc-step-item.done button.proc-step-item-btn {
-  border-color: var(--success);
-}
-.proc-step-item.current button.proc-step-item-btn {
-  border: 2px solid var(--primary);
-}
-.proc-step-item-name {
-  font-weight: 600;
-  font-size: 0.86rem;
-}
-.proc-step-item-meta {
-  font-size: 0.72rem;
-  color: var(--muted);
 }
 @media (max-width: 640px) {
   .exec-dag-view-native {
@@ -11096,6 +11059,18 @@ button.proc-step-item-btn {
 }
 .proc-nav .proc-runs {
   border-top: 1px solid var(--border);
+}
+/* Inside .proc-main the runs bar is a row of that card, not a second card: it
+   inherits the card's own border and shadow and spans its full width. */
+.proc-main > .proc-nav {
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.proc-main > .proc-nav .proc-runs {
+  border-top: 0;
 }
 
 .proc-main {
@@ -11584,4 +11559,196 @@ table.proc-artifacts-table tbody tr:hover {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
   border-radius: var(--radius-sm, 6px);
+}
+
+/* ---- Procedures: runs bar, blueprint list and stepper (2026-11-27 feedback) ----
+   Later rules on purpose: the rules above are scattered across the file. */
+
+/* The runs bar: a head (label, filter, the one action) over the list of choices. */
+.proc-runs {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.proc-runs-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.proc-runs-head .proc-runs-label {
+  margin-right: 0;
+}
+/* The filter is one segmented control, quieter than the run chips it filters. */
+.proc-runs-head .proc-run-filters {
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.proc-runs-head button.proc-run-filter {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+  padding: 3px 10px;
+}
+.proc-runs-head button.proc-run-filter + button.proc-run-filter {
+  border-left: 1px solid var(--border);
+}
+.proc-runs-head button.proc-run-filter.active {
+  background: var(--surface-2);
+  color: var(--text);
+  font-weight: 600;
+}
+.proc-runs-head button.proc-start-run {
+  margin-left: auto;
+}
+button.proc-run {
+  font-weight: 500;
+}
+button.proc-run.active {
+  font-weight: 600;
+}
+
+/* The bluepriNNt's own procedures: a plain line, not a row of disabled pills. */
+.proc-blueprint-item {
+  font-weight: 500;
+}
+.proc-blueprint-item.is-orphan {
+  opacity: 1;
+  background: transparent;
+  border-style: dashed;
+  color: var(--muted);
+}
+
+/* The stepper: a light list. Name in regular weight, status as a small tag, the
+   number quiet; the weight of the page is carried by the open step's card. */
+.proc-step-toggle {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.proc-step-toggle .badge {
+  flex: 0 0 auto;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.proc-step-toggle .badge.done {
+  border-color: color-mix(in srgb, var(--success) 35%, var(--border));
+  background: color-mix(in srgb, var(--success) 8%, var(--surface));
+  color: var(--success);
+}
+.proc-step-toggle .badge.waiting {
+  border-color: color-mix(in srgb, var(--warning) 40%, var(--border));
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+  color: var(--text);
+}
+.proc-step-toggle .badge.failed {
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  color: var(--danger);
+}
+.proc-timeline-number {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+.proc-flow-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* ---- Details modal, inline tag input, Files sidebar, empty matrix cells (2026-11-27 feedback) ---- */
+
+/* The unit details list (View tab of the unit modal) was the browser's bare dt/dd. */
+.nn-ku-info-sub {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.nn-ku-info-list {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px 20px;
+  margin: 0;
+  font-size: 0.85rem;
+}
+.nn-ku-info-term {
+  color: var(--muted);
+  font-weight: 500;
+}
+.nn-ku-info-def {
+  margin: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+/* "+ tag" becomes this input; it is as tall as the button it replaces. */
+.nn-tag-input {
+  width: 9em;
+  padding: 0.1em 0.55em;
+  border: 1px solid var(--border-strong, var(--border));
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.78rem;
+}
+.nn-tag-input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+
+/* Files sidebar: the same field, icons and quiet type as the rest of the console. */
+.nn-files-sidebar .nn-input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+}
+.nn-files-sidebar .nn-input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+.nn-category-header .chevron,
+.nn-file-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+}
+.nn-file-icon {
+  opacity: 1;
+}
+
+/* An empty matrix cell draws nothing and is itself the control. */
+.nn-matrix-cell-empty {
+  cursor: pointer;
+}
+.nn-matrix-cell-empty > * {
+  visibility: hidden;
+}
+.nn-matrix-cell-empty:hover,
+.nn-matrix-cell-empty:focus-visible {
+  background: var(--surface-2);
+}
+.nn-matrix-cell-empty:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+/* An element badge is never bold, even inside a table header, which is bold by default. */
+.nn-ku[data-ku-kind='element'] {
+  font-weight: 400;
 }
