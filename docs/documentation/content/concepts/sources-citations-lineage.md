@@ -78,6 +78,12 @@ the filesystem and the edges from the applied changes:
 There is no record to refresh, so there is nothing to drift: the projection is recomputed on
 every call.
 
+`read_lineage` answers in pages so that a large domaiNN stays readable. The default call
+returns the number of items in every section (`totals`) and the first page of each, with a
+`next_cursor` for each section that holds more. The agent reads the rest of one section by
+calling again with `section` and that cursor, page by page, until the cursor comes back
+empty. `focus` and `scope` narrow every page and every total the same way.
+
 ## `resolve_sources`
 
 `resolve_sources` is the read-only tool that turns a Citation back into evidence. Given

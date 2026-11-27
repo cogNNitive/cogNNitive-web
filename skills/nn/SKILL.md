@@ -154,7 +154,11 @@ applied changes. Surface these capabilities when the user asks where a value cam
 produced an artifact:
 
 - `read_lineage` — the computed lineage view (`sources`, `models`, `artifacts`, `changes`,
-  `edges`, `diagnostics`); read-only, `focus`/`scope` narrow it.
+  `edges`, `diagnostics`); read-only, `focus`/`scope` narrow it. It is paginated: the default
+  call returns `totals` and the first page of each section, never the whole view. Read
+  `totals` first; to read more of one section, call again with `section` and that section's
+  `next_cursor` as `cursor` until `next_cursor` is null. Never conclude an item is absent
+  from a first page alone.
 - `resolve_sources` — the evidence of the last applied change of a unit (field, body or cell),
   each entry carrying its `changeId`.
 - `produce_artifact` — the change that records an artifact a producer wrote (`curate-csv` and

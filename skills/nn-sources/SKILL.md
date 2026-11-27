@@ -429,6 +429,11 @@ Lineage is **computed**, never persisted: `read_lineage` projects the inventory 
 The projection is recomputed on every call; there is no persisted copy and therefore no
 idempotent-replace step, no duplicate entries and nothing to drift.
 
+`read_lineage` is paginated. The default call returns `totals` for every section and only
+its first page; a large domain holds far more. Page through one section with `section` plus
+the `next_cursor` it returned (passed as `cursor`) until `next_cursor` is null, and narrow
+with `focus` before paging when you are looking for one file.
+
 - **`# NN Procedures`** is an **append-only run log**. Each scripted pipeline run (`--scan`, `--import-url`) appends one `## NN Procedures:` entry (`command`, `flags`, `run_at`, `inputs`, `outputs`). A section refresh never removes existing procedure entries. The agent should still add `## NN Procedures:` entries by hand for **non-scripted** research/analysis steps it performs itself. This is distinct from the `procedures/` directory, which holds saved, user-authored orchestration specs.
 
 Lineage is computed, never persisted: there is no record to drift. Provenance lives in
