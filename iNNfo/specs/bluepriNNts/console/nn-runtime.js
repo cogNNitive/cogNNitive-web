@@ -6859,11 +6859,18 @@
     var holder = el('span', 'nn-summary-concept-ref')
     holder.setAttribute('data-concept', concept)
     var meta = conceptMetaOf(schema && schema.concepts, concept)
-    var badge = UI.Ku(
-      'section',
-      { model: modelId, concept: concept, label: concept, index: meta.index, color: meta.color },
-      { doc: doc },
-    )
+    var isBlueprint = modelId && modelId.startsWith('specs/')
+    var kind = isBlueprint ? 'concept' : 'section'
+    var ref = isBlueprint
+      ? {
+          family: modelId.slice(6),
+          concept: concept,
+          label: concept,
+          index: meta.index,
+          color: meta.color,
+        }
+      : { model: modelId, concept: concept, label: concept, index: meta.index, color: meta.color }
+    var badge = UI.Ku(kind, ref, { doc: doc })
     holder.appendChild(badge)
     var unit = holder.querySelector('.nn-ku')
     if (unit) {
@@ -6878,6 +6885,97 @@
   function openConceptWindow(holder) {
     var more = holder && holder.querySelector('[data-ku-more]')
     if (more && typeof more.click === 'function') more.click()
+  }
+
+  // Helper to determine the scoped console file path for an instance model
+  function scopedConsoleHref(m) {
+    var stem = ''
+    if (m.filePath) {
+      stem = m.filePath
+        .replace(/\\/g, '/')
+        .split('/')
+        .pop()
+        .replace(/\.[^/.]+$/, '')
+        .replace(/_NN$/, '')
+      if (m.family && stem.endsWith('_' + m.family)) {
+        stem = stem.slice(0, -(m.family.length + 1))
+      }
+    }
+    if (!stem && m.storage && m.storage.slug) {
+      stem = m.storage.slug
+    }
+    if (!stem && m.id) {
+      stem = m.id.split('/').pop()
+    }
+    return 'artifacts/' + stem + '_console/' + stem + '_console.html'
+  }
+
+  function rootElementOf(m, elements) {
+    var mId = m.id
+    var rootConcept = m.storage && m.storage.concept
+    var rootSlug = m.storage && m.storage.slug
+    for (var i = 0; i < elements.length; i++) {
+      var el = elements[i]
+      if (el && el.modelId === mId) {
+        if (rootConcept && el.concept === rootConcept) return el
+        if (rootSlug && el.slug === rootSlug) return el
+      }
+    }
+    for (var j = 0; j < elements.length; j++) {
+      if (elements[j] && elements[j].modelId === mId) return elements[j]
+    }
+    return null
+  }
+
+  function renderInstanceRow(doc, m, elements, schema) {
+    var row = el('div', 'nn-summary-instance-row')
+    row.setAttribute('data-model', m.id)
+    var ownCount = elements.filter(function (e) {
+      return e.modelId === m.id
+    }).length
+    var rootEl = rootElementOf(m, elements)
+    var status =
+      rootEl && (rootEl.status || (rootEl.fields && (rootEl.fields.status || rootEl.fields.state)))
+
+    var idCol = el('div', 'nn-summary-instance-id-col')
+    var code = el('code', 'nn-summary-instance-id', m.id)
+    idCol.appendChild(code)
+    if (m.title && m.title !== m.id && m.title !== (m.storage && m.storage.slug)) {
+      idCol.appendChild(el('span', 'nn-summary-instance-title', m.title))
+    }
+    row.appendChild(idCol)
+
+    var metaCol = el('div', 'nn-summary-instance-meta-col')
+    metaCol.appendChild(
+      el('span', 'nn-summary-instance-elements', plural(ownCount, 'element', 'elements')),
+    )
+    if (status) {
+      var statusBadge = el('span', 'nn-summary-instance-status', String(status))
+      statusBadge.setAttribute('data-status', String(status).toLowerCase())
+      metaCol.appendChild(statusBadge)
+    }
+    if (m.storage && m.storage.placement === 'PLACEMENT_MISMATCH') {
+      var placementWarn = el('span', 'nn-summary-instance-warning-badge', 'PLACEMENT_MISMATCH')
+      metaCol.appendChild(placementWarn)
+    }
+    row.appendChild(metaCol)
+
+    var actionsCol = el('div', 'nn-summary-instance-actions')
+    var openBtn = el('button', 'nn-summary-instance-open', 'Knowledge')
+    openBtn.setAttribute('type', 'button')
+    openBtn.setAttribute('title', 'Open in Knowledge')
+    openBtn.addEventListener('click', function () {
+      revealInKnowledge(doc, formatFacetToken('model', m.id))
+    })
+    actionsCol.appendChild(openBtn)
+
+    var consoleLink = el('a', 'nn-summary-instance-link', 'Console')
+    consoleLink.setAttribute('href', scopedConsoleHref(m))
+    consoleLink.setAttribute('title', 'Open scoped console')
+    actionsCol.appendChild(consoleLink)
+    row.appendChild(actionsCol)
+
+    return row
   }
 
   // Each model card: title, bluepriNNt, size, completeness and a stacked bar of its
@@ -6898,6 +6996,25 @@
     head.appendChild(el('h3', 'nn-summary-model-title', m.title || m.id))
     head.appendChild(el('span', 'nn-summary-model-blueprint', m.blueprint || ''))
     card.appendChild(head)
+
+    var holdsDistributed = (m.conceptNames || []).some(function (cName) {
+      var cDef = ((schema && schema.concepts) || []).find(function (c) {
+        return c && c.name === cName
+      })
+      return (
+        cDef &&
+        cDef.storage &&
+        (cDef.storage === 'distributed' || cDef.storage.mode === 'distributed')
+      )
+    })
+    var isMixed = (m.storage && m.storage.problem === 'mixed') || holdsDistributed
+    if (isMixed) {
+      var warnBox = el('div', 'nn-summary-model-warning')
+      warnBox.appendChild(el('span', 'nn-warning-icon', '⚠'))
+      warnBox.appendChild(doc.createTextNode(' Holds distributed elements (mixed storage)'))
+      card.appendChild(warnBox)
+    }
+
     card.appendChild(
       el(
         'p',
@@ -6990,13 +7107,51 @@
     }).length
     var fill = fieldFill(elements, schema)
     var domain = (meta && meta.domain) || {}
-    // The model a concept belongs to, for its badge address: the first model that
-    // holds or declares it.
+
+    // Separate compact (structural) models from distributed instance models
+    var compactModels = models.filter(function (m) {
+      return !m.storage || m.storage.kind !== 'instance'
+    })
+    var instanceModels = models.filter(function (m) {
+      return m.storage && m.storage.kind === 'instance'
+    })
+
+    // Distributed concepts declared in schema or present on instance models
+    var schemaConcepts = schema && Array.isArray(schema.concepts) ? schema.concepts : []
+    var declaredDistributed = schemaConcepts.filter(function (c) {
+      return c && c.storage && (c.storage === 'distributed' || c.storage.mode === 'distributed')
+    })
+    var distConceptByName = {}
+    declaredDistributed.forEach(function (c) {
+      distConceptByName[c.name] = c
+    })
+    instanceModels.forEach(function (m) {
+      var cName = m.storage && m.storage.concept
+      if (cName && !distConceptByName[cName]) {
+        distConceptByName[cName] = { name: cName, storage: { mode: 'distributed' } }
+      }
+    })
+    var allDistConceptNames = Object.keys(distConceptByName)
+
+    // The model a concept belongs to, for its badge address: compact models first,
+    // then the bluepriNNt that declares it. A concept has no owning instance.
     function conceptHome(c) {
-      for (var i = 0; i < models.length; i++) {
-        var mm = models[i]
-        var names = (mm.declaredConcepts || []).concat(mm.conceptNames || [])
-        if (names.indexOf(c) >= 0) return mm.id
+      for (var i = 0; i < compactModels.length; i++) {
+        var mm = compactModels[i]
+        if ((mm.conceptNames || []).indexOf(c) >= 0) return mm.id
+      }
+      for (var j = 0; j < compactModels.length; j++) {
+        var mm2 = compactModels[j]
+        if ((mm2.declaredConcepts || []).indexOf(c) >= 0) return mm2.id
+      }
+      var cObj = schemaConcepts.find(function (x) {
+        return (
+          x &&
+          (x.name === c || String(x.name || '').toLowerCase() === String(c || '').toLowerCase())
+        )
+      })
+      if (cObj && cObj.declaredBy && (cObj.declaredBy.family || cObj.declaredBy.name)) {
+        return 'specs/' + (cObj.declaredBy.family || cObj.declaredBy.name)
       }
       return (meta && (meta.modelId || meta.model)) || ''
     }
@@ -7005,7 +7160,27 @@
     if (domain.title) root.appendChild(el('h2', 'nn-summary-title', domain.title))
 
     var kpis = el('div', 'nn-files-kpis nn-summary-kpis')
-    kpis.appendChild(kpiCard('Models', String(models.length), 'documents of kNNowledge'))
+    kpis.appendChild(kpiCard('Models', String(compactModels.length), 'structural documents'))
+
+    var instanceCounts = {}
+    instanceModels.forEach(function (m) {
+      var c = (m.storage && m.storage.concept) || 'Unknown'
+      instanceCounts[c] = (instanceCounts[c] || 0) + 1
+    })
+    var instanceSubParts = []
+    allDistConceptNames.forEach(function (cName) {
+      if (instanceCounts[cName]) {
+        instanceSubParts.push(cName + ' ' + instanceCounts[cName])
+      }
+    })
+    Object.keys(instanceCounts).forEach(function (c) {
+      if (allDistConceptNames.indexOf(c) === -1) {
+        instanceSubParts.push(c + ' ' + instanceCounts[c])
+      }
+    })
+    var instanceSub = instanceSubParts.length ? instanceSubParts.join(' · ') : '0 instances'
+    kpis.appendChild(kpiCard('Instances', String(instanceModels.length), instanceSub))
+
     kpis.appendChild(kpiCard('Concepts', String(conceptNames.length), 'types of card'))
     kpis.appendChild(kpiCard('Elements', String(elements.length), 'cards across all models'))
     kpis.appendChild(
@@ -7063,14 +7238,190 @@
       root.appendChild(attention)
     }
 
-    root.appendChild(el('h3', 'nn-summary-section', 'Models'))
-    var grid = el('div', 'nn-summary-models')
-    root.appendChild(grid)
+    // Two sections when distributed concepts or instance models exist, single section when none or scoped
+    var isScoped =
+      meta &&
+      meta.consoleScope &&
+      Array.isArray(meta.consoleScope.models) &&
+      meta.consoleScope.models.length > 0
+    var hasDistributedSection =
+      (allDistConceptNames.length > 0 || instanceModels.length > 0) && !isScoped
+
+    if (!hasDistributedSection) {
+      // Single group shows no sections
+      if (compactModels.length > 0) {
+        root.appendChild(el('h3', 'nn-summary-section', 'Models'))
+        var grid = el('div', 'nn-summary-models')
+        root.appendChild(grid)
+        compactModels.forEach(function (m) {
+          grid.appendChild(renderSummaryModelCard(doc, m, elements, schema))
+        })
+      } else if (instanceModels.length > 0) {
+        var instContainer = el('div', 'nn-summary-instances')
+        root.appendChild(instContainer)
+        instanceModels.forEach(function (m) {
+          instContainer.appendChild(renderInstanceRow(doc, m, elements, schema))
+        })
+      }
+    } else {
+      // Section 1: MODELS
+      if (compactModels.length > 0) {
+        var modelsHead = el('div', 'nn-summary-section-head')
+        modelsHead.appendChild(el('h3', 'nn-summary-section', 'Models'))
+        modelsHead.appendChild(
+          el(
+            'span',
+            'nn-summary-section-meta',
+            plural(compactModels.length, 'structural document', 'structural documents'),
+          ),
+        )
+        root.appendChild(modelsHead)
+        var compactGrid = el('div', 'nn-summary-models')
+        root.appendChild(compactGrid)
+        compactModels.forEach(function (m) {
+          compactGrid.appendChild(renderSummaryModelCard(doc, m, elements, schema))
+        })
+      }
+
+      // Section 2: INSTANCE MODELS
+      var instHead = el('div', 'nn-summary-section-head')
+      instHead.appendChild(el('h3', 'nn-summary-section', 'Instance Models'))
+      instHead.appendChild(
+        el(
+          'span',
+          'nn-summary-section-meta',
+          plural(instanceModels.length, 'document', 'documents') +
+            ' · ' +
+            plural(allDistConceptNames.length, 'distributed concept', 'distributed concepts'),
+        ),
+      )
+      root.appendChild(instHead)
+
+      var instHost = el('div', 'nn-summary-instances')
+      root.appendChild(instHost)
+
+      // Unplaced detection
+      var parentInstanceIds = new Set(
+        instanceModels.map(function (m) {
+          return m.id
+        }),
+      )
+      instanceModels.forEach(function (m) {
+        if (m.storage && m.storage.slug) parentInstanceIds.add(m.storage.slug)
+      })
+
+      function checkUnplaced(m) {
+        if (!m.storage || m.storage.kind !== 'instance') return false
+        if (m.storage.placement === 'PLACEMENT_MISMATCH') return true
+        var cDef = distConceptByName[m.storage.concept]
+        if (cDef && cDef.storage && cDef.storage.container) {
+          if (!m.storage.container || !parentInstanceIds.has(m.storage.container)) return true
+        }
+        return false
+      }
+
+      var unplaced = instanceModels.filter(checkUnplaced)
+      var placed = instanceModels.filter(function (m) {
+        return !checkUnplaced(m)
+      })
+
+      // Hierarchy: Root concepts (no container)
+      var rootConcepts = allDistConceptNames.filter(function (cName) {
+        var cDef = distConceptByName[cName]
+        return !(cDef && cDef.storage && cDef.storage.container)
+      })
+
+      rootConcepts.forEach(function (rcName) {
+        var rcDef = distConceptByName[rcName]
+        var rcInstances = placed.filter(function (m) {
+          return m.storage && m.storage.concept === rcName
+        })
+        var bpName =
+          (rcDef && rcDef.declaredBy && (rcDef.declaredBy.name || rcDef.declaredBy.family)) ||
+          (rcInstances[0] && rcInstances[0].blueprint) ||
+          ''
+
+        var group = el('details', 'nn-summary-instance-group')
+        if (rcInstances.length > 0) group.setAttribute('open', '')
+
+        var summary = el('summary', 'nn-summary-instance-group-head')
+        summary.appendChild(el('span', 'nn-summary-group-title', rcName))
+        summary.appendChild(
+          el('span', 'nn-summary-group-count', plural(rcInstances.length, 'instance', 'instances')),
+        )
+        if (bpName) summary.appendChild(el('span', 'nn-summary-group-blueprint', bpName))
+        group.appendChild(summary)
+
+        rcInstances.forEach(function (inst) {
+          var box = el('div', 'nn-summary-instance-box')
+          box.appendChild(renderInstanceRow(doc, inst, elements, schema))
+
+          // Check for child concepts nested under this concept
+          allDistConceptNames.forEach(function (childCName) {
+            var childDef = distConceptByName[childCName]
+            if (childDef && childDef.storage && childDef.storage.container === rcName) {
+              var childInstances = placed.filter(function (cm) {
+                return (
+                  cm.storage &&
+                  cm.storage.concept === childCName &&
+                  (cm.storage.container === inst.id ||
+                    cm.storage.container === (inst.storage && inst.storage.slug))
+                )
+              })
+              if (childInstances.length > 0) {
+                var childGroup = el(
+                  'details',
+                  'nn-summary-instance-group nn-summary-instance-group--nested',
+                )
+                childGroup.setAttribute('open', '')
+                var childSummary = el('summary', 'nn-summary-instance-group-head')
+                childSummary.appendChild(el('span', 'nn-summary-group-title', childCName))
+                childSummary.appendChild(
+                  el('span', 'nn-summary-group-container', 'container: ' + rcName),
+                )
+                childSummary.appendChild(
+                  el(
+                    'span',
+                    'nn-summary-group-count',
+                    plural(childInstances.length, 'instance', 'instances'),
+                  ),
+                )
+                childGroup.appendChild(childSummary)
+                childInstances.forEach(function (cInst) {
+                  childGroup.appendChild(renderInstanceRow(doc, cInst, elements, schema))
+                })
+                box.appendChild(childGroup)
+              }
+            }
+          })
+          group.appendChild(box)
+        })
+
+        instHost.appendChild(group)
+      })
+
+      // Unplaced instances group with a warning
+      if (unplaced.length > 0) {
+        var warnGroup = el(
+          'details',
+          'nn-summary-instance-group nn-summary-instance-group--warning',
+        )
+        warnGroup.setAttribute('open', '')
+        var warnSummary = el('summary', 'nn-summary-instance-group-head')
+        warnSummary.appendChild(el('span', 'nn-summary-group-warning-icon', '⚠'))
+        warnSummary.appendChild(el('span', 'nn-summary-group-title', 'Unplaced instances'))
+        warnSummary.appendChild(
+          el('span', 'nn-summary-group-count', plural(unplaced.length, 'instance', 'instances')),
+        )
+        warnGroup.appendChild(warnSummary)
+        unplaced.forEach(function (uInst) {
+          warnGroup.appendChild(renderInstanceRow(doc, uInst, elements, schema))
+        })
+        instHost.appendChild(warnGroup)
+      }
+    }
+
     host.appendChild(root)
-    // Cards are drawn after they are in the document so the charts get a width.
-    models.forEach(function (m) {
-      grid.appendChild(renderSummaryModelCard(doc, m, elements, schema))
-    })
   }
 
   // ---- Versions tab: which bluepriNNts, whether they are current, what is installed ----

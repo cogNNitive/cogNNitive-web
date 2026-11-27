@@ -2628,6 +2628,17 @@ export async function writeConsole(opts = {}) {
         name: blueprintParsed ? blueprintParsed.base : null,
         url: (m.fm && m.fm.parent_spec && m.fm.parent_spec.url) || null,
       })
+      const rawStorage = domainIndex.byPath(relPath)?.storage
+      const isMisplaced = domainIndex.diagnostics.some(
+        (d) => d.code === 'PLACEMENT_MISMATCH' && d.paths.includes(relPath),
+      )
+      const isMixed = domainIndex.diagnostics.some(
+        (d) => d.code === 'MIXED_INSTANCE_MODEL' && d.paths.includes(relPath),
+      )
+      const storage = rawStorage ? { ...rawStorage } : { kind: 'compact' }
+      if (isMisplaced) storage.placement = 'PLACEMENT_MISMATCH'
+      if (isMixed) storage.problem = 'mixed'
+
       modelSummaries.push({
         id: mId,
         title: mTitle,
@@ -2653,6 +2664,7 @@ export async function writeConsole(opts = {}) {
           ),
         ),
         elementCount: Array.isArray(payload.model.elements) ? payload.model.elements.length : 0,
+        storage,
       })
       scopeModelIds.push(mId)
     }
@@ -2808,6 +2820,7 @@ export async function writeConsole(opts = {}) {
         ownership: 'derived',
         conceptNames: ['Change'],
         elementCount: changeUnitCount,
+        storage: { kind: 'compact' },
       })
       scopeModelIds.push(CHANGES_MODEL_ID)
     }
