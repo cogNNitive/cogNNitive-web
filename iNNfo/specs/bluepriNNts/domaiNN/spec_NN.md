@@ -7,7 +7,7 @@ parent_spec:
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
 title: "DomaiNN Blueprint"
 blueprint_name: "domaiNN"
-blueprint_version: "V_0-4-1"
+blueprint_version: "V_0-4-2"
 relationship_types:
   hierarchy:
     enabled: true
@@ -121,7 +121,7 @@ A domaiNN is the container for a body of kNNowledge. It is itself a kNNowledge d
 
 - Define the domaiNN root as an ordinary Level-3 kNNowledge document governed by this blueprint.
 - Standardize the directory layout: `kNNowledge/` for knowledge and `specs/bluepriNNts/` for local bluepriNNts.
-- Make every domaiNN resolvable offline through the parent chain (`domaiNN` → iNNfo V_0-5-0 → defiNNition).
+- Make every domaiNN resolvable offline through the parent chain (`domaiNN` → iNNfo V_0-6-0 → defiNNition).
 
 ## Specification
 

@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
-blueprint_version: "V_0-2-0"
+blueprint_version: "V_0-2-1"
 title: "Sidecar App"
 relationship_types:
   hierarchy:
@@ -91,7 +91,7 @@ description:: Optional. ISO-8601 UTC instant at which the subject was copied or 
 
 A sidecar binds metadata to bytes. It sits next to its subject, keeps the subject's original extension in its own name, and records the subject's hash, size, and format. For binary subjects it also carries a normalized Markdown body, so citations by heading or row stay valid while the raw file stays untouched. Text-native subjects (Markdown, CSV, JSON) need no body: the file is its own text.
 
-A sidecar is a concept, not a new level. It is a kNNowledge-level document that is never a model: model discovery, manifests, console targets, and editor workspace detection all ignore it. It is created or refreshed by the `cognitivize` operation, which is the only writer. Raw files and write-once artifacts are never edited; a sidecar is rewritten when the subject's hash changes.
+A sidecar is a concept, not a new level. It is a kNNowledge-level document that is never a model: model discovery, manifests, console targets, and editor workspace detection all ignore it. Sidecar fields serialize as YAML frontmatter in companion `<file>.<ext>_sidecar_NN.md` files rather than markdown concept blocks in the body. For binary subjects, the optional body holds normalized Markdown headings; for text-native subjects, the body is empty. It is created or refreshed by the `cognitivize` operation, which is the only writer. Raw files and write-once artifacts are never edited; a sidecar is rewritten when the subject's hash changes.
 
 ## Naming
 

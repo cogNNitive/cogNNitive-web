@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-9-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-9-0_NN.md"
-blueprint_version: "V_0-7-0"
+blueprint_version: "V_0-7-1"
 title: "Executions App"
 description: "Level-2 blueprint recording runs of procedures as models with state: one instance model per run, holding its header, one row per step and one row per artifact; the history of the run is the change log of that model."
 relationship_types:
@@ -202,14 +202,14 @@ options:: [file, element, changeset]
 description:: How the artifact is carried: a file, a model element, or a changeset of several elements.
 
 ## NN Field Definition: value
-concept:: Run Artifact
+concept:: [Run Artifact, Input]
 type:: string
-description:: Where the artifact is: a path, a model@element address, or a changeset path.
+description:: Where the artifact is (a path, a model@element address, or a changeset path) or the recorded value of an input.
 
 ## NN Field Definition: rev
 concept:: [Run Artifact, Input]
 type:: string
-description:: The revision that pins the artifact (sha256 for a file, the element's origin change id for an element, the applied change for a changeset) or the recorded input's value.
+description:: The revision that pins the artifact or input (sha256 for a file, the element's origin change id for an element, or the applied change for a changeset).
 
 # Executions App
 
@@ -289,7 +289,7 @@ level: 3
 parent_spec:
   name: executions
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/executions/spec_NN.md"
-blueprint_version: "V_0-7-0"
+blueprint_version: "V_0-7-1"
 status: active
 ---
 

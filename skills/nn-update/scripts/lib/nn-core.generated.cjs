@@ -7396,80 +7396,15 @@ function slugify(name) {
   return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().replace(/[\s_]+/g, "-").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-// iNNfo/packages/nn-core/src/scaffold/domain.ts
-var DOMAIN_BLUEPRINT_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md";
-var DOMAIN_DIRS = [
-  "kNNowledge",
-  "sources/import",
-  "sources/sync",
-  "sources/conversations",
-  "conversations",
-  "artifacts",
-  "procedures",
-  "staging",
-  "changes"
-];
-var DOMAIN_MANIFEST_FILE = "domaiNN_NN.md";
-var SOURCES_CATALOG_FILE = "sources/sources_NN.md";
-var SOURCES_BLUEPRINT_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md";
-function planDomainScaffold(input) {
-  const name = input.name.trim();
-  const workspaceId = (input.workspaceId?.trim() || slugify(name)).trim();
-  const esc = (s) => JSON.stringify(s);
-  const heading = name.split(/\s+/).join(" ");
-  const manifest = [
-    "---",
-    "level: 3",
-    "parent_spec:",
-    '  name: "domaiNN"',
-    `  url: ${esc(DOMAIN_BLUEPRINT_URL)}`,
-    'knowledge_version: "V_0-1-0"',
-    `title: ${esc(name)}`,
-    `workspace_id: ${esc(workspaceId)}`,
-    "---",
-    "",
-    "# NN index",
-    "",
-    "* [[domaiNN]]",
-    "",
-    "# NN domaiNN",
-    "",
-    `## NN domaiNN: ${heading}`,
-    "knowledge_dir:: kNNowledge/",
-    "blueprints_dir:: specs/bluepriNNts/",
-    `${heading} \u2014 an empty domaiNN. Add models with an add_model changeset; every change to its content goes through a changeset.`,
-    ""
-  ].join("\n");
-  const catalog = [
-    "---",
-    "level: 3",
-    "parent_spec:",
-    '  name: "sources"',
-    `  url: ${esc(SOURCES_BLUEPRINT_URL)}`,
-    'knowledge_version: "V_0-1-0"',
-    `title: ${esc(`${name} Sources`)}`,
-    "---",
-    "",
-    "# NN index",
-    "",
-    "* [[Source]]",
-    "* [[Synchronization]]",
-    "",
-    "# NN Source",
-    "",
-    "# NN Synchronization",
-    ""
-  ].join("\n");
-  return {
-    dirs: [...DOMAIN_DIRS],
-    files: [
-      { path: DOMAIN_MANIFEST_FILE, content: manifest },
-      { path: SOURCES_CATALOG_FILE, content: catalog },
-      { path: ".gitattributes", content: "* -text\n" }
-    ],
-    workspaceId
-  };
-}
+// iNNfo/packages/nn-core/src/address/grammar.ts
+var HEAD = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
+var SLUG = "[\\p{Ll}\\p{Lo}\\p{N}]+(?:-+[\\p{Ll}\\p{Lo}\\p{N}]+)*";
+var FIELD = "[\\p{L}\\p{N}]+(?:[-_][\\p{L}\\p{N}]+)*";
+var CONCEPT = "[\\p{L}\\p{N}]+(?:(?:[ _]|-+)[\\p{L}\\p{N}]+)*";
+var HEAD_RE = new RegExp(`^${HEAD}$`);
+var SLUG_RE = new RegExp(`^${SLUG}$`, "u");
+var FIELD_RE = new RegExp(`^${FIELD}$`, "u");
+var CONCEPT_RE = new RegExp(`^${CONCEPT}$`, "u");
 
 // iNNfo/packages/nn-core/src/parser/yaml.ts
 var import_yaml = __toESM(require_dist(), 1);
@@ -8505,6 +8440,83 @@ function parseKnowledge(content) {
   };
 }
 
+// iNNfo/packages/nn-core/src/sync/declarations.ts
+var SOURCES_CATALOG_FILE = "sources/sources_NN.md";
+
+// iNNfo/packages/nn-core/src/scaffold/domain.ts
+var DOMAIN_BLUEPRINT_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md";
+var DOMAIN_DIRS = [
+  "kNNowledge",
+  "sources/import",
+  "sources/sync",
+  "sources/conversations",
+  "conversations",
+  "artifacts",
+  "procedures",
+  "staging",
+  "changes"
+];
+var DOMAIN_MANIFEST_FILE = "domaiNN_NN.md";
+var SOURCES_BLUEPRINT_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md";
+function planDomainScaffold(input) {
+  const name = input.name.trim();
+  const workspaceId = (input.workspaceId?.trim() || slugify(name)).trim();
+  const esc = (s) => JSON.stringify(s);
+  const heading = name.split(/\s+/).join(" ");
+  const manifest = [
+    "---",
+    "level: 3",
+    "parent_spec:",
+    '  name: "domaiNN"',
+    `  url: ${esc(DOMAIN_BLUEPRINT_URL)}`,
+    'knowledge_version: "V_0-1-0"',
+    `title: ${esc(name)}`,
+    `workspace_id: ${esc(workspaceId)}`,
+    "---",
+    "",
+    "# NN index",
+    "",
+    "* [[domaiNN]]",
+    "",
+    "# NN domaiNN",
+    "",
+    `## NN domaiNN: ${heading}`,
+    "knowledge_dir:: kNNowledge/",
+    "blueprints_dir:: specs/bluepriNNts/",
+    `${heading} \u2014 an empty domaiNN. Add models with an add_model changeset; every change to its content goes through a changeset.`,
+    ""
+  ].join("\n");
+  const catalog = [
+    "---",
+    "level: 3",
+    "parent_spec:",
+    '  name: "sources"',
+    `  url: ${esc(SOURCES_BLUEPRINT_URL)}`,
+    'knowledge_version: "V_0-1-0"',
+    `title: ${esc(`${name} Sources`)}`,
+    "---",
+    "",
+    "# NN index",
+    "",
+    "* [[Source]]",
+    "* [[Synchronization]]",
+    "",
+    "# NN Source",
+    "",
+    "# NN Synchronization",
+    ""
+  ].join("\n");
+  return {
+    dirs: [...DOMAIN_DIRS],
+    files: [
+      { path: DOMAIN_MANIFEST_FILE, content: manifest },
+      { path: SOURCES_CATALOG_FILE, content: catalog },
+      { path: ".gitattributes", content: "* -text\n" }
+    ],
+    workspaceId
+  };
+}
+
 // iNNfo/packages/nn-core/src/schema/writePolicy.ts
 var MODEL_CLOSED_KEY = "closed";
 function isModelClosed(frontmatter) {
@@ -8623,16 +8635,6 @@ var REQUIRED_BY_PRIMITIVE = {
   [FIELD_DEFINITION]: ["concept", "type"],
   [MATRIX_DEFINITION]: ["source", "target"]
 };
-
-// iNNfo/packages/nn-core/src/address/grammar.ts
-var HEAD = "[A-Za-z0-9]+(?:[-_][A-Za-z0-9]+)*";
-var SLUG = "[\\p{Ll}\\p{Lo}\\p{N}]+(?:-+[\\p{Ll}\\p{Lo}\\p{N}]+)*";
-var FIELD = "[\\p{L}\\p{N}]+(?:[-_][\\p{L}\\p{N}]+)*";
-var CONCEPT = "[\\p{L}\\p{N}]+(?:(?:[ _]|-+)[\\p{L}\\p{N}]+)*";
-var HEAD_RE = new RegExp(`^${HEAD}$`);
-var SLUG_RE = new RegExp(`^${SLUG}$`, "u");
-var FIELD_RE = new RegExp(`^${FIELD}$`, "u");
-var CONCEPT_RE = new RegExp(`^${CONCEPT}$`, "u");
 
 // iNNfo/packages/nn-core/src/sourceRef.ts
 function levenshteinDistance(a, b) {

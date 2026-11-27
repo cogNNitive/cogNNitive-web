@@ -17,11 +17,12 @@ const {
   readSynchronizations,
   refreshSynchronization,
   removeOrphanMirrors,
+  SOURCES_CATALOG_FILE,
 } = require('./nn-core.generated.cjs');
 const { createNormalizer } = require('./normalizer');
 const webImport = require('../webImport');
 
-const CATALOG = 'sources/sources_NN.md';
+const CATALOG = SOURCES_CATALOG_FILE || 'sources/sources_NN.md';
 const AUTHOR = 'nn-sources';
 const IMPORT_DIR = 'sources/import';
 const isUrl = (origin) => /^https?:\/\//i.test(origin);
