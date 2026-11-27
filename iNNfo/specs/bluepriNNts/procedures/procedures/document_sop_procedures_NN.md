@@ -1,7 +1,7 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-6-1"
+  name: "procedures_V_0-7-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 knowledge_version: "V_0-4-0"
 title: "Standard Operating Procedure: Documenting Procedures in iNNfo"
@@ -156,6 +156,8 @@ Record the unresolved validation findings and finish with outcome `failed`. Do n
 
 ## NN Artifact: Process Intake Brief
 slug:: process-intake-brief
+kind:: file
+at:: {intake}
 verify:: file:{intake}
 Initial document describing business requirements, rough operational steps, and target actors.
 
@@ -177,6 +179,8 @@ Formal cross-functional matrix assigning responsibility and oversight across all
 
 ## NN Artifact: Validated iNNfo Level 3 Model
 slug:: validated-innfo-level-3-model
+kind:: file
+at:: {sop}
 verify:: file:{sop}
 Canonical, verified plain-text Markdown model ready for execution in cogNNitive and distribution via MCP.
 

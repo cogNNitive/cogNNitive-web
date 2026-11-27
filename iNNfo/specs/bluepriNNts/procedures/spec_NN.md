@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
-blueprint_version: "V_0-6-1"
+blueprint_version: "V_0-7-0"
 title: "Procedures App"
 relationship_types:
   hierarchy:
@@ -175,10 +175,21 @@ concept:: Work
 type:: reference
 target_concepts:: [Tools]
 
+## NN Field Definition: kind
+concept:: Artifact
+type:: select
+options:: [file, element, changeset]
+description:: What the artifact is: a file on disk (default), an element in a domain model, or an applied changeset.
+
+## NN Field Definition: at
+concept:: Artifact
+type:: string
+description:: Declared path or address for the artifact; {slot} placeholders take the run's parameters.
+
 ## NN Field Definition: verify
 concept:: Artifact
 type:: string
-description:: How the artifact is checked: file:<glob>, element:<address>, command:<cmd> or human.
+description:: How the artifact is checked: file:<glob>, element:<address>, command:<cmd> or human. Defaults from kind and at.
 
 ## NN Field Definition: required
 concept:: Artifact
@@ -265,7 +276,7 @@ A procedure is run by the procedure runner, which records each run as an `execut
 - **Parameters.** The procedure's frontmatter `slots` are the run's parameters: a required slot must be given when the run starts, and a slot's `default` applies otherwise.
 - **Steps.** Every runnable Work step carries a `slug::`: run events reference steps by slug. `next` names the following step; a decision step (`step_type:: decision`) asks its `decision` question and lists several `next` targets, each guarded by the target's `condition`.
 - **Executors.** `executor` says who performs a step: `human`, `agent` (the default) or `engine`, which runs `command` with the slots substituted.
-- **Artifacts.** A step's `output` artifacts declare `verify`, and `required:: false` exempts an optional one.
+- **Artifacts.** An artifact declares `kind` (`file`, `element`, `changeset`), its output location `at` (with `{slot}` substitution), and its check `verify` (which defaults from `kind` and `at`). A step's `output` artifacts declare `verify`, and `required:: false` exempts an optional one.
 
 ### Usage Procedure
 
