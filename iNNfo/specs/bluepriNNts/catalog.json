@@ -105,7 +105,7 @@
     },
     "coNNtent": {
       "name": "coNNtent",
-      "adopted": "V_0-32-5",
+      "adopted": "V_0-32-6",
       "tier": "free",
       "access": "public",
       "when_to_use": null,
@@ -115,7 +115,7 @@
       ],
       "versions": [
         {
-          "blueprint_version": "V_0-32-5",
+          "blueprint_version": "V_0-32-6",
           "spec_version": "V_0-5-0",
           "title": "coNNtent App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"

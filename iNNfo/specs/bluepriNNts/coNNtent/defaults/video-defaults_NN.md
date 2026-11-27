@@ -1,9 +1,10 @@
 ---
 level: 3
 parent_spec:
-  name: "coNNtent_V_0-15-0"
+  name: "coNNtent_V_0-32-6"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md"
 knowledge_version: "V_0-1-0"
+blueprint_version: "V_0-32-6"
 title: "Video Defaults"
 ---
 

@@ -4,6 +4,7 @@ parent_spec:
   name: "procedures_V_0-6-1"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 knowledge_version: "V_0-3-0"
+blueprint_version: "V_0-32-6"
 title: "Using the coNNtent Blueprint"
 slots:
   - { name: episode, kind: value, required: false, type: string, label: Episode, description: "The episode Produce an Episode runs on, for example series/<s>/episodes/<slug>." }
