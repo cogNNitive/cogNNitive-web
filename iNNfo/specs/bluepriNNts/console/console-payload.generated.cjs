@@ -7826,10 +7826,16 @@ function parseConceptSection(conceptName, content) {
   const rawConceptFields = {};
   let inConceptPrologueProperties = true;
   const warnings = [];
+  const unknownConstructs = [];
   for (const line of lines) {
     const heading = parseElementHeadingFull(line);
     if (heading !== null) {
       current = startElement(heading);
+      continue;
+    }
+    const malformedNnHeading = line.match(/^\s*(#{2,6})\s+NN\s+(.*)$/);
+    if (malformedNnHeading) {
+      unknownConstructs.push(`NN ${malformedNnHeading[2].trim()}`);
       continue;
     }
     if (current) {
@@ -7891,7 +7897,8 @@ function parseConceptSection(conceptName, content) {
     content: leadingLines.join("\n").trim(),
     fields: Object.keys(conceptFields).length > 0 ? conceptFields : void 0,
     rawFields: Object.keys(rawConceptFields).length > 0 ? rawConceptFields : void 0,
-    warnings: warnings.length > 0 ? warnings : void 0
+    warnings: warnings.length > 0 ? warnings : void 0,
+    unknownConstructs: unknownConstructs.length > 0 ? unknownConstructs : void 0
   };
 }
 function parseMatrixSection(content, _matrixName) {
@@ -8042,6 +8049,7 @@ function parseKnowledge(content) {
   const rawOtherSections = {};
   const sectionOrder = [];
   const sectionBlankLine = {};
+  const unknownConstructs = [];
   for (const section of sections) {
     const headerMatch = section.match(/^#\s+(.*)$/m);
     if (!headerMatch) continue;
@@ -8049,6 +8057,15 @@ function parseKnowledge(content) {
     const type = getSectionType(rawTitle);
     const name = sectionTitle(rawTitle);
     const bodyContent = section.replace(/^#\s+.*$/m, "").trim();
+    if (rawTitle.startsWith("NN ")) {
+      const rest = rawTitle.slice(3).trim();
+      const lower = rest.toLowerCase();
+      const isIndex = lower === "index" || lower === "taxonomy";
+      const isMatrix = lower.startsWith("matrices:");
+      if (!isIndex && !isMatrix && rest.includes(":")) {
+        unknownConstructs.push(rawTitle);
+      }
+    }
     let sectionKey;
     if (type === "index") {
       sectionKey = "index";
@@ -8071,6 +8088,9 @@ function parseKnowledge(content) {
       }
     } else if (type === "concept") {
       const parsed = parseConceptSection(name, bodyContent);
+      if (parsed.unknownConstructs) {
+        unknownConstructs.push(...parsed.unknownConstructs);
+      }
       if (parsed.elements.length > 0) {
         for (const el of parsed.elements) {
           const targetConcept = el.type || name;
@@ -8120,6 +8140,7 @@ function parseKnowledge(content) {
     matrices,
     slugCollisions,
     parseWarnings: parseWarnings.length > 0 ? parseWarnings : void 0,
+    unknownConstructs: unknownConstructs.length > 0 ? unknownConstructs : void 0,
     conceptFields: Object.keys(conceptFields).length > 0 ? conceptFields : void 0,
     rawConceptFields: Object.keys(rawConceptFields).length > 0 ? rawConceptFields : void 0,
     rawSections: Object.keys(rawSections).length > 0 ? rawSections : void 0,

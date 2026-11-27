@@ -1813,6 +1813,240 @@ var require_blueprint_channels = __commonJS({
   }
 });
 
+// scripts/lib/node-engine-check.js
+var require_node_engine_check = __commonJS({
+  "scripts/lib/node-engine-check.js"(exports2, module2) {
+    var fs = require("node:fs");
+    var path2 = require("node:path");
+    function normalizeRange(range) {
+      return String(range).replace(/(\^|~|>=|<=|>|<|=)\s+(?=v?\d)/g, "$1");
+    }
+    function parseVersion(v) {
+      const m = String(v).trim().match(/^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
+      if (!m) return null;
+      return [Number(m[1]), m[2] !== void 0 ? Number(m[2]) : 0, m[3] !== void 0 ? Number(m[3]) : 0];
+    }
+    function compareVersions(a, b) {
+      for (let i = 0; i < 3; i++) {
+        if (a[i] !== b[i]) return a[i] - b[i];
+      }
+      return 0;
+    }
+    function satisfiesComparator(version, token) {
+      const trimmed = token.trim();
+      if (!trimmed) return true;
+      const m = trimmed.match(/^(\^|~|>=|<=|>|<|=)?\s*v?(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
+      if (!m) return true;
+      const op = m[1] || "=";
+      const parts = [Number(m[2]), m[3] !== void 0 ? Number(m[3]) : 0, m[4] !== void 0 ? Number(m[4]) : 0];
+      const cmp = compareVersions(version, parts);
+      switch (op) {
+        case ">=":
+          return cmp >= 0;
+        case ">":
+          return cmp > 0;
+        case "<=":
+          return cmp <= 0;
+        case "<":
+          return cmp < 0;
+        case "=":
+          return cmp === 0;
+        case "^": {
+          const upper = [parts[0] + 1, 0, 0];
+          return compareVersions(version, parts) >= 0 && compareVersions(version, upper) < 0;
+        }
+        case "~": {
+          const upper = [parts[0], parts[1] + 1, 0];
+          return compareVersions(version, parts) >= 0 && compareVersions(version, upper) < 0;
+        }
+        default:
+          return true;
+      }
+    }
+    function satisfiesComparatorSet(version, set) {
+      const tokens = set.trim().split(/\s+/).filter(Boolean);
+      if (tokens.length === 0) return true;
+      return tokens.every((t) => satisfiesComparator(version, t));
+    }
+    function satisfiesRange(versionStr, range) {
+      const version = parseVersion(versionStr);
+      if (!version) return false;
+      const orSets = normalizeRange(range).split("||");
+      return orSets.some((set) => satisfiesComparatorSet(version, set));
+    }
+    function isMajorOnly(versionStr) {
+      return /^v?\d+$/.test(String(versionStr).trim());
+    }
+    function comparatorBounds(token) {
+      const m = token.trim().match(/^(\^|~|>=|<=|>|<|=)?\s*v?(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
+      if (!m) return { lower: null, upper: null };
+      const op = m[1] || "=";
+      const parts = [Number(m[2]), m[3] !== void 0 ? Number(m[3]) : 0, m[4] !== void 0 ? Number(m[4]) : 0];
+      switch (op) {
+        case "^":
+          return { lower: parts, upper: [parts[0] + 1, 0, 0] };
+        case "~":
+          return { lower: parts, upper: [parts[0], parts[1] + 1, 0] };
+        case ">=":
+        case ">":
+          return { lower: parts, upper: null };
+        case "<=":
+        case "<":
+          return { lower: null, upper: parts };
+        case "=":
+        default:
+          return { lower: parts, upper: parts };
+      }
+    }
+    function setBounds(set) {
+      let lower = null;
+      let upper = null;
+      for (const token of set.trim().split(/\s+/).filter(Boolean)) {
+        const b = comparatorBounds(token);
+        if (b.lower && (lower === null || compareVersions(b.lower, lower) > 0)) lower = b.lower;
+        if (b.upper && (upper === null || compareVersions(b.upper, upper) < 0)) upper = b.upper;
+      }
+      return { lower, upper };
+    }
+    function rangeOverlapsMajor(range, major) {
+      const majorLower = [major, 0, 0];
+      const majorUpper = [major + 1, 0, 0];
+      return normalizeRange(range).split("||").some((set) => {
+        const { lower, upper } = setBounds(set);
+        const overlapsBelow = upper === null || compareVersions(upper, majorLower) > 0;
+        const overlapsAbove = lower === null || compareVersions(lower, majorUpper) < 0;
+        return overlapsBelow && overlapsAbove;
+      });
+    }
+    function ciVersionSatisfiesRange(ciVersion, range) {
+      if (isMajorOnly(ciVersion)) {
+        const version = parseVersion(ciVersion);
+        return version ? rangeOverlapsMajor(range, version[0]) : false;
+      }
+      return satisfiesRange(ciVersion, range);
+    }
+    function extractCiNodeVersions(ciYamlText) {
+      const versions = [];
+      const re = /node-version:\s*['"]?([^\s'"]+)['"]?/g;
+      let m;
+      while (m = re.exec(ciYamlText)) {
+        versions.push(m[1]);
+      }
+      return versions;
+    }
+    function readEngineNode(pkgJsonPath) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, "utf8"));
+        const engineNode = pkg.engines && pkg.engines.node;
+        if (!engineNode) return null;
+        return { name: pkg.name || path2.basename(path2.dirname(pkgJsonPath)), engineNode };
+      } catch {
+        return null;
+      }
+    }
+    function listInstalledPackages(nodeModulesDir) {
+      if (!fs.existsSync(nodeModulesDir)) return null;
+      let entries;
+      try {
+        entries = fs.readdirSync(nodeModulesDir, { withFileTypes: true });
+      } catch {
+        return null;
+      }
+      const results = [];
+      for (const entry of entries) {
+        if (!entry.isDirectory() || entry.name.startsWith(".")) continue;
+        if (entry.name.startsWith("@")) {
+          const scopeDir = path2.join(nodeModulesDir, entry.name);
+          let subEntries;
+          try {
+            subEntries = fs.readdirSync(scopeDir, { withFileTypes: true });
+          } catch {
+            continue;
+          }
+          for (const sub of subEntries) {
+            if (!sub.isDirectory()) continue;
+            const info = readEngineNode(path2.join(scopeDir, sub.name, "package.json"));
+            if (info) results.push(info);
+          }
+        } else {
+          const info = readEngineNode(path2.join(nodeModulesDir, entry.name, "package.json"));
+          if (info) results.push(info);
+        }
+      }
+      return results;
+    }
+    function expandWorkspaces(repoRoot, patterns) {
+      const dirs = [];
+      for (const pattern of patterns || []) {
+        if (pattern.endsWith("/*")) {
+          const base = path2.join(repoRoot, ...pattern.slice(0, -2).split("/"));
+          if (!fs.existsSync(base)) continue;
+          let entries;
+          try {
+            entries = fs.readdirSync(base, { withFileTypes: true });
+          } catch {
+            continue;
+          }
+          for (const entry of entries) {
+            if (entry.isDirectory()) dirs.push(path2.join(base, entry.name));
+          }
+        } else {
+          dirs.push(path2.join(repoRoot, ...pattern.split("/")));
+        }
+      }
+      return dirs;
+    }
+    function checkNodeEngines(repoRoot = process.cwd()) {
+      const warnings = [];
+      const errors = [];
+      const ciPath = path2.join(repoRoot, ".github", "workflows", "ci.yml");
+      if (!fs.existsSync(ciPath)) {
+        warnings.push(`CI workflow not found at ${ciPath}; skipping node-engine check.`);
+        return { ok: true, errors, warnings };
+      }
+      const ciText = fs.readFileSync(ciPath, "utf8");
+      const ciVersionsRaw = extractCiNodeVersions(ciText);
+      if (ciVersionsRaw.length === 0) {
+        warnings.push(`No "node-version:" entries found in ${ciPath}; skipping node-engine check.`);
+        return { ok: true, errors, warnings };
+      }
+      const uniqueCiVersions = [...new Set(ciVersionsRaw)];
+      if (uniqueCiVersions.length > 1) {
+        warnings.push(`CI "node-version:" values disagree with each other: ${uniqueCiVersions.join(", ")}`);
+      }
+      let pkgJson;
+      try {
+        pkgJson = JSON.parse(fs.readFileSync(path2.join(repoRoot, "package.json"), "utf8"));
+      } catch (e) {
+        errors.push(`Could not read root package.json: ${e.message}`);
+        return { ok: false, errors, warnings };
+      }
+      const workspaceDirs = expandWorkspaces(repoRoot, pkgJson.workspaces);
+      const scanDirs = [repoRoot, ...workspaceDirs];
+      for (const dir of scanDirs) {
+        const label = path2.relative(repoRoot, dir) || ".";
+        const nodeModulesDir = path2.join(dir, "node_modules");
+        const pkgs = listInstalledPackages(nodeModulesDir);
+        if (pkgs === null) {
+          warnings.push(`node_modules not found under ${label}; skipping (not installed).`);
+          continue;
+        }
+        for (const pkg of pkgs) {
+          for (const ciVersion of uniqueCiVersions) {
+            if (!ciVersionSatisfiesRange(ciVersion, pkg.engineNode)) {
+              errors.push(
+                `${pkg.name} (under ${label}) declares engines.node "${pkg.engineNode}", which excludes CI-pinned Node ${ciVersion}.`
+              );
+            }
+          }
+        }
+      }
+      return { ok: errors.length === 0, errors, warnings };
+    }
+    module2.exports = { checkNodeEngines, satisfiesRange };
+  }
+});
+
 // scripts/lib/skills-commands.js
 var require_skills_commands = __commonJS({
   "scripts/lib/skills-commands.js"(exports2, module2) {
@@ -1852,6 +2086,95 @@ var require_skills_commands = __commonJS({
       blueprintVerdict
     } = require_blueprint_provenance();
     var { loadChannels, resolveBlueprintInChannels } = require_blueprint_channels();
+    var { satisfiesRange } = require_node_engine_check();
+    var SUPPORTED_FORMAT_VERSIONS = [
+      "V_0-2-0",
+      "V_0-2-1",
+      "V_0-2-2",
+      "V_0-3-0",
+      "V_0-4-0",
+      "V_0-5-0",
+      "V_0-7-0",
+      "V_0-8-0",
+      "V_0-9-0"
+    ];
+    function getEngineVersion() {
+      try {
+        const corePkgPath = path2.resolve(__dirname, "../../iNNfo/packages/nn-core/package.json");
+        if (fs.existsSync(corePkgPath)) {
+          return JSON.parse(fs.readFileSync(corePkgPath, "utf-8")).version;
+        }
+      } catch {
+      }
+      return "0.60.0";
+    }
+    function assertBlueprintCompatibility(blueprintName, srcPath) {
+      let manifest = null;
+      let manifestPath = null;
+      if (fs.existsSync(srcPath)) {
+        manifestPath = fs.statSync(srcPath).isDirectory() ? path2.join(srcPath, "blueprint.json") : path2.join(path2.dirname(srcPath), "blueprint.json");
+        if (fs.existsSync(manifestPath)) {
+          try {
+            manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+          } catch (err) {
+            throw new Error(`malformed blueprint.json in blueprint '${blueprintName}': ${err.message}`);
+          }
+        }
+      }
+      let specContent = null;
+      if (fs.existsSync(srcPath)) {
+        const specPath = fs.statSync(srcPath).isDirectory() ? path2.join(srcPath, "spec_NN.md") : srcPath;
+        if (fs.existsSync(specPath) && !fs.statSync(specPath).isDirectory()) {
+          try {
+            specContent = fs.readFileSync(specPath, "utf-8");
+          } catch {
+          }
+        }
+      }
+      let fm = null;
+      if (specContent) {
+        try {
+          fm = parseFocusedYaml(parseFrontmatter(specContent));
+        } catch {
+        }
+      }
+      let engineRange = null;
+      if (manifest && manifest.requires) {
+        if (typeof manifest.requires === "object" && manifest.requires.engine) {
+          engineRange = String(manifest.requires.engine).trim();
+        } else if (typeof manifest.requires === "string") {
+          engineRange = manifest.requires.trim();
+        }
+      } else if (fm && fm.requires) {
+        if (typeof fm.requires === "object" && fm.requires.engine) {
+          engineRange = String(fm.requires.engine).trim();
+        } else if (typeof fm.requires === "string") {
+          engineRange = fm.requires.trim();
+        }
+      } else if (fm && fm.engine) {
+        engineRange = String(fm.engine).trim();
+      }
+      if (engineRange) {
+        if (engineRange.toLowerCase().startsWith("engine ")) {
+          engineRange = engineRange.slice(7).trim();
+        }
+        const currentEngine = getEngineVersion();
+        if (!satisfiesRange(currentEngine, engineRange)) {
+          throw new Error(
+            `refusing to install blueprint '${blueprintName}': incompatible engine. Blueprint requires engine '${engineRange}', but current engine is ${currentEngine}. Upgrade engine to install.`
+          );
+        }
+      }
+      const formatVersion = manifest?.format_version ?? fm?.format_version ?? fm?.spec_version;
+      if (formatVersion) {
+        const norm = String(formatVersion).trim();
+        if (!SUPPORTED_FORMAT_VERSIONS.includes(norm)) {
+          throw new Error(
+            `refusing to install blueprint '${blueprintName}': unsupported format_version '${norm}'. Supported versions are: ${SUPPORTED_FORMAT_VERSIONS.join(", ")}.`
+          );
+        }
+      }
+    }
     var DEFAULT_MANIFEST_URL = "https://cognnitive.com/use/manifest.md";
     var FALLBACK_MANIFEST_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/docs/use/manifest.md";
     var RETIRED_SKILL_REPOS = ["cogNNitive/cogNNitive"];
@@ -2268,6 +2591,7 @@ ${RETIRED_REPO_NOTICE}`);
             `template path ${template.path} not found in ${template.repo} at ${template.commit}`
           );
         }
+        assertBlueprintCompatibility(template.name, src);
         if (fs.statSync(src).isDirectory()) {
           if (fs.existsSync(pkgDestPath)) replaceDirAtomic(src, pkgDestPath);
           else copyDirAtomic(src, pkgDestPath);
@@ -2287,7 +2611,10 @@ ${RETIRED_REPO_NOTICE}`);
       } catch (err) {
         if (isMdFile) {
           const rawUrl = `https://raw.githubusercontent.com/${template.repo}/${template.commit}/${template.path}`;
-          await downloadFile(rawUrl, flatDestPath);
+          const tmpFlat = path2.join(tmpRoot, "flat.md");
+          await downloadFile(rawUrl, tmpFlat);
+          assertBlueprintCompatibility(template.name, tmpFlat);
+          fs.copyFileSync(tmpFlat, flatDestPath);
           recordedPath = flatDestPath;
         } else {
           throw err;
@@ -3746,6 +4073,8 @@ Projected skills to agent directories:`);
       resetTarballCache,
       installSkillAtCommit,
       installBlueprintAtCommit,
+      assertBlueprintCompatibility,
+      getEngineVersion,
       installEmbeddedSkills,
       ensureSkillNodeModules,
       recordCliDeliveredSkills,
