@@ -68,6 +68,12 @@ row, for example) are set by one `set_fields` change; the facts every change of 
 shares (`applied_at`, `batch`, `status`, the evidence hashes) are written once, in the
 changeset frontmatter.
 
+The tools keep a derived index of the parsed changesets so a call only reads the ones that
+are new or changed. It lives outside the domaiNN, in the cache folder
+(`<os temp>/innfo-specs/changeset-index/`, or `$INNFO_CACHE_DIR/changeset-index/`), so it
+never shows up in your git. It is never a source of truth: you can delete it at any time
+and the next call rebuilds it from `changes/` with the same results.
+
 ## 5. Export — artifacts
 
 Producers write their output to `artifacts/`. Like imports, artifacts are **write-once**:
