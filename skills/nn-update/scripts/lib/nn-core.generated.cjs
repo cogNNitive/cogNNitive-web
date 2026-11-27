@@ -9660,11 +9660,20 @@ function updateMatrixCell(model, args, schema) {
       ]
     };
   }
-  const cell = matrix.cells.find((c) => matchesCoord(c.row, row) && matchesCoord(c.col, col));
-  if (cell) {
-    cell.value = val;
+  if (!val || val === "" || val === "-") {
+    matrix.cells = matrix.cells.filter(
+      (c) => !(matchesCoord(c.row, row) && matchesCoord(c.col, col)) && c.value && c.value !== "-"
+    );
   } else {
-    matrix.cells.push({ row, col, value: val });
+    matrix.cells = matrix.cells.filter(
+      (c) => matchesCoord(c.row, row) && matchesCoord(c.col, col) || c.value && c.value !== "-"
+    );
+    const cell = matrix.cells.find((c) => matchesCoord(c.row, row) && matchesCoord(c.col, col));
+    if (cell) {
+      cell.value = val;
+    } else {
+      matrix.cells.push({ row, col, value: val });
+    }
   }
   return { success: true };
 }
@@ -10011,14 +10020,18 @@ function addMatrix(model, args) {
     const nodes = model.elements.get(concept);
     return nodes ? nodes.map((n) => n.name) : [];
   };
-  const columnSeeds = listArg(args.columns);
-  const rowSeeds = listArg(args.rows);
-  const cols = columnSeeds.length > 0 ? columnSeeds : elementNamesOf(targetConcept);
-  const rows = rowSeeds.length > 0 ? rowSeeds : elementNamesOf(source);
-  const cells = [];
-  for (const row of rows) {
-    for (const col of cols) cells.push({ row, col, value: "" });
+  if (args.columns !== void 0 || args.rows !== void 0) {
+    return {
+      success: false,
+      errors: [
+        {
+          path: "",
+          message: "columns and rows are retired arguments; the axis universe is derived from the concepts"
+        }
+      ]
+    };
   }
+  const cells = [];
   if (!model.matrices) model.matrices = [];
   model.matrices.push({ name: matrixName, source, target: targetConcept, cells });
   if (model.sectionOrder && !model.sectionOrder.some((s) => {
