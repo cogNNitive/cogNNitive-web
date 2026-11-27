@@ -14945,7 +14945,13 @@ if (typeof window !== 'undefined') {
     }
     registry.list().forEach(function (v) {
       if (scopedView && v.id !== scopedView) return
-      if (!scopedView && v.kind === 'readonly' && v.id === 'conntent-delivery') return
+      if (
+        !scopedView &&
+        (v.standaloneOnly ||
+          v.deliveryOnly ||
+          (v.kind === 'readonly' && (v.id === 'conntent-delivery' || v.id.endsWith('-delivery'))))
+      )
+        return
       var clash = tabs.filter(function (t) {
         return t.id === v.id
       })[0]

@@ -39,7 +39,7 @@
 import { readdir, readFile, writeFile, mkdir, rename, rm, stat, open } from 'node:fs/promises'
 import { createReadStream, existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { join, relative, basename, resolve, dirname, isAbsolute } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { createHash } from 'node:crypto'
 import { StringDecoder } from 'node:string_decoder'
 import { deflateRawSync, inflateRawSync } from 'node:zlib'
@@ -54,15 +54,32 @@ const repoConsoleDir = join(repoRoot, 'iNNfo', 'specs', 'bluepriNNts', 'console'
 
 /** Lazily loads the coNNtent layout checker, or null when that blueprint is not present. */
 async function loadLayoutChecker() {
-  const layoutUrl = new URL(
-    '../iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/layout.mjs',
-    import.meta.url,
-  ).href
-  try {
-    return await import(layoutUrl)
-  } catch {
-    return null
+  const candidates = [
+    new URL(
+      '../iNNfo/specs/bluepriNNts/coNNtent/skills/nn-conntent/scripts/lib/layout.mjs',
+      import.meta.url,
+    ).href,
+    new URL('../../coNNtent/skills/nn-conntent/scripts/lib/layout.mjs', import.meta.url).href,
+    pathToFileURL(
+      join(
+        homedir(),
+        '.agents',
+        'bluepriNNts',
+        'coNNtent',
+        'skills',
+        'nn-conntent',
+        'scripts',
+        'lib',
+        'layout.mjs',
+      ),
+    ).href,
+  ]
+  for (const cand of candidates) {
+    try {
+      return await import(cand)
+    } catch {}
   }
+  return null
 }
 
 /** True when the filename is a coNNtent bluepriNNt instance document (from the naming contract). */
@@ -2839,6 +2856,9 @@ export async function writeConsole(opts = {}) {
         }
       } else if (concept === 'Voice' && blueprintCatalog?.voices) {
         refEntry = blueprintCatalog.voices[slug]
+      } else if (blueprintCatalog) {
+        const cat = blueprintCatalog[concept.toLowerCase() + 's'] || blueprintCatalog[concept]
+        if (cat) refEntry = cat[slug]
       }
 
       // Merge: reference base, domain element overlay wins
@@ -2860,12 +2880,15 @@ export async function writeConsole(opts = {}) {
   for (const f of allFields) {
     if (!f || !f.options_from) continue
     const [kind, capability] = String(f.options_from).split(':')
+    const trimmed = kind.trim()
     const concept =
-      kind.trim().toLowerCase() === 'models'
+      trimmed.toLowerCase() === 'models'
         ? 'Model'
-        : kind.trim().toLowerCase() === 'voices'
+        : trimmed.toLowerCase() === 'voices'
           ? 'Voice'
-          : null
+          : trimmed.endsWith('s')
+            ? trimmed.slice(0, -1)
+            : trimmed
     if (!concept) continue
     const options = catalogOptionValues(concept, capability)
     if (options.length > 0) {
@@ -3124,7 +3147,9 @@ export async function writeConsole(opts = {}) {
       // base64, so the file size alone cannot see a payload that compresses well and
       // explodes in memory; the gate takes the larger of the two.
       modelsRawBytes: bytes(JSON.stringify(domainPayload.model)),
-      views: preparedAssets.viewScripts.reduce((sum, script) => sum + bytes(script), 0),
+      views:
+        preparedAssets.viewScripts.reduce((sum, script) => sum + bytes(script), 0) +
+        (preparedAssets.viewStyles || []).reduce((sum, style) => sum + bytes(style), 0),
       total: bytes(rendered),
       budget: sizeBudget,
       strategy,

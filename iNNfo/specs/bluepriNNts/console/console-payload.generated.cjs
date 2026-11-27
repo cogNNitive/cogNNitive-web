@@ -13789,12 +13789,28 @@ function consoleOutputPath(scope) {
     throw new Error("consoleOutputPath: invalid console scope");
   }
   const scopeObj = scope;
+  const directPath = scopeObj.targetPath || scopeObj.outputPath;
+  if (typeof directPath === "string" && directPath.trim()) {
+    const clean = directPath.trim().replace(/\\/g, "/");
+    if (clean.startsWith("/") || clean.startsWith("../") || clean.includes("/../")) {
+      throw new Error("consoleOutputPath: custom target path cannot escape root");
+    }
+    return clean;
+  }
   let delivery = null;
   if ("delivery" in scopeObj && scopeObj.delivery && typeof scopeObj.delivery === "object") {
     delivery = scopeObj.delivery;
+    const deliveryPath = delivery.targetPath || delivery.outputPath;
+    if (typeof deliveryPath === "string" && deliveryPath.trim()) {
+      const clean = deliveryPath.trim().replace(/\\/g, "/");
+      if (clean.startsWith("/") || clean.startsWith("../") || clean.includes("/../")) {
+        throw new Error("consoleOutputPath: custom target path cannot escape root");
+      }
+      return clean;
+    }
   } else if ("series" in scopeObj && "episode" in scopeObj && "version" in scopeObj) {
     delivery = scope;
-  } else if (scopeObj.view === "conntent-delivery" && ("series" in scopeObj || "model" in scopeObj)) {
+  } else if (typeof scopeObj.view === "string" && (scopeObj.view === "conntent-delivery" || scopeObj.view.endsWith("-delivery")) && ("series" in scopeObj || "model" in scopeObj)) {
     let s = scopeObj.series ? String(scopeObj.series).trim() : "";
     let e = scopeObj.episode ? String(scopeObj.episode).trim() : "";
     const v = scopeObj.version != null ? scopeObj.version : 1;
@@ -14222,10 +14238,20 @@ async function resolveCatalog(parent, warnings) {
       }
       return out;
     };
-    return {
+    const catalog = {
       models: collect("Model"),
       voices: collect("Voice")
     };
+    for (const concept of parsed.elements.keys()) {
+      const pluralKey = concept.toLowerCase() + "s";
+      if (!(pluralKey in catalog)) {
+        catalog[pluralKey] = collect(concept);
+      }
+      if (!(concept in catalog)) {
+        catalog[concept] = collect(concept);
+      }
+    }
+    return catalog;
   } catch (err) {
     warnings.push(
       `Blueprint catalog '${catalogRel}' failed to parse: ${err instanceof Error ? err.message : String(err)}`
