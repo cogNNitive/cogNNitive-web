@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-9-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-9-0_NN.md"
-blueprint_version: "V_0-7-1"
+blueprint_version: "V_0-7-2"
 title: "Executions App"
 description: "Level-2 blueprint recording runs of procedures as models with state: one instance model per run, holding its header, one row per step and one row per artifact; the history of the run is the change log of that model."
 relationship_types:
@@ -96,11 +96,18 @@ transitions:: {"": ["open"], "open": ["paused", "completed", "failed", "cancelle
 description:: The stored lifecycle of the run. The status the tools return is the fold's derived RunStatus, which reports paused when this is paused.
 
 ## NN Field Definition: status
-concept:: [Step Run, Run Artifact]
+concept:: Step Run
 type:: select
-options:: [pending, active, waiting, done, failed, expected, produced, validated, rejected]
-transitions:: {"": ["pending", "expected"], "pending": ["active", "failed", "done"], "active": ["waiting", "done", "failed", "pending"], "waiting": ["active", "done", "failed", "pending"], "failed": ["active"], "done": ["active", "pending"], "expected": ["produced", "validated", "rejected"], "produced": ["validated", "rejected"], "validated": ["produced"], "rejected": ["produced"]}
-description:: The stored lifecycle of a step row (pending, active, waiting, done, failed) or an artifact row (expected, produced, validated, rejected). Each row only takes the edges of its own lifecycle; the rows never cross. A step row goes back to pending only when a loop's back-edge reopens it.
+options:: [pending, active, waiting, done, failed]
+transitions:: {"": ["pending"], "pending": ["active", "failed", "done"], "active": ["waiting", "done", "failed", "pending"], "waiting": ["active", "done", "failed", "pending"], "failed": ["active"], "done": ["active", "pending"]}
+description:: The stored lifecycle of a step row (pending, active, waiting, done, failed). Each row only takes the edges of its own lifecycle. A step row goes back to pending only when a loop's back-edge reopens it.
+
+## NN Field Definition: status
+concept:: Run Artifact
+type:: select
+options:: [expected, produced, validated, rejected]
+transitions:: {"": ["expected"], "expected": ["produced", "validated", "rejected"], "produced": ["validated", "rejected"], "validated": ["produced"], "rejected": ["produced"]}
+description:: The stored lifecycle of an artifact row (expected, produced, validated, rejected). Each row only takes the edges of its own lifecycle.
 
 ## NN Field Definition: attempt
 concept:: Step Run
@@ -289,7 +296,7 @@ level: 3
 parent_spec:
   name: executions
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/executions/spec_NN.md"
-blueprint_version: "V_0-7-1"
+blueprint_version: "V_0-7-2"
 status: active
 ---
 
