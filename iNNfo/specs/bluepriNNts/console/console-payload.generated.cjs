@@ -12476,6 +12476,47 @@ function hashParsedElement(concept, node) {
   });
 }
 
+// iNNfo/packages/nn-core/src/sync/declarations.ts
+var CONCEPT2 = "Synchronization";
+var text = (value) => typeof value === "string" ? value.trim() : "";
+function readSynchronizations(catalog) {
+  const synchronizations = [];
+  const diagnostics = [];
+  const seen = /* @__PURE__ */ new Set();
+  for (const el of parseKnowledge(catalog).elements.get(CONCEPT2) ?? []) {
+    const alias = text(el.fields["alias"]);
+    const path2 = `elements.${CONCEPT2}.${el.name}.fields.alias`;
+    if (!SLUG_RE.test(alias)) {
+      diagnostics.push({
+        path: path2,
+        message: `SYNC_ALIAS_INVALID: alias "${alias}" of Synchronization "${el.name}" is not a folder-safe slug; use lowercase letters, digits and hyphens`,
+        severity: "error",
+        code: "SYNC_ALIAS_INVALID",
+        meta: { field: "alias" }
+      });
+      continue;
+    }
+    if (seen.has(alias)) {
+      diagnostics.push({
+        path: path2,
+        message: `SYNC_ALIAS_DUPLICATE: alias "${alias}" of Synchronization "${el.name}" is already declared; aliases are unique within the domaiNN`,
+        severity: "error",
+        code: "SYNC_ALIAS_DUPLICATE",
+        meta: { field: "alias" }
+      });
+      continue;
+    }
+    seen.add(alias);
+    synchronizations.push({
+      alias,
+      origin: text(el.fields["origin_uri"]),
+      kind: text(el.fields["kind"]) === "file" ? "file" : "folder",
+      state: text(el.fields["state"]) === "paused" ? "paused" : "active"
+    });
+  }
+  return { synchronizations, diagnostics };
+}
+
 // iNNfo/packages/nn-core/src/procedure/graph.ts
 var EXECUTORS = ["human", "agent", "engine"];
 var TOOL_ALIASES = /* @__PURE__ */ new Map([
@@ -13005,47 +13046,6 @@ function runModelOf(model) {
     requests,
     attempts: {}
   };
-}
-
-// iNNfo/packages/nn-core/src/sync/declarations.ts
-var CONCEPT2 = "Synchronization";
-var text = (value) => typeof value === "string" ? value.trim() : "";
-function readSynchronizations(catalog) {
-  const synchronizations = [];
-  const diagnostics = [];
-  const seen = /* @__PURE__ */ new Set();
-  for (const el of parseKnowledge(catalog).elements.get(CONCEPT2) ?? []) {
-    const alias = text(el.fields["alias"]);
-    const path2 = `elements.${CONCEPT2}.${el.name}.fields.alias`;
-    if (!SLUG_RE.test(alias)) {
-      diagnostics.push({
-        path: path2,
-        message: `SYNC_ALIAS_INVALID: alias "${alias}" of Synchronization "${el.name}" is not a folder-safe slug; use lowercase letters, digits and hyphens`,
-        severity: "error",
-        code: "SYNC_ALIAS_INVALID",
-        meta: { field: "alias" }
-      });
-      continue;
-    }
-    if (seen.has(alias)) {
-      diagnostics.push({
-        path: path2,
-        message: `SYNC_ALIAS_DUPLICATE: alias "${alias}" of Synchronization "${el.name}" is already declared; aliases are unique within the domaiNN`,
-        severity: "error",
-        code: "SYNC_ALIAS_DUPLICATE",
-        meta: { field: "alias" }
-      });
-      continue;
-    }
-    seen.add(alias);
-    synchronizations.push({
-      alias,
-      origin: text(el.fields["origin_uri"]),
-      kind: text(el.fields["kind"]) === "file" ? "file" : "folder",
-      state: text(el.fields["state"]) === "paused" ? "paused" : "active"
-    });
-  }
-  return { synchronizations, diagnostics };
 }
 
 // iNNfo/packages/nn-core/src/console/citations.ts
