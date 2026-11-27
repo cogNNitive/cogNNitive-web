@@ -278,6 +278,20 @@ A procedure is run by the procedure runner, which records each run as an `execut
 - **Executors.** `executor` says who performs a step: `human`, `agent` (the default) or `engine`, which runs `command` with the slots substituted.
 - **Artifacts.** An artifact declares `kind` (`file`, `element`, `changeset`), its output location `at` (with `{slot}` substitution), and its check `verify` (which defaults from `kind` and `at`). A step's `output` artifacts declare `verify`, and `required:: false` exempts an optional one.
 
+### Step Body Prose
+
+A Work element's fields are its contract; the Markdown under them is its body, and the body is the only part of a procedure that no field constrains. Two readers consume it: a person reading the procedure as documentation, and an agent executing it as an instruction. The rules below are normative for every body.
+
+- **The element decides the mood, not the document.** A root element (no `parent`) documents: its body is third person and states what the procedure covers, what it does not cover, and what triggers it. A step instructs: its body opens with the verb the actor performs, in the imperative.
+- **A decision step states criteria, not commands.** Its `decision` field asks the question; its body states, in checkable terms, what makes each answer true.
+- **One mood per body.** A body never mixes a descriptive paragraph with an imperative list: the reader cannot tell which half is the instruction.
+- **A body never restates a field.** `input`, `output`, `produces`, `tool`, `executor` and `condition` already declare their facts. Repeating one in prose creates a second source of truth, and the two drift.
+- **A body never restates the grammar.** When a step applies a rule the blueprint defines — a field's allowed values, an element's required fields — it cites that field definition instead of re-explaining it.
+- **Context before action, action before result.** Name the place where the work happens before naming the action, and the action before its result; a result that must follow the action stays in the action's paragraph.
+- **No positional references.** `read_knowledge` returns bounded slices, so "the table below" or "the previous section" resolves to nothing in the reader's context. Name the element or the field.
+- **Name the effect of a command, not the command.** `command` carries the command; the body says what running it establishes.
+- **An optional step says so in its first word.** `condition` is the guard when one exists; when a step is optional for a reason its guard cannot express, the body opens with `Optional:`.
+
 ### Usage Procedure
 
 Every blueprint that ships procedures (any `*_NN.md` under its `procedures/` tree) MUST also ship a file named `usage_procedures_NN.md` there — its "how to use this blueprint" guide. It is an ordinary procedure (consumed by a human as a stepper in the console and by an AI agent as an executable Work sequence) whose steps walk from an empty model to a useful one, and it pins this `procedures` blueprint as its parent. Blueprints with no `procedures/` tree are exempt.

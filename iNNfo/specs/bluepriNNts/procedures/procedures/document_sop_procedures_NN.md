@@ -3,7 +3,7 @@ level: 3
 parent_spec:
   name: "procedures_V_0-7-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-4-0"
+knowledge_version: "V_0-5-0"
 title: "Standard Operating Procedure: Documenting Procedures in iNNfo"
 slots:
   - name: intake
@@ -85,7 +85,7 @@ executor:: human
 scope:: internal
 tags:: [procedure, decomposition, fsm-modeling, step-sequencing]
 
-Decompose the end-to-end workflow into sequential tasks, decision gates, and event handlers. Establish chronological ordering with next references and transition guards.
+Decompose the end-to-end workflow into sequential tasks, decision gates, and event handlers. Establish chronological ordering with next references and transition guards. Give each step one reader decision — a step that asks two questions is two steps — and keep the path as short as the goal allows: drop a step that changes nothing about the outcome. Write each step's body under the `Step Body Prose` rules of the procedures blueprint.
 
 ## NN Work: Artifact & Tool Attachment
 slug:: artifact-tool-attachment

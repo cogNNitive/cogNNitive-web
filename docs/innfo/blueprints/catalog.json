@@ -109,7 +109,7 @@
       "tier": "free",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.109.0",
+      "release_tag": null,
       "embedded_skills": [
         "nn-conntent"
       ],
@@ -247,7 +247,7 @@
       "tier": "core",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.109.0",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
