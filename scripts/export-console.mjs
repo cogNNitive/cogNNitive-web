@@ -2552,6 +2552,37 @@ export async function writeConsole(opts = {}) {
       Object.assign(blueprintCatalog.models, modelSchemaResolution.catalog.models || {})
       Object.assign(blueprintCatalog.voices, modelSchemaResolution.catalog.voices || {})
     }
+    const indexModelId = domainIndex.byPath(relPath)?.id
+    const stem = payloadHelper.displayStem(fileName)
+    const mTitle = m.fm && (m.fm.title || m.fm.name)
+    const baseStem = (stem || modelStem).replace(/_V_[0-9].*$/i, '')
+    const modelKeys = new Set(
+      [
+        baseStem,
+        stem,
+        mTitle,
+        fileName,
+        modelStem,
+        modelStem.replace(/_NN$/i, ''),
+        modelStem.replace(/_NN$/i, '').replace(/_V_[0-9].*$/i, ''),
+        relPath,
+        relPath.replace(/\.[^/.]+$/, ''),
+        relPath.replace(/(_NN)?\.[^/.]+$/, ''),
+        relPath.replace(/(_NN)?\.[^/.]+$/, '').replace(/_V_[0-9].*$/i, ''),
+        indexModelId,
+        indexModelId && indexModelId.includes('/') ? indexModelId.split('/').pop() : null,
+        indexModelId && indexModelId.includes('/')
+          ? indexModelId
+              .split('/')
+              .pop()
+              .replace(/_V_[0-9].*$/i, '')
+          : null,
+      ]
+        .filter(Boolean)
+        .map(function (v) {
+          return String(v).toLowerCase()
+        }),
+    )
     const payload = payloadHelper.buildConsolePayload({
       content: m.content,
       path: relPath,
@@ -2561,7 +2592,8 @@ export async function writeConsole(opts = {}) {
       procedures: modelSchemaResolution.procedures,
       // The domain index id: `<container>/<slug>` for a distributed instance, the stem
       // for a compact model. A model the index cannot address keeps the stem (#606).
-      modelId: domainIndex.byPath(relPath)?.id,
+      modelId: indexModelId,
+      modelKeys,
     })
     if (payload && payload.model) {
       changesBlueprintVersion =
