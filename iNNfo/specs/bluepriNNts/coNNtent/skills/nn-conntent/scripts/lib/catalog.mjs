@@ -13,6 +13,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
+import { findBlueprintPackage } from './video-scope.mjs'
 
 const require = createRequire(import.meta.url)
 const { parseKnowledge } = require('./nn-core.generated.cjs')
@@ -123,6 +124,13 @@ export function resolveReferenceCatalog({ domainRoot = null } = {}) {
   if (env && String(env).trim() !== '')
     candidates.push({ anchor: REFERENCE_CATALOG_ENV, path: path.resolve(String(env)) })
   if (domainRoot) candidates.push({ anchor: 'domaiNN', path: vendoredCatalogPath(domainRoot) })
+  try {
+    const pkg = findBlueprintPackage()
+    candidates.push({
+      anchor: 'blueprintPackage',
+      path: path.join(pkg, 'catalog', REFERENCE_CATALOG_FILENAME),
+    })
+  } catch {}
   candidates.push({ anchor: 'package', path: REFERENCE_CATALOG })
   for (const candidate of candidates) {
     if (fs.existsSync(candidate.path)) return candidate.path

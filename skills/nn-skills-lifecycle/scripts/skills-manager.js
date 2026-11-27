@@ -3271,43 +3271,52 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
       let plan;
       if (entry) {
         if (!entry.release_tag) {
-          throw new Error(
-            `blueprint '${name}' is not yet released (no matching blueprints-v* tag); update the catalog`
-          );
+          if (!args.channelsPath && !process.env.COGNNITIVE_CHANNELS) {
+            throw new Error(
+              `blueprint '${name}' is not yet released (no matching blueprints-v* tag); update the catalog`
+            );
+          }
+        } else {
+          const repo = args.repo || DEFAULT_BLUEPRINT_REPO;
+          const ref = entry.release_tag;
+          const version = entry.adopted;
+          const entryName2 = entry.name || name;
+          let resolvedCommit = ref;
+          try {
+            const resolved = await resolveRef(repo, ref);
+            if (resolved && "sha" in resolved && resolved.sha) resolvedCommit = resolved.sha;
+          } catch (_) {
+          }
+          plan = {
+            template: {
+              name: entryName2,
+              repo,
+              path: `iNNfo/specs/bluepriNNts/${entryName2}/spec_NN.md`,
+              version,
+              tag: ref,
+              ref,
+              commit: resolvedCommit
+            },
+            header: [
+              "Optional catalog blueprint (on demand):",
+              `  - ${entryName2} (${version}) from ${repo} @ ${ref}`,
+              `  tier: ${entry.tier || "free"} \xB7 access: ${entry.access || "public"}`
+            ]
+          };
         }
-        const repo = args.repo || DEFAULT_BLUEPRINT_REPO;
-        const ref = entry.release_tag;
-        const version = entry.adopted;
-        const entryName2 = entry.name || name;
-        let resolvedCommit = ref;
-        try {
-          const resolved = await resolveRef(repo, ref);
-          if (resolved && "sha" in resolved && resolved.sha) resolvedCommit = resolved.sha;
-        } catch (_) {
-        }
-        plan = {
-          template: {
-            name: entryName2,
-            repo,
-            path: `iNNfo/specs/bluepriNNts/${entryName2}/spec_NN.md`,
-            version,
-            tag: ref,
-            ref,
-            commit: resolvedCommit
-          },
-          header: [
-            "Optional catalog blueprint (on demand):",
-            `  - ${entryName2} (${version}) from ${repo} @ ${ref}`,
-            `  tier: ${entry.tier || "free"} \xB7 access: ${entry.access || "public"}`
-          ]
-        };
-      } else {
+      }
+      if (!plan) {
         const loaded = await loadChannels({ file: args.channelsPath, env: process.env });
         const resolved = await resolveBlueprintInChannels(
           { name, channels: loaded.channels },
           { fetchString: args.fetchString }
         );
         if (!resolved.ok) {
+          if (entry && !entry.release_tag) {
+            throw new Error(
+              `blueprint '${name}' is not yet released (no matching blueprints-v* tag); update the catalog`
+            );
+          }
           const tried = resolved.tried.map((t) => `${t.channel}: ${t.reason}`).join("; ");
           throw new Error(
             `blueprint '${name}' is not in the catalog ` + (catalogError ? `(${catalogError.message})` : `(${catalogPath || DEFAULT_CATALOG_PATH})`) + ` and no channel carries it. channels (${loaded.source}): ${tried}`

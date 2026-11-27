@@ -85,6 +85,7 @@ export function findBlueprintPackage(skillDir = SKILL_DIR) {
   const candidates = [
     path.resolve(skillDir, '..', '..'),
     path.resolve(skillDir, '..', '..', 'bluepriNNts', 'coNNtent'),
+    path.resolve(skillDir, '..', '..', 'specs', 'bluepriNNts', 'coNNtent'),
     path.resolve(skillDir, '..', '..', '..', 'specs', 'bluepriNNts', 'coNNtent'),
   ];
   for (const candidate of candidates) {

@@ -24,7 +24,7 @@ import { CacheManager } from '../cache-manager.mjs';
 import { AssetSynthesizer } from '../asset-synthesizer.mjs';
 import { SpendGuard, resolveDefaultCacheDir, normalizeModelId, resolveWorkspace } from './video-guard.mjs';
 import { loadGuardWithVoices } from './guard-config.mjs';
-import { loadCascadeBags, findSeriesRoot, withScriptPresets } from './video-scope.mjs';
+import { loadCascadeBags, findSeriesRoot, withScriptPresets, findBlueprintPackage } from './video-scope.mjs';
 import { resolve, resolveKeyed } from './cascade.mjs';
 import { resolveLibrary } from './library.mjs';
 import { applyCachedAvatars } from './avatar-jobs.mjs';
@@ -49,7 +49,13 @@ const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
 /** The skill's own folder: the fallback anchor for the nearest-folder walker. */
 const SKILL_DIR = path.resolve(SCRIPTS_DIR, '..', '..');
 /** The blueprint package root: its `library/` is the floor for frames and components. */
-const PACKAGE_FLOOR = path.resolve(SKILL_DIR, '..', '..');
+const PACKAGE_FLOOR = (() => {
+  try {
+    return findBlueprintPackage(SKILL_DIR);
+  } catch {
+    return path.resolve(SKILL_DIR, '..', '..');
+  }
+})();
 
 /**
  * Named error raised when the renderer cannot render and no mock was requested. Callers
