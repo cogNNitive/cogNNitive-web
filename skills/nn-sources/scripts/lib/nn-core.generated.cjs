@@ -10789,7 +10789,9 @@ function extractDeclaredCitations(file) {
     return sites;
   } else if (ext === "csv") {
     const lines = file.content.split(/\r?\n/);
-    const header = lines[0].split(",").map((h) => h.trim().toLowerCase().replace(/^["']|["']$/g, ""));
+    const header = lines[0].split(",").map(
+      (h) => h.trim().toLowerCase().replace(/^["']|["']$/g, "")
+    );
     const sourcesIdx = header.indexOf("sources");
     if (sourcesIdx !== -1) {
       for (let i = 1; i < lines.length; i++) {
@@ -10904,7 +10906,10 @@ function projectLineage(files, log = buildChangeLog(files), options = {}) {
     const parsedName = parseName(getBasename(kf.path));
     if (parsedName.kind !== "nn" || parsedName.sidecarOf !== void 0) continue;
     const parsed = parsedKnowledgeOf(options.parses, kf.path, kf.content);
-    if (!isModelCandidate({ path: kf.path, frontmatter: parsed.frontmatter ?? {} })) {
+    if (!isModelCandidate({
+      path: kf.path,
+      frontmatter: parsed.frontmatter ?? {}
+    })) {
       continue;
     }
     const name = parsed.frontmatter?.title || displayStem(getBasename(kf.path));
@@ -10917,7 +10922,12 @@ function projectLineage(files, log = buildChangeLog(files), options = {}) {
           const lower = fieldName.toLowerCase();
           if (lower !== "sources" && lower !== "source") continue;
           for (const raw of splitSourceFieldValue(val)) {
-            citations.push({ value: raw, referringPath: kf.path, element: el.name, field: fieldName });
+            citations.push({
+              value: raw,
+              referringPath: kf.path,
+              element: el.name,
+              field: fieldName
+            });
           }
         }
       }
@@ -10956,15 +10966,37 @@ function projectLineage(files, log = buildChangeLog(files), options = {}) {
     const key = familyKey(f.path);
     if (key !== null) familySizes.set(key, (familySizes.get(key) ?? 0) + 1);
   }
+  const executionArtifactPaths = /* @__PURE__ */ new Set();
+  for (const kf of live) {
+    const parsedName = parseName(getBasename(kf.path));
+    if (parsedName.kind !== "nn" || parsedName.sidecarOf !== void 0) continue;
+    const parsed = parsedKnowledgeOf(options.parses, kf.path, kf.content);
+    for (const [concept, elements] of parsed.elements.entries()) {
+      const c = concept.toLowerCase().replace(/[\s_]+/g, "");
+      if (c === "runartifact") {
+        for (const el of elements) {
+          const val = el.fields.value;
+          if (typeof val === "string" && val.trim()) {
+            executionArtifactPaths.add(posixPath(val.trim()).replace(/^\.\//, ""));
+          }
+        }
+      }
+    }
+  }
   const artifacts = [];
   for (const af of live) {
     const parsedName = parseName(getBasename(af.path));
     if (parsedName.kind !== "file" || sourcePaths.has(af.path)) continue;
     const ext = getExtension(af.path);
     if (!ARTIFACT_EXTENSIONS.has(ext)) continue;
+    const baseName = getBasename(af.path);
+    if (/_console(\.html|\/|$)/i.test(baseName) || baseName === "domaiNN_console.html") continue;
     const citations = extractDeclaredCitations(af);
     const isFamilyMember = parsedName.stamp !== void 0 || (familySizes.get(familyKey(af.path)) ?? 0) > 1;
-    if (!isFamilyMember && citations.length === 0) continue;
+    const isDeliverable = af.path.startsWith("entregables/");
+    const isExecutionArtifact = executionArtifactPaths.has(af.path);
+    if (!isFamilyMember && citations.length === 0 && !isDeliverable && !isExecutionArtifact)
+      continue;
     let format = "document";
     if (ext === "md") {
       const fm = frontmatterOf(af.content);
@@ -11010,7 +11042,8 @@ function projectLineage(files, log = buildChangeLog(files), options = {}) {
       for (const site of sites) {
         const owner = ownerOf(site.unit);
         push({ from: citation, to: owner, kind: "evidence", change: site.changeId });
-        if (site.unit.includes("@")) push({ from: site.unit, to: owner, kind: "target", change: site.changeId });
+        if (site.unit.includes("@"))
+          push({ from: site.unit, to: owner, kind: "target", change: site.changeId });
       }
     }
     for (const change of log.all) {
@@ -11023,14 +11056,17 @@ function projectLineage(files, log = buildChangeLog(files), options = {}) {
       log.all.filter((change) => change.applied && change.op === "produce_artifact").map((change) => change.resolvedTarget ?? change.target)
     );
     for (const artifact of artifacts) {
-      if (recorded.has(artifact.artifact_ref) || isRegenerableView(artifact.artifact_ref)) continue;
+      if (recorded.has(artifact.artifact_ref) || isRegenerableView(artifact.artifact_ref) || executionArtifactPaths.has(artifact.artifact_ref) || artifact.artifact_ref.startsWith("entregables/"))
+        continue;
       diagnostics.push({
         code: "ARTIFACT_WITHOUT_RECORD",
         path: artifact.artifact_ref,
         message: `Artifact "${artifact.artifact_ref}" has no applied produce_artifact change; record how it was produced`
       });
     }
-    return edges.sort((a, b) => compareStrings2(a.from, b.from) || compareStrings2(a.to, b.to) || compareStrings2(a.kind, b.kind) || compareStrings2(a.change, b.change));
+    return edges.sort(
+      (a, b) => compareStrings2(a.from, b.from) || compareStrings2(a.to, b.to) || compareStrings2(a.kind, b.kind) || compareStrings2(a.change, b.change)
+    );
   }
 }
 

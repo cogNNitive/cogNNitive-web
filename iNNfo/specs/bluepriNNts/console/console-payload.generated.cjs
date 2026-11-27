@@ -13668,7 +13668,8 @@ function isMirrorFile(relPath) {
 }
 function classifyFileCategory(relPath) {
   const norm = relPath.replace(/\\/g, "/").replace(/^\/+/, "");
-  if (norm.startsWith("artifacts/") || norm === "domaiNN_console.html") return "artifact";
+  if (norm.startsWith("artifacts/") || norm.startsWith("entregables/") || norm === "domaiNN_console.html")
+    return "artifact";
   if (norm.startsWith("assets/") || norm.startsWith("sources/assets/")) return "asset";
   if (norm.startsWith("evidence/") || norm.startsWith("sources/evidence/")) return "evidence";
   if (norm.startsWith("sources/") || norm.startsWith("conversations/")) return "source";
@@ -13684,7 +13685,8 @@ function mimeTypeFromPath(filePath) {
   if (lower.endsWith(".json")) return "application/json";
   if (lower.endsWith(".html") || lower.endsWith(".htm")) return "text/html";
   if (lower.endsWith(".css")) return "text/css";
-  if (lower.endsWith(".js") || lower.endsWith(".mjs") || lower.endsWith(".cjs")) return "text/javascript";
+  if (lower.endsWith(".js") || lower.endsWith(".mjs") || lower.endsWith(".cjs"))
+    return "text/javascript";
   if (lower.endsWith(".ts")) return "text/typescript";
   if (lower.endsWith(".png")) return "image/png";
   if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
@@ -13776,7 +13778,8 @@ function resolveArtifactReverseLineage(artifacts, elements, changes, sources) {
     if (Array.isArray(cs.changes)) {
       for (const c of cs.changes) {
         if (c.target) {
-          if (!changeTargetToChangeset.has(c.target)) changeTargetToChangeset.set(c.target, /* @__PURE__ */ new Set());
+          if (!changeTargetToChangeset.has(c.target))
+            changeTargetToChangeset.set(c.target, /* @__PURE__ */ new Set());
           if (csId) changeTargetToChangeset.get(c.target).add(csId);
         }
         if (c.evidence && csId) changesetToEvidence.get(csId).add(normalizePosix(c.evidence));
@@ -13788,7 +13791,10 @@ function resolveArtifactReverseLineage(artifacts, elements, changes, sources) {
     const unitIdSet = /* @__PURE__ */ new Set();
     for (const u of art.unitIds || []) unitIdSet.add(u);
     if (art.content) {
-      const patterns = [/\[\[([a-zA-Z0-9_\-:]+)\]\]/g, /(?:data-nn-unit|data-unit)=["']([a-zA-Z0-9_\-:]+)["']/g];
+      const patterns = [
+        /\[\[([a-zA-Z0-9_\-:]+)\]\]/g,
+        /(?:data-nn-unit|data-unit)=["']([a-zA-Z0-9_\-:]+)["']/g
+      ];
       for (const re of patterns) {
         let m;
         while ((m = re.exec(art.content)) !== null) {
