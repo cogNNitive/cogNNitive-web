@@ -366,6 +366,11 @@ test('User Journeys U1-U7 end to end simulation', async (t) => {
       )
       fs.mkdirSync(path.join(root, 'changes'), { recursive: true })
       fs.mkdirSync(path.join(root, 'library'), { recursive: true })
+      fs.writeFileSync(
+        path.join(root, 'specs', 'defiNNe_V_0-1-0_NN.md'),
+        '---\nspec_version: "V_0-1-0"\nlevel: 0\ntitle: "L0"\n---\n\n# NN DefiNNition\n',
+        'utf8',
+      )
 
       // Layout is clean
       const findings = assertLayout(root)

@@ -1693,7 +1693,15 @@ export function embedRunArtifacts(root, graph, record, budget = { left: EMBED_TO
           : kind === 'audio' || kind === 'video'
             ? EMBED_MEDIA_CAP
             : 0
-    const base = { path: shown, kind, bytes: bytes.length }
+    const actualRev = createHash('sha256').update(bytes).digest('hex')
+    const revMismatch =
+      typeof row.rev === 'string' && row.rev.trim() !== '' && row.rev.trim() !== actualRev
+    const base = {
+      path: shown,
+      kind,
+      bytes: bytes.length,
+      ...(revMismatch ? { mismatch: true } : {}),
+    }
     if (kind === 'unsupported') out[slug] = { ...base, omitted: 'unsupported' }
     else if (bytes.length > cap) out[slug] = { ...base, omitted: 'too-large' }
     else if (bytes.length > budget.left) out[slug] = { ...base, omitted: 'budget' }
