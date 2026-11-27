@@ -153,6 +153,6 @@ Whenever a view file is created or updated:
 2. **Via CLI**:
    Run `node scripts/export-console.mjs <domainRoot> --domain`.
 3. **Verify Integrity**:
-   - Check stderr for size warnings (warn > 5 MB, fail > 15 MB).
+   - Check stderr for size warnings. The default budget is **30 MB warn / 100 MB fail** for the final HTML (`CONSOLE_SIZE_BUDGET`, `console-views.mjs`); a domain may raise or lower it with `console_size_budget_warn` / `console_size_budget_fail` (bytes) in the `domaiNN_NN.md` frontmatter.
    - Ensure AST syntax verification passed (no ES module syntax).
    - Report the generated artifact path to the user.
