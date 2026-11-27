@@ -2085,7 +2085,11 @@ var require_skills_commands = __commonJS({
       distributionUrlParts,
       blueprintVerdict
     } = require_blueprint_provenance();
-    var { loadChannels, resolveBlueprintInChannels } = require_blueprint_channels();
+    var {
+      loadChannels,
+      resolveBlueprintInChannels,
+      defaultChannelsFile
+    } = require_blueprint_channels();
     var { satisfiesRange } = require_node_engine_check();
     var SUPPORTED_FORMAT_VERSIONS = [
       "V_0-2-0",
@@ -3271,7 +3275,10 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
       let plan;
       if (entry) {
         if (!entry.release_tag) {
-          if (!args.channelsPath && !process.env.COGNNITIVE_CHANNELS) {
+          const hasChannelSource = Boolean(
+            args.channelsPath || process.env.COGNNITIVE_CHANNELS || fs.existsSync(defaultChannelsFile(args.home))
+          );
+          if (!hasChannelSource) {
             throw new Error(
               `blueprint '${name}' is not yet released (no matching blueprints-v* tag); update the catalog`
             );
@@ -3306,7 +3313,11 @@ routine step. Why and how: ${THIRD_PARTY_SKILL_DOC_URL}
         }
       }
       if (!plan) {
-        const loaded = await loadChannels({ file: args.channelsPath, env: process.env });
+        const loaded = await loadChannels({
+          file: args.channelsPath,
+          home: args.home,
+          env: process.env
+        });
         const resolved = await resolveBlueprintInChannels(
           { name, channels: loaded.channels },
           { fetchString: args.fetchString }
