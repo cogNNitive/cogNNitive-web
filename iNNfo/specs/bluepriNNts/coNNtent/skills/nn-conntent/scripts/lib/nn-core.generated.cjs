@@ -14347,6 +14347,9 @@ var init_parser3 = __esm({
 function changeStamp(changeset) {
   return changesetStampOf2(String(changeset ?? ""))?.stamp ?? "";
 }
+function changeSeq(changeset) {
+  return changesetStampOf2(String(changeset ?? ""))?.seq ?? 1;
+}
 function compareStrings(a, b) {
   return a < b ? -1 : a > b ? 1 : 0;
 }
@@ -14357,6 +14360,9 @@ function compareChanges2(a, b) {
   const byStamp = compareStrings(changeStamp(a.changeset), changeStamp(b.changeset));
   if (byStamp !== 0)
     return byStamp;
+  const bySeq = changeSeq(a.changeset) - changeSeq(b.changeset);
+  if (bySeq !== 0)
+    return bySeq;
   const byFile = compareStrings(a.changeset, b.changeset);
   if (byFile !== 0)
     return byFile;
@@ -23867,10 +23873,10 @@ async function writeProposedChangeset(rootDir, input) {
   const text = serializeChangeset2(document);
   const changesDir = (0, import_node_path19.join)(rootDir, "changes");
   await (0, import_promises10.mkdir)(changesDir, { recursive: true });
-  const base = input.now ?? /* @__PURE__ */ new Date();
-  for (let attempt = 0; attempt < 60; attempt++) {
-    const stamp = formatUtcStamp(new Date(base.getTime() + attempt * 1e3));
-    const fileName = `${fileSegment(workspaceId, "domain")}_${fileSegment(author, "agent")}_${stamp}_changes_NN.md`;
+  const stamp = formatUtcStamp(input.now ?? /* @__PURE__ */ new Date());
+  const prefix = `${fileSegment(workspaceId, "domain")}_${fileSegment(author, "agent")}_${stamp}`;
+  for (let seq = 1; seq <= MAX_CHANGESETS_PER_SECOND; seq++) {
+    const fileName = `${prefix}${seq > 1 ? `-${seq}` : ""}_changes_NN.md`;
     const absolutePath = (0, import_node_path19.join)(changesDir, fileName);
     try {
       await (0, import_promises10.writeFile)(absolutePath, text, { encoding: "utf-8", flag: "wx" });
@@ -23881,6 +23887,7 @@ async function writeProposedChangeset(rootDir, input) {
   }
   throw new Error("Could not allocate a unique changeset file name in changes/");
 }
+var MAX_CHANGESETS_PER_SECOND = 1e4;
 
 // iNNfo/packages/nn-mcp/src/tools/apply-change.ts
 init_path_guard();

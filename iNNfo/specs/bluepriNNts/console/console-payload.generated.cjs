@@ -11572,6 +11572,9 @@ function parseChangeset(rawContent) {
 function changeStamp(changeset) {
   return changesetStampOf(String(changeset ?? ""))?.stamp ?? "";
 }
+function changeSeq(changeset) {
+  return changesetStampOf(String(changeset ?? ""))?.seq ?? 1;
+}
 function compareStrings(a, b) {
   return a < b ? -1 : a > b ? 1 : 0;
 }
@@ -11580,6 +11583,8 @@ function compareChanges(a, b) {
   if (byAppliedAt !== 0) return byAppliedAt;
   const byStamp = compareStrings(changeStamp(a.changeset), changeStamp(b.changeset));
   if (byStamp !== 0) return byStamp;
+  const bySeq = changeSeq(a.changeset) - changeSeq(b.changeset);
+  if (bySeq !== 0) return bySeq;
   const byFile = compareStrings(a.changeset, b.changeset);
   if (byFile !== 0) return byFile;
   const byIndex = a.index - b.index;
