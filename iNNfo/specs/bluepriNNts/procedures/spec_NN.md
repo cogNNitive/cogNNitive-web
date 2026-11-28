@@ -280,17 +280,27 @@ A procedure is run by the procedure runner, which records each run as an `execut
 
 ### Step Body Prose
 
-A Work element's fields are its contract; the Markdown under them is its body, and the body is the only part of a procedure that no field constrains. Two readers consume it: a person reading the procedure as documentation, and an agent executing it as an instruction. The rules below are normative for every body.
+A Work element's fields are its contract; the Markdown under them is its body, and the body is the only part of a procedure that no field constrains. Two readers consume it: a person reading the procedure as documentation, and an agent executing it as an instruction. Nothing here is validated. These are the defaults of a shared style, and a body that departs from one on purpose is doing its job, as long as it says why.
 
-- **The element decides the mood, not the document.** A root element (no `parent`) documents: its body is third person and states what the procedure covers, what it does not cover, and what triggers it. A step instructs: its body opens with the verb the actor performs, in the imperative.
-- **A decision step states criteria, not commands.** Its `decision` field asks the question; its body states, in checkable terms, what makes each answer true.
-- **One mood per body.** A body never mixes a descriptive paragraph with an imperative list: the reader cannot tell which half is the instruction.
-- **A body never restates a field.** `input`, `output`, `produces`, `tool`, `executor` and `condition` already declare their facts. Repeating one in prose creates a second source of truth, and the two drift.
-- **A body never restates the grammar.** When a step applies a rule the blueprint defines — a field's allowed values, an element's required fields — it cites that field definition instead of re-explaining it.
-- **Context before action, action before result.** Name the place where the work happens before naming the action, and the action before its result; a result that must follow the action stays in the action's paragraph.
+**Three invariants.** These hold without exception, because each one is objectively adjudicable.
+
+- **One mood per sentence.** A sentence either states a fact or gives an instruction. A body that alternates between the two inside one sentence leaves the reader unable to tell which half is the instruction.
 - **No positional references.** `read_knowledge` returns bounded slices, so "the table below" or "the previous section" resolves to nothing in the reader's context. Name the element or the field.
-- **Name the effect of a command, not the command.** `command` carries the command; the body says what running it establishes.
-- **An optional step says so in its first word.** `condition` is the guard when one exists; when a step is optional for a reason its guard cannot express, the body opens with `Optional:`.
+- **The body never contradicts a field.** A body may restate a field; it may not disagree with one. `input`, `output`, `produces`, `tool`, `executor` and `condition` are the contract, and prose never overrides them.
+
+**Six defaults.** Each carries the reason it exists. Depart from one when that reason does not apply to your step, and say why in the body or the commit.
+
+- **The element decides the mood.** A root element (no `parent`) documents: third person, what the procedure covers, what it does not cover, and what triggers it. A step performed by `human` or `agent` instructs: it opens with the verb the actor performs. An `engine` step describes: nobody executes it, the command does, so the body states what running that command establishes instead of ordering a person to do it. When `condition` cannot express why a step is optional, open the body with `Optional:`.
+- **A decision step states criteria.** Its `decision` field asks the question, and the body makes each answer checkable. A command the decider must run first belongs in a step of its own, not inside the question.
+- **A body does not restate a field.** Repeating `produces` or `tool` in prose creates a second source of truth, and the two drift. Restate one when the reader cannot see the fields at all — an exported runbook — and say that is why.
+- **A body does not restate the grammar.** When a step applies a rule the blueprint already defines, cite the field definition instead of re-explaining it: an explanation that lives in two places ages in one.
+- **Context before action, action before result.** A reader needs to know where the work happens before what to do, and the action before its consequence. A result that must follow the action stays in that action's paragraph.
+- **Name the effect of a command, not the command.** `command` already carries the command. The body says what running it establishes, so the step still reads without running it.
+
+**Two measured limits.** Borrowed from ASD-STE100 Simplified Technical English, because they are the only rules here that a linter could check without judgement.
+
+- **One instruction per sentence.** Two actions in one sentence become two steps, or two sentences.
+- **Twenty words per procedural sentence, twenty-five per descriptive one.** A sentence that needs more is carrying two ideas.
 
 ### Usage Procedure
 
