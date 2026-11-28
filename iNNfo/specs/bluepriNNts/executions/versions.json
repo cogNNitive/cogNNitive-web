@@ -1,0 +1,9 @@
+{
+  "versions": [
+    {
+      "version": "V_0-7-2",
+      "tag": "blueprints-v0.110.3",
+      "commit": "d1f1313cbaac525c36ab8f72bc1862e1b9630955"
+    }
+  ]
+}
