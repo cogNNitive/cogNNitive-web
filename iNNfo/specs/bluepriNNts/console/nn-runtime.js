@@ -178,20 +178,6 @@
     )
   }
 
-  function stampFromDate(when) {
-    var d = when instanceof Date ? when : new Date(when)
-    if (isNaN(d.getTime())) throw new Error('nn-console: invalid date for filename stamp')
-    return (
-      d.getUTCFullYear() +
-      pad2(d.getUTCMonth() + 1) +
-      pad2(d.getUTCDate()) +
-      '-' +
-      pad2(d.getUTCHours()) +
-      pad2(d.getUTCMinutes()) +
-      pad2(d.getUTCSeconds())
-    )
-  }
-
   function parseConfig(raw) {
     var fallback = { needs: [], runtime: {} }
     if (!raw || typeof raw !== 'string') return fallback
@@ -267,7 +253,6 @@
   // JSON reader. The browser decodes it once, asynchronously, before the synchronous
   // `boot`; the decoded text is kept per document so a snapshot save starts from it.
   // Drafts and UI state live in the plain JSON nn-drafts slot instead.
-  var MODEL_SLOT_TYPE = 'application/x-nn-deflate-base64'
   var decodedModels = typeof WeakMap === 'function' ? new WeakMap() : null
 
   function base64ToBytes(text) {
@@ -975,9 +960,12 @@
   }
 
   // Only http(s) and relative source URLs become links; any other scheme
-  // (javascript:, data:, ...) is rejected. Returns '' when unsafe. Verbatim port
-  // of the retired model viewer's predicate.
+  // (javascript:, data:, ...) is rejected. Returns '' when unsafe. Delegates to
+  // UI.safeHref when available.
   function safeSourceHref(url) {
+    if (UI && typeof UI.safeHref === 'function') {
+      return UI.safeHref(url)
+    }
     var raw = String(url == null ? '' : url).trim()
     if (!raw) return ''
     var hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)
@@ -5698,19 +5686,16 @@
       copy.addEventListener('click', function () {
         var text = String(entry.sha256 || '')
         var view = doc.defaultView
-        if (view && view.navigator && view.navigator.clipboard) {
-          try {
-            view.navigator.clipboard.writeText(text)
-          } catch {
-            /* clipboard unavailable offline */
+        copyTextToClipboard(doc, text).then(function (ok) {
+          if (ok) {
+            copy.textContent = 'copied'
+            if (view && view.setTimeout) {
+              view.setTimeout(function () {
+                copy.textContent = text.slice(0, 16)
+              }, 1200)
+            }
           }
-        }
-        copy.textContent = 'copied'
-        if (view && view.setTimeout) {
-          view.setTimeout(function () {
-            copy.textContent = text.slice(0, 16)
-          }, 1200)
-        }
+        })
       })
       attr('SHA-256', '', copy)
       card.appendChild(attrs)
@@ -6164,18 +6149,8 @@
       var copyBtn = doc.getElementById('nn-file-preview-copy')
       if (copyBtn) {
         copyBtn.onclick = function () {
-          var view = doc.defaultView
-          if (
-            view &&
-            view.navigator &&
-            view.navigator.clipboard &&
-            typeof entry.snippet === 'string'
-          ) {
-            try {
-              view.navigator.clipboard.writeText(entry.snippet)
-            } catch {
-              /* clipboard unavailable */
-            }
+          if (typeof entry.snippet === 'string') {
+            copyTextToClipboard(doc, entry.snippet)
           }
         }
       }
@@ -9385,32 +9360,6 @@
     errorContainer.style.display = 'block'
   }
 
-  // Direct write to a connected domaiNN folder (console-changes-direct-write, D-C2).
-  // The download path stays the fallback; these two calls are what the view wires to a
-  // "Connect folder" control.
-  function fsaWriter() {
-    var root = typeof window !== 'undefined' ? window : null
-    var api = root && root.nnFsa
-    if (!api) return null
-    return api.createWriter({ win: root, store: api.createIndexedDbStore() })
-  }
-
-  function connectFolder(workspaceId) {
-    var writer = fsaWriter()
-    if (!writer) return Promise.resolve({ ok: false, reason: 'fsa-unavailable' })
-    return writer.connect(String(workspaceId || ''))
-  }
-
-  function writeChangesetToFolder(workspaceId, reviewer, changesetText) {
-    var writer = fsaWriter()
-    if (!writer) return Promise.resolve({ ok: false, reason: 'fsa-unavailable' })
-    return writer.writeChangeset({
-      workspaceId: String(workspaceId || ''),
-      reviewer: reviewer,
-      text: changesetText,
-    })
-  }
-
   function downloadChangesetExport(doc, state) {
     var identifierInput = doc.querySelector('#nn-feedback-modal [data-nn="identifier"]')
     var identifier =
@@ -9476,11 +9425,22 @@
   function copyTextToClipboard(doc, text) {
     var win = (doc && doc.defaultView) || (typeof window !== 'undefined' ? window : null)
     var nav =
-      win && win.navigator ? win.navigator : typeof navigator !== 'undefined' ? navigator : null
+      typeof navigator !== 'undefined' && navigator.clipboard
+        ? navigator
+        : win && win.navigator
+          ? win.navigator
+          : typeof navigator !== 'undefined'
+            ? navigator
+            : null
     if (nav && nav.clipboard && typeof nav.clipboard.writeText === 'function') {
-      return nav.clipboard.writeText(text).catch(function () {
-        return execCopyFallback(doc, text)
-      })
+      return nav.clipboard.writeText(text).then(
+        function () {
+          return true
+        },
+        function () {
+          return execCopyFallback(doc, text)
+        },
+      )
     }
     return Promise.resolve(execCopyFallback(doc, text))
   }
@@ -9502,7 +9462,7 @@
       ok = false
     }
     ta.remove()
-    return ok
+    return !!ok
   }
 
   function composeAgentPrompt(state) {
@@ -9708,9 +9668,13 @@
     var promptText = composeAgentPrompt(state)
     var draftsCount = state && state.store ? state.store.drafts().length : 0
 
-    return copyTextToClipboard(active, promptText).then(function () {
-      showToast(active, 'Copied! Prompt for AI agent is ready in clipboard.', 'success')
-      return { ok: true, prompt: promptText, items: draftsCount }
+    return copyTextToClipboard(active, promptText).then(function (ok) {
+      if (ok) {
+        showToast(active, 'Copied! Prompt for AI agent is ready in clipboard.', 'success')
+      } else {
+        showToast(active, 'Copy failed. Select the text and copy manually.', 'error')
+      }
+      return { ok: !!ok, prompt: promptText, items: draftsCount }
     })
   }
 
@@ -11344,7 +11308,6 @@
     ITEM_KINDS: ITEM_KINDS,
     slugify: slugify,
     slugifyReviewer: slugifyReviewer,
-    stampFromDate: stampFromDate,
     changesetStampOf: changesetStampOf,
     consoleScopeMeta: consoleScopeMeta,
     draftStoreId: draftStoreId,
@@ -11353,7 +11316,6 @@
     parseConfig: parseConfig,
     hasNeed: hasNeed,
     parseSlots: parseSlots,
-    MODEL_SLOT_TYPE: MODEL_SLOT_TYPE,
     decodeModelText: decodeModelText,
     encodeModelText: encodeModelText,
     decodeModelSlot: decodeModelSlot,
@@ -11406,9 +11368,8 @@
     composeChangesetExport: composeChangesetExport,
     verdictDraft: verdictDraft,
     downloadChangesetExport: downloadChangesetExport,
-    connectFolder: connectFolder,
-    writeChangesetToFolder: writeChangesetToFolder,
     copyChangesetPrompt: copyChangesetPrompt,
+    copyTextToClipboard: copyTextToClipboard,
     saveSnapshot: saveSnapshot,
     copyAgentPrompt: copyAgentPrompt,
     composeAgentPrompt: composeAgentPrompt,

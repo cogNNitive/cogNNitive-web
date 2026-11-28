@@ -86,7 +86,8 @@
       '--nn-fs-min': '0.75rem',
       '--nn-font':
         "Plus Jakarta Sans, Geist Sans, Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-      '--nn-mono': "Geist Mono, 'JetBrains Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace",
+      '--nn-mono':
+        "Geist Mono, 'JetBrains Mono', ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace",
       '--nn-shadow': '0 1px 2px rgba(0, 0, 0, .06)',
     },
   }
@@ -243,7 +244,7 @@
     // Content badges: NO border; the concept colour rides on the label/value and on
     // the concept icon (the icon of the concept the unit belongs to).
     '.nn-ku[data-ku-nature=content]>.nn-ku-label{color:var(--nn-text)}',
-  '.nn-ku[data-ku-nature=content]>.nn-ku-value{color:var(--c)}',
+    '.nn-ku[data-ku-nature=content]>.nn-ku-value{color:var(--c)}',
     '.nn-ku[data-ku-nature=content]>.nn-ku-icon{color:var(--c)}',
     // A Source is cited evidence: paper fill and neutral ink. It is never tinted by
     // the concept colour, even though it is a content unit.
@@ -468,17 +469,49 @@
   ]
   for (var slot = 1; slot <= 12; slot++) {
     COMPONENT_CSS.push(
-      '[data-concept-slot="' + slot + '"] .nn-concept-dot{background:var(--nn-concept-' + slot + ')}',
+      '[data-concept-slot="' +
+        slot +
+        '"] .nn-concept-dot{background:var(--nn-concept-' +
+        slot +
+        ')}',
     )
   }
   for (var kslot = 1; kslot <= 12; kslot++) {
     COMPONENT_CSS.push(
-      '[data-nn-component=element-card][data-concept-slot="' + kslot + '"]{--card-concept-color:var(--nn-concept-' + kslot + ');--card-concept-bg:var(--nn-concept-' + kslot + '-bg);border-left:4px solid var(--nn-concept-' + kslot + ')}',
+      '[data-nn-component=element-card][data-concept-slot="' +
+        kslot +
+        '"]{--card-concept-color:var(--nn-concept-' +
+        kslot +
+        ');--card-concept-bg:var(--nn-concept-' +
+        kslot +
+        '-bg);border-left:4px solid var(--nn-concept-' +
+        kslot +
+        ')}',
       // The concept slot drives --c/--cb on the badge: content text + icon, the
       // structure border, and the concept/document tint all read from it.
-      '[data-nn-component=ku-unit][data-concept-slot="' + kslot + '"]{--c:var(--nn-concept-' + kslot + ');--cb:var(--nn-concept-' + kslot + '-bg)}',
-      '[data-nn-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=concept],[data-nn-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=document]{background:var(--nn-concept-' + kslot + '-bg);border-color:var(--nn-concept-' + kslot + ')}',
-      '[data-nn-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=concept] .nn-ku-icon,[data-nn-component=ku-unit][data-concept-slot="' + kslot + '"][data-ku-kind=document] .nn-ku-icon{color:var(--nn-concept-' + kslot + ')}',
+      '[data-nn-component=ku-unit][data-concept-slot="' +
+        kslot +
+        '"]{--c:var(--nn-concept-' +
+        kslot +
+        ');--cb:var(--nn-concept-' +
+        kslot +
+        '-bg)}',
+      '[data-nn-component=ku-unit][data-concept-slot="' +
+        kslot +
+        '"][data-ku-kind=concept],[data-nn-component=ku-unit][data-concept-slot="' +
+        kslot +
+        '"][data-ku-kind=document]{background:var(--nn-concept-' +
+        kslot +
+        '-bg);border-color:var(--nn-concept-' +
+        kslot +
+        ')}',
+      '[data-nn-component=ku-unit][data-concept-slot="' +
+        kslot +
+        '"][data-ku-kind=concept] .nn-ku-icon,[data-nn-component=ku-unit][data-concept-slot="' +
+        kslot +
+        '"][data-ku-kind=document] .nn-ku-icon{color:var(--nn-concept-' +
+        kslot +
+        ')}',
     )
   }
   // Dialogs and their controls had no visible focus ring at all: tabbing through a modal
@@ -540,7 +573,16 @@
   // ---- Shared helpers ----
 
   function slug(s) {
-    return String(s == null ? '' : s)
+    var str = String(s == null ? '' : s)
+    var mod =
+      (typeof nnSlug !== 'undefined' && nnSlug && nnSlug.slugify ? nnSlug : null) ||
+      (typeof globalThis !== 'undefined' && globalThis.nnSlug && globalThis.nnSlug.slugify
+        ? globalThis.nnSlug
+        : null)
+    if (mod && typeof mod.slugify === 'function') {
+      return mod.slugify(str)
+    }
+    return str
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -578,7 +620,9 @@
 
   // Tag color derivation: FNV-1a 32-bit over valueKey(name), then slot = (h >>> 0) % 12 + 1
   function tagSlot(name) {
-    var key = String(name == null ? '' : name).trim().toLowerCase()
+    var key = String(name == null ? '' : name)
+      .trim()
+      .toLowerCase()
     var h = 0x811c9dc5
     for (var i = 0; i < key.length; i++) {
       h ^= key.charCodeAt(i)
@@ -601,40 +645,69 @@
   // SVG bodies (everything after viewBox="0 0 24 24", before </svg>). Moved out
   // of nn-runtime.js's former svgIcon.
   var ICON_PATHS = {
-    pencil: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path><path d="m15 5 4 4"></path>',
+    pencil:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"></path><path d="m15 5 4 4"></path>',
     pin: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"></path>',
-    chart: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>',
-    target: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle>',
-    folder: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>',
-    explorer: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>',
-    matrices: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line>',
-    timeline: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path>',
+    chart:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>',
+    target:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle>',
+    folder:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>',
+    explorer:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>',
+    matrices:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line>',
+    timeline:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path>',
     star: ' fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>',
     calc: ' fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="9" x2="19" y2="9"></line><line x1="5" y1="15" x2="19" y2="15"></line>',
-    derived: ' fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a4 4 0 0 1 8 0 4 4 0 0 0 8 0"></path>',
-    close: ' fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>',
-    review: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m9 15 2 2 4-4"></path>',
-    'cite-agent': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="11" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><line x1="12" y1="7" x2="12" y2="9"></line><line x1="8" y1="14" x2="8" y2="15"></line><line x1="16" y1="14" x2="16" y2="15"></line>',
-    'cite-human': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-7 8-7s8 3 8 7"></path>',
-    'cite-reviewer': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="m9 10 2 2 4-4"></path>',
-    'cite-document': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line>',
-    'cite-error': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>',
-    chevron: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline>',
-    image: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>',
-    sliders: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line>',
-    'message-square': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>',
-    'git-commit': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="1.05" y1="12" x2="7" y2="12"></line><line x1="17.01" y1="12" x2="22.96" y2="12"></line>',
-    check: ' fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline>',
-    'arrow-up-right': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline>',
+    derived:
+      ' fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12a4 4 0 0 1 8 0 4 4 0 0 0 8 0"></path>',
+    close:
+      ' fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>',
+    review:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="m9 15 2 2 4-4"></path>',
+    'cite-agent':
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="11" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><line x1="12" y1="7" x2="12" y2="9"></line><line x1="8" y1="14" x2="8" y2="15"></line><line x1="16" y1="14" x2="16" y2="15"></line>',
+    'cite-human':
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 4-7 8-7s8 3 8 7"></path>',
+    'cite-reviewer':
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="m9 10 2 2 4-4"></path>',
+    'cite-document':
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="16" y2="17"></line>',
+    'cite-error':
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line>',
+    chevron:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline>',
+    image:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>',
+    sliders:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line><line x1="1" y1="14" x2="7" y2="14"></line><line x1="9" y1="8" x2="15" y2="8"></line><line x1="17" y1="16" x2="23" y2="16"></line>',
+    'message-square':
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>',
+    'git-commit':
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><line x1="1.05" y1="12" x2="7" y2="12"></line><line x1="17.01" y1="12" x2="22.96" y2="12"></line>',
+    check:
+      ' fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline>',
+    'arrow-up-right':
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline>',
     box: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path>',
-    boxes: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z"></path><path d="m7 16.5-4.74-2.85"></path><path d="m7 16.5 5-3"></path><path d="M7 16.5v5.17"></path><path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z"></path><path d="m17 16.5-5-3"></path><path d="m17 16.5 4.74-2.85"></path><path d="M17 16.5v5.17"></path><path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z"></path><path d="M12 8 7.26 5.15"></path><path d="m12 8 4.74-2.85"></path><path d="M12 13.5V8"></path>',
-    layers: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"></path><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"></path><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"></path>',
-    'flask-conical': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"></path><path d="M8.5 2h7"></path><path d="M7 16h10"></path>',
+    boxes:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z"></path><path d="m7 16.5-4.74-2.85"></path><path d="m7 16.5 5-3"></path><path d="M7 16.5v5.17"></path><path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z"></path><path d="m17 16.5-5-3"></path><path d="m17 16.5 4.74-2.85"></path><path d="M17 16.5v5.17"></path><path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z"></path><path d="M12 8 7.26 5.15"></path><path d="m12 8 4.74-2.85"></path><path d="M12 13.5V8"></path>',
+    layers:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"></path><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"></path><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"></path>',
+    'flask-conical':
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2"></path><path d="M8.5 2h7"></path><path d="M7 16h10"></path>',
     cpu: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"></rect><rect width="6" height="6" x="9" y="9" rx="1"></rect><path d="M15 2v2"></path><path d="M15 20v2"></path><path d="M2 15h2"></path><path d="M2 9h2"></path><path d="M20 15h2"></path><path d="M20 9h2"></path><path d="M9 2v2"></path><path d="M9 20v2"></path>',
-    shield: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>',
-    wrench: ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>',
-    'git-branch': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path>',
-    'more-vertical': ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5" fill="currentColor"></circle><circle cx="12" cy="5" r="1.5" fill="currentColor"></circle><circle cx="12" cy="19" r="1.5" fill="currentColor"></circle>',
+    shield:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path>',
+    wrench:
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>',
+    'git-branch':
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"></line><circle cx="18" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><path d="M18 9a9 9 0 0 1-9 9"></path>',
+    'more-vertical':
+      ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5" fill="currentColor"></circle><circle cx="12" cy="5" r="1.5" fill="currentColor"></circle><circle cx="12" cy="19" r="1.5" fill="currentColor"></circle>',
   }
 
   function icon(name, size, cls) {
@@ -726,7 +799,11 @@
         tag.setAttribute('title', 'Filter by tag ' + String(t))
         tag.addEventListener('click', function (ev) {
           // The review +/x controls live inside the chip and keep their own action.
-          var inner = ev && ev.target && typeof ev.target.closest === 'function' && ev.target.closest('[data-nn-ctl]')
+          var inner =
+            ev &&
+            ev.target &&
+            typeof ev.target.closest === 'function' &&
+            ev.target.closest('[data-nn-ctl]')
           if (inner) return
           onTag(String(t))
         })
@@ -866,10 +943,7 @@
           : String(data.status)
     badge.textContent = text
     badge.setAttribute('aria-label', String(data.label != null ? data.label : text))
-    badge.setAttribute(
-      'title',
-      data.title != null ? String(data.title) : COPY.unsentHelp,
-    )
+    badge.setAttribute('title', data.title != null ? String(data.title) : COPY.unsentHelp)
     return badge
   }
 
@@ -1029,7 +1103,9 @@
     var doc = resolveDoc(opts)
     var root = makeEl(doc, 'div', 'nn-markdown')
     root.setAttribute('data-nn-component', 'markdown')
-    var lines = String(text == null ? '' : text).replace(/\r\n?/g, '\n').split('\n')
+    var lines = String(text == null ? '' : text)
+      .replace(/\r\n?/g, '\n')
+      .split('\n')
     var i = 0
     function blank(l) {
       return !/\S/.test(l)
@@ -1065,7 +1141,11 @@
       if (lm) {
         var ordered = /\d/.test(lm[1].charAt(0))
         var list = makeEl(doc, ordered ? 'ol' : 'ul')
-        while (i < lines.length && (lm = MD_LIST.exec(lines[i])) && /\d/.test(lm[1].charAt(0)) === ordered) {
+        while (
+          i < lines.length &&
+          (lm = MD_LIST.exec(lines[i])) &&
+          /\d/.test(lm[1].charAt(0)) === ordered
+        ) {
           var li = makeEl(doc, 'li')
           mdInline(doc, li, lm[2])
           list.appendChild(li)
@@ -1207,10 +1287,13 @@
           }
         }
         wrap.appendChild(
-          CitationIcon({ variant: v, field: d.name, value: d.value, entry: entry }, {
-            doc: doc,
-            onOpen: opts && opts.onCite ? opts.onCite : undefined,
-          }),
+          CitationIcon(
+            { variant: v, field: d.name, value: d.value, entry: entry },
+            {
+              doc: doc,
+              onOpen: opts && opts.onCite ? opts.onCite : undefined,
+            },
+          ),
         )
       })
     }
@@ -1257,7 +1340,9 @@
     img.setAttribute('loading', 'lazy')
     img.addEventListener('error', function () {
       var cur = img.getAttribute('src') || ''
-      var relMatch = !img.getAttribute('data-retried') && cur.match(/^.+?\b((?:sources|kNNowledge|assets|evidence)\/.+)$/)
+      var relMatch =
+        !img.getAttribute('data-retried') &&
+        cur.match(/^.+?\b((?:sources|kNNowledge|assets|evidence)\/.+)$/)
       if (relMatch) {
         img.setAttribute('data-retried', '1')
         img.setAttribute('src', relMatch[1])
@@ -1331,7 +1416,9 @@
 
   function isAssetPath(value) {
     if (typeof value !== 'string') return false
-    return /^(?:.+?\/)?(?:sources|kNNowledge|assets|evidence)\/[^\s]+\.[a-z0-9]{2,5}$/i.test(value.replace(/\\/g, '/'))
+    return /^(?:.+?\/)?(?:sources|kNNowledge|assets|evidence)\/[^\s]+\.[a-z0-9]{2,5}$/i.test(
+      value.replace(/\\/g, '/'),
+    )
   }
 
   function FieldValue(data, opts) {
@@ -1344,7 +1431,12 @@
     if (type === 'boolean' || typeof value === 'boolean') return renderFieldBoolean(d, doc)
     if (Array.isArray(value)) return renderFieldList(d, doc)
     if (value !== null && typeof value === 'object') return renderFieldObject(d, doc)
-    if (typeof value === 'string' && /^https?:\/\//i.test(value) && type !== 'video' && type !== 'audio') {
+    if (
+      typeof value === 'string' &&
+      /^https?:\/\//i.test(value) &&
+      type !== 'video' &&
+      type !== 'audio'
+    ) {
       return renderFieldUrl(d, doc)
     }
 
@@ -1510,7 +1602,10 @@
     if (m) candidates.push(m[1])
     for (var i = 0; i < candidates.length; i++) {
       if (tried.indexOf(candidates[i]) === -1 && candidates[i] !== cur) {
-        img.setAttribute('data-retried', (img.getAttribute('data-retried') || '') + '|' + candidates[i])
+        img.setAttribute(
+          'data-retried',
+          (img.getAttribute('data-retried') || '') + '|' + candidates[i],
+        )
         img.setAttribute('src', candidates[i])
         return
       }
@@ -1530,7 +1625,20 @@
     return null
   }
 
-  var CONCEPT_SLOT_ICONS = ['box', 'boxes', 'flask-conical', 'git-branch', 'wrench', 'layers', 'cpu', 'shield', 'target', 'cite-document', 'cite-human', 'explorer']
+  var CONCEPT_SLOT_ICONS = [
+    'box',
+    'boxes',
+    'flask-conical',
+    'git-branch',
+    'wrench',
+    'layers',
+    'cpu',
+    'shield',
+    'target',
+    'cite-document',
+    'cite-human',
+    'explorer',
+  ]
 
   function resolveConceptIconName(conceptName, conceptOpts) {
     if (conceptOpts && conceptOpts.icon) return String(conceptOpts.icon)
@@ -1581,7 +1689,8 @@
      representation (mini, pill, marker, timeline row) can reuse it. */
   var _previewHost = null
   function previewHostEl(doc) {
-    if (_previewHost && _previewHost.ownerDocument === doc && _previewHost.parentNode) return _previewHost
+    if (_previewHost && _previewHost.ownerDocument === doc && _previewHost.parentNode)
+      return _previewHost
     _previewHost = makeEl(doc, 'div', 'nn-preview')
     _previewHost.setAttribute('data-nn-component', 'element-preview')
     _previewHost.setAttribute('role', 'dialog')
@@ -1644,8 +1753,12 @@
       clearTimeout(timer)
       timer = setTimeout(open, openDelay)
     }
-    function onLeave() { if (!pinned) close() }
-    function onKey(e) { if (e && e.key === 'Escape') close() }
+    function onLeave() {
+      if (!pinned) close()
+    }
+    function onKey(e) {
+      if (e && e.key === 'Escape') close()
+    }
     function onDocClick(e) {
       var t = e && e.target
       if (t && (trigger.contains(t) || (_previewHost && _previewHost.contains(t)))) return
@@ -1660,7 +1773,13 @@
       open: open,
       close: close,
       togglePin: function () {
-        if (pinned) { close() } else { pinned = true; doc.addEventListener('click', onDocClick, true); open() }
+        if (pinned) {
+          close()
+        } else {
+          pinned = true
+          doc.addEventListener('click', onDocClick, true)
+          open()
+        }
       },
       destroy: function () {
         close()
@@ -1741,7 +1860,8 @@
       mini.appendChild(st)
     }
     if (opts && opts.preview) {
-      var previewOpts = typeof opts.preview === 'object' && opts.preview !== null ? opts.preview : {}
+      var previewOpts =
+        typeof opts.preview === 'object' && opts.preview !== null ? opts.preview : {}
       var ctl = ElementPreview(mini, data, {
         doc: doc,
         concept: conceptOpts,
@@ -1800,13 +1920,17 @@
     var conceptId = data.concept || data.conceptId
     if (conceptId) {
       badgesWrap.appendChild(
-        Ku('section', {
-          model: unitModel,
-          concept: conceptId,
-          label: conceptId,
-          index: conceptOpts.index,
-          color: conceptOpts.color,
-        }, { doc: doc }),
+        Ku(
+          'section',
+          {
+            model: unitModel,
+            concept: conceptId,
+            label: conceptId,
+            index: conceptOpts.index,
+            color: conceptOpts.color,
+          },
+          { doc: doc },
+        ),
       )
     }
     var elSlug = data.id
@@ -1814,13 +1938,17 @@
       elSlug = elSlug.slice(unitModel.length + 1)
     }
     badgesWrap.appendChild(
-      Ku('element', {
-        model: unitModel,
-        id: elSlug,
-        label: data.name || data.id,
-        index: conceptOpts.index,
-        color: conceptOpts.color,
-      }, { doc: doc }),
+      Ku(
+        'element',
+        {
+          model: unitModel,
+          id: elSlug,
+          label: data.name || data.id,
+          index: conceptOpts.index,
+          color: conceptOpts.color,
+        },
+        { doc: doc },
+      ),
     )
     head.appendChild(badgesWrap)
 
@@ -1861,7 +1989,11 @@
       if (!fItem) continue
       if (fItem.name === 'status' && typeof fItem.value === 'string' && fItem.value.trim()) {
         statusField = fItem.value.trim()
-      } else if (fItem.name === 'summary' && typeof fItem.value === 'string' && fItem.value.trim()) {
+      } else if (
+        fItem.name === 'summary' &&
+        typeof fItem.value === 'string' &&
+        fItem.value.trim()
+      ) {
         summaryField = fItem.value.trim()
       }
     }
@@ -1869,7 +2001,12 @@
       var stPill = makeEl(doc, 'span', 'nn-card-status-pill')
       var stNorm = statusField.toLowerCase()
       stPill.setAttribute('data-status', stNorm)
-      if (stNorm === 'reviewed' || stNorm === 'applied' || stNorm === 'completed' || stNorm === 'verified') {
+      if (
+        stNorm === 'reviewed' ||
+        stNorm === 'applied' ||
+        stNorm === 'completed' ||
+        stNorm === 'verified'
+      ) {
         var chk = makeEl(doc, 'span', 'nn-status-pill-icon')
         chk.innerHTML = icon('check', 11)
         stPill.appendChild(chk)
@@ -1928,7 +2065,11 @@
 
       head.addEventListener('click', function (ev) {
         var t = ev && ev.target
-        if (t && typeof t.closest === 'function' && t.closest('button, a, input, select, textarea, [data-ku-more]')) {
+        if (
+          t &&
+          typeof t.closest === 'function' &&
+          t.closest('button, a, input, select, textarea, [data-ku-more]')
+        ) {
           return
         }
         setOpen(!open)
@@ -1974,18 +2115,30 @@
         })
       }
       if (!objFields.length && bodyFields.length > 1) {
-        var compactScalars = bodyFields.filter(function (fr) {
-          if (!fr || fr.ref || fr.value == null || relFieldSet[fr.name]) return false
-          if (fr.name === 'summary' || fr.name === 'long_description' || fr.name === 'description' || fr.name === 'status' || fr.name === 'sources') return false
-          if (typeof fr.value === 'object') return false
-          var sv = normalizeAssetPath(String(fr.value))
-          if (!sv || sv.length > 36 || looksLikeImageValue(sv) || /^\[\[.*\]\]$/.test(sv)) return false
-          return true
-        }).slice(0, 3)
+        var compactScalars = bodyFields
+          .filter(function (fr) {
+            if (!fr || fr.ref || fr.value == null || relFieldSet[fr.name]) return false
+            if (
+              fr.name === 'summary' ||
+              fr.name === 'long_description' ||
+              fr.name === 'description' ||
+              fr.name === 'status' ||
+              fr.name === 'sources'
+            )
+              return false
+            if (typeof fr.value === 'object') return false
+            var sv = normalizeAssetPath(String(fr.value))
+            if (!sv || sv.length > 36 || looksLikeImageValue(sv) || /^\[\[.*\]\]$/.test(sv))
+              return false
+            return true
+          })
+          .slice(0, 3)
         compactScalars.forEach(function (fr) {
           var chip = makeEl(doc, 'span', 'nn-obj-chip')
           chip.appendChild(makeEl(doc, 'span', 'nn-obj-chip-k', fr.name))
-          chip.appendChild(makeEl(doc, 'span', 'nn-obj-chip-v', normalizeAssetPath(String(fr.value))))
+          chip.appendChild(
+            makeEl(doc, 'span', 'nn-obj-chip-v', normalizeAssetPath(String(fr.value))),
+          )
           stripLeft.appendChild(chip)
         })
       }
@@ -2011,7 +2164,10 @@
           if (tConcept || tSlot) {
             var tIco = makeEl(doc, 'span', 'nn-strip-rel-icon')
             tIco.setAttribute('aria-hidden', 'true')
-            tIco.innerHTML = icon(resolveConceptIconName(tConcept, { index: (Number(tSlot) || 1) - 1 }), 11)
+            tIco.innerHTML = icon(
+              resolveConceptIconName(tConcept, { index: (Number(tSlot) || 1) - 1 }),
+              11,
+            )
             pill.appendChild(tIco)
           }
           pill.appendChild(doc.createTextNode((!r.field ? '' : '') + rLabel + ' ↗'))
@@ -2077,22 +2233,37 @@
       }
       // No tag row without tags (the review controller adds its own for "+ tag").
       var tags = Array.isArray(data.tags) ? data.tags : []
-      if (tags.length) body.appendChild(TagRow({ tags: tags }, { doc: doc, onTag: opts && opts.onTag }))
+      if (tags.length)
+        body.appendChild(TagRow({ tags: tags }, { doc: doc, onTag: opts && opts.onTag }))
       if (relations && relations.length) {
         var outWrap = makeEl(doc, 'div', 'nn-card-outgoing')
         outWrap.appendChild(
-          makeEl(doc, 'span', 'nn-card-outgoing-label', 'Outgoing relations (' + relations.length + ')'),
+          makeEl(
+            doc,
+            'span',
+            'nn-card-outgoing-label',
+            'Outgoing relations (' + relations.length + ')',
+          ),
         )
-        outWrap.appendChild(RelList({ relations: relations, byId: byId, model: unitModel }, { doc: doc }))
+        outWrap.appendChild(
+          RelList({ relations: relations, byId: byId, model: unitModel }, { doc: doc }),
+        )
         body.appendChild(outWrap)
       }
       var incoming = Array.isArray(data.incomingRelations) ? data.incomingRelations : null
       if (incoming && incoming.length) {
         var incWrap = makeEl(doc, 'div', 'nn-card-incoming')
         incWrap.appendChild(
-          makeEl(doc, 'span', 'nn-card-incoming-label', 'Incoming relations (' + incoming.length + ')'),
+          makeEl(
+            doc,
+            'span',
+            'nn-card-incoming-label',
+            'Incoming relations (' + incoming.length + ')',
+          ),
         )
-        incWrap.appendChild(RelList({ relations: incoming, byId: byId, model: unitModel }, { doc: doc }))
+        incWrap.appendChild(
+          RelList({ relations: incoming, byId: byId, model: unitModel }, { doc: doc }),
+        )
         body.appendChild(incWrap)
       }
       card.appendChild(body)
@@ -2102,7 +2273,8 @@
         card.appendChild(cardFooter)
       }
       var win = doc && (doc.defaultView || (doc.ownerDocument && doc.ownerDocument.defaultView))
-      var CustomEv = (win && win.CustomEvent) || (typeof CustomEvent !== 'undefined' ? CustomEvent : null)
+      var CustomEv =
+        (win && win.CustomEvent) || (typeof CustomEvent !== 'undefined' ? CustomEvent : null)
       if (CustomEv && typeof doc.dispatchEvent === 'function') {
         try {
           doc.dispatchEvent(new CustomEv('nn:rendered', { detail: { root: card } }))
@@ -2277,8 +2449,7 @@
 
     // Evidence / sources are citations: the standard citation value widget keeps
     // the icon live, so the reviewer opens the source from the change sheet.
-    var rawEvidence =
-      variant === 'draft' ? e.sources || e.evidence : e.evidence || e.sources
+    var rawEvidence = variant === 'draft' ? e.sources || e.evidence : e.evidence || e.sources
     var evidenceList =
       rawEvidence == null ? [] : Array.isArray(rawEvidence) ? rawEvidence : [rawEvidence]
     evidenceList.forEach(function (src) {
@@ -2424,7 +2595,12 @@
       })
     }
     if (typeof opts.onDiscard === 'function' && entry.id != null) {
-      var discard = makeEl(doc, 'button', 'nn-change-sheet-action nn-change-sheet-discard', COPY.discard)
+      var discard = makeEl(
+        doc,
+        'button',
+        'nn-change-sheet-action nn-change-sheet-discard',
+        COPY.discard,
+      )
       discard.setAttribute('type', 'button')
       discard.setAttribute('data-nn', 'discard')
       discard.addEventListener('click', function () {
@@ -2463,7 +2639,8 @@
     card.setAttribute('data-nn-change-sheet', '')
     card.setAttribute('data-change-state', stateKind)
     if (entry.id != null) card.setAttribute('data-change-id', String(entry.id))
-    if (variant === 'draft' && entry.id != null) card.setAttribute('data-draft-id', String(entry.id))
+    if (variant === 'draft' && entry.id != null)
+      card.setAttribute('data-draft-id', String(entry.id))
     if (data.stale) card.setAttribute('data-target-changed', 'true')
     return card
   }
@@ -2589,13 +2766,14 @@
             doc: doc,
             title: cardTitle(
               item.op,
-              item.el && item.el.name ? Object.assign({}, item.entry, { element: item.el.name }) : item.entry,
+              item.el && item.el.name
+                ? Object.assign({}, item.entry, { element: item.el.name })
+                : item.entry,
             ),
             stateKind: item.applied ? 'applied' : 'not-applied',
             stateLabel: item.applied ? COPY.applied : COPY.notApplied,
             elementId: item.elementName || (item.el && item.el.id),
-            revertable:
-              item.applied && (item.op === 'update_field' || item.op === 'set_fields'),
+            revertable: item.applied && (item.op === 'update_field' || item.op === 'set_fields'),
             onRevert: typeof opts.onRevert === 'function' ? opts.onRevert : null,
             onGoTo: typeof opts.onGoTo === 'function' ? opts.onGoTo : null,
             onCite:
@@ -2630,7 +2808,6 @@
     more()
     return host
   }
-
 
   // ---- Core Edit Widgets (D13 / S3) ----
 
@@ -2799,13 +2976,19 @@
   // address substring, or an empty query listing every candidate.
   function refMatches(candidates, query) {
     var list = Array.isArray(candidates) ? candidates : []
-    var q = String(query == null ? '' : query).trim().toLowerCase()
+    var q = String(query == null ? '' : query)
+      .trim()
+      .toLowerCase()
     if (!q) return list
     return list.filter(function (c) {
       if (!c) return false
       return (
-        String(c.title == null ? '' : c.title).toLowerCase().indexOf(q) !== -1 ||
-        String(c.address == null ? '' : c.address).toLowerCase().indexOf(q) !== -1
+        String(c.title == null ? '' : c.title)
+          .toLowerCase()
+          .indexOf(q) !== -1 ||
+        String(c.address == null ? '' : c.address)
+          .toLowerCase()
+          .indexOf(q) !== -1
       )
     })
   }
@@ -2878,7 +3061,8 @@
       var address = raw.indexOf('@') !== -1 ? raw : model ? model + '@' + raw : raw
       elementTitles[address] = String(e.name == null ? raw : e.name)
     })
-    var collections = data.collections && typeof data.collections === 'object' ? data.collections : {}
+    var collections =
+      data.collections && typeof data.collections === 'object' ? data.collections : {}
     var byAddress = {}
     var out = []
     Object.keys(collections).forEach(function (concept) {
@@ -3068,7 +3252,8 @@
         Object.keys(el.fields).forEach(function (k) {
           if (k === 'sources' || k === 'source') return
           var val = el.fields[k]
-          var cleanKey = typeof val === 'string' ? val.replace(/^\[\[|\]\]$/g, '').trim() : String(val)
+          var cleanKey =
+            typeof val === 'string' ? val.replace(/^\[\[|\]\]$/g, '').trim() : String(val)
           var target = null
           if (Array.isArray(el.relations)) {
             var relMatch = el.relations.find(function (r) {
@@ -3138,14 +3323,22 @@
     } else if (data.fieldName) {
       var fieldBox = makeEl(doc, 'div', 'nn-field-view-box')
       var headBadges = makeEl(doc, 'div', 'nn-card-badges')
-      var unitModel = (opts && (opts.modelId || opts.model)) || data.modelId || (el && (el.modelId || el.model)) || ''
+      var unitModel =
+        (opts && (opts.modelId || opts.model)) ||
+        data.modelId ||
+        (el && (el.modelId || el.model)) ||
+        ''
       if (data.concept) {
         headBadges.appendChild(
-          Ku('section', {
-            model: unitModel,
-            concept: data.concept,
-            label: data.concept,
-          }, { doc: doc }),
+          Ku(
+            'section',
+            {
+              model: unitModel,
+              concept: data.concept,
+              label: data.concept,
+            },
+            { doc: doc },
+          ),
         )
       }
       if (el) {
@@ -3154,20 +3347,28 @@
           elSlug = elSlug.slice(unitModel.length + 1)
         }
         headBadges.appendChild(
-          Ku('element', {
-            model: unitModel,
-            id: elSlug,
-            label: el.name || el.id,
-          }, { doc: doc }),
+          Ku(
+            'element',
+            {
+              model: unitModel,
+              id: elSlug,
+              label: el.name || el.id,
+            },
+            { doc: doc },
+          ),
         )
       }
       headBadges.appendChild(
-        Ku('field', {
-          model: unitModel,
-          concept: data.concept || '',
-          name: data.fieldName,
-          label: data.fieldName,
-        }, { doc: doc }),
+        Ku(
+          'field',
+          {
+            model: unitModel,
+            concept: data.concept || '',
+            name: data.fieldName,
+            label: data.fieldName,
+          },
+          { doc: doc },
+        ),
       )
       fieldBox.appendChild(headBadges)
 
@@ -3175,7 +3376,7 @@
       var fieldRows = [
         ['Field', data.fieldName],
         ['Declared Type', data.type || 'string'],
-        ['Element', el ? (el.name || el.id) : (data.elementId || '')],
+        ['Element', el ? el.name || el.id : data.elementId || ''],
         ['Concept', data.concept || ''],
       ]
       fieldRows.forEach(function (pair) {
@@ -3189,14 +3390,22 @@
       valSection.appendChild(makeEl(doc, 'h4', 'nn-field-view-subtitle', 'Current Value'))
       var valNode = null
       if (typeof FieldValue === 'function') {
-        valNode = FieldValue({
-          name: data.fieldName,
-          value: data.value,
-          type: data.type,
-        }, { doc: doc })
+        valNode = FieldValue(
+          {
+            name: data.fieldName,
+            value: data.value,
+            type: data.type,
+          },
+          { doc: doc },
+        )
       }
       if (!valNode) {
-        valNode = makeEl(doc, 'div', 'nn-field-view-val-text', String(data.value == null ? '' : data.value))
+        valNode = makeEl(
+          doc,
+          'div',
+          'nn-field-view-val-text',
+          String(data.value == null ? '' : data.value),
+        )
       }
       valSection.appendChild(valNode)
       fieldBox.appendChild(valSection)
@@ -3228,14 +3437,30 @@
     // toggle is not offered. Only declared string lists have a typed list editor;
     // arbitrary arrays and objects remain comment-only rather than being coerced.
     var commentOnly = Boolean(data.commentOnly)
-    var editableList = Boolean(data.multiple) &&
-      (data.value == null || typeof data.value === 'string' ||
-        (Array.isArray(data.value) && data.value.every(function (v) { return typeof v === 'string' })))
-    var valueIsContainer = Boolean(data.valueCommentOnly) ||
+    var editableList =
+      Boolean(data.multiple) &&
+      (data.value == null ||
+        typeof data.value === 'string' ||
+        (Array.isArray(data.value) &&
+          data.value.every(function (v) {
+            return typeof v === 'string'
+          })))
+    var valueIsContainer =
+      Boolean(data.valueCommentOnly) ||
       (!editableList && data.value !== null && typeof data.value === 'object')
     var isComment = commentOnly || valueIsContainer || Boolean(data.isComment)
-    var btnPropose = makeEl(doc, 'button', 'nn-edit-mode-btn' + (!isComment ? ' active' : ''), 'Propose value')
-    var btnComment = makeEl(doc, 'button', 'nn-edit-mode-btn' + (isComment ? ' active' : ''), 'Comment')
+    var btnPropose = makeEl(
+      doc,
+      'button',
+      'nn-edit-mode-btn' + (!isComment ? ' active' : ''),
+      'Propose value',
+    )
+    var btnComment = makeEl(
+      doc,
+      'button',
+      'nn-edit-mode-btn' + (isComment ? ' active' : ''),
+      'Comment',
+    )
     btnPropose.setAttribute('type', 'button')
     btnComment.setAttribute('type', 'button')
     modeWrap.appendChild(btnPropose)
@@ -3283,9 +3508,18 @@
     var fieldsContainer = makeEl(doc, 'div', 'nn-edit-fields')
     var widgetRef = null
     var fieldType = data.type || 'string'
-    var listValues = editableList && Array.isArray(data.value) ? data.value.slice() :
-      editableList && typeof data.value === 'string' && data.value.trim() ? [data.value] : []
-    var fieldLabel = makeEl(doc, 'label', 'nn-edit-field-label', data.fieldName ? data.fieldName : 'Value')
+    var listValues =
+      editableList && Array.isArray(data.value)
+        ? data.value.slice()
+        : editableList && typeof data.value === 'string' && data.value.trim()
+          ? [data.value]
+          : []
+    var fieldLabel = makeEl(
+      doc,
+      'label',
+      'nn-edit-field-label',
+      data.fieldName ? data.fieldName : 'Value',
+    )
     fieldsContainer.appendChild(fieldLabel)
 
     if (valueIsContainer) {
@@ -3293,8 +3527,16 @@
       // String()-coerced into a text control (S3b P0-2).
       widgetRef = null
     } else if (editableList) {
-      widgetRef = ChipEditor({ values: listValues, options: data.options,
-        onChange: function (values) { listValues = values } }, opts)
+      widgetRef = ChipEditor(
+        {
+          values: listValues,
+          options: data.options,
+          onChange: function (values) {
+            listValues = values
+          },
+        },
+        opts,
+      )
     } else if (fieldType === 'number') {
       widgetRef = FieldNumberWidget(data.value, opts)
     } else if (fieldType === 'boolean') {
@@ -3362,19 +3604,34 @@
       })
     } else {
       histSection.appendChild(
-        makeEl(doc, 'div', 'nn-history-empty', data.fieldName ? 'No recorded changes for this field.' : 'No recorded changes for this element.'),
+        makeEl(
+          doc,
+          'div',
+          'nn-history-empty',
+          data.fieldName
+            ? 'No recorded changes for this field.'
+            : 'No recorded changes for this element.',
+        ),
       )
     }
     // The payload keeps the newest hops only. Say so, and say where the rest lives:
     // showing twelve of forty without a word is the console claiming the element has
     // twelve changes.
-    if (!data.fieldName && typeof data.historyTotal === 'number' && data.historyTotal > historyItems.length) {
+    if (
+      !data.fieldName &&
+      typeof data.historyTotal === 'number' &&
+      data.historyTotal > historyItems.length
+    ) {
       histSection.appendChild(
         makeEl(
           doc,
           'div',
           'nn-history-empty',
-          'Showing the last ' + String(historyItems.length) + ' of ' + String(data.historyTotal) + ' recorded changes. The full lineage is in the changes model.',
+          'Showing the last ' +
+            String(historyItems.length) +
+            ' of ' +
+            String(data.historyTotal) +
+            ' recorded changes. The full lineage is in the changes model.',
         ),
       )
     }
@@ -3396,8 +3653,18 @@
     saveError.style.display = 'none'
 
     // Tab switcher events
-    var tabButtons = { view: tabBtnView, edit: tabBtnEdit, history: tabBtnHistory, connections: tabBtnConnections }
-    var tabPanels = { view: panelView, edit: panelEdit, history: panelHistory, connections: panelConnections }
+    var tabButtons = {
+      view: tabBtnView,
+      edit: tabBtnEdit,
+      history: tabBtnHistory,
+      connections: tabBtnConnections,
+    }
+    var tabPanels = {
+      view: panelView,
+      edit: panelEdit,
+      history: panelHistory,
+      connections: panelConnections,
+    }
     function showTab(name) {
       Object.keys(tabButtons).forEach(function (k) {
         tabButtons[k].className = 'nn-modal-tab-btn' + (k === name ? ' active' : '')
@@ -3437,8 +3704,12 @@
       if (!isComment) {
         if (editableList) {
           var invalid = listValues.filter(function (value) {
-            return Array.isArray(data.options) && data.options.length && data.options.indexOf(value) === -1 &&
+            return (
+              Array.isArray(data.options) &&
+              data.options.length &&
+              data.options.indexOf(value) === -1 &&
               !(Array.isArray(data.value) && data.value.indexOf(value) !== -1)
+            )
           })
           if (invalid.length) {
             saveError.textContent = 'Choose a declared option: ' + data.options.join(', ')
@@ -3460,7 +3731,9 @@
           result.proposed = cb ? cb.checked : false
         } else if (fieldType === 'multiselect') {
           var checkedBoxes = widgetRef.querySelectorAll('input[type="checkbox"]:checked')
-          result.proposed = Array.prototype.map.call(checkedBoxes, function (b) { return b.value })
+          result.proposed = Array.prototype.map.call(checkedBoxes, function (b) {
+            return b.value
+          })
         } else if (fieldType === 'reference') {
           var refInp = widgetRef.querySelector('input')
           var refRaw = refInp ? refInp.value : ''
@@ -3509,7 +3782,8 @@
   // EditModal. onSave receives { concept, name, fields } where fields holds only
   // the filled values (a blank input is not a value).
   function NewElementModal(data, opts) {
-    if (!data || typeof data !== 'object') throw new TypeError('nnUI.NewElementModal: data required')
+    if (!data || typeof data !== 'object')
+      throw new TypeError('nnUI.NewElementModal: data required')
     var doc = resolveDoc(opts)
     var concepts = Array.isArray(data.concepts) ? data.concepts : []
     var modal = makeEl(doc, 'dialog', 'nn-edit-modal')
@@ -3610,7 +3884,8 @@
       else if (type === 'select') node = FieldSelectWidget('', def.options, opts)
       else if (type === 'multiselect') node = FieldMultiSelectWidget([], def.options, opts)
       else if (type === 'reference') node = FieldReferenceWidget('', data.candidates, opts)
-      else if (type === 'markdown' || type === 'markdown_inline') node = FieldMarkdownWidget('', opts)
+      else if (type === 'markdown' || type === 'markdown_inline')
+        node = FieldMarkdownWidget('', opts)
       else node = FieldStringWidget('', opts)
       node.setAttribute('data-nn-field', def.name)
       return { name: def.name, type: type, node: node }
@@ -3695,7 +3970,11 @@
           concept: picker.value,
           name: name,
           fields: fields,
-          modelId: modelPicker ? modelPicker.value : models.length === 1 ? String(models[0].id) : undefined,
+          modelId: modelPicker
+            ? modelPicker.value
+            : models.length === 1
+              ? String(models[0].id)
+              : undefined,
         })
       }
       dismiss()
@@ -3775,7 +4054,6 @@
     return pop
   }
 
-
   // A compact 3-column Sankey-style flow for a knowledge unit: incoming
   // relations flow into the centre node, outgoing relations flow out. Pure SVG,
   // no layout library. Data: { center, incoming: [{label, field}], outgoing: [...] }.
@@ -3787,7 +4065,9 @@
     var wrap = makeEl(doc, 'div', 'nn-sankey')
     wrap.setAttribute('data-nn-component', 'sankey')
     if (!incoming.length && !outgoing.length) {
-      wrap.appendChild(makeEl(doc, 'p', 'nn-sankey-empty', 'No relations recorded for this knowledge unit.'))
+      wrap.appendChild(
+        makeEl(doc, 'p', 'nn-sankey-empty', 'No relations recorded for this knowledge unit.'),
+      )
       return wrap
     }
     var NS = 'http://www.w3.org/2000/svg'
@@ -3834,7 +4114,10 @@
     function flow(x1, y1, x2, y2) {
       var p = doc.createElementNS(NS, 'path')
       var mx = (x1 + x2) / 2
-      p.setAttribute('d', 'M' + x1 + ' ' + y1 + ' C' + mx + ' ' + y1 + ' ' + mx + ' ' + y2 + ' ' + x2 + ' ' + y2)
+      p.setAttribute(
+        'd',
+        'M' + x1 + ' ' + y1 + ' C' + mx + ' ' + y1 + ' ' + mx + ' ' + y2 + ' ' + x2 + ' ' + y2,
+      )
       p.setAttribute('class', 'nn-sankey-link')
       return p
     }
@@ -3861,9 +4144,13 @@
         r.appendChild(title)
       }
       svg.appendChild(r)
-      svg.appendChild(label(x + 10, nodeY(i) + 21, truncate(link && link.label, 20), 'nn-sankey-label'))
+      svg.appendChild(
+        label(x + 10, nodeY(i) + 21, truncate(link && link.label, 20), 'nn-sankey-label'),
+      )
       if (link && link.field) {
-        svg.appendChild(label(x + colW - 8, nodeY(i) + 21, truncate(link.field, 12), 'nn-sankey-field', 'end'))
+        svg.appendChild(
+          label(x + colW - 8, nodeY(i) + 21, truncate(link.field, 12), 'nn-sankey-field', 'end'),
+        )
       }
     }
     incoming.forEach(function (link, i) {
@@ -3875,7 +4162,13 @@
 
     svg.appendChild(rect(centerX, centerY, 'nn-sankey-node nn-sankey-center'))
     svg.appendChild(
-      label(centerX + colW / 2, centerY + 22, truncate(d.center || 'This unit', 26), 'nn-sankey-center-label', 'middle'),
+      label(
+        centerX + colW / 2,
+        centerY + 22,
+        truncate(d.center || 'This unit', 26),
+        'nn-sankey-center-label',
+        'middle',
+      ),
     )
 
     wrap.appendChild(svg)
@@ -3898,10 +4191,7 @@
     span.setAttribute('data-nn-component', 'rail-progress')
     span.setAttribute('data-total', String(total))
     span.setAttribute('data-pending', String(pending))
-    span.setAttribute(
-      'title',
-      pending + ' of ' + total + ' elements have unsent changes',
-    )
+    span.setAttribute('title', pending + ' of ' + total + ' elements have unsent changes')
     span.appendChild(doc.createTextNode(pending + '/' + total))
     return span
   }
@@ -3946,13 +4236,21 @@
     var onCopyPrompt = opts.onCopyPrompt
     var draftsCount = (data && data.draftsCount) || 0
 
-    var htmlTag = (typeof html !== 'undefined' && html) || (typeof window !== 'undefined' && window.html) || (typeof globalThis !== 'undefined' && globalThis.html)
-    var renderFn = (typeof render !== 'undefined' && render) || (typeof window !== 'undefined' && window.render) || (typeof globalThis !== 'undefined' && globalThis.render)
+    var htmlTag =
+      (typeof html !== 'undefined' && html) ||
+      (typeof window !== 'undefined' && window.html) ||
+      (typeof globalThis !== 'undefined' && globalThis.html)
+    var renderFn =
+      (typeof render !== 'undefined' && render) ||
+      (typeof window !== 'undefined' && window.render) ||
+      (typeof globalThis !== 'undefined' && globalThis.render)
 
-    var saveSvg = (typeof icon === 'function' ? icon('download', 14) : '') ||
+    var saveSvg =
+      (typeof icon === 'function' ? icon('download', 14) : '') ||
       '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>'
 
-    var promptSvg = (typeof icon === 'function' ? icon('sparkles', 14) : '') ||
+    var promptSvg =
+      (typeof icon === 'function' ? icon('sparkles', 14) : '') ||
       '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></svg>'
 
     if (htmlTag && renderFn) {
@@ -4021,8 +4319,12 @@
     var btnCopy = makeEl(doc, 'button', 'nn-navbar-action-btn nn-btn-copy-prompt')
     btnCopy.setAttribute('type', 'button')
     btnCopy.setAttribute('data-nn', 'copy-agent-prompt')
-    btnCopy.setAttribute('title', 'Copy the agent prompt: instructions plus the embedded changeset document')
-    btnCopy.innerHTML = '<span class="nn-btn-icon">' + promptSvg + '</span><span>Copy AI Prompt</span>'
+    btnCopy.setAttribute(
+      'title',
+      'Copy the agent prompt: instructions plus the embedded changeset document',
+    )
+    btnCopy.innerHTML =
+      '<span class="nn-btn-icon">' + promptSvg + '</span><span>Copy AI Prompt</span>'
     btnCopy.addEventListener('click', function (e) {
       if (e && e.preventDefault) e.preventDefault()
       if (typeof onCopyPrompt === 'function') onCopyPrompt()
@@ -4038,7 +4340,15 @@
    * same actions. The CSS hides `.nn-navbar-actions-inner` below 720px and shows
    * the trigger, so the header never wraps or clips the two labels.
    */
-  function appendCollapsedActions(doc, group, draftsCount, saveSvg, promptSvg, onSave, onCopyPrompt) {
+  function appendCollapsedActions(
+    doc,
+    group,
+    draftsCount,
+    saveSvg,
+    promptSvg,
+    onSave,
+    onCopyPrompt,
+  ) {
     var moreSvg =
       (typeof icon === 'function' ? icon('more-horizontal', 14) : '') ||
       '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>'
@@ -4049,7 +4359,9 @@
     toggle.setAttribute('aria-haspopup', 'menu')
     toggle.setAttribute('aria-expanded', 'false')
     toggle.innerHTML =
-      '<span class="nn-btn-icon">' + moreSvg + '</span><span>Actions</span>' +
+      '<span class="nn-btn-icon">' +
+      moreSvg +
+      '</span><span>Actions</span>' +
       (draftsCount > 0 ? '<span class="nn-badge-count">' + draftsCount + '</span>' : '')
 
     var menu = makeEl(doc, 'div', 'nn-navbar-actions-menu')
@@ -4126,7 +4438,13 @@
 
     function addChip(value) {
       var text = String(value == null ? '' : value).trim()
-      if (!text || values.some(function (v) { return String(v).toLowerCase() === text.toLowerCase() })) return
+      if (
+        !text ||
+        values.some(function (v) {
+          return String(v).toLowerCase() === text.toLowerCase()
+        })
+      )
+        return
       values.push(text)
       var chip = makeEl(doc, 'span', 'nn-chip', text)
       var remove = makeEl(doc, 'button', 'nn-chip-remove')
@@ -4293,7 +4611,8 @@
       th.setAttribute('scope', 'col')
       if (col.key != null) th.setAttribute('data-col', String(col.key))
       if (col.align) th.className = gridCellClass(col.align)
-      th.textContent = col.label != null ? String(col.label) : String(col.key == null ? '' : col.key)
+      th.textContent =
+        col.label != null ? String(col.label) : String(col.key == null ? '' : col.key)
       htr.appendChild(th)
     })
     thead.appendChild(htr)
@@ -4385,13 +4704,22 @@
   }
 
   function DataTable(data, opts) {
-    if (!data || !Array.isArray(data.columns)) throw new TypeError('nnUI.DataTable: data.columns must be an array')
+    if (!data || !Array.isArray(data.columns))
+      throw new TypeError('nnUI.DataTable: data.columns must be an array')
     if (!Array.isArray(data.rows)) throw new TypeError('nnUI.DataTable: data.rows must be an array')
     var doc = resolveDoc(opts)
     if (!doc) throw new TypeError('nnUI.DataTable: doc is required')
     var modelId = (opts && (opts.modelId || opts.model)) || data.modelId || 'model'
     var columns = data.columns.map(function (c) {
-      return { key: c.key, label: c.label, align: c.align, kind: c.kind || 'text', type: c.type, value: c.value, render: c.render }
+      return {
+        key: c.key,
+        label: c.label,
+        align: c.align,
+        kind: c.kind || 'text',
+        type: c.type,
+        value: c.value,
+        render: c.render,
+      }
     })
     var rows = data.rows.map(function (el) {
       return {
@@ -4411,14 +4739,18 @@
   }
 
   function MatrixGrid(data, opts) {
-    if (!data || !Array.isArray(data.columns)) throw new TypeError('nnUI.MatrixGrid: data.columns must be an array')
-    if (!Array.isArray(data.rows)) throw new TypeError('nnUI.MatrixGrid: data.rows must be an array')
+    if (!data || !Array.isArray(data.columns))
+      throw new TypeError('nnUI.MatrixGrid: data.columns must be an array')
+    if (!Array.isArray(data.rows))
+      throw new TypeError('nnUI.MatrixGrid: data.rows must be an array')
     var doc = resolveDoc(opts)
     if (!doc) throw new TypeError('nnUI.MatrixGrid: doc is required')
     return buildGrid({
       doc: doc,
       component: 'matrix-grid',
-      columns: data.columns.map(function (c) { return { key: c.key, label: c.label, align: c.align } }),
+      columns: data.columns.map(function (c) {
+        return { key: c.key, label: c.label, align: c.align }
+      }),
       rows: data.rows,
       rowHeader: data.rowHeader || { label: '' },
       pinFirstColumn: data.pinFirstColumn !== false,
@@ -4429,14 +4761,18 @@
   // A timeline is a matrix whose columns ARE periods; identical to MatrixGrid
   // apart from the component name (styling) and a centre-aligned axis default.
   function Timeline(data, opts) {
-    if (!data || !Array.isArray(data.periods)) throw new TypeError('nnUI.Timeline: data.periods must be an array')
-    if (!Array.isArray(data.lanes)) throw new TypeError('nnUI.Timeline: data.lanes must be an array')
+    if (!data || !Array.isArray(data.periods))
+      throw new TypeError('nnUI.Timeline: data.periods must be an array')
+    if (!Array.isArray(data.lanes))
+      throw new TypeError('nnUI.Timeline: data.lanes must be an array')
     var doc = resolveDoc(opts)
     if (!doc) throw new TypeError('nnUI.Timeline: doc is required')
     return buildGrid({
       doc: doc,
       component: 'timeline',
-      columns: data.periods.map(function (p) { return { key: p.key, label: p.label, align: p.align || 'center' } }),
+      columns: data.periods.map(function (p) {
+        return { key: p.key, label: p.label, align: p.align || 'center' }
+      }),
       rows: data.lanes,
       rowHeader: data.rowHeader || { label: data.laneLabel || '' },
       pinFirstColumn: data.pinFirstColumn !== false,
@@ -4467,7 +4803,9 @@
 
   function filterSummary(label, options, selected) {
     var total = options.length
-    var chosen = options.filter(function (o) { return selected[o.value] })
+    var chosen = options.filter(function (o) {
+      return selected[o.value]
+    })
     if (!total) return label
     if (chosen.length === total) return label + ': todos (' + total + ')'
     if (!chosen.length) return label + ': ninguno'
@@ -4484,11 +4822,17 @@
     var options = normalizeFilterOptions(data.options)
     var selected = {}
     if (data.selected && !Array.isArray(data.selected) && typeof data.selected === 'object') {
-      Object.keys(data.selected).forEach(function (k) { if (data.selected[k]) selected[k] = true })
+      Object.keys(data.selected).forEach(function (k) {
+        if (data.selected[k]) selected[k] = true
+      })
     } else if (Array.isArray(data.selected)) {
-      data.selected.forEach(function (v) { selected[v] = true })
+      data.selected.forEach(function (v) {
+        selected[v] = true
+      })
     }
-    options.forEach(function (o) { if (o.selected) selected[o.value] = true })
+    options.forEach(function (o) {
+      if (o.selected) selected[o.value] = true
+    })
     var label = data.label != null ? String(data.label) : ''
 
     var root = makeEl(doc, 'details', 'nn-filter')
@@ -4501,9 +4845,17 @@
 
     var cbByValue = {}
     function selectedValues() {
-      return options.filter(function (o) { return selected[o.value] }).map(function (o) { return o.value })
+      return options
+        .filter(function (o) {
+          return selected[o.value]
+        })
+        .map(function (o) {
+          return o.value
+        })
     }
-    function syncSummary() { summary.textContent = filterSummary(label, options, selected) }
+    function syncSummary() {
+      summary.textContent = filterSummary(label, options, selected)
+    }
     function notify() {
       if (typeof opts.onChange === 'function') opts.onChange(selectedValues())
     }
@@ -4511,7 +4863,9 @@
       var allow = null
       if (values !== 'all') {
         allow = {}
-        ;(Array.isArray(values) ? values : [values]).forEach(function (v) { allow[v] = true })
+        ;(Array.isArray(values) ? values : [values]).forEach(function (v) {
+          allow[v] = true
+        })
       }
       options.forEach(function (o) {
         var on = values === 'all' ? true : !!(allow && allow[o.value])
@@ -4550,7 +4904,8 @@
       cbByValue[o.value] = cb
       row.appendChild(cb)
       row.appendChild(makeEl(doc, 'span', 'nn-filter-option-label', o.label))
-      if (o.count != null) row.appendChild(makeEl(doc, 'span', 'nn-filter-option-count', String(o.count)))
+      if (o.count != null)
+        row.appendChild(makeEl(doc, 'span', 'nn-filter-option-count', String(o.count)))
       menu.appendChild(row)
     })
 
@@ -4561,7 +4916,12 @@
   }
 
   function defineCustomElements() {
-    if (typeof window === 'undefined' || !window.customElements || window.customElements.get('nn-ku')) return
+    if (
+      typeof window === 'undefined' ||
+      !window.customElements ||
+      window.customElements.get('nn-ku')
+    )
+      return
     try {
       function nnKu() {
         return Reflect.construct(HTMLElement, [], nnKu)
@@ -4704,12 +5064,7 @@
             return api.unitAddress.element(ref.model, elId)
           case 'value':
             if (ref.row && ref.col) {
-              return api.unitAddress.cell(
-                ref.model,
-                ref.matrix || ref.element,
-                ref.row,
-                ref.col,
-              )
+              return api.unitAddress.cell(ref.model, ref.matrix || ref.element, ref.row, ref.col)
             }
             return api.unitAddress.value(valueBaseAddress(ref), ref.field)
           case 'concept':
@@ -4753,7 +5108,9 @@
       case 'concept':
         return 'specs/' + (ref.family || m) + '@concept:' + slug(ref.concept || ref.name)
       case 'field':
-        return 'specs/' + (ref.family || m) + '@concept:' + slug(ref.concept) + '&' + (ref.name || '')
+        return (
+          'specs/' + (ref.family || m) + '@concept:' + slug(ref.concept) + '&' + (ref.name || '')
+        )
       case 'matrix':
         return 'specs/' + (ref.family || m) + '@matrix:' + slug(ref.name)
     }
@@ -4845,7 +5202,7 @@
       '.nn-ku[data-ku-nature=structure]{border:1.5px solid var(--c);font-family:ui-monospace,monospace;color:var(--nn-muted);background:var(--nn-surface,#fff)}',
       '.nn-ku[data-ku-nature=content]{border:0;background:var(--nn-surface-2,#f1f5f9)}',
       '.nn-ku[data-ku-nature=content]>.nn-ku-label{color:var(--nn-text)}',
-  '.nn-ku[data-ku-nature=content]>.nn-ku-value{color:var(--c)}',
+      '.nn-ku[data-ku-nature=content]>.nn-ku-value{color:var(--c)}',
       '.nn-ku[data-ku-nature=content]>.nn-ku-icon{color:var(--c)}',
       '.nn-ku[data-ku-home=source]{background:var(--nn-source-paper,#fff7e6)}',
       '.nn-ku[data-ku-home=source]>.nn-ku-label,.nn-ku[data-ku-home=source] .nn-ku-icon{color:var(--nn-muted)}',
@@ -4921,7 +5278,8 @@
     if (ref && ref.field) badge.setAttribute('data-field', String(ref.field))
     if (ref && ref.row != null) badge.setAttribute('data-row', String(ref.row))
     if (ref && ref.col != null) badge.setAttribute('data-col', String(ref.col))
-    if (ref && ref.id != null && kind === 'element') badge.setAttribute('data-element-id', String(ref.id))
+    if (ref && ref.id != null && kind === 'element')
+      badge.setAttribute('data-element-id', String(ref.id))
     if (isBlock) {
       badge.setAttribute('data-ku-variant', 'block')
       if (opts.body) badge.appendChild(opts.body)
@@ -4973,7 +5331,9 @@
       return b
     }
     actions.appendChild(actionButton('info', 'info', 'Unit info', opts.onInfo))
-    actions.appendChild(actionButton('reveal', 'arrow-up-right', 'Reveal in context', opts.onReveal))
+    actions.appendChild(
+      actionButton('reveal', 'arrow-up-right', 'Reveal in context', opts.onReveal),
+    )
     if (desc.editability !== 'none') {
       var editBtn = actionButton('edit', 'pencil', 'Edit unit', opts.onEdit)
       if (desc.editability === 'structure') editBtn.setAttribute('data-ku-structure', 'true')
@@ -5100,7 +5460,10 @@
           pip.setAttribute('data-ku-address', address)
           var labelEl = badge.querySelector('.nn-ku-label')
           var label = labelEl ? labelEl.textContent : badge.getAttribute('aria-label') || address
-          pip.setAttribute('aria-label', n + ' pending change' + (n === 1 ? '' : 's') + ' on ' + label)
+          pip.setAttribute(
+            'aria-label',
+            n + ' pending change' + (n === 1 ? '' : 's') + ' on ' + label,
+          )
           if (typeof opts.onChanges === 'function') {
             pip.addEventListener('click', function (ev) {
               if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation()
@@ -5206,12 +5569,17 @@
     panelEdit.style.display = 'none'
     if (descriptor.editability === 'structure') {
       var warn = makeEl(doc, 'div', 'nn-edit-warn')
-      warn.innerHTML = '<strong>Structural BluepriNNt Unit:</strong> Changes to this unit affect schema contracts across the domain.'
+      warn.innerHTML =
+        '<strong>Structural BluepriNNt Unit:</strong> Changes to this unit affect schema contracts across the domain.'
       panelEdit.appendChild(warn)
     } else if (descriptor.editability === 'none') {
-      panelEdit.appendChild(makeEl(doc, 'p', 'nn-edit-note', 'This unit is read-only (evidence source or container).'))
+      panelEdit.appendChild(
+        makeEl(doc, 'p', 'nn-edit-note', 'This unit is read-only (evidence source or container).'),
+      )
     } else {
-      panelEdit.appendChild(makeEl(doc, 'p', 'nn-edit-note', 'Use review mode or edit controls to propose changes.'))
+      panelEdit.appendChild(
+        makeEl(doc, 'p', 'nn-edit-note', 'Use review mode or edit controls to propose changes.'),
+      )
     }
     dlg.appendChild(panelEdit)
 
@@ -5219,19 +5587,38 @@
     var panelHistory = makeEl(doc, 'div', 'nn-modal-tab-panel nn-history-modal-body')
     panelHistory.setAttribute('data-tab', 'history')
     panelHistory.style.display = 'none'
-    panelHistory.appendChild(makeEl(doc, 'div', 'nn-history-empty', 'No recorded changes targeting this unit.'))
+    panelHistory.appendChild(
+      makeEl(doc, 'div', 'nn-history-empty', 'No recorded changes targeting this unit.'),
+    )
     dlg.appendChild(panelHistory)
 
     // Panel 3: Connections
     var panelConnections = makeEl(doc, 'div', 'nn-modal-tab-panel nn-connections-modal-body')
     panelConnections.setAttribute('data-tab', 'connections')
     panelConnections.style.display = 'none'
-    panelConnections.appendChild(makeEl(doc, 'p', 'nn-ku-info-sub', 'Connections and usages for ' + (descriptor.label || descriptor.address)))
+    panelConnections.appendChild(
+      makeEl(
+        doc,
+        'p',
+        'nn-ku-info-sub',
+        'Connections and usages for ' + (descriptor.label || descriptor.address),
+      ),
+    )
     dlg.appendChild(panelConnections)
 
     // Tab switcher events
-    var tabButtons = { view: tabBtnView, edit: tabBtnEdit, history: tabBtnHistory, connections: tabBtnConnections }
-    var tabPanels = { view: panelView, edit: panelEdit, history: panelHistory, connections: panelConnections }
+    var tabButtons = {
+      view: tabBtnView,
+      edit: tabBtnEdit,
+      history: tabBtnHistory,
+      connections: tabBtnConnections,
+    }
+    var tabPanels = {
+      view: panelView,
+      edit: panelEdit,
+      history: panelHistory,
+      connections: panelConnections,
+    }
     function showTab(name) {
       Object.keys(tabButtons).forEach(function (k) {
         tabButtons[k].className = 'nn-modal-tab-btn' + (k === name ? ' active' : '')
@@ -5240,10 +5627,18 @@
       })
     }
     showTab('view')
-    tabBtnView.addEventListener('click', function () { showTab('view') })
-    tabBtnEdit.addEventListener('click', function () { showTab('edit') })
-    tabBtnHistory.addEventListener('click', function () { showTab('history') })
-    tabBtnConnections.addEventListener('click', function () { showTab('connections') })
+    tabBtnView.addEventListener('click', function () {
+      showTab('view')
+    })
+    tabBtnEdit.addEventListener('click', function () {
+      showTab('edit')
+    })
+    tabBtnHistory.addEventListener('click', function () {
+      showTab('history')
+    })
+    tabBtnConnections.addEventListener('click', function () {
+      showTab('connections')
+    })
 
     // The same action bar as the other two dialogs. `nn-edit-modal-foot` had no rule at
     // all, so this footer rendered unstyled.
