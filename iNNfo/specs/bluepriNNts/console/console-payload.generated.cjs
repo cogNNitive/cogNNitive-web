@@ -7498,6 +7498,14 @@ var ElementsMap = class {
   }
 };
 
+// iNNfo/packages/nn-core/src/path-guard.ts
+var import_node_path = require("node:path");
+function isInsideRoot(rootDir, candidate) {
+  const abs = (0, import_node_path.resolve)(rootDir, candidate);
+  const rel = (0, import_node_path.relative)((0, import_node_path.resolve)(rootDir), abs);
+  return rel !== "" && !rel.startsWith("..") && !(0, import_node_path.isAbsolute)(rel);
+}
+
 // iNNfo/packages/nn-core/src/parser/slug.ts
 function nfc(text2) {
   return text2.normalize("NFC");
@@ -9409,6 +9417,10 @@ function formatMemberName(key, ext, stamp) {
 function sidecarPathOf(rawPath) {
   return `${rawPath}_sidecar_NN.md`;
 }
+function rawPathOfSidecar(sidecarPath) {
+  const m = SIDECAR_PATH_RE.exec(sidecarPath);
+  return m ? m[1] : null;
+}
 function displayStem(basename6) {
   if (NN_SUFFIX_RE.test(basename6)) return basename6.replace(NN_SUFFIX_RE, "");
   return basename6.replace(/\.md$/i, "");
@@ -10323,7 +10335,7 @@ ${url ?? ""}`;
     const group = byIdGroups.get(id);
     return group?.length === 1 ? group[0].model : void 0;
   };
-  const resolve7 = (address, from, expect) => {
+  const resolve8 = (address, from, expect) => {
     const parsed = typeof address === "string" ? parseAddress(address) : address;
     const text2 = typeof address === "string" ? address.trim() : formatAddress(address);
     const fail = (code, message) => ({
@@ -10424,7 +10436,7 @@ ${url ?? ""}`;
     byId,
     collection,
     byPath: (path3) => pathMap.get(path3),
-    resolve: resolve7,
+    resolve: resolve8,
     placementFor: (concept, id, blueprint) => {
       const declared = lookup(blueprint);
       if (!declared) {
@@ -12282,11 +12294,11 @@ function canonicalUnitModelId(model) {
 
 // iNNfo/packages/nn-core/src/helpers.ts
 var import_promises = require("node:fs/promises");
-var import_node_path2 = require("node:path");
+var import_node_path3 = require("node:path");
 
 // iNNfo/packages/nn-core/src/scope/root.ts
 var import_node_fs = require("node:fs");
-var import_node_path = require("node:path");
+var import_node_path2 = require("node:path");
 function isFile(path3) {
   try {
     return (0, import_node_fs.statSync)(path3).isFile();
@@ -12295,7 +12307,7 @@ function isFile(path3) {
   }
 }
 function isDomainRoot(dir) {
-  return isFile((0, import_node_path.join)(dir, ENTRYPOINT_FILENAME));
+  return isFile((0, import_node_path2.join)(dir, ENTRYPOINT_FILENAME));
 }
 
 // iNNfo/packages/nn-core/src/helpers.ts
@@ -12339,7 +12351,7 @@ async function collectModels(dir, rootDir, candidates) {
     if (entry.isDirectory()) {
       if (isIgnoredDir(entry.name)) continue;
       if (dir === rootDir && isDomainChangesDir(entry.name)) continue;
-      const child = (0, import_node_path2.join)(dir, entry.name);
+      const child = (0, import_node_path3.join)(dir, entry.name);
       if (isDomainRoot(child)) continue;
       await collectModels(child, rootDir, candidates);
       continue;
@@ -12348,8 +12360,8 @@ async function collectModels(dir, rootDir, candidates) {
     if (!MD_FILE_RE.test(entry.name)) continue;
     if (entry.name.toLowerCase() === "index.md") continue;
     if (parseName(entry.name).kind !== "nn") continue;
-    const filePath = (0, import_node_path2.join)(dir, entry.name);
-    const relPath = (0, import_node_path2.relative)(rootDir, filePath).split("\\").join("/");
+    const filePath = (0, import_node_path3.join)(dir, entry.name);
+    const relPath = (0, import_node_path3.relative)(rootDir, filePath).split("\\").join("/");
     if (isExcludedPath(relPath)) continue;
     let frontmatter = null;
     let content = "";
@@ -12391,9 +12403,9 @@ var import_node_crypto = require("node:crypto");
 
 // iNNfo/packages/nn-core/src/cache-dir.ts
 var import_node_os = require("node:os");
-var import_node_path3 = require("node:path");
+var import_node_path4 = require("node:path");
 function defaultCacheDir() {
-  return process.env.INNFO_CACHE_DIR ?? (0, import_node_path3.join)((0, import_node_os.tmpdir)(), "innfo-specs");
+  return process.env.INNFO_CACHE_DIR ?? (0, import_node_path4.join)((0, import_node_os.tmpdir)(), "innfo-specs");
 }
 
 // iNNfo/packages/nn-core/src/changeset/changeset-index.ts
@@ -12543,7 +12555,8 @@ var import_yaml8 = __toESM(require_dist(), 1);
 var SIDECAR_SPEC_URL = `https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/${SIDECAR_BLUEPRINT}/${SPEC_FILENAME}`;
 var FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 function parseSidecarFrontmatter(text2) {
-  const match = FRONTMATTER_RE.exec(text2);
+  const normalized = text2.charCodeAt(0) === 65279 ? text2.slice(1) : text2;
+  const match = FRONTMATTER_RE.exec(normalized);
   if (!match) return null;
   try {
     const value = (0, import_yaml8.parse)(match[1]);
@@ -13525,7 +13538,7 @@ function citationFieldsFor(conceptName, fields, schema) {
 }
 
 // iNNfo/packages/nn-core/src/console/element-history.ts
-var import_node_path4 = require("node:path");
+var import_node_path5 = require("node:path");
 function hopOf(change) {
   return {
     changeId: change.id,
@@ -13568,7 +13581,7 @@ function stripWrappingQuotes(value) {
   return value;
 }
 async function loadChangesetRecords(rootDir) {
-  const read = readChangesDir((0, import_node_path4.join)(rootDir, "changes"), isChangesetFile).sort(
+  const read = readChangesDir((0, import_node_path5.join)(rootDir, "changes"), isChangesetFile).sort(
     (a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0
   );
   const records = [];
@@ -13701,34 +13714,26 @@ function mimeTypeFromPath(filePath) {
 function isTextMime(mimeType) {
   return mimeType.startsWith("text/") || mimeType === "application/json" || mimeType === "application/yaml";
 }
-var SIDECAR_SUFFIX = "_sidecar_NN.md";
 function isSidecarPath(relPath) {
   return isSidecarName(relPath);
 }
 function sidecarSubjectPath(sidecarRel) {
   if (!isSidecarName(sidecarRel)) return sidecarRel;
-  return sidecarRel.slice(0, sidecarRel.length - SIDECAR_SUFFIX.length);
+  return rawPathOfSidecar(sidecarRel) ?? sidecarRel;
 }
 function sidecarPathFor(relPath) {
-  return relPath + SIDECAR_SUFFIX;
-}
-var FRONTMATTER_RE2 = /^---\r?\n([\s\S]*?)\r?\n---/;
-function frontmatterEntry(block, key) {
-  const m = new RegExp("^" + key + ":\\s*(.+?)\\s*$", "m").exec(block);
-  if (!m) return void 0;
-  return m[1].replace(/^["']|["']$/g, "").trim();
+  return sidecarPathOf(relPath);
 }
 function parseAndValidateSidecar(sidecarContent, sidecarPath, subjectSha256) {
   if (sidecarContent === null || sidecarContent === void 0) {
     return { path: sidecarPath, exists: false, valid: false };
   }
-  const match = String(sidecarContent).match(FRONTMATTER_RE2);
-  if (!match) {
+  const fm = parseSidecarFrontmatter(String(sidecarContent));
+  if (!fm) {
     return { path: sidecarPath, exists: true, valid: false, error: "Missing YAML frontmatter" };
   }
-  const block = match[1];
-  const sourceFile = frontmatterEntry(block, "source_file");
-  const sha256 = (frontmatterEntry(block, "sha256") || "").toLowerCase();
+  const sourceFile = typeof fm["source_file"] === "string" ? fm["source_file"].trim() : void 0;
+  const sha256 = typeof fm["sha256"] === "string" ? fm["sha256"].trim().toLowerCase() : "";
   if (!sourceFile) {
     return { path: sidecarPath, exists: true, valid: false, error: "Missing source_file" };
   }
@@ -13741,6 +13746,7 @@ function parseAndValidateSidecar(sidecarContent, sidecarPath, subjectSha256) {
       error: "Missing or malformed sha256"
     };
   }
+  const str4 = (k) => typeof fm[k] === "string" ? fm[k].trim() : void 0;
   return {
     path: sidecarPath,
     exists: true,
@@ -13748,12 +13754,12 @@ function parseAndValidateSidecar(sidecarContent, sidecarPath, subjectSha256) {
     sourceFile,
     sha256,
     sha256Matches: subjectSha256 ? sha256 === subjectSha256.toLowerCase() : void 0,
-    sourceFormat: frontmatterEntry(block, "source_format"),
-    author: frontmatterEntry(block, "author"),
-    normalizedAt: frontmatterEntry(block, "normalized_at"),
-    synchronization: frontmatterEntry(block, "synchronization"),
-    originUri: frontmatterEntry(block, "origin_uri"),
-    originPath: frontmatterEntry(block, "origin_path")
+    sourceFormat: str4("source_format"),
+    author: str4("author"),
+    normalizedAt: str4("normalized_at"),
+    synchronization: str4("synchronization"),
+    originUri: str4("origin_uri"),
+    originPath: str4("origin_path")
   };
 }
 function normalizePosix(p) {
@@ -13934,36 +13940,34 @@ function calculateFilesStats(inventory) {
 
 // iNNfo/packages/nn-core/src/console/fs-source-resolver.ts
 var import_node_fs3 = require("node:fs");
-var import_node_path5 = require("node:path");
+var import_node_path6 = require("node:path");
 function createFsSourceResolver(rootDir) {
-  const rootResolved = (0, import_node_path5.resolve)(rootDir);
+  const rootResolved = (0, import_node_path6.resolve)(rootDir);
   return (refPath, referringPath) => {
     const candidateDirs = [];
     if (referringPath) {
-      const absReferring = (0, import_node_path5.isAbsolute)(referringPath) ? referringPath : (0, import_node_path5.resolve)(rootDir, referringPath);
-      let cur = (0, import_node_path5.dirname)(absReferring);
+      const absReferring = (0, import_node_path6.isAbsolute)(referringPath) ? referringPath : (0, import_node_path6.resolve)(rootDir, referringPath);
+      let cur = (0, import_node_path6.dirname)(absReferring);
       while (true) {
-        const sourcesDir = (0, import_node_path5.join)(cur, "sources");
+        const sourcesDir = (0, import_node_path6.join)(cur, "sources");
         if ((0, import_node_fs3.existsSync)(sourcesDir)) {
           candidateDirs.push(cur);
         }
-        if (cur === rootResolved || (0, import_node_path5.dirname)(cur) === cur) {
+        if (cur === rootResolved || (0, import_node_path6.dirname)(cur) === cur) {
           break;
         }
-        const relToRoot = (0, import_node_path5.relative)(rootResolved, cur);
-        if (relToRoot.startsWith("..")) {
+        if (!isInsideRoot(rootResolved, cur)) {
           break;
         }
-        cur = (0, import_node_path5.dirname)(cur);
+        cur = (0, import_node_path6.dirname)(cur);
       }
     }
     if (!candidateDirs.includes(rootResolved)) {
       candidateDirs.push(rootResolved);
     }
     for (const dir of candidateDirs) {
-      const abs = (0, import_node_path5.resolve)(dir, refPath);
-      const rel = (0, import_node_path5.relative)(dir, abs);
-      if (rel === "" || rel.startsWith("..") || (0, import_node_path5.isAbsolute)(rel)) {
+      const abs = (0, import_node_path6.resolve)(dir, refPath);
+      if (!isInsideRoot(dir, abs)) {
         continue;
       }
       if ((0, import_node_fs3.existsSync)(abs)) {
@@ -13980,8 +13984,8 @@ function createFsSourceResolver(rootDir) {
       }
     }
     const primaryDir = candidateDirs[0] ?? rootResolved;
-    const targetAbs = (0, import_node_path5.resolve)(primaryDir, refPath);
-    const targetParent = (0, import_node_path5.dirname)(targetAbs);
+    const targetAbs = (0, import_node_path6.resolve)(primaryDir, refPath);
+    const targetParent = (0, import_node_path6.dirname)(targetAbs);
     const parentExists = (0, import_node_fs3.existsSync)(targetParent);
     if (!parentExists) {
       return { exists: false, parentExists: false };
@@ -13989,7 +13993,7 @@ function createFsSourceResolver(rootDir) {
     let suggestions;
     try {
       const entries = (0, import_node_fs3.readdirSync)(targetParent, { withFileTypes: true });
-      const targetBase = (0, import_node_path5.basename)(refPath);
+      const targetBase = (0, import_node_path6.basename)(refPath);
       const targetStem = targetBase.replace(/\.[^.]+$/, "");
       const files = entries.filter((e) => e.isFile()).map((e) => e.name);
       const maxAllowed = Math.max(1, Math.min(3, Math.floor(targetStem.length / 3)));
@@ -14013,17 +14017,17 @@ function createFsSourceResolver(rootDir) {
 // iNNfo/packages/nn-core/src/console/locate-writer.ts
 var import_node_fs4 = require("node:fs");
 var import_node_os2 = require("node:os");
-var import_node_path6 = require("node:path");
+var import_node_path7 = require("node:path");
 var import_node_url = require("node:url");
-var DEV_ROOT_MARKER = (0, import_node_path6.join)("iNNfo", "specs", "bluepriNNts", "console", "artifact_shell.html");
+var DEV_ROOT_MARKER = (0, import_node_path7.join)("iNNfo", "specs", "bluepriNNts", "console", "artifact_shell.html");
 var EXPORT_MODULE = "export-console.mjs";
 var NO_OPEN_ENV = "INNFO_CONSOLE_NO_OPEN";
 function devCheckoutRoot(opts = {}) {
   const requires = opts.requires ?? [];
-  let dir = opts.startDir ?? (0, import_node_path6.dirname)((0, import_node_url.fileURLToPath)(__nnImportMetaUrl));
+  let dir = opts.startDir ?? (0, import_node_path7.dirname)((0, import_node_url.fileURLToPath)(__nnImportMetaUrl));
   for (; ; ) {
-    if ((0, import_node_fs4.existsSync)((0, import_node_path6.join)(dir, DEV_ROOT_MARKER)) && requires.every((rel) => (0, import_node_fs4.existsSync)((0, import_node_path6.join)(dir, rel)))) return dir;
-    const parent = (0, import_node_path6.dirname)(dir);
+    if ((0, import_node_fs4.existsSync)((0, import_node_path7.join)(dir, DEV_ROOT_MARKER)) && requires.every((rel) => (0, import_node_fs4.existsSync)((0, import_node_path7.join)(dir, rel)))) return dir;
+    const parent = (0, import_node_path7.dirname)(dir);
     if (parent === dir) return null;
     dir = parent;
   }
@@ -14031,21 +14035,21 @@ function devCheckoutRoot(opts = {}) {
 function resolveConsoleModulePath(opts = {}) {
   const env = opts.env ?? process.env;
   const candidates = [];
-  if (env.INNFO_CONSOLE_DIR) candidates.push((0, import_node_path6.join)(env.INNFO_CONSOLE_DIR, EXPORT_MODULE));
-  const devRoot = opts.devRoot === void 0 ? devCheckoutRoot({ requires: [(0, import_node_path6.join)("scripts", EXPORT_MODULE)] }) : opts.devRoot;
-  if (devRoot && (0, import_node_fs4.existsSync)((0, import_node_path6.join)(devRoot, DEV_ROOT_MARKER))) candidates.push((0, import_node_path6.join)(devRoot, "scripts", EXPORT_MODULE));
-  candidates.push((0, import_node_path6.join)(opts.home ?? (0, import_node_os2.homedir)(), ".agents", "console", EXPORT_MODULE));
+  if (env.INNFO_CONSOLE_DIR) candidates.push((0, import_node_path7.join)(env.INNFO_CONSOLE_DIR, EXPORT_MODULE));
+  const devRoot = opts.devRoot === void 0 ? devCheckoutRoot({ requires: [(0, import_node_path7.join)("scripts", EXPORT_MODULE)] }) : opts.devRoot;
+  if (devRoot && (0, import_node_fs4.existsSync)((0, import_node_path7.join)(devRoot, DEV_ROOT_MARKER))) candidates.push((0, import_node_path7.join)(devRoot, "scripts", EXPORT_MODULE));
+  candidates.push((0, import_node_path7.join)(opts.home ?? (0, import_node_os2.homedir)(), ".agents", "console", EXPORT_MODULE));
   return candidates.find((candidate) => (0, import_node_fs4.existsSync)(candidate)) ?? null;
 }
 var CONSOLE_BUNDLE = "nn-console.bundle.js";
-var DEV_CONSOLE_DIR = (0, import_node_path6.join)("iNNfo", "specs", "bluepriNNts", "console");
+var DEV_CONSOLE_DIR = (0, import_node_path7.join)("iNNfo", "specs", "bluepriNNts", "console");
 function resolveConsoleBundlePath(opts = {}) {
   const env = opts.env ?? process.env;
   const candidates = [];
-  if (env.INNFO_CONSOLE_DIR) candidates.push((0, import_node_path6.join)(env.INNFO_CONSOLE_DIR, CONSOLE_BUNDLE));
-  const devRoot = opts.devRoot === void 0 ? devCheckoutRoot({ requires: [(0, import_node_path6.join)(DEV_CONSOLE_DIR, CONSOLE_BUNDLE)] }) : opts.devRoot;
-  if (devRoot && (0, import_node_fs4.existsSync)((0, import_node_path6.join)(devRoot, DEV_ROOT_MARKER))) candidates.push((0, import_node_path6.join)(devRoot, DEV_CONSOLE_DIR, CONSOLE_BUNDLE));
-  candidates.push((0, import_node_path6.join)(opts.home ?? (0, import_node_os2.homedir)(), ".agents", "console", CONSOLE_BUNDLE));
+  if (env.INNFO_CONSOLE_DIR) candidates.push((0, import_node_path7.join)(env.INNFO_CONSOLE_DIR, CONSOLE_BUNDLE));
+  const devRoot = opts.devRoot === void 0 ? devCheckoutRoot({ requires: [(0, import_node_path7.join)(DEV_CONSOLE_DIR, CONSOLE_BUNDLE)] }) : opts.devRoot;
+  if (devRoot && (0, import_node_fs4.existsSync)((0, import_node_path7.join)(devRoot, DEV_ROOT_MARKER))) candidates.push((0, import_node_path7.join)(devRoot, DEV_CONSOLE_DIR, CONSOLE_BUNDLE));
+  candidates.push((0, import_node_path7.join)(opts.home ?? (0, import_node_os2.homedir)(), ".agents", "console", CONSOLE_BUNDLE));
   return candidates.find((candidate) => (0, import_node_fs4.existsSync)(candidate)) ?? null;
 }
 
@@ -14196,6 +14200,22 @@ function extractWikilinksFromValue(val) {
   }
   return [];
 }
+function referenceTokens2(val) {
+  if (typeof val === "string") return [val];
+  if (Array.isArray(val)) return val.filter((v) => typeof v === "string");
+  return [];
+}
+function referenceTargetName(value) {
+  let text2 = String(value || "").trim();
+  if (!text2) return "";
+  const link = text2.match(/^\[\[([^\]]+)\]\]$/);
+  if (link) text2 = link[1].split("|")[0].trim();
+  const bracket = text2.match(/^\[[^\]]+\]\s*(.+)$/);
+  if (bracket) return bracket[1].trim();
+  const colon = text2.lastIndexOf("::");
+  if (colon !== -1) return text2.slice(colon + 2).trim();
+  return text2;
+}
 function standaloneModelId(filePath, fallbackTitle) {
   if (filePath) {
     const base = filePath.split(/[\\/]/).pop() ?? "";
@@ -14237,6 +14257,16 @@ function buildConsolePayload(options) {
   const elementsById = /* @__PURE__ */ new Map();
   const unfrozen = [];
   const resolvedBlueprintSchema = typeof inputSchema === "string" ? resolveBlueprintSchema(inputSchema).schema : inputSchema;
+  const referenceFieldsByConcept = /* @__PURE__ */ new Map();
+  if (resolvedBlueprintSchema?.concepts) {
+    const conceptDefs = Array.isArray(resolvedBlueprintSchema.concepts) ? resolvedBlueprintSchema.concepts : Object.values(resolvedBlueprintSchema.concepts);
+    for (const def of conceptDefs) {
+      const names = (Array.isArray(def?.fields) ? def.fields : []).filter((f) => f?.type === "reference").map((f) => String(f.name).toLowerCase());
+      if (def?.name && names.length > 0) {
+        referenceFieldsByConcept.set(String(def.name).toLowerCase(), new Set(names));
+      }
+    }
+  }
   for (const [conceptName, nodes] of parsed.elements.entries()) {
     for (const node of nodes) {
       const concept = conceptName;
@@ -14302,6 +14332,20 @@ function buildConsolePayload(options) {
             target: targetEl.id,
             targetLabel: link.label || targetEl.name
           });
+        }
+      }
+    }
+    const referenceFields = referenceFieldsByConcept.get(elem.concept.toLowerCase());
+    if (referenceFields) {
+      for (const [fieldName, val] of Object.entries(rawFields)) {
+        if (!referenceFields.has(fieldName.toLowerCase())) continue;
+        for (const token of referenceTokens2(val)) {
+          const targetName = referenceTargetName(token);
+          if (!targetName) continue;
+          const targetEl = elementsByName.get(targetName.toLowerCase()) || elementsById.get(slugify(targetName).toLowerCase());
+          if (!targetEl || targetEl.id === elem.id) continue;
+          if (relations.some((r) => r.field === fieldName && r.target === targetEl.id)) continue;
+          relations.push({ field: fieldName, target: targetEl.id, targetLabel: targetEl.name });
         }
       }
     }
@@ -14415,28 +14459,27 @@ function buildConsolePayload(options) {
 }
 
 // iNNfo/packages/nn-core/src/console/schema-resolution.ts
-var import_node_path7 = require("node:path");
+var import_node_path8 = require("node:path");
 var import_node_fs5 = require("node:fs");
 var import_promises2 = require("node:fs/promises");
 async function resolveLocalSpecPath(rootDir, url) {
   if (!url || /^(?:https?|data|file):/i.test(url)) return null;
-  const absolute = (0, import_node_path7.isAbsolute)(url) ? url : (0, import_node_path7.resolve)(rootDir, url);
-  const rel = (0, import_node_path7.relative)(rootDir, absolute);
-  if (rel.startsWith("..") || (0, import_node_path7.isAbsolute)(rel)) return null;
+  const absolute = (0, import_node_path8.isAbsolute)(url) ? url : (0, import_node_path8.resolve)(rootDir, url);
+  if (!isInsideRoot(rootDir, absolute)) return null;
   return (0, import_node_fs5.existsSync)(absolute) ? absolute : null;
 }
 async function resolveBlueprintContent(rootDir, name, url, globalDir, skillsDir, warnings) {
   const local = await resolveLocalSpecPath(rootDir, url);
   if (local !== null) {
     const content = await (0, import_promises2.readFile)(local, "utf-8").catch(() => null);
-    if (content !== null) return { content, dir: (0, import_node_path7.dirname)(local) };
+    if (content !== null) return { content, dir: (0, import_node_path8.dirname)(local) };
   }
-  const version = url ? parseSpecName((0, import_node_path7.basename)(url)).version : void 0;
+  const version = url ? parseSpecName((0, import_node_path8.basename)(url)).version : void 0;
   const resolveOnce = async (refName) => {
     const pkg = await resolveBlueprintPackage(rootDir, refName, version, { globalDir, skillsDir });
     if (pkg) {
       const content = await (0, import_promises2.readFile)(pkg.specFilePath, "utf-8").catch(() => null);
-      if (content !== null) return { content, dir: (0, import_node_path7.dirname)(pkg.specFilePath) };
+      if (content !== null) return { content, dir: (0, import_node_path8.dirname)(pkg.specFilePath) };
     }
     const canonical = findCanonicalBlueprint(refName) || (url ? findCanonicalBlueprint(url) : null);
     return canonical ? { content: canonical.specContent, dir: null } : null;
@@ -14460,9 +14503,13 @@ async function resolveBlueprintContent(rootDir, name, url, globalDir, skillsDir,
 function proceduresOf(res) {
   const fm = parseFrontmatter(res.content);
   const list = Array.isArray(fm?.procedures) ? fm.procedures.filter((p) => p && p.id && p.path).map((p) => ({ id: String(p.id), name: String(p.name ?? p.id), path: String(p.path) })) : [];
-  if (res.dir && (0, import_node_fs5.existsSync)((0, import_node_path7.join)(res.dir, "procedures", "usage_procedures_NN.md"))) {
+  if (res.dir && (0, import_node_fs5.existsSync)((0, import_node_path8.join)(res.dir, "procedures", "usage_procedures_NN.md"))) {
     if (!list.some((p) => p.id === "usage")) {
-      list.unshift({ id: "usage", name: "Getting started", path: "procedures/usage_procedures_NN.md" });
+      list.unshift({
+        id: "usage",
+        name: "Getting started",
+        path: "procedures/usage_procedures_NN.md"
+      });
     }
   }
   return list;
@@ -14481,7 +14528,14 @@ async function collectIncludes(parent, rootDir, globalDir, skillsDir, warnings) 
     const key = ref.name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    const resolved = await resolveBlueprintContent(rootDir, ref.name, ref.url, globalDir, skillsDir, warnings);
+    const resolved = await resolveBlueprintContent(
+      rootDir,
+      ref.name,
+      ref.url,
+      globalDir,
+      skillsDir,
+      warnings
+    );
     if (resolved === null) {
       warnings.push(`Included template '${ref.name}' could not be resolved.`);
       continue;
@@ -14504,7 +14558,7 @@ async function resolveCatalog(parent, warnings) {
     warnings.push(`Blueprint declares catalog '${catalogRel}' but has no on-disk directory.`);
     return null;
   }
-  const catalogPath = (0, import_node_path7.isAbsolute)(catalogRel) ? catalogRel : (0, import_node_path7.resolve)(parent.dir, catalogRel);
+  const catalogPath = (0, import_node_path8.isAbsolute)(catalogRel) ? catalogRel : (0, import_node_path8.resolve)(parent.dir, catalogRel);
   if (!(0, import_node_fs5.existsSync)(catalogPath)) {
     warnings.push(`Blueprint catalog '${catalogRel}' not found at '${catalogPath}'.`);
     return null;

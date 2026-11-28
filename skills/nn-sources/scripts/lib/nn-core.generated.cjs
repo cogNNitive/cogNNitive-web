@@ -8468,36 +8468,44 @@ function versionSkew(models) {
 
 // iNNfo/packages/nn-core/src/console/fs-source-resolver.ts
 var import_node_fs = require("node:fs");
+var import_node_path2 = require("node:path");
+
+// iNNfo/packages/nn-core/src/path-guard.ts
 var import_node_path = require("node:path");
+function isInsideRoot(rootDir, candidate) {
+  const abs = (0, import_node_path.resolve)(rootDir, candidate);
+  const rel = (0, import_node_path.relative)((0, import_node_path.resolve)(rootDir), abs);
+  return rel !== "" && !rel.startsWith("..") && !(0, import_node_path.isAbsolute)(rel);
+}
+
+// iNNfo/packages/nn-core/src/console/fs-source-resolver.ts
 function createFsSourceResolver(rootDir) {
-  const rootResolved = (0, import_node_path.resolve)(rootDir);
+  const rootResolved = (0, import_node_path2.resolve)(rootDir);
   return (refPath, referringPath) => {
     const candidateDirs = [];
     if (referringPath) {
-      const absReferring = (0, import_node_path.isAbsolute)(referringPath) ? referringPath : (0, import_node_path.resolve)(rootDir, referringPath);
-      let cur = (0, import_node_path.dirname)(absReferring);
+      const absReferring = (0, import_node_path2.isAbsolute)(referringPath) ? referringPath : (0, import_node_path2.resolve)(rootDir, referringPath);
+      let cur = (0, import_node_path2.dirname)(absReferring);
       while (true) {
-        const sourcesDir = (0, import_node_path.join)(cur, "sources");
+        const sourcesDir = (0, import_node_path2.join)(cur, "sources");
         if ((0, import_node_fs.existsSync)(sourcesDir)) {
           candidateDirs.push(cur);
         }
-        if (cur === rootResolved || (0, import_node_path.dirname)(cur) === cur) {
+        if (cur === rootResolved || (0, import_node_path2.dirname)(cur) === cur) {
           break;
         }
-        const relToRoot = (0, import_node_path.relative)(rootResolved, cur);
-        if (relToRoot.startsWith("..")) {
+        if (!isInsideRoot(rootResolved, cur)) {
           break;
         }
-        cur = (0, import_node_path.dirname)(cur);
+        cur = (0, import_node_path2.dirname)(cur);
       }
     }
     if (!candidateDirs.includes(rootResolved)) {
       candidateDirs.push(rootResolved);
     }
     for (const dir of candidateDirs) {
-      const abs = (0, import_node_path.resolve)(dir, refPath);
-      const rel = (0, import_node_path.relative)(dir, abs);
-      if (rel === "" || rel.startsWith("..") || (0, import_node_path.isAbsolute)(rel)) {
+      const abs = (0, import_node_path2.resolve)(dir, refPath);
+      if (!isInsideRoot(dir, abs)) {
         continue;
       }
       if ((0, import_node_fs.existsSync)(abs)) {
@@ -8514,8 +8522,8 @@ function createFsSourceResolver(rootDir) {
       }
     }
     const primaryDir = candidateDirs[0] ?? rootResolved;
-    const targetAbs = (0, import_node_path.resolve)(primaryDir, refPath);
-    const targetParent = (0, import_node_path.dirname)(targetAbs);
+    const targetAbs = (0, import_node_path2.resolve)(primaryDir, refPath);
+    const targetParent = (0, import_node_path2.dirname)(targetAbs);
     const parentExists = (0, import_node_fs.existsSync)(targetParent);
     if (!parentExists) {
       return { exists: false, parentExists: false };
@@ -8523,7 +8531,7 @@ function createFsSourceResolver(rootDir) {
     let suggestions;
     try {
       const entries = (0, import_node_fs.readdirSync)(targetParent, { withFileTypes: true });
-      const targetBase = (0, import_node_path.basename)(refPath);
+      const targetBase = (0, import_node_path2.basename)(refPath);
       const targetStem = targetBase.replace(/\.[^.]+$/, "");
       const files = entries.filter((e) => e.isFile()).map((e) => e.name);
       const maxAllowed = Math.max(1, Math.min(3, Math.floor(targetStem.length / 3)));
@@ -11463,9 +11471,9 @@ var import_node_crypto = require("node:crypto");
 
 // iNNfo/packages/nn-core/src/cache-dir.ts
 var import_node_os = require("node:os");
-var import_node_path2 = require("node:path");
+var import_node_path3 = require("node:path");
 function defaultCacheDir() {
-  return process.env.INNFO_CACHE_DIR ?? (0, import_node_path2.join)((0, import_node_os.tmpdir)(), "innfo-specs");
+  return process.env.INNFO_CACHE_DIR ?? (0, import_node_path3.join)((0, import_node_os.tmpdir)(), "innfo-specs");
 }
 
 // iNNfo/packages/nn-core/src/changeset/changeset-index.ts
@@ -11674,7 +11682,8 @@ var OWNED_KEYS = /* @__PURE__ */ new Set([
 var DROPPED_KEYS = /* @__PURE__ */ new Set(["source_url", "downloaded_at"]);
 var FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 function parseSidecarFrontmatter(text2) {
-  const match = FRONTMATTER_RE.exec(text2);
+  const normalized = text2.charCodeAt(0) === 65279 ? text2.slice(1) : text2;
+  const match = FRONTMATTER_RE.exec(normalized);
   if (!match) return null;
   try {
     const value = (0, import_yaml8.parse)(match[1]);
@@ -11865,12 +11874,15 @@ var isoSeconds = (at) => at.toISOString().replace(/\.\d{3}Z$/, "Z");
 async function cognitivize(root, rel, o = {}) {
   const rootAbs = path4.resolve(root);
   const abs = path4.resolve(rootAbs, rel);
-  const within = path4.relative(rootAbs, abs);
-  if (within === "" || within.startsWith("..") || path4.isAbsolute(within)) {
+  if (!isInsideRoot(rootAbs, abs)) {
     throw new RangeError(`${rel}: path escapes the workspace root`);
   }
-  const relPath = toPosix2(within);
-  const reject = (reason) => ({ status: "rejected", path: relPath, reason });
+  const relPath = toPosix2(path4.relative(rootAbs, abs));
+  const reject = (reason) => ({
+    status: "rejected",
+    path: relPath,
+    reason
+  });
   if (isSidecarName(relPath)) return reject("sidecar");
   if (isNNName(relPath)) return reject("nn-document");
   if (isExcludedPath(relPath)) return reject("excluded");
@@ -11903,7 +11915,10 @@ async function cognitivize(root, rel, o = {}) {
     normalizedAt: nowIso,
     normalizedBy: normalized?.normalizedBy,
     previous,
-    metadata: { ...normalized?.metadata, ...o.origin ? { ...o.origin, retrieved_at: nowIso } : {} },
+    metadata: {
+      ...normalized?.metadata,
+      ...o.origin ? { ...o.origin, retrieved_at: nowIso } : {}
+    },
     body: textNative ? void 0 : normalized?.body
   });
   await import_node_fs3.promises.writeFile(sidecarAbs, text2, "utf8");
@@ -11944,10 +11959,6 @@ var digestOf = (entries) => sha256Hex(
   [...entries].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([p, s]) => `${p}	${s}
 `).join("")
 );
-var isInside = (child, parent) => {
-  const rel = path5.relative(parent, child);
-  return rel === "" || !rel.startsWith("..") && !path5.isAbsolute(rel);
-};
 async function shaTree(dir) {
   const out = /* @__PURE__ */ new Map();
   const walk = async (rel) => {
@@ -11961,7 +11972,8 @@ async function shaTree(dir) {
     for (const entry of entries) {
       const entryRel = rel ? `${rel}/${entry.name}` : entry.name;
       if (entry.isDirectory()) await walk(entryRel);
-      else if (entry.isFile()) out.set(entryRel, sha256Hex(await import_node_fs4.promises.readFile(path5.join(dir, entryRel))));
+      else if (entry.isFile())
+        out.set(entryRel, sha256Hex(await import_node_fs4.promises.readFile(path5.join(dir, entryRel))));
     }
   };
   await walk("");
@@ -12022,7 +12034,7 @@ async function latestMemberSha(root, dirRel, key, ext) {
 }
 async function pruneEmptyDirs(from, stop) {
   let dir = from;
-  while (dir !== stop && isInside(dir, stop)) {
+  while (dir !== stop && isInsideRoot(stop, dir)) {
     const left = await import_node_fs4.promises.readdir(dir).catch(() => null);
     if (!left || left.length > 0) return;
     await import_node_fs4.promises.rmdir(dir);
@@ -12030,7 +12042,8 @@ async function pruneEmptyDirs(from, stop) {
   }
 }
 async function refreshSynchronization(root, s, o = {}) {
-  if (!SLUG_RE.test(s.alias)) throw new RangeError(`SYNC_ALIAS_INVALID: "${s.alias}" is not a folder-safe slug`);
+  if (!SLUG_RE.test(s.alias))
+    throw new RangeError(`SYNC_ALIAS_INVALID: "${s.alias}" is not a folder-safe slug`);
   const rootAbs = path5.resolve(root);
   const mirrorDir = path5.join(rootAbs, SYNC_DIR, s.alias);
   const platform = o.platform ?? process.platform;
@@ -12042,13 +12055,18 @@ async function refreshSynchronization(root, s, o = {}) {
   if (s.state === "paused") return idle("skipped");
   const originAbs = path5.resolve(s.origin);
   const stat = await import_node_fs4.promises.stat(originAbs).catch(() => null);
-  if (!stat || (s.kind === "file" ? !stat.isFile() : !stat.isDirectory())) return idle("unreachable");
+  if (!stat || (s.kind === "file" ? !stat.isFile() : !stat.isDirectory()))
+    return idle("unreachable");
   const [originReal, rootReal] = await Promise.all([import_node_fs4.promises.realpath(originAbs), import_node_fs4.promises.realpath(rootAbs)]);
-  if (isInside(originReal, rootReal)) {
-    throw new RangeError(`SYNC_SELF_LOOP: origin ${s.origin} is inside the domaiNN; a mirror would recurse`);
+  if (originReal === rootReal || isInsideRoot(rootReal, originReal)) {
+    throw new RangeError(
+      `SYNC_SELF_LOOP: origin ${s.origin} is inside the domaiNN; a mirror would recurse`
+    );
   }
-  if (isInside(rootReal, originReal)) {
-    throw new RangeError(`SYNC_SELF_LOOP: the domaiNN is inside origin ${s.origin}; a mirror would recurse`);
+  if (originReal === rootReal || isInsideRoot(originReal, rootReal)) {
+    throw new RangeError(
+      `SYNC_SELF_LOOP: the domaiNN is inside origin ${s.origin}; a mirror would recurse`
+    );
   }
   const originFiles = await enumerateOrigin(s, originAbs);
   const before = /* @__PURE__ */ new Map();
@@ -12062,7 +12080,9 @@ async function refreshSynchronization(root, s, o = {}) {
   const overBudget = (abs, rel) => {
     const budget = checkPathBudget(abs, platform);
     if (!budget.ok) {
-      throw new RangeError(`SYNC_PATH_TOO_LONG: ${rel} (${budget.length} characters exceeds the ${budget.limit} limit)`);
+      throw new RangeError(
+        `SYNC_PATH_TOO_LONG: ${rel} (${budget.length} characters exceeds the ${budget.limit} limit)`
+      );
     }
   };
   const models = originFiles.filter((f) => f.model);
@@ -12098,7 +12118,13 @@ async function refreshSynchronization(root, s, o = {}) {
     const prior = await latestMemberSha(rootAbs, dirRel, parsed.key, parsed.ext);
     note(f.rel, prior, f.sha);
     if (prior === f.sha) continue;
-    overBudget(path5.join(rootAbs, sidecarPathOf(`${dirRel}/${parsed.key}_00000000T000000Z-99.${parsed.ext}`)), f.rel);
+    overBudget(
+      path5.join(
+        rootAbs,
+        sidecarPathOf(`${dirRel}/${parsed.key}_00000000T000000Z-99.${parsed.ext}`)
+      ),
+      f.rel
+    );
     files.push({ path: f.rel, before: prior, after: f.sha });
     writes.push(async () => {
       const r = await importRaw(rootAbs, f.abs, {

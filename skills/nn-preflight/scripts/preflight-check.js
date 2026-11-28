@@ -928,11 +928,9 @@ function isUrl(value) {
 function findCatalogEntry(catalog, name) {
   if (!catalog) return null;
   const wanted = String(name).toLowerCase();
-  for (const group of [catalog.blueprints || {}, catalog.frozen || {}]) {
-    for (const [key, entry] of Object.entries(group)) {
-      if (key.toLowerCase() === wanted) return entry;
-      if (entry && entry.name && String(entry.name).toLowerCase() === wanted) return entry;
-    }
+  for (const [key, entry] of Object.entries(catalog.blueprints || {})) {
+    if (key.toLowerCase() === wanted) return entry;
+    if (entry && entry.name && String(entry.name).toLowerCase() === wanted) return entry;
   }
   return null;
 }
