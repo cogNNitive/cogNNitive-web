@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
-blueprint_version: "V_0-5-2"
+blueprint_version: "V_0-5-3"
 title: "Artifacts Catalog App"
 relationship_types:
   hierarchy:
@@ -51,7 +51,7 @@ description:: Format of the deliverable or output artifact.
 ## NN Field Definition: summary
 concept:: Artifact
 type:: string
-description:: Mandatory concise summary of the artifact contents for progressive disclosure.
+description:: Recommended concise summary of the artifact contents for progressive disclosure. A missing summary is valid, and it forces the reader to open the model instead of routing from the catalog.
 
 ## NN Field Definition: status
 concept:: Artifact

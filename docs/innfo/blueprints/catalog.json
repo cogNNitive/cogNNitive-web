@@ -20,15 +20,15 @@
     },
     "artifacts": {
       "name": "artifacts",
-      "adopted": "V_0-5-2",
+      "adopted": "V_0-5-3",
       "tier": "core",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.110.2",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
-          "blueprint_version": "V_0-5-2",
+          "blueprint_version": "V_0-5-3",
           "spec_version": "V_0-5-0",
           "title": "Artifacts Catalog App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"
@@ -328,15 +328,15 @@
     },
     "sources": {
       "name": "sources",
-      "adopted": "V_0-4-0",
+      "adopted": "V_0-4-1",
       "tier": "core",
       "access": "public",
       "when_to_use": null,
-      "release_tag": "blueprints-v0.110.2",
+      "release_tag": null,
       "embedded_skills": [],
       "versions": [
         {
-          "blueprint_version": "V_0-4-0",
+          "blueprint_version": "V_0-4-1",
           "spec_version": "V_0-5-0",
           "title": "Sources Catalog App",
           "url": "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md"

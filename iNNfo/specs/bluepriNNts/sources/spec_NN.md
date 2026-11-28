@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
-blueprint_version: "V_0-4-0"
+blueprint_version: "V_0-4-1"
 title: "Sources Catalog App"
 relationship_types:
   hierarchy:
@@ -92,7 +92,7 @@ description:: Workspace-relative path to the raw/binary asset in sources/import/
 ## NN Field Definition: summary
 concept:: Source
 type:: string
-description:: Mandatory concise semantic summary of the source contents for progressive disclosure.
+description:: Recommended concise semantic summary of the source contents for progressive disclosure. A missing summary is valid, and it forces the reader to open the model instead of routing from the catalog.
 
 ## NN Field Definition: status
 concept:: Source
