@@ -10,6 +10,14 @@
  */
 // @ts-nocheck
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res, err) => function __init() {
+  if (err) throw err[0];
+  try {
+    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+  } catch (e) {
+    throw err = [e], e;
+  }
+};
 var __commonJS = (cb, mod) => function __require() {
   try {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
@@ -18,9 +26,18 @@ var __commonJS = (cb, mod) => function __require() {
   }
 };
 
+// <define:__NN_ENGINE_FACTS__>
+var define_NN_ENGINE_FACTS_default;
+var init_define_NN_ENGINE_FACTS = __esm({
+  "<define:__NN_ENGINE_FACTS__>"() {
+    define_NN_ENGINE_FACTS_default = { engineVersion: "0.65.0", formatVersions: ["V_0-1-0", "V_0-2-0", "V_0-2-1", "V_0-2-2", "V_0-3-0", "V_0-4-0", "V_0-5-0", "V_0-6-0", "V_0-7-0", "V_0-8-0", "V_0-9-0"] };
+  }
+});
+
 // scripts/lib/atomic-fs.js
 var require_atomic_fs = __commonJS({
   "scripts/lib/atomic-fs.js"(exports2, module2) {
+    init_define_NN_ENGINE_FACTS();
     var fs = require("fs");
     var path2 = require("path");
     var { spawnSync } = require("child_process");
@@ -177,6 +194,7 @@ Please close any open files or editors accessing that folder and retry.`
 // skills/nn-preflight/scripts/lib/projection.js
 var require_projection = __commonJS({
   "skills/nn-preflight/scripts/lib/projection.js"(exports2, module2) {
+    init_define_NN_ENGINE_FACTS();
     var fs = require("fs");
     var path2 = require("path");
     var crypto = require("crypto");
@@ -277,6 +295,7 @@ var require_projection = __commonJS({
 // scripts/lib/skill-tree-digest.js
 var require_skill_tree_digest = __commonJS({
   "scripts/lib/skill-tree-digest.js"(exports2, module2) {
+    init_define_NN_ENGINE_FACTS();
     var crypto = require("crypto");
     var fs = require("fs");
     var path2 = require("path");
@@ -315,6 +334,7 @@ var require_skill_tree_digest = __commonJS({
 // skills/nn-preflight/scripts/lib/skill-content-hash.js
 var require_skill_content_hash = __commonJS({
   "skills/nn-preflight/scripts/lib/skill-content-hash.js"(exports2, module2) {
+    init_define_NN_ENGINE_FACTS();
     var crypto = require("crypto");
     var fs = require("fs");
     var path2 = require("path");
@@ -376,6 +396,7 @@ var require_skill_content_hash = __commonJS({
 // scripts/lib/skill-content-hash.js
 var require_skill_content_hash2 = __commonJS({
   "scripts/lib/skill-content-hash.js"(exports2, module2) {
+    init_define_NN_ENGINE_FACTS();
     module2.exports = require_skill_content_hash();
   }
 });
@@ -383,6 +404,7 @@ var require_skill_content_hash2 = __commonJS({
 // scripts/lib/github-client.js
 var require_github_client = __commonJS({
   "scripts/lib/github-client.js"(exports2, module2) {
+    init_define_NN_ENGINE_FACTS();
     var fs = require("fs");
     var path2 = require("path");
     var USER_AGENT = "actioNN-Skills-Updater";
@@ -512,6 +534,7 @@ var require_github_client = __commonJS({
 // skills/nn-preflight/scripts/lib/yaml-lite.js
 var require_yaml_lite = __commonJS({
   "skills/nn-preflight/scripts/lib/yaml-lite.js"(exports2, module2) {
+    init_define_NN_ENGINE_FACTS();
     function parseScalar(text) {
       const t = text.trim();
       if (t === "") return null;
@@ -648,6 +671,7 @@ var require_yaml_lite = __commonJS({
 // scripts/lib/yaml-parser.js
 var require_yaml_parser = __commonJS({
   "scripts/lib/yaml-parser.js"(exports2, module2) {
+    init_define_NN_ENGINE_FACTS();
     var {
       parseScalar,
       parseMappingItem,
@@ -704,6 +728,7 @@ var require_yaml_parser = __commonJS({
 // scripts/lib/yaml-lite.js
 var require_yaml_lite2 = __commonJS({
   "scripts/lib/yaml-lite.js"(exports2, module2) {
+    init_define_NN_ENGINE_FACTS();
     module2.exports = require_yaml_lite();
   }
 });
@@ -711,6 +736,7 @@ var require_yaml_lite2 = __commonJS({
 // scripts/lib/mcp-config-adapter.js
 var require_mcp_config_adapter = __commonJS({
   "scripts/lib/mcp-config-adapter.js"(exports2, module2) {
+    init_define_NN_ENGINE_FACTS();
     var fs = require("fs");
     var path2 = require("path");
     var os = require("os");
@@ -1108,6 +1134,7 @@ var require_mcp_config_adapter = __commonJS({
 var require_blueprint_provenance = __commonJS({
   "scripts/lib/blueprint-provenance.js"(exports2, module2) {
     "use strict";
+    init_define_NN_ENGINE_FACTS();
     var fs = require("fs");
     var path2 = require("path");
     var crypto = require("crypto");
@@ -1551,6 +1578,7 @@ var require_blueprint_provenance = __commonJS({
 var require_blueprint_channels = __commonJS({
   "scripts/lib/blueprint-channels.js"(exports2, module2) {
     "use strict";
+    init_define_NN_ENGINE_FACTS();
     var fs = require("fs");
     var os = require("os");
     var path2 = require("path");
@@ -1702,6 +1730,7 @@ var require_blueprint_channels = __commonJS({
 // scripts/lib/node-engine-check.js
 var require_node_engine_check = __commonJS({
   "scripts/lib/node-engine-check.js"(exports2, module2) {
+    init_define_NN_ENGINE_FACTS();
     var fs = require("node:fs");
     var path2 = require("node:path");
     function normalizeRange(range) {
@@ -1933,9 +1962,43 @@ var require_node_engine_check = __commonJS({
   }
 });
 
+// scripts/lib/engine-facts.js
+var require_engine_facts = __commonJS({
+  "scripts/lib/engine-facts.js"(exports2, module2) {
+    "use strict";
+    init_define_NN_ENGINE_FACTS();
+    var fs = require("fs");
+    var path2 = require("path");
+    var FORMAT_SPEC_RE = /^iNNfo_(V_(\d+)-(\d+)-(\d+))_NN\.md$/;
+    function readEngineFacts(repoRoot) {
+      const corePkgPath = path2.join(repoRoot, "iNNfo", "packages", "nn-core", "package.json");
+      if (!fs.existsSync(corePkgPath)) {
+        throw new Error(`engine facts: missing ${corePkgPath}`);
+      }
+      const engineVersion = JSON.parse(fs.readFileSync(corePkgPath, "utf-8")).version;
+      if (!engineVersion) throw new Error(`engine facts: no version in ${corePkgPath}`);
+      const specsDir = path2.join(repoRoot, "iNNfo", "specs");
+      if (!fs.existsSync(specsDir)) throw new Error(`engine facts: missing ${specsDir}`);
+      const formatVersions = fs.readdirSync(specsDir).map((f) => FORMAT_SPEC_RE.exec(f)).filter(Boolean).sort(
+        (a, b) => Number(a[2]) - Number(b[2]) || Number(a[3]) - Number(b[3]) || Number(a[4]) - Number(b[4])
+      ).map((m) => m[1]);
+      if (formatVersions.length === 0) {
+        throw new Error(`engine facts: no iNNfo_V_*_NN.md format specs in ${specsDir}`);
+      }
+      return { engineVersion, formatVersions };
+    }
+    function engineFacts() {
+      if (typeof define_NN_ENGINE_FACTS_default !== "undefined") return define_NN_ENGINE_FACTS_default;
+      return readEngineFacts(path2.resolve(__dirname, "..", ".."));
+    }
+    module2.exports = { readEngineFacts, engineFacts };
+  }
+});
+
 // scripts/lib/skills-commands.js
 var require_skills_commands = __commonJS({
   "scripts/lib/skills-commands.js"(exports2, module2) {
+    init_define_NN_ENGINE_FACTS();
     var fs = require("fs");
     var os = require("os");
     var path2 = require("path");
@@ -1977,26 +2040,9 @@ var require_skills_commands = __commonJS({
       defaultChannelsFile
     } = require_blueprint_channels();
     var { satisfiesRange } = require_node_engine_check();
-    var SUPPORTED_FORMAT_VERSIONS = [
-      "V_0-2-0",
-      "V_0-2-1",
-      "V_0-2-2",
-      "V_0-3-0",
-      "V_0-4-0",
-      "V_0-5-0",
-      "V_0-7-0",
-      "V_0-8-0",
-      "V_0-9-0"
-    ];
+    var { engineFacts } = require_engine_facts();
     function getEngineVersion() {
-      try {
-        const corePkgPath = path2.resolve(__dirname, "../../iNNfo/packages/nn-core/package.json");
-        if (fs.existsSync(corePkgPath)) {
-          return JSON.parse(fs.readFileSync(corePkgPath, "utf-8")).version;
-        }
-      } catch {
-      }
-      return "0.60.0";
+      return engineFacts().engineVersion;
     }
     function assertBlueprintCompatibility(blueprintName, srcPath) {
       let manifest = null;
@@ -2028,26 +2074,14 @@ var require_skills_commands = __commonJS({
         } catch {
         }
       }
-      let engineRange = null;
-      if (manifest && manifest.requires) {
-        if (typeof manifest.requires === "object" && manifest.requires.engine) {
-          engineRange = String(manifest.requires.engine).trim();
-        } else if (typeof manifest.requires === "string") {
-          engineRange = manifest.requires.trim();
+      if (manifest && manifest.requires !== void 0) {
+        const requires = manifest.requires;
+        if (!requires || typeof requires !== "object" || typeof requires.engine !== "string" || !requires.engine.trim()) {
+          throw new Error(
+            `malformed requires in blueprint.json of blueprint '${blueprintName}': expected { "engine": "<range>" }, got ${JSON.stringify(requires)}.`
+          );
         }
-      } else if (fm && fm.requires) {
-        if (typeof fm.requires === "object" && fm.requires.engine) {
-          engineRange = String(fm.requires.engine).trim();
-        } else if (typeof fm.requires === "string") {
-          engineRange = fm.requires.trim();
-        }
-      } else if (fm && fm.engine) {
-        engineRange = String(fm.engine).trim();
-      }
-      if (engineRange) {
-        if (engineRange.toLowerCase().startsWith("engine ")) {
-          engineRange = engineRange.slice(7).trim();
-        }
+        const engineRange = requires.engine.trim();
         const currentEngine = getEngineVersion();
         if (!satisfiesRange(currentEngine, engineRange)) {
           throw new Error(
@@ -2058,9 +2092,10 @@ var require_skills_commands = __commonJS({
       const formatVersion = manifest?.format_version ?? fm?.format_version ?? fm?.spec_version;
       if (formatVersion) {
         const norm = String(formatVersion).trim();
-        if (!SUPPORTED_FORMAT_VERSIONS.includes(norm)) {
+        const supported = engineFacts().formatVersions;
+        if (!supported.includes(norm)) {
           throw new Error(
-            `refusing to install blueprint '${blueprintName}': unsupported format_version '${norm}'. Supported versions are: ${SUPPORTED_FORMAT_VERSIONS.join(", ")}.`
+            `refusing to install blueprint '${blueprintName}': unsupported format_version '${norm}'. Supported versions are: ${supported.join(", ")}.`
           );
         }
       }
@@ -4016,6 +4051,7 @@ Projected skills to agent directories:`);
 });
 
 // scripts/skills-manager.js
+init_define_NN_ENGINE_FACTS();
 var path = require("path");
 var commands = require_skills_commands();
 function parseArgs(argv) {

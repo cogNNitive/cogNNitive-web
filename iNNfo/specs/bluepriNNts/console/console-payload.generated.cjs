@@ -7710,6 +7710,44 @@ function parseIndexBlock(content) {
   return edges;
 }
 
+// iNNfo/packages/nn-core/src/matrix.ts
+function isEvaluatedCellValue(value) {
+  const v = (value ?? "").trim();
+  return v !== "" && v !== "-";
+}
+function pushUnique(list, value) {
+  if (!list.includes(value)) list.push(value);
+}
+function derivedAxes(cells) {
+  const rows = [];
+  const cols = [];
+  for (const c of cells) {
+    pushUnique(rows, c.row);
+    pushUnique(cols, c.col);
+  }
+  return { rows, cols };
+}
+var sameList = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+function matrixAxes(matrix) {
+  const derived = derivedAxes(matrix.cells);
+  const rows = [...matrix.rows ?? []];
+  const cols = [...matrix.cols ?? []];
+  for (const r of derived.rows) pushUnique(rows, r);
+  for (const c of derived.cols) pushUnique(cols, c);
+  return { rows, cols };
+}
+function explicitAxes(cells, rows, cols) {
+  const derived = derivedAxes(cells);
+  return sameList(rows, derived.rows) && sameList(cols, derived.cols) ? {} : { rows, cols };
+}
+function prunableMatrixCellCount(matrix) {
+  const { rows, cols } = matrixAxes(matrix);
+  const live = matrix.cells.filter((c) => isEvaluatedCellValue(c.value));
+  const liveRows = rows.filter((r) => live.some((c) => c.row === r)).length;
+  const liveCols = cols.filter((c) => live.some((cell) => cell.col === c)).length;
+  return rows.length * cols.length - liveRows * liveCols;
+}
+
 // iNNfo/packages/nn-core/src/parser/sections.ts
 var UNIFIED_ELEMENT_RE = /^\s*(#{2,6})\s+NN\s+([^:\n]+?):\s+(.*)$/;
 var PROPERTY_RE = /^\s*([A-Za-z_][A-Za-z0-9_-]*)\s*::\s*(.*)$/;
@@ -7917,12 +7955,20 @@ function parseMatrixSection(content, _matrixName) {
   for (const row of rows) {
     const rowName = colNames.length > 0 ? row[colNames[0]] || "" : "";
     for (let i = 1; i < colNames.length; i++) {
-      if (row[colNames[i]]) {
+      if (isEvaluatedCellValue(row[colNames[i]])) {
         cells.push({ row: rowName, col: colNames[i], value: row[colNames[i]] });
       }
     }
   }
   return cells;
+}
+function parseMatrixTableAxes(content) {
+  const rows = parseMarkdownTable(content);
+  const colNames = rows.length > 0 ? Object.keys(rows[0]) : [];
+  return {
+    rows: colNames.length > 0 ? rows.map((r) => r[colNames[0]] || "") : [],
+    cols: colNames.slice(1)
+  };
 }
 function parseMatrixHeaderAxis(content) {
   const headerLine = normalizeSource(content).split("\n").find((l) => /(^|[^\\])\|/.test(l.trim()));
@@ -8126,11 +8172,13 @@ function parseKnowledge(content) {
       );
       const cells = parseMatrixSection(bodyContent, name);
       const axis = parseMatrixHeaderAxis(bodyContent);
+      const table = parseMatrixTableAxes(bodyContent);
       matrices.push({
         name,
         source: axis?.source || matrixDecl?.source || "",
         target: axis?.target || matrixDecl?.target || "",
-        cells
+        cells,
+        ...explicitAxes(cells, table.rows, table.cols)
       });
     }
   }
@@ -10115,14 +10163,12 @@ function countToWords(n) {
 function matrixHygieneDiagnostics(input) {
   const out = [];
   for (const matrix of input.matrices ?? []) {
-    const emptyCount = (matrix.cells ?? []).filter(
-      (c) => !c.value || c.value.trim() === "" || c.value.trim() === "-"
-    ).length;
+    const emptyCount = prunableMatrixCellCount({ ...matrix, cells: matrix.cells ?? [] });
     if (emptyCount > 0) {
       out.push(
         layoutDiagnostic(
           "PERSISTED_EMPTY_MATRIX_CELLS",
-          `${input.path} - matrix "${matrix.name}" persists ${countToWords(emptyCount)} cells with no value`,
+          `${input.path} - matrix "${matrix.name}" persists ${countToWords(emptyCount)} cells in rows or columns with no value`,
           [input.path],
           { severity: "warning", meta: { matrix: matrix.name, emptyCount } }
         )
@@ -12339,7 +12385,9 @@ function matricesOf(content) {
   try {
     return parseKnowledge(content).matrices.map((m) => ({
       name: m.name,
-      cells: m.cells.map((c) => ({ row: c.row, col: c.col, value: c.value }))
+      cells: m.cells.map((c) => ({ row: c.row, col: c.col, value: c.value })),
+      ...m.rows ? { rows: [...m.rows] } : {},
+      ...m.cols ? { cols: [...m.cols] } : {}
     }));
   } catch {
     return [];
@@ -14371,13 +14419,13 @@ function buildConsolePayload(options) {
   const matrices = [];
   if (Array.isArray(parsed.matrices)) {
     for (const mat of parsed.matrices) {
-      const rows = [];
-      const cols = [];
+      const { rows, cols } = matrixAxes({
+        ...mat,
+        cells: Array.isArray(mat.cells) ? mat.cells : []
+      });
       const cellsObj = {};
       if (Array.isArray(mat.cells)) {
         for (const cell of mat.cells) {
-          if (!rows.includes(cell.row)) rows.push(cell.row);
-          if (!cols.includes(cell.col)) cols.push(cell.col);
           if (!cellsObj[cell.row]) {
             cellsObj[cell.row] = {};
           }

@@ -7790,6 +7790,64 @@ var init_taxonomy = __esm({
   }
 });
 
+// iNNfo/packages/nn-core/dist/matrix.js
+function isEvaluatedCellValue2(value) {
+  const v = (value ?? "").trim();
+  return v !== "" && v !== "-";
+}
+function pushUnique2(list, value) {
+  if (!list.includes(value))
+    list.push(value);
+}
+function derivedAxes2(cells) {
+  const rows = [];
+  const cols = [];
+  for (const c of cells) {
+    pushUnique2(rows, c.row);
+    pushUnique2(cols, c.col);
+  }
+  return { rows, cols };
+}
+function matrixAxes2(matrix) {
+  const derived = derivedAxes2(matrix.cells);
+  const rows = [...matrix.rows ?? []];
+  const cols = [...matrix.cols ?? []];
+  for (const r of derived.rows)
+    pushUnique2(rows, r);
+  for (const c of derived.cols)
+    pushUnique2(cols, c);
+  return { rows, cols };
+}
+function explicitAxes2(cells, rows, cols) {
+  const derived = derivedAxes2(cells);
+  return sameList2(rows, derived.rows) && sameList2(cols, derived.cols) ? {} : { rows, cols };
+}
+function pruneMatrixAxes2(matrix) {
+  const { rows, cols } = matrixAxes2(matrix);
+  const live = matrix.cells.filter((c) => isEvaluatedCellValue2(c.value));
+  const keep = explicitAxes2(matrix.cells, rows.filter((r) => live.some((c) => c.row === r)), cols.filter((c) => live.some((cell) => cell.col === c)));
+  delete matrix.rows;
+  delete matrix.cols;
+  if (keep.rows)
+    matrix.rows = keep.rows;
+  if (keep.cols)
+    matrix.cols = keep.cols;
+}
+function prunableMatrixCellCount(matrix) {
+  const { rows, cols } = matrixAxes2(matrix);
+  const live = matrix.cells.filter((c) => isEvaluatedCellValue2(c.value));
+  const liveRows = rows.filter((r) => live.some((c) => c.row === r)).length;
+  const liveCols = cols.filter((c) => live.some((cell) => cell.col === c)).length;
+  return rows.length * cols.length - liveRows * liveCols;
+}
+var sameList2;
+var init_matrix = __esm({
+  "iNNfo/packages/nn-core/dist/matrix.js"() {
+    "use strict";
+    sameList2 = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+  }
+});
+
 // iNNfo/packages/nn-core/dist/parser/sections.js
 function sectionName2(rawTitle) {
   const fm = rawTitle.match(SECTION_RE2);
@@ -8007,12 +8065,20 @@ function parseMatrixSection2(content, _matrixName) {
   for (const row of rows) {
     const rowName = colNames.length > 0 ? row[colNames[0]] || "" : "";
     for (let i = 1; i < colNames.length; i++) {
-      if (row[colNames[i]]) {
+      if (isEvaluatedCellValue2(row[colNames[i]])) {
         cells.push({ row: rowName, col: colNames[i], value: row[colNames[i]] });
       }
     }
   }
   return cells;
+}
+function parseMatrixTableAxes2(content) {
+  const rows = parseMarkdownTable2(content);
+  const colNames = rows.length > 0 ? Object.keys(rows[0]) : [];
+  return {
+    rows: colNames.length > 0 ? rows.map((r) => r[colNames[0]] || "") : [],
+    cols: colNames.slice(1)
+  };
 }
 function parseMatrixHeaderAxis2(content) {
   const headerLine = normalizeSource2(content).split("\n").find((l) => /(^|[^\\])\|/.test(l.trim()));
@@ -8048,6 +8114,7 @@ var UNIFIED_ELEMENT_RE2, PROPERTY_RE2, SECTION_RE2;
 var init_sections = __esm({
   "iNNfo/packages/nn-core/dist/parser/sections.js"() {
     "use strict";
+    init_matrix();
     init_markdown();
     UNIFIED_ELEMENT_RE2 = /^\s*(#{2,6})\s+NN\s+([^:\n]+?):\s+(.*)$/;
     PROPERTY_RE2 = /^\s*([A-Za-z_][A-Za-z0-9_-]*)\s*::\s*(.*)$/;
@@ -8353,10 +8420,7 @@ function serializeKnowledge2(model) {
     lines.push(`# NN matrices: ${matrix.name}`);
     if (matrixBlankLine(matrix.name))
       lines.push("");
-    const colSet = new Set(matrix.cells.map((c) => c.col));
-    const rowSet = new Set(matrix.cells.map((c) => c.row));
-    const cols = Array.from(colSet);
-    const rows = Array.from(rowSet);
+    const { rows, cols } = matrixAxes2(matrix);
     const cellMap = new Map(matrix.cells.map((c) => [`${c.row}||${c.col}`, c.value]));
     const headerLine = `| ${matrix.source} \\ ${matrix.target} | ${cols.join(" | ")} |`;
     const sepLine = `| :--- | ${cols.map(() => ":---:").join(" | ")} |`;
@@ -8428,6 +8492,7 @@ var init_serializer = __esm({
     import_yaml10 = __toESM(require_dist(), 1);
     init_taxonomy();
     init_sections();
+    init_matrix();
     CONSTRUCTED_FRONTMATTER_KEYS2 = /* @__PURE__ */ new Set([
       "spec_version",
       "spec_url",
@@ -8624,11 +8689,13 @@ function parseKnowledge2(content) {
       const matrixDecl = frontmatter?.matrices?.find((m) => m.name.toLowerCase() === name.toLowerCase());
       const cells = parseMatrixSection2(bodyContent, name);
       const axis = parseMatrixHeaderAxis2(bodyContent);
+      const table = parseMatrixTableAxes2(bodyContent);
       matrices.push({
         name,
         source: axis?.source || matrixDecl?.source || "",
         target: axis?.target || matrixDecl?.target || "",
-        cells
+        cells,
+        ...explicitAxes2(cells, table.rows, table.cols)
       });
     }
   }
@@ -8665,6 +8732,7 @@ var init_core = __esm({
     init_taxonomy();
     init_sections();
     init_slug();
+    init_matrix();
   }
 });
 
@@ -12572,9 +12640,9 @@ function countToWords(n) {
 function matrixHygieneDiagnostics(input) {
   const out = [];
   for (const matrix of input.matrices ?? []) {
-    const emptyCount = (matrix.cells ?? []).filter((c) => !c.value || c.value.trim() === "" || c.value.trim() === "-").length;
+    const emptyCount = prunableMatrixCellCount({ ...matrix, cells: matrix.cells ?? [] });
     if (emptyCount > 0) {
-      out.push(layoutDiagnostic("PERSISTED_EMPTY_MATRIX_CELLS", `${input.path} - matrix "${matrix.name}" persists ${countToWords(emptyCount)} cells with no value`, [input.path], { severity: "warning", meta: { matrix: matrix.name, emptyCount } }));
+      out.push(layoutDiagnostic("PERSISTED_EMPTY_MATRIX_CELLS", `${input.path} - matrix "${matrix.name}" persists ${countToWords(emptyCount)} cells in rows or columns with no value`, [input.path], { severity: "warning", meta: { matrix: matrix.name, emptyCount } }));
     }
   }
   return out;
@@ -12594,6 +12662,7 @@ var init_placement = __esm({
     init_contract();
     init_storage();
     init_classify();
+    init_matrix();
     slugCount = (rule) => rule.folder.filter((s) => s.kind === "slug").length;
   }
 });
@@ -15334,13 +15403,6 @@ var init_relationships = __esm({
   }
 });
 
-// iNNfo/packages/nn-core/dist/matrix.js
-var init_matrix = __esm({
-  "iNNfo/packages/nn-core/dist/matrix.js"() {
-    "use strict";
-  }
-});
-
 // iNNfo/packages/nn-core/dist/recursiveParser/normalize.js
 var init_normalize = __esm({
   "iNNfo/packages/nn-core/dist/recursiveParser/normalize.js"() {
@@ -15519,7 +15581,9 @@ function matricesOf(content) {
   try {
     return parseKnowledge2(content).matrices.map((m) => ({
       name: m.name,
-      cells: m.cells.map((c) => ({ row: c.row, col: c.col, value: c.value }))
+      cells: m.cells.map((c) => ({ row: c.row, col: c.col, value: c.value })),
+      ...m.rows ? { rows: [...m.rows] } : {},
+      ...m.cols ? { cols: [...m.cols] } : {}
     }));
   } catch {
     return [];
@@ -16481,6 +16545,7 @@ function updateMatrixCell(model, args, schema) {
       matrix.cells.push({ row, col, value: val });
     }
   }
+  pruneMatrixAxes2(matrix);
   return { success: true };
 }
 function matrixDeclOf(schema, requested, resolvedName) {
@@ -16524,24 +16589,24 @@ function removeElement(model, args) {
     const targetIdent = elementName.toLowerCase();
     const targetSlug = targetEl?.slug?.toLowerCase();
     const targetHeading = targetEl ? slugifyHeading2(targetEl.name).toLowerCase() : void 0;
+    const unbracket = (s) => {
+      const m = s.match(/^\[\[(.*)\]\]$/);
+      return m ? m[1].toLowerCase() : s;
+    };
+    const namesTarget = (label) => {
+      const lower = label.toLowerCase();
+      const clean = unbracket(lower);
+      return lower === targetIdent || clean === targetIdent || targetSlug !== void 0 && (lower === targetSlug || clean === targetSlug) || targetHeading !== void 0 && (lower === targetHeading || clean === targetHeading);
+    };
     for (const matrix of model.matrices) {
       if (!matrix.cells)
         continue;
       const initialCount = matrix.cells.length;
-      matrix.cells = matrix.cells.filter((c) => {
-        const rLower = c.row.toLowerCase();
-        const colLower = c.col.toLowerCase();
-        const unbracket = (s) => {
-          const m = s.match(/^\[\[(.*)\]\]$/);
-          return m ? m[1].toLowerCase() : s;
-        };
-        const rClean = unbracket(rLower);
-        const cClean = unbracket(colLower);
-        const rowMatches = rLower === targetIdent || rClean === targetIdent || targetSlug !== void 0 && (rLower === targetSlug || rClean === targetSlug) || targetHeading !== void 0 && (rLower === targetHeading || rClean === targetHeading);
-        const colMatches = colLower === targetIdent || cClean === targetIdent || targetSlug !== void 0 && (colLower === targetSlug || cClean === targetSlug) || targetHeading !== void 0 && (colLower === targetHeading || cClean === targetHeading);
-        return !rowMatches && !colMatches;
-      });
+      matrix.cells = matrix.cells.filter((c) => !namesTarget(c.row) && !namesTarget(c.col));
       cascadedCells += initialCount - matrix.cells.length;
+      const axisNamesTarget = [...matrix.rows ?? [], ...matrix.cols ?? []].some(namesTarget);
+      if (matrix.cells.length !== initialCount || axisNamesTarget)
+        pruneMatrixAxes2(matrix);
     }
   }
   return { success: true, cascadedMatrixCells: cascadedCells };
@@ -17060,6 +17125,11 @@ function renameElement(model, args, schema) {
       if (cell.col.toLowerCase() === lowerOld)
         cell.col = newName;
     }
+    const rename3 = (label) => label.toLowerCase() === lowerOld ? newName : label;
+    if (matrix.rows)
+      matrix.rows = matrix.rows.map(rename3);
+    if (matrix.cols)
+      matrix.cols = matrix.cols.map(rename3);
   }
   const refsByConcept = referenceFieldsByConcept(schema);
   for (const [, elements] of model.elements.entries()) {
@@ -17151,6 +17221,7 @@ var init_mutate = __esm({
     init_references2();
     init_field_values();
     init_types2();
+    init_matrix();
     init_references2();
     MUTATION_HANDLERS = {
       add_concept: (model, args) => addConcept(model, args),
@@ -17198,6 +17269,7 @@ var init_merge = __esm({
   "iNNfo/packages/nn-core/dist/merge.js"() {
     "use strict";
     init_types();
+    init_matrix();
   }
 });
 
@@ -17767,6 +17839,7 @@ var init_payload_builder = __esm({
     init_compose();
     init_element_history();
     init_load();
+    init_matrix();
     init_files_inventory();
   }
 });
@@ -21032,6 +21105,37 @@ function printTaxonomyNode(name, allEdges, lines, depth, ancestors = /* @__PURE_
   }
 }
 
+// iNNfo/packages/nn-core/src/matrix.ts
+function isEvaluatedCellValue(value) {
+  const v = (value ?? "").trim();
+  return v !== "" && v !== "-";
+}
+function pushUnique(list, value) {
+  if (!list.includes(value)) list.push(value);
+}
+function derivedAxes(cells) {
+  const rows = [];
+  const cols = [];
+  for (const c of cells) {
+    pushUnique(rows, c.row);
+    pushUnique(cols, c.col);
+  }
+  return { rows, cols };
+}
+var sameList = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+function matrixAxes(matrix) {
+  const derived = derivedAxes(matrix.cells);
+  const rows = [...matrix.rows ?? []];
+  const cols = [...matrix.cols ?? []];
+  for (const r of derived.rows) pushUnique(rows, r);
+  for (const c of derived.cols) pushUnique(cols, c);
+  return { rows, cols };
+}
+function explicitAxes(cells, rows, cols) {
+  const derived = derivedAxes(cells);
+  return sameList(rows, derived.rows) && sameList(cols, derived.cols) ? {} : { rows, cols };
+}
+
 // iNNfo/packages/nn-core/src/parser/sections.ts
 var UNIFIED_ELEMENT_RE = /^\s*(#{2,6})\s+NN\s+([^:\n]+?):\s+(.*)$/;
 var PROPERTY_RE = /^\s*([A-Za-z_][A-Za-z0-9_-]*)\s*::\s*(.*)$/;
@@ -21239,12 +21343,20 @@ function parseMatrixSection(content, _matrixName) {
   for (const row of rows) {
     const rowName = colNames.length > 0 ? row[colNames[0]] || "" : "";
     for (let i = 1; i < colNames.length; i++) {
-      if (row[colNames[i]]) {
+      if (isEvaluatedCellValue(row[colNames[i]])) {
         cells.push({ row: rowName, col: colNames[i], value: row[colNames[i]] });
       }
     }
   }
   return cells;
+}
+function parseMatrixTableAxes(content) {
+  const rows = parseMarkdownTable(content);
+  const colNames = rows.length > 0 ? Object.keys(rows[0]) : [];
+  return {
+    rows: colNames.length > 0 ? rows.map((r) => r[colNames[0]] || "") : [],
+    cols: colNames.slice(1)
+  };
 }
 function parseMatrixHeaderAxis(content) {
   const headerLine = normalizeSource(content).split("\n").find((l) => /(^|[^\\])\|/.test(l.trim()));
@@ -21556,10 +21668,7 @@ function serializeKnowledge(model) {
   const emitMatrixTable = (matrix) => {
     lines.push(`# NN matrices: ${matrix.name}`);
     if (matrixBlankLine(matrix.name)) lines.push("");
-    const colSet = new Set(matrix.cells.map((c) => c.col));
-    const rowSet = new Set(matrix.cells.map((c) => c.row));
-    const cols = Array.from(colSet);
-    const rows = Array.from(rowSet);
+    const { rows, cols } = matrixAxes(matrix);
     const cellMap = new Map(matrix.cells.map((c) => [`${c.row}||${c.col}`, c.value]));
     const headerLine = `| ${matrix.source} \\ ${matrix.target} | ${cols.join(" | ")} |`;
     const sepLine = `| :--- | ${cols.map(() => ":---:").join(" | ")} |`;
@@ -21826,11 +21935,13 @@ function parseKnowledge(content) {
       );
       const cells = parseMatrixSection(bodyContent, name);
       const axis = parseMatrixHeaderAxis(bodyContent);
+      const table = parseMatrixTableAxes(bodyContent);
       matrices.push({
         name,
         source: axis?.source || matrixDecl?.source || "",
         target: axis?.target || matrixDecl?.target || "",
-        cells
+        cells,
+        ...explicitAxes(cells, table.rows, table.cols)
       });
     }
   }

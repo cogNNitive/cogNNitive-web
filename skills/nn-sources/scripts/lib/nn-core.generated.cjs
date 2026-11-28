@@ -8402,6 +8402,29 @@ function parentSpecOf(frontmatter) {
 }
 var byText = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 
+// iNNfo/packages/nn-core/src/matrix.ts
+function isEvaluatedCellValue(value) {
+  const v = (value ?? "").trim();
+  return v !== "" && v !== "-";
+}
+function pushUnique(list, value) {
+  if (!list.includes(value)) list.push(value);
+}
+function derivedAxes(cells) {
+  const rows = [];
+  const cols = [];
+  for (const c of cells) {
+    pushUnique(rows, c.row);
+    pushUnique(cols, c.col);
+  }
+  return { rows, cols };
+}
+var sameList = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+function explicitAxes(cells, rows, cols) {
+  const derived = derivedAxes(cells);
+  return sameList(rows, derived.rows) && sameList(cols, derived.cols) ? {} : { rows, cols };
+}
+
 // iNNfo/packages/nn-core/src/domain/placement.ts
 function layoutDiagnostic(code, message, paths, extra = {}) {
   const { severity = "error", ...rest } = extra;
@@ -9310,12 +9333,20 @@ function parseMatrixSection(content, _matrixName) {
   for (const row of rows) {
     const rowName = colNames.length > 0 ? row[colNames[0]] || "" : "";
     for (let i = 1; i < colNames.length; i++) {
-      if (row[colNames[i]]) {
+      if (isEvaluatedCellValue(row[colNames[i]])) {
         cells.push({ row: rowName, col: colNames[i], value: row[colNames[i]] });
       }
     }
   }
   return cells;
+}
+function parseMatrixTableAxes(content) {
+  const rows = parseMarkdownTable2(content);
+  const colNames = rows.length > 0 ? Object.keys(rows[0]) : [];
+  return {
+    rows: colNames.length > 0 ? rows.map((r) => r[colNames[0]] || "") : [],
+    cols: colNames.slice(1)
+  };
 }
 function parseMatrixHeaderAxis(content) {
   const headerLine = normalizeSource(content).split("\n").find((l) => /(^|[^\\])\|/.test(l.trim()));
@@ -9519,11 +9550,13 @@ function parseKnowledge(content) {
       );
       const cells = parseMatrixSection(bodyContent, name);
       const axis = parseMatrixHeaderAxis(bodyContent);
+      const table = parseMatrixTableAxes(bodyContent);
       matrices.push({
         name,
         source: axis?.source || matrixDecl?.source || "",
         target: axis?.target || matrixDecl?.target || "",
-        cells
+        cells,
+        ...explicitAxes(cells, table.rows, table.cols)
       });
     }
   }
