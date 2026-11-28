@@ -30,7 +30,7 @@ var __commonJS = (cb, mod) => function __require() {
 var define_NN_ENGINE_FACTS_default;
 var init_define_NN_ENGINE_FACTS = __esm({
   "<define:__NN_ENGINE_FACTS__>"() {
-    define_NN_ENGINE_FACTS_default = { engineVersion: "0.65.1", formatVersions: ["V_0-1-0", "V_0-2-0", "V_0-2-1", "V_0-2-2", "V_0-3-0", "V_0-4-0", "V_0-5-0", "V_0-6-0", "V_0-7-0", "V_0-8-0", "V_0-9-0"] };
+    define_NN_ENGINE_FACTS_default = { engineVersion: "0.66.0", formatVersions: ["V_0-1-0", "V_0-2-0", "V_0-2-1", "V_0-2-2", "V_0-3-0", "V_0-4-0", "V_0-5-0", "V_0-6-0", "V_0-7-0", "V_0-8-0", "V_0-9-0"] };
   }
 });
 
