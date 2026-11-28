@@ -510,6 +510,17 @@ tags:: [docs, skills, statechart, routing]
 
 How the skills hand off to one another, from the `nn` entry point.
 
+## NN Page: Query languages
+slug:: query-languages
+title:: Query languages
+source:: content/reference/query-languages.md
+route:: content/reference/query-languages.md
+order:: 50
+parent:: [[Reference]]
+tags:: [docs, reference, query, search]
+
+Two query languages answer different questions, and the boundary between them is a rule.
+
 # NN NavbarItem
 
 ## NN NavbarItem: Website
