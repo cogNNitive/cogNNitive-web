@@ -1,6 +1,6 @@
 {
   "name": "@cognnitive/nn-console",
-  "version": "0.65.1",
+  "version": "0.65.2",
   "private": true,
   "description": "Interactive web console for viewing and navigating iNNfo blueprints and knowledge documents"
 }
