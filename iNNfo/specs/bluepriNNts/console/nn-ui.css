@@ -116,7 +116,7 @@
   transition-duration: 200ms;
   transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
   height: 1.25rem;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
   width: fit-content;
   padding-left: 0.563rem;
@@ -188,7 +188,7 @@
   padding-left: 1rem;
   padding-right: 1rem;
   text-align: center;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1em;
 }
 /* disabled */
@@ -203,14 +203,14 @@
   min-height: 1.5rem;
   padding-left: 0.45rem;
   padding-right: 0.45rem;
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
 }
 .btn-sm {
   height: 2rem;
   min-height: 2rem;
   padding-left: 0.75rem;
   padding-right: 0.75rem;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
 }
 .btn-ghost {
   background-color: transparent;
@@ -358,12 +358,12 @@
 }
 .chat-header {
   grid-row-start: 1;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
 }
 .chat-footer {
   grid-row-start: 3;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
 }
 .chat-bubble {
@@ -723,7 +723,7 @@
   height: 3rem;
   flex-shrink: 1;
   padding-inline-end: 1rem;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
   line-height: 2;
 }
@@ -740,7 +740,7 @@
   padding-left: 1rem;
   padding-right: 1rem;
   text-align: center;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
   transition-property:
     color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow,
@@ -827,7 +827,7 @@
   height: 3rem;
   padding-left: 1rem;
   padding-right: 1rem;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
   line-height: 2;
 }
@@ -946,7 +946,7 @@
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
 }
 .menu :where(li ul) {
@@ -1162,7 +1162,7 @@
   min-height: 3rem;
   padding-inline-start: 1rem;
   padding-inline-end: 2.5rem;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
   line-height: 2;
 }
@@ -1304,7 +1304,7 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
   line-height: 2;
   --tab-padding: 1rem;
@@ -1375,7 +1375,7 @@ input.tab:checked + .tab-content,
   padding-right: 1rem;
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
   line-height: 2;
 }
@@ -1650,7 +1650,7 @@ input.tab:checked + .tab-content,
   }
 }
 .btm-nav > * .label {
-  font-size: 1rem;
+  font-size: var(--nn-text-body);
   line-height: 1.5rem;
 }
 .breadcrumbs {
@@ -2270,7 +2270,7 @@ input.tab:checked + .tab-content,
 }
 .card.compact .card-body {
   padding: 1rem;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
 }
 .card-body {
@@ -2283,7 +2283,7 @@ input.tab:checked + .tab-content,
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1.25rem;
+  font-size: var(--nn-text-title);
   line-height: 1.75rem;
   font-weight: 600;
 }
@@ -2934,7 +2934,7 @@ details.collapse summary {
   --tw-border-opacity: 0;
   --tw-bg-opacity: 1;
   background-color: var(--fallback-b1, oklch(var(--b1) / var(--tw-bg-opacity)));
-  font-size: 1rem;
+  font-size: var(--nn-text-body);
   line-height: 1.5rem;
 }
 .file-input::file-selector-button {
@@ -3105,7 +3105,7 @@ details.collapse summary {
 .footer {
   column-gap: 1rem;
   row-gap: 2.5rem;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
 }
 .footer > * {
@@ -3124,13 +3124,13 @@ details.collapse summary {
   padding-bottom: 0.5rem;
 }
 .label-text {
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
   --tw-text-opacity: 1;
   color: var(--fallback-bc, oklch(var(--bc) / var(--tw-text-opacity)));
 }
 .label-text-alt {
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   line-height: 1rem;
   --tw-text-opacity: 1;
   color: var(--fallback-bc, oklch(var(--bc) / var(--tw-text-opacity)));
@@ -3156,7 +3156,7 @@ details.collapse summary {
   border-color: transparent;
   --tw-bg-opacity: 1;
   background-color: var(--fallback-b1, oklch(var(--b1) / var(--tw-bg-opacity)));
-  font-size: 1rem;
+  font-size: var(--nn-text-body);
   line-height: 1.5rem;
 }
 .input input {
@@ -3665,7 +3665,7 @@ details.collapse summary {
   padding-right: 1rem;
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
   font-weight: 700;
   color: var(--fallback-bc, oklch(var(--bc) / 0.4));
@@ -4649,12 +4649,12 @@ details.collapse summary {
   color: var(--fallback-bc, oklch(var(--bc) / 0.6));
 }
 .stat-value {
-  font-size: 2.25rem;
+  font-size: var(--nn-text-display);
   line-height: 2.5rem;
   font-weight: 800;
 }
 .stat-desc {
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   line-height: 1rem;
   color: var(--fallback-bc, oklch(var(--bc) / 0.6));
 }
@@ -5040,7 +5040,7 @@ details.collapse summary {
 .table {
   border-radius: var(--rounded-box, 1rem);
   text-align: left;
-  font-size: 0.875rem;
+  font-size: var(--nn-text-small);
   line-height: 1.25rem;
 }
 .table:where([dir='rtl'], [dir='rtl'] *) {
@@ -5086,7 +5086,7 @@ details.collapse summary {
 }
 .table :where(thead, tfoot) {
   white-space: nowrap;
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   line-height: 1rem;
   font-weight: 700;
   color: var(--fallback-bc, oklch(var(--bc) / 0.6));
@@ -5472,6 +5472,16 @@ details.collapse summary {
        this shell's layout variables working without hard-coded colors. */
 .nn-procedure-view,
 .nn-proc-host {
+  /* One 6-step type scale (#914). Candidate A from the specimen: 12 / 14 / 16 /
+     18 / 21, with the display step as a clamp so a hero number cannot collapse
+     into the view title. Names say the job, not the size, so the ramp can move
+     again without renaming 300 call sites. */
+  --nn-text-micro: 12px;
+  --nn-text-small: 14px;
+  --nn-text-body: 16px;
+  --nn-text-title-sm: 18px;
+  --nn-text-title: 21px;
+  --nn-text-display: clamp(24px, 2.4vw, 32px);
   --bg: var(--nn-bg);
   --surface: var(--nn-surface);
   --surface-2: var(--nn-surface-2);
@@ -5524,7 +5534,7 @@ details.collapse summary {
 .nn-procedure-view header .badge,
 .nn-proc-host header .badge {
   display: inline-block;
-  font-size: 0.65rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -5539,7 +5549,7 @@ details.collapse summary {
 .nn-proc-host header h1,
 .nn-proc-host .proc-view-header .proc-title {
   margin: 0 0 4px;
-  font-size: 1.35rem;
+  font-size: var(--nn-text-title);
   font-weight: 700;
   letter-spacing: -0.4px;
 }
@@ -5547,7 +5557,7 @@ details.collapse summary {
 .nn-procedure-view .proc-view-header .meta-line,
 .nn-proc-host header .meta-line,
 .nn-proc-host .proc-view-header .meta-line {
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
   display: flex;
   flex-wrap: wrap;
@@ -5566,10 +5576,10 @@ details.collapse summary {
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
 }
 .proc-blueprint-label {
-  font-size: 0.68rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -5581,7 +5591,7 @@ details.collapse summary {
   align-items: center;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -5639,7 +5649,7 @@ nav.rail {
   }
 }
 nav.rail .rail-label {
-  font-size: 0.62rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -5655,7 +5665,7 @@ nav.rail button.rail-item {
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 0.84rem;
+  font-size: var(--nn-text-small);
   text-align: left;
   padding: 7px 10px;
   border-radius: var(--radius-sm);
@@ -5673,7 +5683,7 @@ nav.rail button.rail-item.active {
 }
 nav.rail button.rail-item .count {
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
 }
 nav.rail button.rail-item .rail-dot {
@@ -5713,7 +5723,7 @@ button.tab {
   background: transparent;
   color: var(--muted);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
   font-weight: 600;
   padding: 8px 16px;
   cursor: pointer;
@@ -5755,7 +5765,7 @@ button.subtab {
   background: var(--surface);
   color: var(--muted);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 5px 14px;
   border-radius: var(--radius);
@@ -5790,7 +5800,7 @@ button.subtab:focus-visible {
 }
 .doc-root h2 {
   margin: 0 0 8px;
-  font-size: 1.15rem;
+  font-size: var(--nn-text-title-sm);
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -5798,7 +5808,7 @@ button.subtab:focus-visible {
 }
 .doc-root p.desc {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--nn-text-small);
   color: var(--muted);
 }
 .doc-step {
@@ -5810,7 +5820,7 @@ button.subtab:focus-visible {
 }
 .doc-step h3 {
   margin: 0 0 6px;
-  font-size: 0.98rem;
+  font-size: var(--nn-text-body);
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -5821,7 +5831,7 @@ button.subtab:focus-visible {
 }
 .doc-step p.desc {
   margin: 0 0 10px;
-  font-size: 0.88rem;
+  font-size: var(--nn-text-small);
   color: var(--muted);
 }
 
@@ -5839,7 +5849,7 @@ button.proc-tab {
   background: var(--surface);
   color: var(--muted);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 6px 14px;
   cursor: pointer;
@@ -5880,7 +5890,7 @@ button.proc-tab:focus-visible {
   flex: 1;
 }
 .proc-status-title {
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   color: var(--text);
 }
 .proc-progress-track {
@@ -5901,7 +5911,7 @@ button.proc-tab:focus-visible {
   align-items: center;
   gap: 8px;
   font-family: var(--mono);
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   color: var(--muted);
 }
 .proc-timer {
@@ -5951,7 +5961,7 @@ button.proc-tab:focus-visible {
   padding: 10px 14px;
   background: var(--surface-2);
   border-bottom: 1px solid var(--border);
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -5966,7 +5976,7 @@ button.proc-tab:focus-visible {
   gap: 6px;
 }
 .count-badge {
-  font-size: 0.7rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   color: var(--text-faint);
 }
@@ -5977,7 +5987,7 @@ button.proc-tab:focus-visible {
   background: var(--surface);
   color: var(--text);
   font: inherit;
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
@@ -6081,13 +6091,13 @@ svg.dag-canvas {
   min-width: 0;
 }
 .dag-list .node-sub {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
 }
 .dag-list .node-title {
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   line-height: 1.3;
   color: var(--text);
@@ -6164,13 +6174,13 @@ svg.dag-canvas {
   stroke-width: 1.5;
 }
 .dag-node text.node-sub {
-  font-size: 9px;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   fill: var(--muted);
   font-family: var(--font);
 }
 .dag-node text.node-title {
-  font-size: 11px;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   fill: var(--text);
   font-family: var(--font);
@@ -6220,7 +6230,7 @@ svg.dag-canvas {
   align-items: center;
 }
 .step-type-pill {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -6244,7 +6254,7 @@ svg.dag-canvas {
 }
 
 .step-state-badge {
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 2px 8px;
   border-radius: var(--radius-sm);
@@ -6277,13 +6287,13 @@ svg.dag-canvas {
 }
 
 .exec-step-title {
-  font-size: 1.25rem;
+  font-size: var(--nn-text-title);
   font-weight: 700;
   letter-spacing: -0.3px;
   margin: 0;
 }
 .exec-step-desc {
-  font-size: 0.92rem;
+  font-size: var(--nn-text-small);
   color: var(--muted);
   line-height: 1.6;
   margin: 0;
@@ -6300,7 +6310,7 @@ svg.dag-canvas {
   gap: 8px;
 }
 .exec-box-title {
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -6315,7 +6325,7 @@ svg.dag-canvas {
   background: rgba(255, 255, 255, 0.12);
   color: #f8fafc;
   font: inherit;
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 3px 8px;
   border-radius: 4px;
@@ -6332,7 +6342,7 @@ svg.dag-canvas {
 .nn-proc-host button.btn {
   appearance: none;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   font-weight: 600;
   padding: 7px 14px;
   border-radius: var(--radius-sm);
@@ -6377,7 +6387,7 @@ svg.dag-canvas {
 }
 .proc-actions-title {
   width: 100%;
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -6387,7 +6397,7 @@ svg.dag-canvas {
 .proc-action {
   appearance: none;
   font: inherit;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
@@ -6405,7 +6415,7 @@ svg.dag-canvas {
 }
 .proc-action-outcome {
   font: inherit;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   padding: 6px 8px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong);
@@ -6416,7 +6426,7 @@ svg.dag-canvas {
 .proc-action-error {
   width: 100%;
   color: var(--danger);
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
 }
 .proc-action-error:empty {
   display: none;
@@ -6432,7 +6442,7 @@ svg.dag-canvas {
   align-items: center;
 }
 .proc-output-file {
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 .proc-output-file-row .proc-output-name {
@@ -6455,7 +6465,7 @@ svg.dag-canvas {
   border-left-width: 3px;
   background: var(--warning-light);
   color: var(--text);
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   line-height: 1.45;
 }
 
@@ -6468,7 +6478,7 @@ svg.dag-canvas {
   margin-bottom: 12px;
 }
 .proc-structure-summary {
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   color: var(--muted);
   font-family: var(--mono);
@@ -6479,7 +6489,7 @@ svg.dag-canvas {
   gap: 4px;
 }
 .proc-defect-item {
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
   color: var(--danger);
 }
 .proc-defect-item[data-severity='info'] {
@@ -6495,7 +6505,7 @@ svg.dag-canvas {
   margin: 10px 0 14px;
 }
 .proc-runs-label {
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -6509,7 +6519,7 @@ button.proc-run {
   background: var(--surface);
   color: var(--muted);
   font: inherit;
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 5px 12px;
   cursor: pointer;
@@ -6534,7 +6544,7 @@ button.proc-run[data-status='completed'] {
   border-color: var(--success);
 }
 .proc-runs-empty {
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
   font-style: italic;
 }
@@ -6552,16 +6562,16 @@ button.proc-run[data-status='completed'] {
   box-shadow: var(--shadow-card);
 }
 .proc-ficha-summary {
-  font-size: 0.86rem;
+  font-size: var(--nn-text-small);
   color: var(--text);
   margin-bottom: 4px;
 }
 .proc-ficha > div:not(.proc-ficha-summary) {
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 .proc-no-catalog-note {
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
   font-style: italic;
 }
@@ -6572,7 +6582,7 @@ button.proc-run[data-status='completed'] {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   color: var(--text);
 }
 .proc-run-state > p {
@@ -6580,7 +6590,7 @@ button.proc-run[data-status='completed'] {
   color: var(--muted);
 }
 .proc-run-title {
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
   font-weight: 700;
   margin-bottom: 4px;
   font-family: var(--mono);
@@ -6592,7 +6602,7 @@ button.proc-run[data-status='completed'] {
 }
 .proc-run-path {
   font-family: var(--mono);
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
 }
 .proc-run-blocked,
 .proc-run-crashed {
@@ -6611,7 +6621,7 @@ button.proc-run[data-status='completed'] {
 .proc-run-allowed,
 .proc-run-artifacts {
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
 }
 .proc-run-next {
   margin-top: 8px;
@@ -6620,7 +6630,7 @@ button.proc-run[data-status='completed'] {
   background: var(--surface-2);
   border: 1px solid var(--border);
   font-family: var(--mono);
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   line-height: 1.5;
   color: var(--muted);
 }
@@ -6712,7 +6722,7 @@ button.proc-run[data-status='completed'] {
 .dag-edge-label.taken {
   fill: var(--primary);
   font-weight: 800;
-  font-size: 11px;
+  font-size: var(--nn-text-micro);
 }
 .dag-edge-label.taken.done {
   fill: var(--success);
@@ -6733,7 +6743,7 @@ button.proc-run[data-status='completed'] {
   gap: 6px;
 }
 .proc-projection-title {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -6743,7 +6753,7 @@ button.proc-run[data-status='completed'] {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.84rem;
+  font-size: var(--nn-text-small);
   font-weight: 600;
 }
 .proc-projection-from {
@@ -6760,11 +6770,11 @@ button.proc-run[data-status='completed'] {
   flex-direction: column;
   gap: 2px;
   font-family: var(--mono);
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   color: var(--text);
 }
 .proc-projection-note {
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
   line-height: 1.4;
 }
@@ -6781,7 +6791,7 @@ button.proc-run[data-status='completed'] {
   margin-top: 6px;
 }
 .proc-artifact-row-label {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -6800,7 +6810,7 @@ button.proc-run[data-status='completed'] {
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface-2);
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
 }
 .proc-artifact[data-status='validated'] {
   border-color: var(--success);
@@ -6817,11 +6827,11 @@ button.proc-run[data-status='completed'] {
 .proc-artifact-state {
   color: var(--muted);
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
 }
 .proc-artifact-pending {
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-style: italic;
 }
 button.proc-artifact-producer,
@@ -6831,7 +6841,7 @@ button.proc-artifact-open {
   background: transparent;
   color: var(--primary);
   font: inherit;
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   padding: 0;
   cursor: pointer;
   text-decoration: underline;
@@ -6851,7 +6861,7 @@ button.proc-artifact-open:disabled {
   gap: 4px;
 }
 .proc-run-artifacts-label {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -6884,7 +6894,7 @@ button.proc-artifact-open:disabled {
 }
 .proc-artifact-view-title {
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
 }
 button.proc-artifact-view-close {
   appearance: none;
@@ -6893,21 +6903,21 @@ button.proc-artifact-view-close {
   background: var(--surface);
   color: var(--text);
   font: inherit;
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   padding: 3px 10px;
   cursor: pointer;
 }
 .proc-artifact-view-path {
   padding: 6px 14px 0;
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 .proc-artifact-view-body {
   margin: 0;
   padding: 10px 14px 14px;
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   line-height: 1.5;
   white-space: pre-wrap;
   max-height: 420px;
@@ -6924,7 +6934,7 @@ button.proc-artifact-view-close {
   gap: 10px;
 }
 .audit-item {
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   border-left: 2px solid var(--border-strong);
   padding-left: 8px;
   display: flex;
@@ -6945,7 +6955,7 @@ button.proc-artifact-view-close {
 }
 .audit-time {
   font-family: var(--mono);
-  font-size: 0.7rem;
+  font-size: var(--nn-text-micro);
   color: var(--faint);
 }
 .audit-author {
@@ -6973,7 +6983,7 @@ dialog.export-dialog::backdrop {
   backdrop-filter: blur(2px);
 }
 .export-modal-inner h3 {
-  font-size: 1.1rem;
+  font-size: var(--nn-text-title-sm);
   font-weight: 700;
   margin: 0 0 6px;
   display: flex;
@@ -6981,7 +6991,7 @@ dialog.export-dialog::backdrop {
   gap: 8px;
 }
 .export-modal-desc {
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   color: var(--muted);
   margin: 0 0 12px;
 }
@@ -6989,7 +6999,7 @@ dialog.export-dialog::backdrop {
   width: 100%;
   height: 220px;
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   background: var(--surface-2);
   color: var(--text);
   border: 1px solid var(--border);
@@ -7019,12 +7029,12 @@ dialog.export-dialog::backdrop {
 }
 .concept-card h3 {
   margin: 0 0 6px;
-  font-size: 1rem;
+  font-size: var(--nn-text-body);
   font-weight: 700;
 }
 .concept-card .concept-tag {
   display: inline-block;
-  font-size: 0.66rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   color: var(--muted);
   background: var(--surface-2);
@@ -7035,7 +7045,7 @@ dialog.export-dialog::backdrop {
 }
 .concept-card p {
   margin: 0 0 8px;
-  font-size: 0.88rem;
+  font-size: var(--nn-text-small);
   color: var(--muted);
 }
 .field-list {
@@ -7043,7 +7053,7 @@ dialog.export-dialog::backdrop {
   grid-template-columns: 170px 1fr;
   gap: 3px 14px;
   margin: 10px 0 0;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
 }
 .field-list dt {
   color: var(--muted);
@@ -7062,7 +7072,7 @@ dialog.export-dialog::backdrop {
   overflow: hidden;
 }
 .matrix-block h3 {
-  font-size: 0.9rem;
+  font-size: var(--nn-text-small);
   font-weight: 700;
   margin: 0 0 12px;
   color: var(--text);
@@ -7072,7 +7082,7 @@ dialog.export-dialog::backdrop {
 }
 table.matrix {
   border-collapse: collapse;
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
   width: 100%;
 }
 table.matrix th,
@@ -7100,7 +7110,7 @@ table.matrix td:empty::after {
 
 .empty-state {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--nn-text-small);
   padding: 40px 0;
 }
 
@@ -7141,7 +7151,7 @@ table.matrix td:empty::after {
 }
 .nn-ref-head h2 {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: var(--nn-text-body);
   font-weight: 700;
 }
 .nn-ref-close {
@@ -7153,7 +7163,7 @@ table.matrix td:empty::after {
   width: 28px;
   height: 28px;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: var(--nn-text-small);
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -7169,7 +7179,7 @@ table.matrix td:empty::after {
 }
 .nn-ref-tag {
   display: inline-block;
-  font-size: 0.64rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   color: var(--nn-muted, var(--muted));
   background: var(--nn-surface-2, var(--surface-2));
@@ -7180,14 +7190,14 @@ table.matrix td:empty::after {
 }
 .nn-ref-desc {
   margin: 0 0 12px;
-  font-size: 0.88rem;
+  font-size: var(--nn-text-small);
 }
 .nn-ref-fields {
   display: grid;
   grid-template-columns: 170px 1fr;
   gap: 3px 14px;
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
 }
 .nn-ref-fields dt {
   color: var(--nn-muted, var(--muted));
@@ -7313,7 +7323,7 @@ button.btn-primary:hover:not(:disabled) {
   border-width: 0 !important;
   background: color-mix(in srgb, var(--card-concept-color, var(--nn-accent, #171717)) 10%, #ffffff);
   color: var(--card-concept-color, var(--nn-accent, #171717));
-  font-size: 0.73rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   line-height: 1.3;
   white-space: nowrap;
@@ -7444,7 +7454,7 @@ button.btn-primary:hover:not(:disabled) {
   border-left: 3px solid var(--card-concept-color, var(--nn-accent, #171717));
   border-radius: 0 6px 6px 0;
   color: var(--nn-text, #0a0a0a);
-  font-size: 0.88rem;
+  font-size: var(--nn-text-small);
   line-height: 1.55;
 }
 [data-nn-component='element-card'] .nn-card-fields {
@@ -7465,7 +7475,7 @@ button.btn-primary:hover:not(:disabled) {
   border-radius: 0;
   padding: 9px 14px;
   background: var(--nn-surface, #ffffff);
-  font-size: 0.86rem;
+  font-size: var(--nn-text-small);
 }
 [data-nn-component='element-card'] .nn-card-fields > .nn-ku-badge[data-ku-kind='field']:last-child {
   border-bottom: none;
@@ -7487,7 +7497,7 @@ button.btn-primary:hover:not(:disabled) {
   flex: 0 0 140px;
   width: 140px;
   font-family: var(--nn-mono);
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   color: var(--nn-muted, #666666);
 }
@@ -7553,7 +7563,7 @@ button.btn-primary:hover:not(:disabled) {
   align-items: center;
   padding: 0.15em 0.55em;
   border-radius: 999px;
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   font-weight: 600;
   background: var(--nn-surface-2, #f1f5f9);
   color: var(--nn-text, #0f172a);
@@ -7586,7 +7596,7 @@ button.btn-primary:hover:not(:disabled) {
   flex-wrap: wrap;
 }
 [data-nn-component='element-card'] .nn-card-incoming-label {
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -7609,7 +7619,7 @@ button.btn-primary:hover:not(:disabled) {
 
 .nn-schema-legend {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 
@@ -7629,7 +7639,7 @@ button.btn-primary:hover:not(:disabled) {
 
 .nn-schema-words-title {
   margin: 0 0 8px;
-  font-size: 1rem;
+  font-size: var(--nn-text-body);
   font-weight: 700;
   color: var(--text);
 }
@@ -7637,7 +7647,7 @@ button.btn-primary:hover:not(:disabled) {
 .nn-schema-group h3 {
   margin: 12px 0 4px;
   font-family: var(--mono);
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 
@@ -7647,7 +7657,7 @@ button.btn-primary:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
   color: var(--text);
 }
 
@@ -7696,13 +7706,13 @@ button.btn-primary:hover:not(:disabled) {
 }
 .nn-procedure-view .proc-view-header .proc-title,
 .nn-proc-host .proc-view-header .proc-title {
-  font-size: 1rem;
+  font-size: var(--nn-text-body);
   display: inline-block;
   margin: 0 10px 0 6px;
 }
 .step-cond-pill {
   font-family: var(--nn-mono);
-  font-size: 0.73rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 2px 9px;
   border-radius: 999px;
@@ -7711,7 +7721,7 @@ button.btn-primary:hover:not(:disabled) {
   border: 1px solid rgba(180, 83, 9, 0.25);
 }
 .step-scope-pill {
-  font-size: 0.73rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 2px 9px;
   border-radius: 999px;
@@ -7739,7 +7749,7 @@ button.btn-primary:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 2px 9px;
   border-radius: 999px;
@@ -7771,7 +7781,7 @@ button.btn-primary:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
   padding: 3px 10px;
   border-radius: 6px;
   background: var(--nn-surface-2, #f4f4f5);
@@ -7786,7 +7796,7 @@ button.btn-primary:hover:not(:disabled) {
   gap: 5px;
   padding: 2px 9px;
   border-radius: 999px;
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   line-height: 1.35;
   border: 1px solid color-mix(in srgb, var(--concept-slot-fg, #3b82f6) 45%, #e5e5e5);
@@ -7853,7 +7863,7 @@ button.btn-primary:hover:not(:disabled) {
   gap: 5px;
   padding: 2px 9px;
   border-radius: 6px;
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   line-height: 1.35;
   background: #ffffff;
@@ -7900,7 +7910,7 @@ button.btn-primary:hover:not(:disabled) {
   border-color: transparent;
   border-bottom-color: #e5e5e5;
   border-radius: 0;
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -7938,7 +7948,7 @@ button.btn-primary:hover:not(:disabled) {
 .nn-ku[data-ku-kind='section'][data-ku-nature='container'] {
   color: var(--rail-concept-color, var(--concept-slot-fg, #0a0a0a));
   font-weight: 700;
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   background: color-mix(
     in srgb,
     var(--rail-concept-color, var(--concept-slot-fg, #3b82f6)) 10%,
@@ -7972,7 +7982,7 @@ button.btn-primary:hover:not(:disabled) {
   gap: 5px;
   border-radius: 999px;
   padding: 3px 10px;
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   border: 1px solid #d4d4d8;
   background: #ffffff;
   color: #0a0a0a;
@@ -7991,7 +8001,7 @@ button.btn-primary:hover:not(:disabled) {
   opacity: 0.65;
   cursor: pointer;
   padding: 0 2px;
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
   line-height: 1;
 }
 .nn-filter-pill-remove:hover {
@@ -8005,7 +8015,7 @@ button.btn-primary:hover:not(:disabled) {
   align-items: center;
   gap: 4px;
   font-family: var(--nn-mono);
-  font-size: 0.73rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 2px 7px;
   border-radius: 5px;
@@ -8018,7 +8028,7 @@ button.btn-primary:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   font-family: var(--nn-mono);
-  font-size: 0.68rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 1px 6px;
   border-radius: 4px;
@@ -8037,7 +8047,7 @@ button.btn-primary:hover:not(:disabled) {
   gap: 4px;
   padding: 2px 8px;
   border-radius: 6px;
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   background: color-mix(
     in srgb,
@@ -8063,7 +8073,7 @@ button.btn-primary:hover:not(:disabled) {
 }
 .nn-guide-meta {
   font-family: var(--nn-mono);
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 999px;
@@ -8108,7 +8118,7 @@ button.btn-primary:hover:not(:disabled) {
   border-radius: 7px;
 }
 .nn-guide-matrix-name {
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   color: #0a0a0a;
 }
@@ -8121,7 +8131,7 @@ button.btn-primary:hover:not(:disabled) {
 .nn-guide-matrix-arrow {
   font-weight: 700;
   color: #71717a;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
 }
 .nn-guide-collapse {
   margin-left: auto;
@@ -8146,7 +8156,7 @@ button.btn-primary:hover:not(:disabled) {
 .nn-guide-field-desc {
   flex-basis: 100%;
   margin: 2px 0 0;
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   line-height: 1.4;
   color: #71717a;
 }
@@ -8182,7 +8192,7 @@ aside.nn-guide.is-collapsed > :not(.nn-guide-head) {
 .nn-matrix-corner-sep {
   font-weight: 700;
   color: #71717a;
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
 }
 .nn-matrix td .nn-ku-badge[data-ku-kind='cell'][data-cell-value='relevant'] {
   background: #dcfce7;
@@ -8266,7 +8276,7 @@ aside.nn-guide.is-collapsed > :not(.nn-guide-head) {
   height: 16px !important;
   border-radius: 50% !important;
   background: rgba(0, 0, 0, 0.08) !important;
-  font-size: 13px !important;
+  font-size: var(--nn-text-micro) !important;
   font-weight: 700 !important;
   line-height: 1 !important;
   cursor: pointer !important;
@@ -8314,7 +8324,7 @@ button.cite-icon,
 .nn-qud-id {
   color: var(--nn-muted) !important;
   font-family: var(--nn-mono), ui-monospace, monospace !important;
-  font-size: 0.82rem !important;
+  font-size: var(--nn-text-small) !important;
 }
 .nn-qud-btn {
   background: transparent !important;
@@ -8338,7 +8348,7 @@ button.cite-icon,
   border-radius: 0 !important;
   padding: 2px 0 !important;
   font-family: var(--nn-mono), ui-monospace, monospace !important;
-  font-size: 11px !important;
+  font-size: var(--nn-text-micro) !important;
   display: inline-flex !important;
   align-items: center !important;
   gap: 4px !important;
@@ -8371,7 +8381,7 @@ button.cite-icon,
   background-color: #f8fafc !important;
   color: var(--muted) !important;
   font-family: var(--nn-mono), ui-monospace, monospace !important;
-  font-size: 11px !important;
+  font-size: var(--nn-text-micro) !important;
   font-weight: 400 !important;
   padding: 3px 8px !important;
   border: none !important;
@@ -8387,7 +8397,7 @@ button.cite-icon,
   border: none !important;
   border-radius: 0 !important;
   padding: 3px 8px !important;
-  font-size: 11.5px !important;
+  font-size: var(--nn-text-micro) !important;
   font-weight: 400 !important;
   color: var(--pill-concept-color, var(--concept-slot-fg, #0284c7)) !important;
   text-decoration: none !important;
@@ -8564,7 +8574,7 @@ button.cite-icon,
   flex: 0 0 130px !important;
   width: 130px !important;
   font-family: var(--nn-mono), ui-monospace, monospace !important;
-  font-size: 11px !important;
+  font-size: var(--nn-text-micro) !important;
   font-weight: 400 !important;
   color: var(--muted) !important;
   border: none !important;
@@ -8599,7 +8609,7 @@ button.cite-icon,
   flex: 1 1 auto !important;
   background: transparent !important;
   padding: 0 !important;
-  font-size: 12px !important;
+  font-size: var(--nn-text-micro) !important;
   font-weight: 400 !important;
   color: #1e293b !important;
   border: none !important;
@@ -8651,7 +8661,7 @@ select {
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  font-size: 13px !important;
+  font-size: var(--nn-text-micro) !important;
   font-weight: 600 !important;
 }
 .nn-dock-dot {
@@ -8702,7 +8712,7 @@ select {
   background: transparent !important;
   border: none !important;
   color: #f1f5f9 !important;
-  font-size: 13px !important;
+  font-size: var(--nn-text-micro) !important;
   font-weight: 500 !important;
   cursor: pointer !important;
   padding: 4px 8px !important;
@@ -8741,7 +8751,7 @@ select {
   padding: 12px 16px !important;
   z-index: 1000 !important;
   min-width: 260px !important;
-  font-size: 12px !important;
+  font-size: var(--nn-text-micro) !important;
   line-height: 1.6 !important;
   color: #334155 !important;
 }
@@ -8797,7 +8807,7 @@ select {
 }
 
 #nn-navbar-extra {
-  font-size: 0.82rem !important;
+  font-size: var(--nn-text-small) !important;
   color: var(--muted) !important;
   display: flex !important;
   align-items: center !important;
@@ -8820,7 +8830,7 @@ select {
   border: 1px solid var(--border, #e2e8f0) !important;
   border-radius: 6px !important;
   padding: 6px 14px !important;
-  font-size: 0.8rem !important;
+  font-size: var(--nn-text-micro) !important;
   font-weight: 500 !important;
   cursor: pointer !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
@@ -8889,7 +8899,7 @@ select {
   background: var(--surface, #ffffff);
 }
 #nn-domain-subtabs .nn-view-subtab {
-  font-size: 0.85rem !important;
+  font-size: var(--nn-text-small) !important;
   padding: 8px 12px !important;
   min-height: auto !important;
   height: auto !important;
@@ -8912,7 +8922,7 @@ select {
 
 /* 17. Field badge styling in element table header */
 .nn-element-table-th .nn-ku-badge[data-ku-kind='field'] {
-  font-size: 0.76rem !important;
+  font-size: var(--nn-text-micro) !important;
   padding: 2px 8px !important;
   background: var(--surface-2, #f1f5f9) !important;
   border: 1px solid var(--border, #e2e8f0) !important;
@@ -8940,7 +8950,7 @@ select {
 }
 .nn-card-outgoing-label,
 .nn-card-incoming-label {
-  font-size: 11px !important;
+  font-size: var(--nn-text-micro) !important;
   font-weight: 600 !important;
   color: var(--nn-muted) !important;
   text-transform: uppercase !important;
@@ -8964,7 +8974,7 @@ select {
   border: 1px solid var(--border, #e2e8f0);
   border-radius: 6px;
   padding: 8px 12px;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   background: var(--surface-2, #f8fafc);
 }
 .nn-modal-details > summary {
@@ -8975,12 +8985,12 @@ select {
 }
 .nn-modal-details h4 {
   margin: 8px 0 4px;
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   text-transform: uppercase;
   color: var(--muted);
 }
 .nn-review-dock .nn-dock-drafts {
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
   white-space: nowrap;
 }
@@ -9018,7 +9028,7 @@ select {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  font-size: 0.78rem !important;
+  font-size: var(--nn-text-micro) !important;
   font-weight: 600 !important;
   color: #2563eb !important;
   padding: 2px 8px !important;
@@ -9041,7 +9051,7 @@ select {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  font-size: 0.78rem !important;
+  font-size: var(--nn-text-micro) !important;
   color: var(--muted) !important;
 }
 .nn-review-dock .nn-reviewer-name {
@@ -9052,7 +9062,7 @@ select {
   background: #ffffff !important;
   color: #0f172a !important;
   font: inherit !important;
-  font-size: 0.78rem !important;
+  font-size: var(--nn-text-micro) !important;
 }
 .nn-review-dock .nn-new-element {
   appearance: none !important;
@@ -9060,7 +9070,7 @@ select {
   background: #f8fafc !important;
   color: #0f172a !important;
   font: inherit !important;
-  font-size: 0.78rem !important;
+  font-size: var(--nn-text-micro) !important;
   font-weight: 600 !important;
   padding: 4px 12px !important;
   border-radius: 9999px !important;
@@ -9077,7 +9087,7 @@ select {
   background: #2563eb !important;
   color: #ffffff !important;
   font: inherit !important;
-  font-size: 0.78rem !important;
+  font-size: var(--nn-text-micro) !important;
   font-weight: 600 !important;
   padding: 4px 14px !important;
   border-radius: 9999px !important;
@@ -9117,7 +9127,7 @@ select {
   background: #ffffff !important;
   color: var(--muted) !important;
   font: inherit !important;
-  font-size: 0.75rem !important;
+  font-size: var(--nn-text-micro) !important;
   padding: 3px 8px !important;
   border-radius: 9999px !important;
   cursor: pointer !important;
@@ -9159,7 +9169,7 @@ select {
 }
 .nn-export-count {
   margin-left: auto;
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--nn-status-unsent, #1e3a8a);
@@ -9176,7 +9186,7 @@ select {
 }
 .nn-export-flow {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   line-height: 1.45;
   color: var(--nn-muted);
 }
@@ -9195,12 +9205,12 @@ select {
 }
 .nn-export-list-head h3 {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--nn-text-small);
   font-weight: 700;
   color: var(--nn-text, #0a0a0a);
 }
 .nn-export-list-head span {
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   color: var(--nn-muted);
 }
 /* One list container for every change list: the export modal's pending list and
@@ -9216,12 +9226,12 @@ select {
 .nn-export-empty {
   margin: 0;
   padding: 12px 0;
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   color: var(--nn-muted);
 }
 /* A stale draft says so in the sheet head, not as a body line. */
 .nn-change-sheet-stale {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   color: #92400e;
   background: #fef3c7;
@@ -9237,7 +9247,7 @@ select {
   background: transparent;
   color: var(--nn-muted);
   font: inherit;
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 0.2em 0.55em;
   border-radius: var(--nn-radius-sm, 6px);
@@ -9250,7 +9260,7 @@ select {
   background: var(--nn-surface, #fff);
 }
 .nn-change-sheet-state {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   color: var(--nn-muted);
   white-space: nowrap;
@@ -9273,7 +9283,7 @@ select {
   }
   #nn-navbar-actions .nn-new-element::before {
     content: '+';
-    font-size: 1rem;
+    font-size: var(--nn-text-body);
   }
   .nn-export-actions .nn-export-spacer {
     display: none;
@@ -9295,19 +9305,19 @@ select {
 }
 .nn-export-modal .nn-navbar-action-btn {
   padding: 7px 12px;
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
   font-weight: 600;
 }
 [data-nn='errors'] {
   color: var(--nn-status-rejected, #dc2626);
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
   padding: 8px 12px;
   background: #fef2f2;
   border: 1px solid #fecaca;
   border-radius: var(--nn-radius-sm, 6px);
 }
 [data-nn='copy-status'] {
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   color: var(--nn-muted);
 }
 /* Dock Changes button */
@@ -9317,7 +9327,7 @@ select {
   background: #f8fafc;
   color: #334155;
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 4px 10px;
   border-radius: 6px;
@@ -9339,14 +9349,14 @@ select {
   padding: 0.4em 0 0;
   border-top: none !important;
   font-family: var(--nn-mono, monospace);
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   color: #94a3b8;
   overflow: hidden;
   min-width: 0;
 }
 .nn-card-path {
   font-family: var(--nn-mono, monospace);
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   color: #94a3b8;
   border-top: none !important;
   padding: 0;
@@ -9391,11 +9401,11 @@ select {
   flex: 0 0 auto;
 }
 .nn-card-title-group .nn-card-concept-pill {
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   font-weight: 600;
 }
 .nn-card-title-group [data-ku-kind='element'] {
-  font-size: 1.15rem;
+  font-size: var(--nn-text-title-sm);
   font-weight: 700;
   line-height: 1.2;
 }
@@ -9408,7 +9418,7 @@ select {
 }
 .nn-card-outgoing-label,
 .nn-card-incoming-label {
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   color: var(--nn-muted);
   text-transform: none;
@@ -9428,7 +9438,7 @@ select {
   gap: 6px !important;
   padding: 5px 14px !important;
   border-radius: 9999px !important;
-  font-size: 0.8rem !important;
+  font-size: var(--nn-text-micro) !important;
   font-weight: 500 !important;
   color: #475569 !important;
   background: #f1f5f9 !important;
@@ -9482,7 +9492,7 @@ select {
   border: none;
   padding: 4px 12px;
   font: inherit;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   font-weight: 500;
   color: var(--muted);
   border-radius: calc(var(--radius-sm) - 2px);
@@ -9502,7 +9512,7 @@ select {
 }
 
 .nn-files-stat-pill {
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   font-family: var(--mono);
   color: var(--muted);
 }
@@ -9552,7 +9562,7 @@ select {
   gap: 8px;
   padding: 6px 8px;
   font-weight: 700;
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted);
@@ -9576,7 +9586,7 @@ select {
 .nn-category-header .chevron {
   display: inline-flex;
   transition: transform 0.15s ease;
-  font-size: 0.7rem;
+  font-size: var(--nn-text-micro);
 }
 
 .nn-category-header.collapsed .chevron {
@@ -9584,7 +9594,7 @@ select {
 }
 
 .nn-category-badge {
-  font-size: 0.7rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   background: var(--surface-2);
   padding: 1px 6px;
@@ -9610,7 +9620,7 @@ select {
   align-items: center;
   gap: 6px;
   padding: 5px 8px;
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   cursor: pointer;
   border-radius: var(--radius-sm);
   color: var(--text);
@@ -9646,14 +9656,14 @@ select {
 }
 
 .nn-file-size {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-family: var(--mono);
   color: var(--muted);
   flex-shrink: 0;
 }
 
 .nn-badge-warning {
-  font-size: 0.68rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   padding: 1px 5px;
   border-radius: 999px;
@@ -9700,7 +9710,7 @@ select {
 }
 
 .nn-kpi-card .kpi-label {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -9709,14 +9719,14 @@ select {
 }
 
 .nn-kpi-card .kpi-value {
-  font-size: 1.5rem;
+  font-size: var(--nn-text-display);
   font-weight: 800;
   color: var(--text);
   line-height: 1.2;
 }
 
 .nn-kpi-card .kpi-sub {
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
   margin-top: 4px;
 }
@@ -9726,7 +9736,7 @@ select {
   margin: 8px 0 0;
   padding-top: 8px;
   border-top: 1px solid var(--border);
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 
@@ -9750,7 +9760,7 @@ select {
 
 .nn-summary-title {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--nn-text-title);
   font-weight: 800;
   color: var(--text);
 }
@@ -9758,7 +9768,7 @@ select {
 .nn-summary-section,
 .nn-summary-attention h3 {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -9812,14 +9822,14 @@ select {
 
 .nn-summary-model-title {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--nn-text-body);
   font-weight: 700;
   color: var(--text);
 }
 
 .nn-summary-model-blueprint {
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -9829,7 +9839,7 @@ select {
 
 .nn-summary-model-stats {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 
@@ -9844,7 +9854,7 @@ select {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 12px;
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
 }
 
 .nn-summary-model-legend li {
@@ -9873,7 +9883,7 @@ select {
 
 .nn-summary-model-open {
   align-self: flex-start;
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   color: var(--primary);
   text-decoration: underline;
@@ -9892,7 +9902,7 @@ select {
 }
 
 .nn-summary-section-meta {
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
   font-weight: 500;
 }
@@ -9919,7 +9929,7 @@ select {
   align-items: center;
   gap: 10px;
   cursor: pointer;
-  font-size: 0.88rem;
+  font-size: var(--nn-text-small);
   font-weight: 700;
   user-select: none;
   list-style: none;
@@ -9931,7 +9941,7 @@ select {
 
 .nn-summary-instance-group-head::before {
   content: '▶';
-  font-size: 0.7rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
   transition: transform 0.15s ease;
   display: inline-block;
@@ -9946,14 +9956,14 @@ select {
 }
 
 .nn-summary-group-container {
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
   font-family: var(--mono);
   font-weight: 400;
 }
 
 .nn-summary-group-count {
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   font-weight: 500;
   color: var(--muted);
 }
@@ -9961,7 +9971,7 @@ select {
 .nn-summary-group-blueprint {
   margin-left: auto;
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -9996,7 +10006,7 @@ select {
   gap: 12px;
   padding: 6px 8px;
   border-radius: 4px;
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
 }
 
 .nn-summary-instance-row:hover {
@@ -10012,14 +10022,14 @@ select {
 
 .nn-summary-instance-id {
   font-family: var(--mono);
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   font-weight: 600;
   color: var(--text);
 }
 
 .nn-summary-instance-title {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
 }
 
 .nn-summary-instance-meta-col {
@@ -10031,11 +10041,11 @@ select {
 
 .nn-summary-instance-elements {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
 }
 
 .nn-summary-instance-status {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 1px 7px;
   border-radius: 999px;
@@ -10061,7 +10071,7 @@ select {
 }
 
 .nn-summary-instance-warning-badge {
-  font-size: 0.7rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   color: #92400e;
   background: #fef3c7;
@@ -10078,7 +10088,7 @@ select {
 
 .nn-summary-instance-open,
 .nn-summary-instance-link {
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   color: var(--primary);
   text-decoration: underline;
@@ -10089,7 +10099,7 @@ select {
 }
 
 .nn-summary-model-warning {
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   color: #b45309;
   background: #fffbeb;
@@ -10124,7 +10134,7 @@ select {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 
@@ -10143,7 +10153,7 @@ select {
 .nn-origins-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
 }
 
 .nn-origins-table th,
@@ -10154,7 +10164,7 @@ select {
 }
 
 .nn-origins-table th {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -10194,7 +10204,7 @@ select {
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--warning) 10%, var(--surface));
   border: 1px solid color-mix(in srgb, var(--warning) 30%, var(--surface));
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   color: var(--text);
 }
 
@@ -10206,7 +10216,7 @@ select {
 }
 
 .nn-file-detail-breadcrumb {
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
   display: flex;
   align-items: center;
@@ -10233,14 +10243,14 @@ select {
 }
 
 .nn-file-detail-title {
-  font-size: 1.25rem;
+  font-size: var(--nn-text-title);
   font-weight: 700;
   margin: 0 0 6px 0;
   line-height: 1.3;
 }
 
 .nn-file-detail-path {
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   font-family: var(--mono);
   color: var(--muted);
   word-break: break-all;
@@ -10262,7 +10272,7 @@ select {
 }
 
 .nn-file-attr-label {
-  font-size: 0.7rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -10270,7 +10280,7 @@ select {
 }
 
 .nn-file-attr-value {
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   font-family: var(--mono);
   color: var(--text);
 }
@@ -10294,7 +10304,7 @@ select {
 }
 
 .nn-lineage-tier-title {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -10334,7 +10344,7 @@ select {
   align-items: center;
   justify-content: space-between;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text);
@@ -10444,12 +10454,12 @@ select {
 
 #nn-file-preview-dialog .nn-modal-header h2 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--nn-text-title-sm);
   font-weight: 700;
 }
 
 #nn-file-preview-dialog .nn-file-preview-size {
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
   font-family: var(--mono);
   color: var(--muted);
 }
@@ -10462,7 +10472,7 @@ select {
   color: var(--muted);
   width: 28px;
   height: 28px;
-  font-size: 1.2rem;
+  font-size: var(--nn-text-title-sm);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -10494,7 +10504,7 @@ pre.nn-file-preview-code {
   padding: 16px;
   background: var(--surface-2);
   font-family: var(--mono);
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   overflow: auto;
   max-height: 60vh;
   border-radius: var(--radius-sm);
@@ -10524,7 +10534,7 @@ pre.nn-file-preview-code {
   padding: 20px;
   background: var(--surface-2);
   border-radius: var(--radius-sm);
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
   color: var(--muted);
 }
 
@@ -10636,7 +10646,7 @@ pre.nn-file-preview-code {
   border-radius: 6px;
   border-left: 3px solid currentColor;
   background: rgba(255, 255, 255, 0.03);
-  font-size: 12px;
+  font-size: var(--nn-text-micro);
   line-height: 1.45;
 }
 .request-item .request-text {
@@ -10651,7 +10661,7 @@ pre.nn-file-preview-code {
 }
 .request-status,
 .proc-request-status {
-  font-size: 10px;
+  font-size: var(--nn-text-micro);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: 1px 6px;
@@ -10662,10 +10672,10 @@ pre.nn-file-preview-code {
 .proc-request-detail {
   display: block;
   color: rgba(230, 232, 238, 0.72);
-  font-size: 11px;
+  font-size: var(--nn-text-micro);
 }
 .request-reason {
-  font-size: 11px;
+  font-size: var(--nn-text-micro);
   font-style: italic;
   color: rgba(230, 232, 238, 0.6);
 }
@@ -10698,14 +10708,14 @@ pre.nn-file-preview-code {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 12px;
+  font-size: var(--nn-text-micro);
 }
 .proc-action-waiting {
   padding: 8px 10px;
   border-radius: 6px;
   background: rgba(224, 179, 65, 0.12);
   color: #e0b341;
-  font-size: 12px;
+  font-size: var(--nn-text-micro);
   line-height: 1.45;
 }
 
@@ -10717,7 +10727,7 @@ pre.nn-file-preview-code {
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.04);
   color: inherit;
-  font-size: 12px;
+  font-size: var(--nn-text-micro);
 }
 
 /* ---- Procedure runner UX (standalone console): response bar, inbox, answers ---- */
@@ -10746,7 +10756,7 @@ pre.nn-file-preview-code {
   min-width: 0;
 }
 .proc-response-hint {
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 .proc-response-name {
@@ -10756,7 +10766,7 @@ pre.nn-file-preview-code {
   flex-wrap: wrap;
 }
 .proc-response-name-label {
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 .proc-response-name-input {
@@ -10766,7 +10776,7 @@ pre.nn-file-preview-code {
   background: var(--surface);
   color: var(--text);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
   width: 160px;
   max-width: 100%;
 }
@@ -10783,7 +10793,7 @@ button.proc-start-submit {
   background: var(--primary);
   color: #ffffff;
   font: inherit;
-  font-size: 0.88rem;
+  font-size: var(--nn-text-small);
   font-weight: 700;
   padding: 8px 16px;
   border-radius: var(--radius-sm);
@@ -10811,7 +10821,7 @@ button.proc-run-filter {
   background: var(--surface);
   color: var(--text);
   font: inherit;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 6px 12px;
   border-radius: var(--radius-sm);
@@ -10819,7 +10829,7 @@ button.proc-run-filter {
 }
 button.proc-run-filter {
   padding: 3px 10px;
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
 }
 button.proc-run-filter.active,
 button.proc-start-run.active {
@@ -10828,20 +10838,20 @@ button.proc-start-run.active {
 }
 button.proc-undo {
   padding: 2px 10px;
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
 }
 .proc-response-error:empty {
   display: none;
 }
 .proc-response-error {
   color: var(--danger);
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   flex-basis: 100%;
 }
 .proc-response-saved {
   color: var(--success);
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
   flex-basis: 100%;
 }
 
@@ -10865,7 +10875,7 @@ button.proc-undo {
   font-weight: 700;
 }
 .proc-inbox-count {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   background: var(--primary);
   color: #ffffff;
@@ -10904,11 +10914,11 @@ button.proc-inbox-open:hover {
   font-weight: 700;
 }
 .proc-inbox-run {
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 .proc-inbox-question {
-  font-size: 0.86rem;
+  font-size: var(--nn-text-small);
 }
 
 .proc-runs {
@@ -10936,7 +10946,7 @@ button.proc-run.proc-run-unsent {
   border: 1px dashed var(--warning);
   border-radius: var(--radius-sm);
   padding: 3px 8px;
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
   background: var(--warning-light);
 }
 .proc-start-form {
@@ -10959,7 +10969,7 @@ button.proc-run.proc-run-unsent {
   gap: 4px;
 }
 .proc-start-label {
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   color: var(--muted);
 }
@@ -10972,7 +10982,7 @@ button.proc-run.proc-run-unsent {
   font: inherit;
 }
 .proc-start-note {
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 .proc-start-field select,
@@ -11007,7 +11017,7 @@ button.proc-run.proc-run-unsent {
   }
 }
 .dag-edge-label {
-  font-size: 11px;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   fill: var(--muted);
 }
@@ -11029,7 +11039,7 @@ button.proc-run.proc-run-unsent {
   gap: 6px;
   margin-bottom: 8px;
   padding: 4px 0;
-  font-size: 13px;
+  font-size: var(--nn-text-micro);
 }
 .nn-map-crumb {
   background: none;
@@ -11056,7 +11066,7 @@ button.proc-run.proc-run-unsent {
 }
 .nn-map-dive-hint {
   margin-left: auto;
-  font-size: 11px;
+  font-size: var(--nn-text-micro);
   color: var(--muted, #64748b);
 }
 .dag-live {
@@ -11076,7 +11086,7 @@ button.proc-run.proc-run-unsent {
   background: var(--surface);
   color: var(--muted);
   font-family: var(--mono, monospace);
-  font-size: 10px;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
@@ -11092,7 +11102,7 @@ button.proc-run.proc-run-unsent {
   flex-wrap: wrap;
   gap: 4px 12px;
   padding: 2px 13px 8px;
-  font-size: 10.5px;
+  font-size: var(--nn-text-micro);
   color: var(--faint);
 }
 .dag-legend-item {
@@ -11159,13 +11169,13 @@ button.proc-run.proc-run-unsent {
 }
 
 .exec-step-question {
-  font-size: 1.02rem;
+  font-size: var(--nn-text-body);
   font-weight: 600;
   margin: 0;
 }
 .step-system-pill,
 .step-executor-pill {
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   padding: 3px 9px;
   border-radius: 999px;
@@ -11189,7 +11199,7 @@ button.proc-run.proc-run-unsent {
   border-radius: var(--radius-sm);
   background: var(--surface-2);
   border-left: 3px solid var(--accent);
-  font-size: 0.88rem;
+  font-size: var(--nn-text-small);
 }
 .nn-procedure-view .proc-actions {
   display: flex;
@@ -11220,7 +11230,7 @@ button.proc-run.proc-run-unsent {
   width: 100%;
   box-sizing: border-box;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   line-height: 1.45;
   padding: 8px 10px;
   border: 1px solid var(--border-strong, var(--border, #cbd5e1));
@@ -11234,7 +11244,7 @@ button.proc-run.proc-run-unsent {
   background: var(--surface);
   color: var(--text);
   font: inherit;
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
   resize: vertical;
 }
 .proc-decided {
@@ -11251,13 +11261,13 @@ button.proc-run.proc-run-unsent {
   font-weight: 700;
 }
 .proc-decided-state {
-  font-size: 0.76rem;
+  font-size: var(--nn-text-micro);
   color: var(--warning);
   font-weight: 700;
 }
 .proc-decided-reason {
   flex-basis: 100%;
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
   color: var(--muted);
 }
 .nn-procedure-view .proc-run-projected {
@@ -11265,19 +11275,19 @@ button.proc-run.proc-run-unsent {
   border-radius: var(--radius-sm);
   background: var(--warning-light);
   color: var(--text);
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
 }
 .proc-details > summary,
 .proc-agent-hint > summary,
 .proc-embed > summary {
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   color: var(--muted);
 }
 .proc-details {
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 .proc-details[open] {
@@ -11288,7 +11298,7 @@ button.proc-run.proc-run-unsent {
 .proc-agent-hint-text {
   white-space: pre-wrap;
   font-family: var(--mono);
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   padding: 8px 10px;
   border-radius: var(--radius-sm);
   background: var(--surface-2);
@@ -11315,7 +11325,7 @@ button.proc-run.proc-run-unsent {
   margin-top: 8px;
 }
 .proc-artifact-remote {
-  font-size: 0.74rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
   font-style: italic;
 }
@@ -11335,7 +11345,7 @@ button.proc-run.proc-run-unsent {
   align-items: baseline;
 }
 .proc-run-summary .exec-step-title {
-  font-size: 1.15rem;
+  font-size: var(--nn-text-title-sm);
 }
 
 /* ---- Procedure Runner B+D+E integrated layout ---- */
@@ -11400,7 +11410,7 @@ button.proc-run.proc-run-unsent {
 }
 .proc-runbar .id {
   font-family: var(--mono);
-  font-size: 13px;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
 }
 .proc-runbar .sep {
@@ -11427,7 +11437,7 @@ button.proc-run.proc-run-unsent {
   background: none;
   color: var(--muted);
   font: inherit;
-  font-size: 12.5px;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   padding: 10px 12px;
   cursor: pointer;
@@ -11483,7 +11493,7 @@ button.proc-run.proc-run-unsent {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
 }
 .rail-col .dot.done {
@@ -11519,7 +11529,7 @@ button.proc-run.proc-run-unsent {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 13px;
+  font-size: var(--nn-text-micro);
   padding: 6px 8px;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -11536,7 +11546,7 @@ button.proc-run.proc-run-unsent {
 }
 .step-row .compact .d {
   color: var(--faint);
-  font-size: 11.5px;
+  font-size: var(--nn-text-micro);
 }
 
 /* Document definition */
@@ -11551,7 +11561,7 @@ button.proc-run.proc-run-unsent {
   background: var(--surface-2);
 }
 .doc-step h3 {
-  font-size: 13px;
+  font-size: var(--nn-text-micro);
   margin: 0 0 6px;
   display: flex;
   align-items: center;
@@ -11559,18 +11569,18 @@ button.proc-run.proc-run-unsent {
 }
 .doc-step h3 .idx {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--nn-text-micro);
   color: var(--faint);
 }
 .doc-step .instructions p {
-  font-size: 12.5px;
+  font-size: var(--nn-text-micro);
   margin: 0 0 6px;
   color: var(--text);
 }
 .doc-step .instructions ul {
   margin: 0 0 6px;
   padding-left: 18px;
-  font-size: 12.5px;
+  font-size: var(--nn-text-micro);
   color: var(--text);
 }
 .doc-step .instructions li {
@@ -11578,7 +11588,7 @@ button.proc-run.proc-run-unsent {
 }
 .doc-step .instructions code {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: var(--nn-text-micro);
   background: var(--surface-3);
   padding: 1px 4px;
   border-radius: 3px;
@@ -11591,7 +11601,7 @@ table.proc-artifacts-table {
 }
 table.proc-artifacts-table thead th {
   text-align: left;
-  font-size: 10.5px;
+  font-size: var(--nn-text-micro);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--faint);
@@ -11603,7 +11613,7 @@ table.proc-artifacts-table thead th {
 table.proc-artifacts-table tbody td {
   padding: 9px 10px;
   border-bottom: 1px solid var(--border);
-  font-size: 12.5px;
+  font-size: var(--nn-text-micro);
 }
 table.proc-artifacts-table tbody tr:hover {
   background: var(--surface-2);
@@ -11627,7 +11637,7 @@ table.proc-artifacts-table tbody tr:hover {
 }
 .rail-hint {
   padding: 8px 13px 12px;
-  font-size: 11px;
+  font-size: var(--nn-text-micro);
   color: var(--faint);
 }
 .proc-detail-card .detail-inner {
@@ -11647,7 +11657,7 @@ table.proc-artifacts-table tbody tr:hover {
 
 .nn-versions-checked {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
   color: var(--muted);
 }
 
@@ -11663,26 +11673,26 @@ table.proc-artifacts-table tbody tr:hover {
 
 .nn-versions-section h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--nn-text-body);
   font-weight: 700;
   color: var(--text);
 }
 
 .nn-versions-hint {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 
 .nn-versions-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
 }
 
 .nn-versions-table th {
   text-align: left;
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -11706,7 +11716,7 @@ table.proc-artifacts-table tbody tr:hover {
   display: inline-block;
   border-radius: 999px;
   padding: 1px 9px;
-  font-size: 0.75rem;
+  font-size: var(--nn-text-micro);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -11740,14 +11750,14 @@ table.proc-artifacts-table tbody tr:hover {
 
 .nn-map-title {
   margin: 8px 0 0;
-  font-size: 1rem;
+  font-size: var(--nn-text-body);
   font-weight: 700;
   color: var(--text);
 }
 
 .nn-map-hint {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 
@@ -11759,7 +11769,7 @@ table.proc-artifacts-table tbody tr:hover {
 }
 
 .nn-map-picker {
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
   color: var(--text);
   display: flex;
   align-items: center;
@@ -11777,7 +11787,7 @@ table.proc-artifacts-table tbody tr:hover {
 
 .nn-map-words {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
   color: var(--text);
 }
 
@@ -11857,7 +11867,7 @@ table.proc-artifacts-table tbody tr:hover {
   background: transparent;
   color: inherit;
   font: inherit;
-  font-size: 1.1rem;
+  font-size: var(--nn-text-title-sm);
   font-weight: 700;
   text-align: start;
   cursor: pointer;
@@ -11933,7 +11943,7 @@ button.proc-run.active {
 /* The stepper: a light list. Name in regular weight, status as a small tag, the
    number quiet; the weight of the page is carried by the open step's card. */
 .proc-step-toggle {
-  font-size: 0.9rem;
+  font-size: var(--nn-text-small);
   font-weight: 500;
 }
 .proc-step-toggle .badge {
@@ -11943,7 +11953,7 @@ button.proc-run.active {
   border-radius: 999px;
   background: var(--surface-2);
   color: var(--muted);
-  font-size: 0.7rem;
+  font-size: var(--nn-text-micro);
   font-weight: 500;
   line-height: 1.5;
 }
@@ -11964,12 +11974,12 @@ button.proc-run.active {
 }
 .proc-timeline-number {
   font-family: var(--mono);
-  font-size: 0.72rem;
+  font-size: var(--nn-text-micro);
   font-weight: 400;
   color: var(--muted);
 }
 .proc-flow-note {
-  font-size: 0.8rem;
+  font-size: var(--nn-text-micro);
   color: var(--muted);
 }
 
@@ -11979,14 +11989,14 @@ button.proc-run.active {
 .nn-ku-info-sub {
   margin: 0 0 12px;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
 }
 .nn-ku-info-list {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
   gap: 8px 20px;
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--nn-text-small);
 }
 .nn-ku-info-term {
   color: var(--muted);
@@ -12007,7 +12017,7 @@ button.proc-run.active {
   background: var(--surface);
   color: var(--text);
   font: inherit;
-  font-size: 0.78rem;
+  font-size: var(--nn-text-micro);
 }
 .nn-tag-input:focus-visible {
   outline: 2px solid var(--primary);
@@ -12023,7 +12033,7 @@ button.proc-run.active {
   background: var(--surface);
   color: var(--text);
   font: inherit;
-  font-size: 0.82rem;
+  font-size: var(--nn-text-small);
 }
 .nn-files-sidebar .nn-input:focus-visible {
   outline: 2px solid var(--primary);
@@ -12077,7 +12087,7 @@ button.proc-run.active {
   background: var(--surface);
   color: var(--text);
   font: inherit;
-  font-size: 12.5px;
+  font-size: var(--nn-text-micro);
   cursor: pointer;
 }
 .nn-map-leaf:hover {
