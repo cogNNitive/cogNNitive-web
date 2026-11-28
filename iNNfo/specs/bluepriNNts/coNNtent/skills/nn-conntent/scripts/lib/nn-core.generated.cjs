@@ -18065,6 +18065,297 @@ var init_procedure = __esm({
   }
 });
 
+// iNNfo/packages/nn-core/dist/scope/chain.js
+function buildScopeChain2(startDir, probe, parentOf3) {
+  const searched = [];
+  const found = [];
+  let cutAt = null;
+  for (let dir = startDir; dir !== null; dir = parentOf3(dir)) {
+    searched.push(dir);
+    const { hasEntrypoint, scopeMarkers } = probe(dir);
+    if (scopeMarkers.length > 1 && cutAt === null) {
+      return {
+        ok: false,
+        code: "DUPLICATE_SCOPE_MARKER",
+        dir,
+        markers: scopeMarkers.map((m) => m.path)
+      };
+    }
+    const marker = scopeMarkers[0];
+    if (hasEntrypoint) {
+      if (cutAt === null) {
+        found.push({ dir, valuesDoc: marker?.path ?? null, kind: "root", isolate: false });
+      }
+      return { ok: true, chain: { root: dir, links: found.reverse(), cutAt } };
+    }
+    if (marker && cutAt === null) {
+      found.push({ dir, valuesDoc: marker.path, kind: "scope", isolate: marker.isolate });
+      if (marker.isolate)
+        cutAt = dir;
+    }
+  }
+  return { ok: false, code: "NO_DOMAIN_ROOT", searched };
+}
+var init_chain = __esm({
+  "iNNfo/packages/nn-core/dist/scope/chain.js"() {
+    "use strict";
+  }
+});
+
+// iNNfo/packages/nn-core/dist/scope/fs-chain.js
+function startDirOf2(path3) {
+  const abs = (0, import_node_path13.resolve)(path3);
+  try {
+    return (0, import_node_fs8.statSync)(abs).isFile() ? (0, import_node_path13.dirname)(abs) : abs;
+  } catch {
+    return abs;
+  }
+}
+function parentOf2(dir) {
+  const parent = (0, import_node_path13.dirname)(dir);
+  return parent === dir ? null : parent;
+}
+function knowledgeDocsOf2(dir) {
+  let names;
+  try {
+    names = (0, import_node_fs8.readdirSync)(dir, { withFileTypes: true }).filter((e) => e.isFile()).map((e) => e.name);
+  } catch {
+    return [];
+  }
+  return names.filter((name) => {
+    if (name === ENTRYPOINT_FILENAME2)
+      return false;
+    const parsed = parseName2(name);
+    return parsed.kind === "nn" && parsed.sidecarOf === void 0;
+  }).sort();
+}
+function posix2(root, path3) {
+  return (0, import_node_path13.relative)(root, path3).split(import_node_path13.sep).join("/");
+}
+function probeDir2(dir, root, failures) {
+  const scopeMarkers = [];
+  for (const name of knowledgeDocsOf2(dir)) {
+    const path3 = (0, import_node_path13.join)(dir, name);
+    let text;
+    try {
+      text = (0, import_node_fs8.readFileSync)(path3, "utf-8");
+    } catch (error) {
+      failures.push({
+        ok: false,
+        code: "UNREADABLE_DOCUMENT",
+        path: posix2(root, path3),
+        detail: error instanceof Error ? error.message : String(error)
+      });
+      continue;
+    }
+    const problems = [];
+    const fm = parseFrontmatter2(text, (message) => problems.push(message));
+    if (problems.length > 0) {
+      failures.push({
+        ok: false,
+        code: "MALFORMED_FRONTMATTER",
+        path: posix2(root, path3),
+        detail: problems.join("; ")
+      });
+      continue;
+    }
+    if (fm?.["scope"] === true)
+      scopeMarkers.push({ path: path3, isolate: fm["isolate"] === true });
+  }
+  return { hasEntrypoint: dir === root, scopeMarkers };
+}
+function toRelative2(chain) {
+  const { root } = chain;
+  return {
+    root,
+    cutAt: chain.cutAt === null ? null : posix2(root, chain.cutAt),
+    links: chain.links.map((l) => ({
+      ...l,
+      dir: posix2(root, l.dir),
+      valuesDoc: l.valuesDoc === null ? null : posix2(root, l.valuesDoc)
+    }))
+  };
+}
+function findScopeChain2(path3) {
+  const start = startDirOf2(path3);
+  const root = findDomainRoot2(start);
+  if (root === null)
+    return buildScopeChain2(start, () => NO_MARKERS2, parentOf2);
+  const failures = [];
+  const result = buildScopeChain2(start, (dir) => probeDir2(dir, root, failures), parentOf2);
+  if (failures.length > 0)
+    return failures[0];
+  if (result.ok)
+    return { ok: true, chain: toRelative2(result.chain) };
+  if (result.code === "DUPLICATE_SCOPE_MARKER") {
+    return {
+      ok: false,
+      code: "DUPLICATE_SCOPE_MARKER",
+      dir: posix2(root, result.dir),
+      markers: result.markers.map((m) => posix2(root, m))
+    };
+  }
+  return result;
+}
+var import_node_fs8, import_node_path13, NO_MARKERS2;
+var init_fs_chain = __esm({
+  "iNNfo/packages/nn-core/dist/scope/fs-chain.js"() {
+    "use strict";
+    import_node_fs8 = require("node:fs");
+    import_node_path13 = require("node:path");
+    init_path_guard();
+    init_contract();
+    init_parser2();
+    init_chain();
+    init_root();
+    NO_MARKERS2 = { hasEntrypoint: false, scopeMarkers: [] };
+  }
+});
+
+// iNNfo/packages/nn-core/dist/scope/json.js
+function asJson2(value) {
+  if (value === null || typeof value === "boolean" || typeof value === "string")
+    return value;
+  if (typeof value === "number")
+    return Number.isFinite(value) ? value : String(value);
+  if (Array.isArray(value))
+    return value.map(asJson2);
+  if (typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, asJson2(v)]));
+  }
+  return String(value);
+}
+var init_json = __esm({
+  "iNNfo/packages/nn-core/dist/scope/json.js"() {
+    "use strict";
+  }
+});
+
+// iNNfo/packages/nn-core/dist/scope/fs-layers.js
+function fillsOf2(frontmatter) {
+  const raw = isPlainObject4(frontmatter) ? frontmatter["fills"] : void 0;
+  if (!isPlainObject4(raw))
+    return null;
+  const fills = Object.fromEntries(Object.entries(raw).filter((entry) => isPlainObject4(entry[1])).map(([procedure, slots]) => [
+    procedure,
+    Object.fromEntries(Object.entries(slots).map(([slot, v]) => [slot, asJson2(v)]))
+  ]));
+  return Object.keys(fills).length > 0 ? fills : null;
+}
+function readValuesDoc2(path3) {
+  const parsed = parseKnowledge2((0, import_node_fs9.readFileSync)(path3, "utf-8"));
+  const fills = fillsOf2(parsed.frontmatter);
+  for (const [, elements] of parsed.elements.entries()) {
+    const first = elements[0];
+    if (first) {
+      return { values: Object.fromEntries(Object.entries(first.fields).map(([k, v]) => [k, asJson2(v)])), fills };
+    }
+  }
+  return { values: {}, fills };
+}
+function nodeOf3(base, path3, shown) {
+  if (path3 === null)
+    return { ...base, values: {} };
+  let read;
+  try {
+    read = readValuesDoc2(path3);
+  } catch (error) {
+    return { ok: false, code: "UNREADABLE_DOCUMENT", path: shown, detail: error instanceof Error ? error.message : String(error) };
+  }
+  return read.fills ? { ...base, values: read.values, fills: read.fills } : { ...base, values: read.values };
+}
+function loadChain2(chain, opts = {}) {
+  const nodes = [];
+  for (const link of chain.links) {
+    const node = nodeOf3({ id: link.dir, kind: link.kind, doc: link.valuesDoc, isolate: link.isolate }, link.valuesDoc === null ? null : (0, import_node_path14.join)(chain.root, link.valuesDoc), link.valuesDoc ?? link.dir);
+    if (failed2(node))
+      return node;
+    nodes.push(node);
+  }
+  const { floorDoc } = opts;
+  if (!floorDoc)
+    return { ok: true, loaded: { floor: null, nodes } };
+  const floor = nodeOf3({ id: `bluepriNNt:${floorDoc.label}`, kind: "floor", doc: (0, import_node_path14.basename)(floorDoc.path), isolate: false }, floorDoc.path, (0, import_node_path14.basename)(floorDoc.path));
+  if (failed2(floor))
+    return floor;
+  return { ok: true, loaded: { floor, nodes } };
+}
+var import_node_fs9, import_node_path14, isPlainObject4, failed2;
+var init_fs_layers = __esm({
+  "iNNfo/packages/nn-core/dist/scope/fs-layers.js"() {
+    "use strict";
+    import_node_fs9 = require("node:fs");
+    import_node_path14 = require("node:path");
+    init_parser2();
+    init_json();
+    isPlainObject4 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+    failed2 = (n) => "ok" in n;
+  }
+});
+
+// iNNfo/packages/nn-core/dist/scope/fs-procedures.js
+var init_fs_procedures = __esm({
+  "iNNfo/packages/nn-core/dist/scope/fs-procedures.js"() {
+    "use strict";
+    init_contract();
+    init_parser2();
+    init_json();
+  }
+});
+
+// iNNfo/packages/nn-core/dist/scope/procedures.js
+var init_procedures = __esm({
+  "iNNfo/packages/nn-core/dist/scope/procedures.js"() {
+    "use strict";
+    init_resolve();
+  }
+});
+
+// iNNfo/packages/nn-core/dist/scope/elements.js
+var init_elements = __esm({
+  "iNNfo/packages/nn-core/dist/scope/elements.js"() {
+    "use strict";
+    init_address();
+  }
+});
+
+// iNNfo/packages/nn-core/dist/scope/fs-elements.js
+var init_fs_elements = __esm({
+  "iNNfo/packages/nn-core/dist/scope/fs-elements.js"() {
+    "use strict";
+    init_parser2();
+    init_elements();
+    init_fs_chain();
+    init_fs_layers();
+    init_json();
+  }
+});
+
+// iNNfo/packages/nn-core/dist/scope/drift.js
+var init_drift2 = __esm({
+  "iNNfo/packages/nn-core/dist/scope/drift.js"() {
+    "use strict";
+    init_resolve();
+  }
+});
+
+// iNNfo/packages/nn-core/dist/scope/index.js
+var init_scope = __esm({
+  "iNNfo/packages/nn-core/dist/scope/index.js"() {
+    "use strict";
+    init_root();
+    init_chain();
+    init_fs_chain();
+    init_fs_layers();
+    init_fs_procedures();
+    init_resolve();
+    init_procedures();
+    init_elements();
+    init_fs_elements();
+    init_drift2();
+  }
+});
+
 // iNNfo/packages/nn-core/dist/sync/declarations.js
 var init_declarations = __esm({
   "iNNfo/packages/nn-core/dist/sync/declarations.js"() {
@@ -18110,6 +18401,7 @@ var init_console = __esm({
     init_audit();
     init_parser2();
     init_procedure();
+    init_scope();
     init_declarations();
     init_contract();
     init_plan();
@@ -18601,9 +18893,9 @@ function warn(message) {
   console.warn(`[ChangesetLock] ${message}`);
 }
 async function acquireLock(rootDir, changesetName, timeoutMs = 6e4) {
-  const lockDir = (0, import_node_path13.join)(rootDir, "changes");
+  const lockDir = (0, import_node_path15.join)(rootDir, "changes");
   await (0, import_promises2.mkdir)(lockDir, { recursive: true });
-  const lockPath = (0, import_node_path13.join)(lockDir, ".lock");
+  const lockPath = (0, import_node_path15.join)(lockDir, ".lock");
   const nonce = (0, import_node_crypto5.randomUUID)();
   const payload = {
     pid: process.pid,
@@ -18648,13 +18940,13 @@ async function acquireLock(rootDir, changesetName, timeoutMs = 6e4) {
   }
   throw busy(lockPath);
 }
-var import_node_crypto5, import_promises2, import_node_path13, ORPHAN_MULTIPLIER, holderAlive, releaseOwned, readStored, busy;
+var import_node_crypto5, import_promises2, import_node_path15, ORPHAN_MULTIPLIER, holderAlive, releaseOwned, readStored, busy;
 var init_lock = __esm({
   "iNNfo/packages/nn-core/dist/changeset/lock.js"() {
     "use strict";
     import_node_crypto5 = require("node:crypto");
     import_promises2 = require("node:fs/promises");
-    import_node_path13 = require("node:path");
+    import_node_path15 = require("node:path");
     ORPHAN_MULTIPLIER = 10;
     holderAlive = (pid) => {
       if (typeof pid !== "number" || !Number.isInteger(pid) || pid <= 0)
@@ -19797,297 +20089,6 @@ var init_scaffold = __esm({
     "use strict";
     init_knowledge3();
     init_domain2();
-  }
-});
-
-// iNNfo/packages/nn-core/dist/scope/chain.js
-function buildScopeChain2(startDir, probe, parentOf3) {
-  const searched = [];
-  const found = [];
-  let cutAt = null;
-  for (let dir = startDir; dir !== null; dir = parentOf3(dir)) {
-    searched.push(dir);
-    const { hasEntrypoint, scopeMarkers } = probe(dir);
-    if (scopeMarkers.length > 1 && cutAt === null) {
-      return {
-        ok: false,
-        code: "DUPLICATE_SCOPE_MARKER",
-        dir,
-        markers: scopeMarkers.map((m) => m.path)
-      };
-    }
-    const marker = scopeMarkers[0];
-    if (hasEntrypoint) {
-      if (cutAt === null) {
-        found.push({ dir, valuesDoc: marker?.path ?? null, kind: "root", isolate: false });
-      }
-      return { ok: true, chain: { root: dir, links: found.reverse(), cutAt } };
-    }
-    if (marker && cutAt === null) {
-      found.push({ dir, valuesDoc: marker.path, kind: "scope", isolate: marker.isolate });
-      if (marker.isolate)
-        cutAt = dir;
-    }
-  }
-  return { ok: false, code: "NO_DOMAIN_ROOT", searched };
-}
-var init_chain = __esm({
-  "iNNfo/packages/nn-core/dist/scope/chain.js"() {
-    "use strict";
-  }
-});
-
-// iNNfo/packages/nn-core/dist/scope/fs-chain.js
-function startDirOf2(path3) {
-  const abs = (0, import_node_path14.resolve)(path3);
-  try {
-    return (0, import_node_fs8.statSync)(abs).isFile() ? (0, import_node_path14.dirname)(abs) : abs;
-  } catch {
-    return abs;
-  }
-}
-function parentOf2(dir) {
-  const parent = (0, import_node_path14.dirname)(dir);
-  return parent === dir ? null : parent;
-}
-function knowledgeDocsOf2(dir) {
-  let names;
-  try {
-    names = (0, import_node_fs8.readdirSync)(dir, { withFileTypes: true }).filter((e) => e.isFile()).map((e) => e.name);
-  } catch {
-    return [];
-  }
-  return names.filter((name) => {
-    if (name === ENTRYPOINT_FILENAME2)
-      return false;
-    const parsed = parseName2(name);
-    return parsed.kind === "nn" && parsed.sidecarOf === void 0;
-  }).sort();
-}
-function posix2(root, path3) {
-  return (0, import_node_path14.relative)(root, path3).split(import_node_path14.sep).join("/");
-}
-function probeDir2(dir, root, failures) {
-  const scopeMarkers = [];
-  for (const name of knowledgeDocsOf2(dir)) {
-    const path3 = (0, import_node_path14.join)(dir, name);
-    let text;
-    try {
-      text = (0, import_node_fs8.readFileSync)(path3, "utf-8");
-    } catch (error) {
-      failures.push({
-        ok: false,
-        code: "UNREADABLE_DOCUMENT",
-        path: posix2(root, path3),
-        detail: error instanceof Error ? error.message : String(error)
-      });
-      continue;
-    }
-    const problems = [];
-    const fm = parseFrontmatter2(text, (message) => problems.push(message));
-    if (problems.length > 0) {
-      failures.push({
-        ok: false,
-        code: "MALFORMED_FRONTMATTER",
-        path: posix2(root, path3),
-        detail: problems.join("; ")
-      });
-      continue;
-    }
-    if (fm?.["scope"] === true)
-      scopeMarkers.push({ path: path3, isolate: fm["isolate"] === true });
-  }
-  return { hasEntrypoint: dir === root, scopeMarkers };
-}
-function toRelative2(chain) {
-  const { root } = chain;
-  return {
-    root,
-    cutAt: chain.cutAt === null ? null : posix2(root, chain.cutAt),
-    links: chain.links.map((l) => ({
-      ...l,
-      dir: posix2(root, l.dir),
-      valuesDoc: l.valuesDoc === null ? null : posix2(root, l.valuesDoc)
-    }))
-  };
-}
-function findScopeChain2(path3) {
-  const start = startDirOf2(path3);
-  const root = findDomainRoot2(start);
-  if (root === null)
-    return buildScopeChain2(start, () => NO_MARKERS2, parentOf2);
-  const failures = [];
-  const result = buildScopeChain2(start, (dir) => probeDir2(dir, root, failures), parentOf2);
-  if (failures.length > 0)
-    return failures[0];
-  if (result.ok)
-    return { ok: true, chain: toRelative2(result.chain) };
-  if (result.code === "DUPLICATE_SCOPE_MARKER") {
-    return {
-      ok: false,
-      code: "DUPLICATE_SCOPE_MARKER",
-      dir: posix2(root, result.dir),
-      markers: result.markers.map((m) => posix2(root, m))
-    };
-  }
-  return result;
-}
-var import_node_fs8, import_node_path14, NO_MARKERS2;
-var init_fs_chain = __esm({
-  "iNNfo/packages/nn-core/dist/scope/fs-chain.js"() {
-    "use strict";
-    import_node_fs8 = require("node:fs");
-    import_node_path14 = require("node:path");
-    init_path_guard();
-    init_contract();
-    init_parser2();
-    init_chain();
-    init_root();
-    NO_MARKERS2 = { hasEntrypoint: false, scopeMarkers: [] };
-  }
-});
-
-// iNNfo/packages/nn-core/dist/scope/json.js
-function asJson2(value) {
-  if (value === null || typeof value === "boolean" || typeof value === "string")
-    return value;
-  if (typeof value === "number")
-    return Number.isFinite(value) ? value : String(value);
-  if (Array.isArray(value))
-    return value.map(asJson2);
-  if (typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, asJson2(v)]));
-  }
-  return String(value);
-}
-var init_json = __esm({
-  "iNNfo/packages/nn-core/dist/scope/json.js"() {
-    "use strict";
-  }
-});
-
-// iNNfo/packages/nn-core/dist/scope/fs-layers.js
-function fillsOf2(frontmatter) {
-  const raw = isPlainObject4(frontmatter) ? frontmatter["fills"] : void 0;
-  if (!isPlainObject4(raw))
-    return null;
-  const fills = Object.fromEntries(Object.entries(raw).filter((entry) => isPlainObject4(entry[1])).map(([procedure, slots]) => [
-    procedure,
-    Object.fromEntries(Object.entries(slots).map(([slot, v]) => [slot, asJson2(v)]))
-  ]));
-  return Object.keys(fills).length > 0 ? fills : null;
-}
-function readValuesDoc2(path3) {
-  const parsed = parseKnowledge2((0, import_node_fs9.readFileSync)(path3, "utf-8"));
-  const fills = fillsOf2(parsed.frontmatter);
-  for (const [, elements] of parsed.elements.entries()) {
-    const first = elements[0];
-    if (first) {
-      return { values: Object.fromEntries(Object.entries(first.fields).map(([k, v]) => [k, asJson2(v)])), fills };
-    }
-  }
-  return { values: {}, fills };
-}
-function nodeOf3(base, path3, shown) {
-  if (path3 === null)
-    return { ...base, values: {} };
-  let read;
-  try {
-    read = readValuesDoc2(path3);
-  } catch (error) {
-    return { ok: false, code: "UNREADABLE_DOCUMENT", path: shown, detail: error instanceof Error ? error.message : String(error) };
-  }
-  return read.fills ? { ...base, values: read.values, fills: read.fills } : { ...base, values: read.values };
-}
-function loadChain2(chain, opts = {}) {
-  const nodes = [];
-  for (const link of chain.links) {
-    const node = nodeOf3({ id: link.dir, kind: link.kind, doc: link.valuesDoc, isolate: link.isolate }, link.valuesDoc === null ? null : (0, import_node_path15.join)(chain.root, link.valuesDoc), link.valuesDoc ?? link.dir);
-    if (failed2(node))
-      return node;
-    nodes.push(node);
-  }
-  const { floorDoc } = opts;
-  if (!floorDoc)
-    return { ok: true, loaded: { floor: null, nodes } };
-  const floor = nodeOf3({ id: `bluepriNNt:${floorDoc.label}`, kind: "floor", doc: (0, import_node_path15.basename)(floorDoc.path), isolate: false }, floorDoc.path, (0, import_node_path15.basename)(floorDoc.path));
-  if (failed2(floor))
-    return floor;
-  return { ok: true, loaded: { floor, nodes } };
-}
-var import_node_fs9, import_node_path15, isPlainObject4, failed2;
-var init_fs_layers = __esm({
-  "iNNfo/packages/nn-core/dist/scope/fs-layers.js"() {
-    "use strict";
-    import_node_fs9 = require("node:fs");
-    import_node_path15 = require("node:path");
-    init_parser2();
-    init_json();
-    isPlainObject4 = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
-    failed2 = (n) => "ok" in n;
-  }
-});
-
-// iNNfo/packages/nn-core/dist/scope/fs-procedures.js
-var init_fs_procedures = __esm({
-  "iNNfo/packages/nn-core/dist/scope/fs-procedures.js"() {
-    "use strict";
-    init_contract();
-    init_parser2();
-    init_json();
-  }
-});
-
-// iNNfo/packages/nn-core/dist/scope/procedures.js
-var init_procedures = __esm({
-  "iNNfo/packages/nn-core/dist/scope/procedures.js"() {
-    "use strict";
-    init_resolve();
-  }
-});
-
-// iNNfo/packages/nn-core/dist/scope/elements.js
-var init_elements = __esm({
-  "iNNfo/packages/nn-core/dist/scope/elements.js"() {
-    "use strict";
-    init_address();
-  }
-});
-
-// iNNfo/packages/nn-core/dist/scope/fs-elements.js
-var init_fs_elements = __esm({
-  "iNNfo/packages/nn-core/dist/scope/fs-elements.js"() {
-    "use strict";
-    init_parser2();
-    init_elements();
-    init_fs_chain();
-    init_fs_layers();
-    init_json();
-  }
-});
-
-// iNNfo/packages/nn-core/dist/scope/drift.js
-var init_drift2 = __esm({
-  "iNNfo/packages/nn-core/dist/scope/drift.js"() {
-    "use strict";
-    init_resolve();
-  }
-});
-
-// iNNfo/packages/nn-core/dist/scope/index.js
-var init_scope = __esm({
-  "iNNfo/packages/nn-core/dist/scope/index.js"() {
-    "use strict";
-    init_root();
-    init_chain();
-    init_fs_chain();
-    init_fs_layers();
-    init_fs_procedures();
-    init_resolve();
-    init_procedures();
-    init_elements();
-    init_fs_elements();
-    init_drift2();
   }
 });
 

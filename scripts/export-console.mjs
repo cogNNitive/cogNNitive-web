@@ -1485,6 +1485,51 @@ export function collectProcedureRuns({
 }
 
 /**
+ * Resolves each procedure entry's slot bindings through the domaiNN's scope chain and attaches
+ * them to the entry's declarations (`procedure-slot-navigation`, console-payload-builder).
+ *
+ * The chain is the one `findScopeChain(root)` builds from the domaiNN root, loaded by the same
+ * `loadChain`/`resolveProcedures` the runner uses, so the console reports the binding a run would
+ * read instead of re-deriving it. A procedure the chain does not carry keeps its declarations:
+ * a binding the chain would not report is never emitted. A document that cannot be read is
+ * skipped, and `bindSlotEntries` then keeps its binding while naming no target. Read-only.
+ *
+ * @param {{ root: string, entries: any[], helper: any }} input
+ * @returns {any[]} the entries, each with `slots` carrying `binding` where one resolved
+ */
+export function attachProcedureSlotBindings({ root, entries, helper }) {
+  // Always hand back a new array: the caller owns the list it passed and may rewrite it in
+  // place, so returning the same reference would let one clear the other.
+  const untouched = () => entries.slice()
+  if (entries.length === 0) return untouched()
+  let resolution
+  try {
+    const found = helper.findScopeChain(root)
+    if (!found || found.ok === false || !found.chain) return untouched()
+    const loaded = helper.loadChain(found.chain)
+    if (!loaded || loaded.ok === false) return untouched()
+    resolution = helper.resolveProcedures(loaded.loaded)
+  } catch {
+    return untouched()
+  }
+  const byId = new Map((resolution.procedures || []).map((p) => [p.def.id, p]))
+  const inputs = []
+  for (const entry of entries) {
+    const resolved = byId.get(entry.id)
+    if (!resolved) continue
+    inputs.push({
+      // The declarations were parsed from the procedure document by
+      // `collectProcedureRuns`, so the binding sits beside the shape the form renders.
+      path: entry.path,
+      slots: slotDeclarationsOf({ slots: entry.slots ?? [] }),
+      bindings: resolved.bindings,
+    })
+  }
+  if (inputs.length === 0) return untouched()
+  return helper.bindSlotEntries(entries, inputs).slice()
+}
+
+/**
  * The slots a procedure declares in its frontmatter (`slots: [{ name, kind, required,
  * default }]`), normalized for the console's "Start a run" form. A bare string is a required
  * value slot. Anything without a name is dropped. The presentation keys the form reads
@@ -2818,6 +2863,23 @@ export async function writeConsole(opts = {}) {
         }
       }
     }
+  }
+
+  // `procedure-slot-navigation`: every entry carries the binding its scope chain resolved for
+  // each slot it declares. The chain is resolved once per procedure document through the same
+  // core the runner reads; a document outside the chain, or one that cannot be read, keeps its
+  // declarations without bindings rather than inventing them. Nothing is written to the domaiNN.
+  //
+  // `attachProcedureSlotBindings` may hand back the very array it was given (a domaiNN with no
+  // resolvable root), so read the result into a fresh array: clearing `allProcedures` in place
+  // would empty the list it just returned.
+  if (allProcedures.length > 0) {
+    const withBindings = attachProcedureSlotBindings({
+      root,
+      entries: allProcedures,
+      helper: payloadHelper,
+    })
+    allProcedures.splice(0, allProcedures.length, ...withBindings.slice())
   }
 
   // Change B: materialize the `changes` collection (structure: members) — one unit per
