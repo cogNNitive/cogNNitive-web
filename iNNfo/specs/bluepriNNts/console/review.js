@@ -98,7 +98,7 @@
     return 'fb-' + String(max + 1).padStart(3, '0')
   }
 
-  function normalizeDraft(raw, id) {
+  function normalizeDraft(raw, id, modelId) {
     var d = isObject(raw) ? raw : {}
     var draft = {
       id: id || (typeof d.id === 'string' ? d.id : ''),
@@ -138,6 +138,23 @@
     if (d.run != null && d.run !== '') draft.run = String(d.run)
     if (d.path != null && d.path !== '') draft.path = String(d.path)
     if (d.choice != null && d.choice !== '') draft.choice = String(d.choice)
+    // Canonical unit address of the target: `<model>@<slug>`, plus `&<field>` when the draft
+    // edits one field. A record that predates the field is derived from its own keys, so the
+    // decoration can match exactly instead of guessing by suffix.
+    var fieldPart = d.field && d.field !== '__name' ? '&' + String(d.field) : ''
+    if (d.address != null && d.address !== '') {
+      draft.address = String(d.address)
+    } else if (
+      d.knowledge_id != null &&
+      d.element_slug != null &&
+      d.knowledge_id !== '' &&
+      d.element_slug !== ''
+    ) {
+      draft.address = String(d.knowledge_id) + '@' + String(d.element_slug) + fieldPart
+    } else if (d.element_id != null && d.element_id !== '') {
+      var model = modelId != null ? String(modelId) : ''
+      draft.address = (model ? model + '@' : '') + String(d.element_id) + fieldPart
+    }
     return draft
   }
 
@@ -208,7 +225,7 @@
       }
       var drafts = Array.isArray(parsed.drafts)
         ? parsed.drafts.map(function (d) {
-            return normalizeDraft(d)
+            return normalizeDraft(d, null, modelId)
           })
         : []
       return {
@@ -241,7 +258,7 @@
       })
       var modified = false
       opts.initialDrafts.forEach(function (d) {
-        var norm = normalizeDraft(d)
+        var norm = normalizeDraft(d, null, modelId)
         if (!norm) return
         if (norm.id && indexById[norm.id] !== undefined) {
           state.drafts[indexById[norm.id]] = norm
@@ -381,7 +398,7 @@
                   prev.element_slug === String(raw.element_slug) &&
                   prev.gate === String(raw.gate)
                 ) {
-                  var replaced = normalizeDraft(raw, prev.id)
+                  var replaced = normalizeDraft(raw, prev.id, modelId)
                   s.drafts[i] = replaced
                   return replaced
                 }
@@ -392,13 +409,13 @@
               for (var h = 0; h < s.drafts.length; h++) {
                 var held = s.drafts[h]
                 if (held && held.kind === 'run_handoff' && held.run === String(raw.run)) {
-                  var rechosen = normalizeDraft(raw, held.id)
+                  var rechosen = normalizeDraft(raw, held.id, modelId)
                   s.drafts[h] = rechosen
                   return rechosen
                 }
               }
             }
-            var draft = normalizeDraft(raw, raw.id || nextDraftId(s.drafts))
+            var draft = normalizeDraft(raw, raw.id || nextDraftId(s.drafts), modelId)
             s.drafts.push(draft)
             return draft
           }),
@@ -791,8 +808,12 @@
       if (payload.comment !== undefined && payload.comment !== null) {
         draft.comment = String(payload.comment)
       }
-      // Canonical unit address of the draft target (element, or element&field).
-      draft.address = draft.field ? `${draft.element_id}&${draft.field}` : draft.element_id
+      // Canonical unit address of the draft target: the element badge, or that badge plus
+      // `&<field>` when the draft edits one field. `__name` targets the element itself.
+      draft.address = elementAddress(el)
+      if (draft.field && draft.field !== '__name' && draft.address) {
+        draft.address += '&' + draft.field
+      }
       var saved = store.addDraft(draft)
       showChangeToast()
       refreshCount()
@@ -1606,32 +1627,15 @@
       var host = root || doc
       if (!host.querySelectorAll) return
       var drafts = store.drafts() || []
-      var raw = {}
-      drafts.forEach(function (d) {
-        if (!d) return
-        var fieldPart = d.field && d.field !== '__name' ? '&' + String(d.field) : ''
-        var key = d.address || (d.element_id ? '@' + String(d.element_id) + fieldPart : '')
-        if (!key) return
-        raw[key] = (raw[key] || 0) + 1
-      })
-      // Resolve legacy keys (drafts without `address`) onto each badge's
-      // canonical address through a suffix match, then let the kit paint.
+      // Every draft carries its canonical address (normalizeDraft derives one for records
+      // that predate the field), so decoration is an exact match. A suffix scan attributed a
+      // draft to another element — or another model's row — whenever two addresses shared a
+      // tail, which is worse than painting nothing.
       var counts = {}
-      Array.prototype.forEach.call(
-        host.querySelectorAll('[data-nn-component="ku-unit"][data-ku-address]'),
-        function (badge) {
-          var address = badge.getAttribute('data-ku-address') || ''
-          if (raw[address] != null) {
-            counts[address] = raw[address]
-            return
-          }
-          var found = 0
-          Object.keys(raw).forEach(function (key) {
-            if (address && address.slice(-key.length) === key) found += raw[key]
-          })
-          if (found) counts[address] = found
-        },
-      )
+      drafts.forEach(function (d) {
+        if (!d || !d.address) return
+        counts[d.address] = (counts[d.address] || 0) + 1
+      })
       UI.setUnitChanges(host, counts, {
         onChanges: function (address) {
           if (typeof openInfo === 'function') openInfo(anchorFromDescriptor({ address: address }))
