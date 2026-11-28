@@ -9567,13 +9567,7 @@ function isConsoleModel(f) {
   const parentSpecName = parentSpecNameOf(f.frontmatter);
   const role = roleOf({ path: f.path, parentSpecName });
   if ((role === "knowledge" || role === "procedure") && isUnderRootSources(f.path)) return false;
-  if (role === "knowledge") return true;
-  if (role === "procedure") {
-    if (!segmentsOf(f.path).includes("procedures")) return true;
-    const linked = f.linkedProcedureModels;
-    if (!linked) return false;
-    return !linked.has(f.path.replace(/\\/g, "/"));
-  }
+  if (role === "knowledge" || role === "procedure") return true;
   return natureOfBlueprint(coreBlueprintKey(parentSpecName))?.structure === "catalog";
 }
 function blueprintNameOf(parentSpecName) {
@@ -12916,12 +12910,7 @@ function readSynchronizations(catalog) {
 
 // iNNfo/packages/nn-core/src/procedure/graph.ts
 var EXECUTORS = ["human", "agent", "engine"];
-var TOOL_ALIASES = /* @__PURE__ */ new Map([
-  ["engine", "engine"],
-  ["agent", "agent"],
-  ["human", "human"],
-  ["console", "human"]
-]);
+var DEFAULT_EXECUTOR = "agent";
 var SLOT_RE = /\{([A-Za-z_][\w-]*)\}/g;
 function slotNames(...texts) {
   const out = [];
@@ -12945,22 +12934,16 @@ function resolver(nodes) {
   return (token) => slugs.has(token) ? token : byName.get(token.toLowerCase());
 }
 var str2 = (v) => v === void 0 || v === null || v === "" ? void 0 : String(v);
-function procedureGraph(model, container) {
-  const allWork = model.elements.get("Work") ?? [];
+function procedureGraph(model) {
+  const work = model.elements.get("Work") ?? [];
   const artifactNodes = model.elements.get("Artifact") ?? [];
-  const toAllWork = resolver(allWork);
-  const containerSlug = container ? toAllWork(container) ?? container : void 0;
-  const work = containerSlug ? descendantsOf(allWork, containerSlug, resolver(allWork)) : allWork;
   const toWork = resolver(work);
   const toArtifact = resolver(artifactNodes);
   const diagnostics = [];
-  const parentOf = (n) => referenceTokens(n.fields["parent"]).map(toWork)[0];
-  const containers = new Set(work.map(parentOf).filter((p) => p !== void 0));
   const artifactRefs = (v) => referenceTokens(v).map((t) => toArtifact(t) ?? t);
   const steps = {};
   for (const n of work) {
     const slug = n.slug ?? "";
-    if (containers.has(slug)) continue;
     if (!n.slugExplicit) {
       diagnostics.push({
         code: "MISSING_SLUG",
@@ -12970,18 +12953,17 @@ function procedureGraph(model, container) {
       });
     }
     const executor = str2(n.fields["executor"]);
-    const toolAlias = str2(n.fields["tool"]);
-    const resolvedExecutor = executor && EXECUTORS.includes(executor) ? executor : toolAlias ? TOOL_ALIASES.get(toolAlias.trim().toLowerCase()) : void 0;
+    const resolvedExecutor = executor && EXECUTORS.includes(executor) ? executor : DEFAULT_EXECUTOR;
     steps[slug] = {
       slug,
       name: n.name,
       stepType: str2(n.fields["step_type"]),
       executor: resolvedExecutor,
-      parent: parentOf(n),
       next: [],
       condition: str2(n.fields["condition"]),
       decision: str2(n.fields["decision"]),
       command: str2(n.fields["command"]),
+      call: str2(n.fields["call"]),
       produces: str2(n.fields["produces"]),
       ...exitCodesOf(n.fields["exit_codes"]) ? { exitCodes: exitCodesOf(n.fields["exit_codes"]) } : {},
       inputs: artifactRefs(n.fields["input"]),
@@ -13046,7 +13028,7 @@ function procedureGraph(model, container) {
   ) : typeof model.frontmatter["slots"] === "string" ? String(model.frontmatter["slots"]).replace(/^\[|\]$/g, "").split(",").map((s) => s.trim().replace(/^\{|\}$/g, "")) : [];
   const slots = [
     .../* @__PURE__ */ new Set([
-      ...containerSlug ? [] : declaredSlots.filter((s) => s !== ""),
+      ...declaredSlots.filter((s) => s !== ""),
       ...slotNames(
         ...Object.values(steps).map((s) => s.command),
         ...Object.values(artifacts).map((a) => a.at)
@@ -13062,23 +13044,6 @@ function procedureGraph(model, container) {
     slots,
     diagnostics
   };
-}
-function descendantsOf(work, container, toWork) {
-  const childrenOf = /* @__PURE__ */ new Map();
-  for (const n of work) {
-    const parent = referenceTokens(n.fields["parent"]).map(toWork)[0];
-    if (!parent) continue;
-    const list = childrenOf.get(parent);
-    if (list) list.push(n);
-    else childrenOf.set(parent, [n]);
-  }
-  const out = /* @__PURE__ */ new Set();
-  const todo = [...childrenOf.get(container) ?? []];
-  for (let n = todo.pop(); n !== void 0; n = todo.pop()) {
-    out.add(n);
-    todo.push(...childrenOf.get(n.slug ?? "") ?? []);
-  }
-  return work.filter((n) => out.has(n));
 }
 function exitCodesOf(v) {
   if (v === null || v === void 0 || v === "") return void 0;

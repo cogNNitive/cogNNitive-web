@@ -1,31 +1,27 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-5-0"
+knowledge_version: "V_0-6-0"
 title: "Upgrade a Workspace or Import a Legacy Domain Procedure"
 ---
 
 > There is no in-place migration of an old domain. A current domaiNN is upgraded (bluepriNNt versions); an old or broken domain is replaced by a new domain that imports the old one as a Source. The skill `nn-upgrade` owns consent, backup and recovery; THIS procedure owns the step tables and the legacy detector.
 
-# NN Work
+# NN Procedure
 
-## NN Work: Upgrade a Workspace or Import a Legacy Domain
+## NN Procedure: Upgrade a Workspace or Import a Legacy Domain
 slug:: upgrade-a-workspace-or-import-a-legacy-domain
-step_type:: task
-condition:: Adopted bluepriNNt versions available (`upgrade-available`) or a legacy domain detected (preflight verdict `legacy-layout`)
-input:: @workspace-directory
-output:: @validated-canonical-workspace
-output_status:: verified
-tool:: @ai-agent
-executor:: agent
-scope:: internal
+summary:: Route by the preflight verdict.
+inputs_required:: @workspace-directory
+outputs_expected:: @validated-canonical-workspace
 Route by the preflight verdict. `upgrade-available` on a current domaiNN runs the bluepriNNt version upgrade (Back Up, Analyze Impact, Rehydrate and Validate). `legacy-layout`, or a domain that cannot be upgraded, runs Import Legacy Domain as Source. Nothing here rewrites or deletes a user domain's content.
 
-## NN Work: Route by the Preflight Verdict
+It starts when: Adopted bluepriNNt versions available (`upgrade-available`) or a legacy domain detected (preflight verdict `legacy-layout`).
+
+### NN Work: Route by the Preflight Verdict
 slug:: route-by-the-preflight-verdict
-parent:: @upgrade-a-workspace-or-import-a-legacy-domain
 step_type:: decision
 next:: [@back-up-before-upgrade, @detect-legacy-layout]
 condition:: Preflight has reported a verdict for the domain
@@ -36,9 +32,8 @@ decision:: Which verdict did preflight report? Answer upgrade-available for a cu
 scope:: internal
 `upgrade-available` runs the bluepriNNt version upgrade (Back Up, Analyze Impact, Rehydrate and Validate); `legacy-layout` runs Detect Legacy Layout and Import Legacy Domain as Source.
 
-## NN Work: Detect Legacy Layout
+### NN Work: Detect Legacy Layout
 slug:: detect-legacy-layout
-parent:: @upgrade-a-workspace-or-import-a-legacy-domain
 step_type:: task
 next:: @import-legacy-domain-as-source
 condition:: outcome == legacy-layout
@@ -58,9 +53,8 @@ Entered when preflight reports `legacy-layout`. Read-only detection. A domain is
 | legacy frontmatter keys (`template_version`, `template_name`, `models_dir`, `templates_dir`, `target_template`, `model_version`) | pre-rename keys |
 | legacy L1/L0 `parent_spec` | specification parent below the current level |
 
-## NN Work: Import Legacy Domain as Source
+### NN Work: Import Legacy Domain as Source
 slug:: import-legacy-domain-as-source
-parent:: @upgrade-a-workspace-or-import-a-legacy-domain
 step_type:: task
 condition:: Legacy domain detected, or a domain that cannot be upgraded
 input:: @legacy-detection-report
@@ -73,9 +67,8 @@ Create a new domain and import the old one as a Source:
 1. Run `node skills/nn-upgrade/scripts/migrate-domain.js --domain-dir <old-dir> --import-as-source --new-domain-dir <new-dir>`. The old tree is copied byte-identically under the new domain's `sources/`; the old directory is never modified.
 2. Derive the new domain's content from that Source with agent changesets that cite it, then validate the new domain with `innfo-mcp`.
 
-## NN Work: Back Up Before Upgrade
+### NN Work: Back Up Before Upgrade
 slug:: back-up-before-upgrade
-parent:: @upgrade-a-workspace-or-import-a-legacy-domain
 step_type:: task
 next:: @analyze-upgrade-impact
 condition:: outcome == upgrade-available
@@ -87,9 +80,8 @@ executor:: agent
 scope:: internal
 Entered when adopted bluepriNNt versions are available; the user must have consented before anything is written. Run `node skills/nn-upgrade/scripts/backup-workspace.js --workspace-dir <dir>`: a timestamped copy outside the workspace with a SHA-256 manifest. No write happens before this backup exists.
 
-## NN Work: Analyze Upgrade Impact
+### NN Work: Analyze Upgrade Impact
 slug:: analyze-upgrade-impact
-parent:: @upgrade-a-workspace-or-import-a-legacy-domain
 step_type:: task
 next:: @rehydrate-and-validate
 condition:: Backup verified
@@ -101,9 +93,8 @@ executor:: agent
 scope:: internal
 Diff the pinned and adopted schemas. Ask mapping questions only when the diff removes, renames, or re-types a definition in active use.
 
-## NN Work: Rehydrate and Validate
+### NN Work: Rehydrate and Validate
 slug:: rehydrate-and-validate
-parent:: @upgrade-a-workspace-or-import-a-legacy-domain
 step_type:: decision
 next:: [@confirm-validated-workspace, @restore-from-backup]
 condition:: Impact analysis done
@@ -114,9 +105,8 @@ decision:: Did the rehydrated domaiNN pass validation with 0 errors and 0 warnin
 scope:: internal
 Materialize the adopted bluepriNNts locally, repoint `parent_spec`, update `blueprint_name`, bump the version and re-validate with `innfo-mcp` (0 errors, 0 warnings). Record the outcome `valid` or `invalid`. On `invalid`, the run takes the restore path and the workspace is never recorded as validated.
 
-## NN Work: Confirm Validated Workspace
+### NN Work: Confirm Validated Workspace
 slug:: confirm-validated-workspace
-parent:: @upgrade-a-workspace-or-import-a-legacy-domain
 step_type:: task
 condition:: outcome == valid
 input:: @verified-backup
@@ -127,9 +117,8 @@ executor:: agent
 scope:: internal
 Record the validated domaiNN as the run's output, with its path and revision, only after the validation of the previous step passed. Finish the run with outcome `completed`.
 
-## NN Work: Restore From Backup
+### NN Work: Restore From Backup
 slug:: restore-from-backup
-parent:: @upgrade-a-workspace-or-import-a-legacy-domain
 step_type:: task
 condition:: outcome == invalid
 input:: @verified-backup

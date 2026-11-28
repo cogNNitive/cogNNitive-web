@@ -23835,29 +23835,20 @@ if (typeof window !== 'undefined') {
       })
     }
 
-    // ---- Ficha: the Procedure element that links this document ----
+    // ---- Ficha: the Procedure header of the active document ----
+    // A procedure document holds exactly one `Procedure` element, its header; a document
+    // without one is malformed and the validator reports it, so the ficha shows nothing.
     function renderFicha(hostEl) {
-      var linked = null
+      var header = null
       elements.forEach(function (el) {
-        if (
-          el &&
-          el.concept === 'Procedure' &&
-          el.fields &&
-          el.fields.procedure_model === active.file
-        )
-          linked = linked || el
+        if (el && el.concept === 'Procedure' && el.modelFile === active.file) header = header || el
       })
+      if (!header) return
+      var f = header.fields || {}
       var ficha = make('div', 'proc-ficha')
-      if (!linked) {
-        ficha.appendChild(make('div', 'proc-no-catalog-note', 'No catalog entry linked.'))
-        hostEl.appendChild(ficha)
-        return
-      }
-      var f = linked.fields
       if (f.summary) ficha.appendChild(make('div', 'proc-ficha-summary', f.summary))
       ;[
         ['category', 'Category'],
-        ['executed_by', 'Executed by'],
         ['inputs_required', 'Inputs required'],
         ['outputs_expected', 'Outputs expected'],
       ].forEach(function (pair) {
@@ -25614,7 +25605,8 @@ if (typeof window !== 'undefined') {
         })
         card.appendChild(branches)
       }
-      var raci = rolesForStep(step.name)
+      renderCall(card, step)
+      var raci = rolesForStep(step)
       if (raci.length) {
         var raciBox = make('div', 'exec-raci-box')
         raciBox.appendChild(make('div', 'exec-box-title', 'Governance & Roles (RACI)'))
@@ -25728,13 +25720,27 @@ if (typeof window !== 'undefined') {
       card.appendChild(box)
     }
 
-    function rolesForStep(workName) {
+    // A `work-roles matrix` row names its step the way the procedure graph resolves a
+    // reference: by slug first, then by element name (case-insensitive).
+    function rolesForStep(step) {
       var mx = null
       matrices.forEach(function (m) {
-        if (m && m.name === 'work-roles matrix') mx = m
+        if (m && m.name === 'work-roles matrix' && (!m.modelFile || m.modelFile === active.file))
+          mx = mx || m
       })
       if (!mx) return []
-      var row = (mx.cells || {})[workName]
+      var cells = mx.cells || {}
+      var labels = Object.keys(cells)
+      var key = labels.filter(function (l) {
+        return l === step.slug
+      })[0]
+      if (key === undefined) {
+        var name = String(step.name || '').toLowerCase()
+        key = labels.filter(function (l) {
+          return name && l.toLowerCase() === name
+        })[0]
+      }
+      var row = key === undefined ? null : cells[key]
       if (!row) return []
       return (mx.cols || [])
         .filter(function (c) {
@@ -25743,6 +25749,41 @@ if (typeof window !== 'undefined') {
         .map(function (c) {
           return { label: c, value: row[c] }
         })
+    }
+
+    // ---- Call steps: a step that runs another procedure ----
+    /** The exported procedure a `call` names: a document file name of the caller's folder. */
+    function entryForCall(target) {
+      var dir = String(active.file || '').replace(/[^/]*$/, '')
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].file === dir + target) return entries[i]
+      }
+      return null
+    }
+
+    function renderCall(card, step) {
+      if (!step.call) return
+      var box = make('div', 'exec-step-call')
+      box.setAttribute('data-proc-call', step.call)
+      box.appendChild(make('span', 'exec-step-call-label', 'Calls: '))
+      var slot = /^\{([^{}]+)\}$/.exec(step.call)
+      var target = slot ? null : entryForCall(step.call)
+      if (target) {
+        box.appendChild(
+          button(
+            'exec-step-call-link',
+            target.title || target.file,
+            function () {
+              selectEntry(target)
+              render()
+            },
+            { 'data-proc-call-target': target.file },
+          ),
+        )
+      } else {
+        box.appendChild(make('span', 'exec-step-call-target', slot ? slot[1] : step.call))
+      }
+      card.appendChild(box)
     }
 
     // ---- Closed run: what came out of it ----

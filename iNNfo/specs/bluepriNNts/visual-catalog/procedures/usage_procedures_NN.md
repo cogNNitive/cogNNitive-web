@@ -1,28 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Using the Visual Catalog Blueprint"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Using the Visual Catalog Blueprint
+## NN Procedure: Using the Visual Catalog Blueprint
 slug:: using-the-visual-catalog-blueprint
-step_type:: task
-condition:: You want to curate a visual asset catalog
-input:: @visual-catalog-model
-output:: @ingested-catalog
-tool:: @console
-executor:: human
-scope:: internal
-Getting started with the Visual Catalog blueprint: create catalog entries, define their categories, attach evidence, then ingest the catalog.
+summary:: Getting started with the Visual Catalog blueprint: create catalog entries, define their categories, attach evidence, then ingest the catalog.
+inputs_required:: @visual-catalog-model
+outputs_expected:: @ingested-catalog
 
-## NN Work: Create Catalog Entries
+It starts when: You want to curate a visual asset catalog.
+
+### NN Work: Create Catalog Entries
 slug:: create-catalog-entries
-parent:: @using-the-visual-catalog-blueprint
 step_type:: task
 next:: @define-categories
 condition:: No visual catalog model exists yet
@@ -33,9 +29,8 @@ executor:: human
 scope:: internal
 Add `Entry` elements for each asset to catalog.
 
-## NN Work: Define Categories
+### NN Work: Define Categories
 slug:: define-categories
-parent:: @using-the-visual-catalog-blueprint
 step_type:: task
 next:: @attach-evidence
 condition:: Entries created
@@ -46,9 +41,8 @@ executor:: human
 scope:: internal
 Add the `Category` elements and assign every entry to one.
 
-## NN Work: Attach Evidence
+### NN Work: Attach Evidence
 slug:: attach-evidence
-parent:: @using-the-visual-catalog-blueprint
 step_type:: task
 next:: @ingest-the-visual-catalog
 condition:: Categories defined
@@ -59,9 +53,8 @@ executor:: human
 scope:: internal
 Attach `Evidence` elements (source paths, hashes) backing each entry.
 
-## NN Work: Ingest the Visual Catalog
+### NN Work: Ingest the Visual Catalog
 slug:: ingest-the-visual-catalog
-parent:: @using-the-visual-catalog-blueprint
 step_type:: task
 condition:: Entries, categories and evidence complete
 input:: @visual-catalog-model

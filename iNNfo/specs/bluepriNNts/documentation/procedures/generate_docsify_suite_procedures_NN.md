@@ -1,29 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Generate Docsify Suite Procedure"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Generate Complete Docsify Suite
+## NN Procedure: Generate Complete Docsify Suite
 slug:: generate-complete-docsify-suite
-step_type:: task
-condition:: Documentation model updated or site build triggered
-input:: @documentation-model
-output:: @verified-documentation-suite
-output_status:: verified
-tool:: @docsify-suite-generator-script
-executor:: agent
-scope:: internal
-Standard procedure to parse a documentation model, validate source markdown paths, and compile Docsify navigation (_sidebar.md, _navbar.md) and AI indexes (llms.txt, ai-index.yaml).
+summary:: Standard procedure to parse a documentation model, validate source markdown paths, and compile Docsify navigation (_sidebar.md, _navbar.md) and AI indexes (llms.txt, ai-index.yaml).
+inputs_required:: @documentation-model
+outputs_expected:: @verified-documentation-suite
 
-## NN Work: Verify Documentation Model
+It starts when: Documentation model updated or site build triggered.
+
+### NN Work: Verify Documentation Model
 slug:: verify-documentation-model
-parent:: @generate-complete-docsify-suite
 step_type:: task
 next:: @audit-source-markdown-files
 condition:: Execution begins
@@ -35,9 +30,8 @@ executor:: agent
 scope:: internal
 Verify that documentation_NN.md conforms to documentation_V_0-2-0 and contains valid DocSite, Section, Page, NavbarItem, and Asset concepts.
 
-## NN Work: Audit Source Markdown Files
+### NN Work: Audit Source Markdown Files
 slug:: audit-source-markdown-files
-parent:: @generate-complete-docsify-suite
 step_type:: task
 next:: @compile-sidebar-markdown
 condition:: Model syntax is valid
@@ -49,9 +43,8 @@ executor:: agent
 scope:: internal
 Inspect every Page element in the model and verify that the file referenced in the source field exists on the local filesystem.
 
-## NN Work: Compile Sidebar Markdown
+### NN Work: Compile Sidebar Markdown
 slug:: compile-sidebar-markdown
-parent:: @generate-complete-docsify-suite
 step_type:: task
 next:: @compile-navbar-markdown
 condition:: All source files exist
@@ -63,9 +56,8 @@ executor:: agent
 scope:: internal
 Iterate through Sections and Pages in order, generating Markdown list items with labels and routes into _sidebar.md.
 
-## NN Work: Compile Navbar Markdown
+### NN Work: Compile Navbar Markdown
 slug:: compile-navbar-markdown
-parent:: @generate-complete-docsify-suite
 step_type:: task
 next:: @compile-ai-summary-and-index
 condition:: Sidebar generation complete
@@ -77,9 +69,8 @@ executor:: agent
 scope:: internal
 Iterate through NavbarItem entities in order, formatting top-level navigation links and dropdown menus into _navbar.md.
 
-## NN Work: Compile AI Summary and Index
+### NN Work: Compile AI Summary and Index
 slug:: compile-ai-summary-and-index
-parent:: @generate-complete-docsify-suite
 step_type:: task
 next:: @verify-output-suite
 condition:: Navbar generation complete
@@ -91,9 +82,8 @@ executor:: agent
 scope:: internal
 Compile all DocSite descriptions, Sections, and Page summaries into machine-readable llms.txt and ai-index.yaml formats.
 
-## NN Work: Verify Output Suite
+### NN Work: Verify Output Suite
 slug:: verify-output-suite
-parent:: @generate-complete-docsify-suite
 step_type:: task
 condition:: All artifacts written
 input:: @docsify-sidebar

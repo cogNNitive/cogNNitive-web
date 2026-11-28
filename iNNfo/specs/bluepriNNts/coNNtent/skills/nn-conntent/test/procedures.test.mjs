@@ -1,18 +1,16 @@
 /**
  * nn-conntent/test/procedures.test.mjs
  *
- * Guard for the single coNNtent procedures document
- * (`procedures/usage_procedures_NN.md`): exactly six procedures, every step
- * declaring exactly one tool from the closed set, no Deliver procedure, the
- * setup procedures ending in a sealed proposed changeset, the Create a Series
- * dry run, and Plan an Episode reading CHARACTER.md prose.
+ * Guard for the coNNtent procedures: `procedures/usage_procedures_NN.md` is a walkthrough
+ * whose six steps each `call::` one procedure document (Set up the Domain ... Produce an
+ * Episode). Every step of those documents declares its `executor` from the closed set and the
+ * field that carries its contribution, there is no Deliver procedure, the setup procedures end
+ * in a sealed proposed changeset, Create a Series ends in a dry run, and Plan an Episode reads
+ * CHARACTER.md prose.
  *
- * Capability `conntent-procedures` (tasks 5a.1-5a.5). The document is parsed
- * as the console procedure stepper reads it: `## NN Work:` elements whose
- * `parent::` field links a step to its procedure, with `next::` ordering the
- * chain inside that procedure. Both are addresses (`@<slug>`), the one form
- * `validate_knowledge` accepts for a typed reference field
- * (procedure-reference-form).
+ * Each document holds one `## NN Procedure:` header with its steps nested under it as
+ * `### NN Work:`, ordered by `next::`, an address (`@<slug>`), the one form
+ * `validate_knowledge` accepts for a typed reference field (procedure-reference-form).
  */
 
 import test from 'node:test';
@@ -22,8 +20,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const DOC_PATH = path.resolve(here, '..', '..', '..', 'procedures', 'usage_procedures_NN.md');
-const text = fs.readFileSync(DOC_PATH, 'utf8');
+const PROCEDURES_DIR = path.resolve(here, '..', '..', '..', 'procedures');
+const read = (file) => fs.readFileSync(path.join(PROCEDURES_DIR, file), 'utf8');
 
 const SIX = [
   'Set up the Domain',
@@ -36,14 +34,13 @@ const SIX = [
 
 const SETUP = ['Set up the Domain', 'Define a Frame', 'Define a Character', 'Create a Series'];
 
-const TOOLS = new Set(['agent', 'engine', 'console', 'human']);
+const EXECUTORS = new Set(['agent', 'engine', 'human']);
 
-/** The field each tool must fill to satisfy "declare its tool". */
-const TOOL_FIELD = {
-  agent: 'produces',
-  engine: 'command',
-  console: 'section',
-  human: 'decision',
+/** The fields that carry what each executor contributes ("declare its contribution"). */
+const EXECUTOR_FIELDS = {
+  agent: ['produces'],
+  engine: ['command'],
+  human: ['decision', 'section'],
 };
 
 /** Console sections registered by `conntent-domain-console` (task 4c.1). */
@@ -58,11 +55,7 @@ const FIELD_RE = /^([a-z_]+)::\s*(.*)$/;
  */
 const addressSlug = (value) => String(value || '').trim().replace(/^@+/, '').trim();
 
-/**
- * Parses the document into the elements the console sees. `lines` keeps the raw
- * body so a duplicate `tool::` can be counted (the last value wins in `fields`).
- * @returns {{elements: Array<{concept: string, name: string, fields: Record<string,string>, lines: string[]}>}}
- */
+/** Parses one document into its elements; `lines` keeps the raw body. */
 function parseDocument(source) {
   const elements = [];
   let current = null;
@@ -82,66 +75,74 @@ function parseDocument(source) {
     const field = raw.match(FIELD_RE);
     if (field) current.fields[field[1]] = field[2].trim();
   }
-  return { elements };
+  return elements;
 }
 
-const { elements } = parseDocument(text);
-const work = elements.filter((element) => element.concept === 'Work');
-const procedures = work.filter((element) => !element.fields.parent);
+const usage = parseDocument(read('usage_procedures_NN.md'));
+const calls = usage.filter((element) => element.concept === 'Work').map((step) => step.fields.call);
+/** One entry per called document: its header (the procedure) and its steps. */
+const documents = calls.map((file) => {
+  const source = read(file);
+  const elements = parseDocument(source);
+  return {
+    file,
+    source,
+    elements,
+    header: elements.find((element) => element.concept === 'Procedure'),
+    steps: elements.filter((element) => element.concept === 'Work'),
+  };
+});
+const procedures = documents.map((doc) => doc.header);
 const procedureNames = procedures.map((element) => element.name);
-/** Every slug the document declares — the only thing an in-document address resolves to. */
-const declaredSlugs = new Set(
-  elements.map((element) => element.fields.slug).filter((slug) => Boolean(slug)),
-);
-const stepsOf = (procedure) =>
-  work.filter(
-    (element) => element.fields.parent && addressSlug(element.fields.parent) === procedure.fields.slug,
-  );
-const allSteps = procedures.flatMap((procedure) => stepsOf(procedure));
+const stepsOf = (procedure) => documents.find((doc) => doc.header === procedure).steps;
+const allSteps = documents.flatMap((doc) => doc.steps);
+const text = [read('usage_procedures_NN.md'), ...documents.map((doc) => doc.source)].join('\n');
 
 const body = (element) => element.lines.join('\n');
 /** A procedure's own fields and prose plus every step body, in order. */
 const allText = (procedure) => [body(procedure), ...stepsOf(procedure).map(body)].join('\n');
-const toolOf = (step) => (step.lines.find((line) => /^tool::/.test(line)) || '').replace(/^tool::\s*/, '').trim();
+const executorOf = (step) => step.fields.executor || 'agent';
 
-test('exactly the six procedures, in order, and nothing else', () => {
+test('the usage guide calls exactly the six procedures, in order, and nothing else', () => {
   assert.deepEqual(procedureNames, SIX);
-  // "and nothing else": no other unparented Work element is a procedure.
-  assert.equal(procedures.length, SIX.length);
+  for (const file of calls) assert.match(file, /^[a-z_]+_procedures_NN\.md$/);
 });
 
-test('every procedure declares a slug and every step addresses it', () => {
-  for (const procedure of procedures) {
-    assert.ok(
-      procedure.fields.slug,
-      `procedure "${procedure.name}" declares no slug::, so no step can address it`,
+test('every procedure document holds one header and declares the slug of every step', () => {
+  for (const doc of documents) {
+    assert.equal(
+      doc.elements.filter((element) => element.concept === 'Procedure').length,
+      1,
+      `${doc.file} must hold exactly one Procedure header`,
     );
-    assert.ok(declaredSlugs.has(procedure.fields.slug), `slug:: ${procedure.fields.slug} is missing`);
-    assert.ok(
-      stepsOf(procedure).length > 0,
-      `no step addresses procedure "${procedure.name}" with parent:: @${procedure.fields.slug}`,
-    );
+    assert.ok(doc.header.fields.slug, `procedure "${doc.header.name}" declares no slug::`);
+    assert.ok(doc.steps.length > 0, `procedure "${doc.header.name}" has no steps`);
+    for (const step of doc.steps) assert.ok(step.fields.slug, `step "${step.name}" has no slug::`);
   }
 });
 
-test('parent::, next:: and output:: carry an address, never a wikilink', () => {
+test('next:: and output:: carry an address, never a wikilink', () => {
   // `procedure-reference-form`: one accepted form. `validate_knowledge` rejects
   // `[[Name]]` with ADDRESS_MALFORMED, so nothing here may still write it.
-  const referenceFields = ['parent', 'next', 'output'];
-  for (const element of [...procedures, ...allSteps]) {
-    for (const field of referenceFields) {
-      const value = element.fields[field];
-      if (!value) continue;
-      assert.doesNotMatch(
-        value,
-        /\[\[|\]\]/,
-        `"${element.name}" writes the removed wikilink form in ${field}:: ${value}`,
-      );
-      assert.match(value, /^@/, `"${element.name}" must write ${field}:: as @<slug>, got "${value}"`);
-      assert.ok(
-        declaredSlugs.has(addressSlug(value)),
-        `"${element.name}" addresses ${field}:: ${value}, which is not a slug:: declared in the document`,
-      );
+  for (const doc of documents) {
+    const declaredSlugs = new Set(
+      doc.elements.map((element) => element.fields.slug).filter((slug) => Boolean(slug)),
+    );
+    for (const element of [doc.header, ...doc.steps]) {
+      for (const field of ['next', 'output']) {
+        const value = element.fields[field];
+        if (!value) continue;
+        assert.doesNotMatch(
+          value,
+          /\[\[|\]\]/,
+          `"${element.name}" writes the removed wikilink form in ${field}:: ${value}`,
+        );
+        assert.match(value, /^@/, `"${element.name}" must write ${field}:: as @<slug>, got "${value}"`);
+        assert.ok(
+          declaredSlugs.has(addressSlug(value)),
+          `"${element.name}" addresses ${field}:: ${value}, which is not a slug:: declared in ${doc.file}`,
+        );
+      }
     }
   }
 });
@@ -170,47 +171,47 @@ test('the seven episode-only procedures are gone', () => {
 
 test('every procedure states its level, its precondition and the artifact it ends in', () => {
   for (const procedure of procedures) {
-    for (const field of ['level', 'condition', 'output']) {
+    for (const field of ['level', 'outputs_expected']) {
       assert.ok(
         procedure.fields[field] && procedure.fields[field].length > 0,
         `procedure "${procedure.name}" has no ${field}::`,
       );
     }
+    assert.match(body(procedure), /It starts when: /, `procedure "${procedure.name}" states no precondition`);
   }
 });
 
-test('every step declares exactly one tool from the closed set', () => {
+test('every step declares its executor from the closed set, never through tool', () => {
   assert.ok(allSteps.length > 0, 'no steps found: every procedure needs steps');
-  for (const procedure of procedures) {
-    assert.ok(stepsOf(procedure).length > 0, `procedure "${procedure.name}" has no steps`);
-  }
   for (const step of allSteps) {
-    const declarations = step.lines.filter((line) => /^tool::/.test(line));
-    assert.equal(declarations.length, 1, `step "${step.name}" must declare exactly one tool::`);
-    const tool = toolOf(step);
-    assert.ok(TOOLS.has(tool), `step "${step.name}" declares tool "${tool}", outside the closed set`);
+    const declarations = step.lines.filter((line) => /^executor::/.test(line));
+    assert.equal(declarations.length, 1, `step "${step.name}" must declare exactly one executor::`);
+    assert.ok(EXECUTORS.has(executorOf(step)), `step "${step.name}" declares executor "${executorOf(step)}"`);
+    assert.doesNotMatch(
+      step.fields.tool || '',
+      /^(agent|engine|human|console)$/,
+      `step "${step.name}" still names its executor through tool::`,
+    );
   }
 });
 
-test('every tool in the closed set is used at least once', () => {
-  const used = new Set(allSteps.map(toolOf));
-  for (const tool of TOOLS) assert.ok(used.has(tool), `no step uses tool "${tool}"`);
+test('every executor in the closed set is used at least once', () => {
+  const used = new Set(allSteps.map(executorOf));
+  for (const executor of EXECUTORS) assert.ok(used.has(executor), `no step uses executor "${executor}"`);
 });
 
-test('each step states what its tool contributes', () => {
+test('each step states what its executor contributes', () => {
   for (const step of allSteps) {
-    const tool = toolOf(step);
-    const field = TOOL_FIELD[tool];
-    assert.ok(field, `step "${step.name}" has an unknown tool "${tool}"`);
+    const fields = EXECUTOR_FIELDS[executorOf(step)];
     assert.ok(
-      step.fields[field] && step.fields[field].length > 0,
-      `step "${step.name}" (tool ${tool}) has no ${field}::`,
+      fields.some((field) => step.fields[field] && step.fields[field].length > 0),
+      `step "${step.name}" (executor ${executorOf(step)}) has none of ${fields.join(', ')}::`,
     );
   }
 });
 
 test('every console step names a registered console section', () => {
-  for (const step of allSteps.filter((element) => toolOf(element) === 'console')) {
+  for (const step of allSteps.filter((element) => element.fields.section)) {
     assert.match(
       step.fields.section || '',
       CONSOLE_SECTION_RE,
@@ -220,7 +221,7 @@ test('every console step names a registered console section', () => {
 });
 
 test('every engine command points at the installed skill and a script', () => {
-  for (const step of allSteps.filter((element) => toolOf(element) === 'engine')) {
+  for (const step of allSteps.filter((element) => executorOf(element) === 'engine')) {
     const command = step.fields.command || '';
     assert.match(command, /^~\/\.agents\/skills\/nn-conntent\/scripts\/[\w-]+\.mjs\b/, `step "${step.name}" does not use the installed skill path`);
   }
@@ -242,22 +243,22 @@ test('setup procedures end in a sealed proposed changeset and a human approval',
 
     const last = steps.at(-1);
     assert.ok(last, `setup procedure "${name}" has no steps`);
-    assert.equal(toolOf(last), 'human', `setup procedure "${name}" must end in a human step`);
+    assert.equal(executorOf(last), 'human', `setup procedure "${name}" must end in a human step`);
 
     const proposals = steps.filter((step) => /writeProposedChangeset/.test(body(step)));
     assert.ok(proposals.length > 0, `setup procedure "${name}" never delivers a sealed proposed changeset`);
     for (const proposal of proposals) {
-      assert.equal(toolOf(proposal), 'agent', `the changeset writer in "${name}" must be the agent`);
+      assert.equal(executorOf(proposal), 'agent', `the changeset writer in "${name}" must be the agent`);
       assert.match(body(proposal), /proposed/i);
     }
 
     assert.ok(
-      steps.some((step) => toolOf(step) === 'human' && /approv/i.test(body(step))),
+      steps.some((step) => executorOf(step) === 'human' && /approv/i.test(body(step))),
       `setup procedure "${name}" has no human approval step`,
     );
 
     for (const step of steps) {
-      if (toolOf(step) !== 'agent') continue;
+      if (executorOf(step) !== 'agent') continue;
       assert.doesNotMatch(body(step), /apply (this|the) (sealed )?changeset/i, `agent applies the changeset in "${name}"`);
     }
   }
@@ -269,16 +270,16 @@ test('Create a Series ends with a dry-run test episode kept or discarded by the 
 
   // The test episode is created inside the run, so its path is not a run parameter: the agent
   // runs the dry run on the episode the applied proposal created.
-  const dryRun = steps.find((step) => toolOf(step) === 'agent' && /dry run/i.test(body(step)));
+  const dryRun = steps.find((step) => executorOf(step) === 'agent' && /dry run/i.test(body(step)));
   assert.ok(dryRun, 'Create a Series has no agent dry-run step');
   assert.match(body(dryRun), /scripts\/produce\.mjs\b[^\n]*--dry-run\b/, 'the dry run does not name produce --dry-run');
   assert.match(allText(procedure), /no spend|spends nothing|nothing is spent/i, 'the dry run does not state that it spends nothing');
 
-  const choice = steps.find((step) => toolOf(step) === 'human' && /keep/i.test(body(step)) && /discard/i.test(body(step)));
+  const choice = steps.find((step) => executorOf(step) === 'human' && /keep/i.test(body(step)) && /discard/i.test(body(step)));
   assert.ok(choice, 'no human keep-or-discard step');
 
   const last = steps.at(-1);
-  assert.equal(toolOf(last), 'human', 'the keep-or-discard choice must be the last step');
+  assert.equal(executorOf(last), 'human', 'the keep-or-discard choice must be the last step');
   assert.match(allText(procedure), /first episode/i, 'keeping must make the test episode the first episode');
 });
 
@@ -290,7 +291,7 @@ test('voices are cloned by the agent, once per voice the person chose, each with
     const clones = stepsOf(procedure).filter((step) => /voice-clone\.mjs/.test(body(step)));
     assert.equal(clones.length, 1, `${name} has no single voice-clone step`);
     const [clone] = clones;
-    assert.equal(toolOf(clone), 'agent', `${name} clones voices outside the agent`);
+    assert.equal(executorOf(clone), 'agent', `${name} clones voices outside the agent`);
     assert.match(body(clone), /scripts\/voice-clone\.mjs\b[^\n]*--language\b/, `${name} clones without a language`);
     assert.match(body(clone), /each (chosen )?voice|once per voice|for every voice/i, `${name} does not clone per voice`);
   }
@@ -301,7 +302,7 @@ test('Plan an Episode reads CHARACTER.md prose before writing narration', () => 
   const steps = stepsOf(procedure);
   const reads = steps.filter((step) => /CHARACTER\.md/.test(body(step)) && /prose/i.test(body(step)));
   assert.ok(reads.length > 0, 'Plan an Episode never reads the character prose');
-  assert.equal(toolOf(reads[0]), 'agent', 'the character prose is read by the agent');
+  assert.equal(executorOf(reads[0]), 'agent', 'the character prose is read by the agent');
 });
 
 test('Plan an Episode verifies translation prerequisites and addresses one scene', () => {
@@ -316,7 +317,7 @@ test('Plan an Episode verifies translation prerequisites and addresses one scene
 test('Produce an Episode names produce as the only engine command', () => {
   const procedure = procedures.find((element) => element.name === 'Produce an Episode');
   const steps = stepsOf(procedure);
-  const engineSteps = steps.filter((step) => toolOf(step) === 'engine');
+  const engineSteps = steps.filter((step) => executorOf(step) === 'engine');
   assert.ok(engineSteps.length > 0, 'Produce an Episode has no engine step');
   for (const step of engineSteps) {
     assert.match(step.fields.command || '', /\/scripts\/produce\.mjs\b/, `step "${step.name}" runs a command other than produce`);
@@ -330,8 +331,8 @@ test('Produce an Episode keeps every approval human or in the console', () => {
   for (const step of stepsOf(procedure)) {
     if (!/approv/i.test(body(step))) continue;
     assert.ok(
-      ['console', 'human'].includes(toolOf(step)),
-      `step "${step.name}" approves a gate with tool "${toolOf(step)}"`,
+      executorOf(step) === 'human',
+      `step "${step.name}" approves a gate with executor "${executorOf(step)}"`,
     );
   }
 });

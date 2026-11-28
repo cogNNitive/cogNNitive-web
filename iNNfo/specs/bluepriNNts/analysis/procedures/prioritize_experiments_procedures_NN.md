@@ -1,29 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Prioritize Experiments Procedure"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Prioritize Experiments
+## NN Procedure: Prioritize Experiments
 slug:: prioritize-experiments
-step_type:: task
-condition:: An analysis model is loaded
-input:: @active-analysis-model
-output:: @prioritized-experiment-backlog
-output_status:: verified
-tool:: @ai-agent
-executor:: agent
-scope:: internal
-Rank all validation experiments based on the criticality and uncertainty of the assumptions they validate.
+summary:: Rank all validation experiments based on the criticality and uncertainty of the assumptions they validate.
+inputs_required:: @active-analysis-model
+outputs_expected:: @prioritized-experiment-backlog
 
-## NN Work: Score Assumption Criticality
+It starts when: An analysis model is loaded.
+
+### NN Work: Score Assumption Criticality
 slug:: score-assumption-criticality
-parent:: @prioritize-experiments
 step_type:: task
 next:: @rank-experiments-by-impact
 condition:: Procedure starts
@@ -35,9 +30,8 @@ executor:: agent
 scope:: internal
 Evaluate assumption markers (`importance`, `certainty`, `priority`) to determine which hypotheses pose the greatest existential risk if false.
 
-## NN Work: Rank Experiments by Impact
+### NN Work: Rank Experiments by Impact
 slug:: rank-experiments-by-impact
-parent:: @prioritize-experiments
 step_type:: task
 condition:: Assumptions scored
 input:: @assumption-uncertainty-scores

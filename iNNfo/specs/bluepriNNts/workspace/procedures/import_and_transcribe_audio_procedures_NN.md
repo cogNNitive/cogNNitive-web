@@ -1,9 +1,9 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Audio Source Import & Transcription Procedure"
 slots:
   - { name: batch, kind: value, required: true }
@@ -13,36 +13,18 @@ slots:
 >
 > **Experimental External Ingestion**: Audio conversion (ffmpeg) and speech-to-text transcription (Whisper/ASR engine) are external helper processes assisted by the AI agent or user environment. cogNNitive natively manages the resulting transcript sources and their sidecar provenance.
 
-# NN index
+# NN Procedure
 
-* [[Work]]
-* [[Artifact]]
-* [[Tools]]
-* [[Roles]]
-
-# NN Work
-
-The run takes two slots: `batch`, a lowercase name for this intake (its working files live
-under `artifacts/intake/{batch}/`), and `import_dir`, the folder scanned for audio
-(default `sources/import`). Engine steps run portable `node -e` commands from the domaiNN
-root, so they need nothing but Node.js; the transcription itself is agent work, and a person
-approves the transcripts before anything becomes a citable source.
-
-## NN Work: Import and Transcribe Audio Sources
+## NN Procedure: Import and Transcribe Audio Sources
 slug:: import-and-transcribe-audio-sources
-step_type:: task
-condition:: Raw audio recordings present in import or external drop folder
-input:: @raw-audio-recordings-directory
-output:: @verified-target-domain-model
-output_status:: verified
-tool:: @ai-agent
-executor:: agent
-scope:: internal
-Ingest unprocessed audio recordings, orchestrate speech-to-text transcription via external ASR tooling, have a person approve the transcripts, cognitivize them in place as citable sources with sidecar provenance, bind them to target domain model elements, and validate semantic integrity.
+summary:: Ingest unprocessed audio recordings, orchestrate speech-to-text transcription via external ASR tooling, have a person approve the transcripts, cognitivize them in place as citable sources with sidecar provenance, bind them to target domain model elements, and validate semantic integrity.
+inputs_required:: @raw-audio-recordings-directory
+outputs_expected:: @verified-target-domain-model
 
-## NN Work: Discover Raw Audio Files
+It starts when: Raw audio recordings present in import or external drop folder.
+
+### NN Work: Discover Raw Audio Files
 slug:: discover-raw-audio-files
-parent:: @import-and-transcribe-audio-sources
 step_type:: task
 next:: @verify-and-deduplicate-sources
 condition:: Ingestion workflow triggered
@@ -55,9 +37,8 @@ command:: node -e "const fs=require('fs'),p=require('path');const [d,o]=process.
 scope:: internal
 Scan the import folder `{import_dir}` recursively to identify audio files (.mp3, .wav, .m4a, .ogg, .flac, .opus) that lack a same-stem transcript file (.txt, .srt, .vtt, .md), and write them to `artifacts/intake/{batch}/audio-list.json`. The step fails when there is no audio to transcribe, so an empty drop folder never runs an empty batch.
 
-## NN Work: Verify and Deduplicate Sources
+### NN Work: Verify and Deduplicate Sources
 slug:: verify-and-deduplicate-sources
-parent:: @import-and-transcribe-audio-sources
 step_type:: task
 next:: @transcribe-audio-via-external-asr
 condition:: Unprocessed audio list generated
@@ -70,9 +51,8 @@ command:: node -e "const fs=require('fs'),p=require('path'),c=require('crypto');
 scope:: internal
 Compute SHA-256 hashes for the discovered audio files and drop every file whose bytes are already recorded (`sha256` or `media_sha256`) in a sidecar under `sources/`, or repeat a file earlier in the same batch, to prevent duplicate processing. Each queued entry names the transcript file the next step must write (`artifacts/intake/{batch}/transcripts/<stem>.txt`) and where it will be staged (beside the audio). The step fails when nothing is left to transcribe.
 
-## NN Work: Transcribe Audio via External ASR
+### NN Work: Transcribe Audio via External ASR
 slug:: transcribe-audio-via-external-asr
-parent:: @import-and-transcribe-audio-sources
 step_type:: task
 next:: @review-the-transcripts
 condition:: Ingestion queue validated
@@ -85,9 +65,8 @@ produces:: one transcript per queued entry, at the `transcript` path `artifacts/
 scope:: external
 Convert audio to 16 kHz mono WAV via ffmpeg (chunking long files if needed) and transcribe speech using an external ASR engine (faster-whisper, Whisper API, or whisper.cpp). Generate text transcripts and timestamped SRT subtitle files under `artifacts/intake/{batch}/transcripts/`; nothing is written to the import folder yet.
 
-## NN Work: Review the Transcripts
+### NN Work: Review the Transcripts
 slug:: review-the-transcripts
-parent:: @import-and-transcribe-audio-sources
 step_type:: decision
 next:: [@stage-transcriptions-with-media-link, @record-the-rejected-batch]
 condition:: Transcripts generated
@@ -98,9 +77,8 @@ decision:: Are the transcripts in artifacts/intake/{batch}/transcripts/ faithful
 scope:: internal
 The Workspace Maintainer reads the transcripts against the recordings. Approval is the only way a transcript reaches the import folder; a rejected batch leaves the domaiNN untouched, and a corrected batch is started as a new run.
 
-## NN Work: Stage Transcriptions with Media Link
+### NN Work: Stage Transcriptions with Media Link
 slug:: stage-transcriptions-with-media-link
-parent:: @import-and-transcribe-audio-sources
 step_type:: task
 next:: @cognitivize-the-staged-transcripts
 condition:: outcome == approve
@@ -113,9 +91,8 @@ command:: node -e "const fs=require('fs');const [q,o]=process.argv.slice(1);cons
 scope:: internal
 Copy each approved .txt transcript into the import folder beside its audio file, under the audio's base name, and record the result in `artifacts/intake/{batch}/staged.json`. An existing file of that name is never overwritten, and a queued entry whose transcript is missing fails the step.
 
-## NN Work: Cognitivize the Staged Transcripts
+### NN Work: Cognitivize the Staged Transcripts
 slug:: cognitivize-the-staged-transcripts
-parent:: @import-and-transcribe-audio-sources
 step_type:: task
 next:: @bind-normalized-source-to-target-entity
 condition:: Transcripts staged in the import folder
@@ -128,9 +105,8 @@ produces:: a co-located `<transcript>_sidecar_NN.md` for every path `artifacts/i
 scope:: internal
 Cognitivize every staged transcript in place, through the nn-sources scanner (`--scan` or `--cognitivize <file>`) or the MCP `cognitivize` tool, so each gets a co-located sidecar with its provenance (source_file, sha256, normalized_at). The raw audio stays untouched.
 
-## NN Work: Bind Normalized Source to Target Entity
+### NN Work: Bind Normalized Source to Target Entity
 slug:: bind-normalized-source-to-target-entity
-parent:: @import-and-transcribe-audio-sources
 step_type:: task
 next:: @validate-target-model
 condition:: Transcript sources cognitivized
@@ -142,9 +118,8 @@ executor:: agent
 scope:: internal
 Update the sources:: field of the target Element in the active domain model with the transcript source path, through a proposed changeset. Confirm entity mappings with the user when ambiguous.
 
-## NN Work: Validate Target Model
+### NN Work: Validate Target Model
 slug:: validate-target-model
-parent:: @import-and-transcribe-audio-sources
 step_type:: task
 condition:: Domain model updated
 input:: @updated-domain-model
@@ -155,9 +130,8 @@ executor:: agent
 scope:: internal
 Execute validate_knowledge on the target domain model via innfo-mcp to ensure reference integrity and schema compliance.
 
-## NN Work: Record the Rejected Batch
+### NN Work: Record the Rejected Batch
 slug:: record-the-rejected-batch
-parent:: @import-and-transcribe-audio-sources
 step_type:: task
 condition:: outcome == reject
 input:: @raw-transcript-and-subtitles
@@ -168,6 +142,20 @@ executor:: agent
 produces:: artifacts/intake/{batch}/review-rejected.md
 scope:: internal
 Write `artifacts/intake/{batch}/review-rejected.md` with the reviewer's reason and the queued audio files, so the batch can be transcribed again in a new run. Nothing is staged, cognitivized or bound.
+
+# NN index
+
+* [[Work]]
+* [[Artifact]]
+* [[Tools]]
+* [[Roles]]
+
+
+The run takes two slots: `batch`, a lowercase name for this intake (its working files live
+under `artifacts/intake/{batch}/`), and `import_dir`, the folder scanned for audio
+(default `sources/import`). Engine steps run portable `node -e` commands from the domaiNN
+root, so they need nothing but Node.js; the transcription itself is agent work, and a person
+approves the transcripts before anything becomes a citable source.
 
 # NN Tools
 

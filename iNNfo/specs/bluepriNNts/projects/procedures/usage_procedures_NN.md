@@ -1,28 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Using the Projects Blueprint"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Using the Projects Blueprint
+## NN Procedure: Using the Projects Blueprint
 slug:: using-the-projects-blueprint
-step_type:: task
-condition:: You want to plan and track delivery work
-input:: @project-model
-output:: @status-report
-tool:: @console
-executor:: human
-scope:: internal
-Getting started with the Projects blueprint: create the Project, plan phases and milestones, add deliverables and tasks, track risks, then compute the critical path and generate a status report.
+summary:: Getting started with the Projects blueprint: create the Project, plan phases and milestones, add deliverables and tasks, track risks, then compute the critical path and generate a status report.
+inputs_required:: @project-model
+outputs_expected:: @status-report
 
-## NN Work: Create the Project
+It starts when: You want to plan and track delivery work.
+
+### NN Work: Create the Project
 slug:: create-the-project
-parent:: @using-the-projects-blueprint
 step_type:: task
 next:: @plan-phases-and-milestones
 condition:: No project model exists yet
@@ -33,9 +29,8 @@ executor:: human
 scope:: internal
 Add the `Project` element that anchors the model.
 
-## NN Work: Plan Phases and Milestones
+### NN Work: Plan Phases and Milestones
 slug:: plan-phases-and-milestones
-parent:: @using-the-projects-blueprint
 step_type:: task
 next:: @add-deliverables-and-tasks
 condition:: Project element created
@@ -46,9 +41,8 @@ executor:: human
 scope:: internal
 Populate the `Phases` and nested `Milestone` elements.
 
-## NN Work: Add Deliverables and Tasks
+### NN Work: Add Deliverables and Tasks
 slug:: add-deliverables-and-tasks
-parent:: @using-the-projects-blueprint
 step_type:: task
 next:: @track-risks
 condition:: Phases and milestones planned
@@ -59,9 +53,8 @@ executor:: human
 scope:: internal
 Capture `Deliverable` and `Task` elements and their dependencies.
 
-## NN Work: Track Risks
+### NN Work: Track Risks
 slug:: track-risks
-parent:: @using-the-projects-blueprint
 step_type:: task
 next:: @calculate-the-critical-path
 condition:: Tasks and dependencies present
@@ -72,9 +65,8 @@ executor:: human
 scope:: internal
 Record `Risk` elements and assign owners from `Project roles`.
 
-## NN Work: Calculate the Critical Path
+### NN Work: Calculate the Critical Path
 slug:: calculate-the-critical-path
-parent:: @using-the-projects-blueprint
 step_type:: task
 next:: @generate-the-status-report
 condition:: Task graph complete
@@ -85,9 +77,8 @@ executor:: agent
 scope:: internal
 Execute the `calculate-critical-path` procedure to identify the longest dependency chain.
 
-## NN Work: Generate the Status Report
+### NN Work: Generate the Status Report
 slug:: generate-the-status-report
-parent:: @using-the-projects-blueprint
 step_type:: task
 condition:: Critical path computed
 input:: @critical-path

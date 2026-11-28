@@ -1,29 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Export Team Directory Procedure"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Export Team Directory
+## NN Procedure: Export Team Directory
 slug:: export-team-directory
-step_type:: task
-condition:: An organization model is loaded
-input:: @active-organization-model
-output:: @team-directory-markdown
-output_status:: verified
-tool:: @ai-agent
-executor:: agent
-scope:: internal
-Compile all Person, Position, Role, and Skill elements from the active organization model into a human-readable team directory and accountability roster.
+summary:: Compile all Person, Position, Role, and Skill elements from the active organization model into a human-readable team directory and accountability roster.
+inputs_required:: @active-organization-model
+outputs_expected:: @team-directory-markdown
 
-## NN Work: Extract Personnel Records
+It starts when: An organization model is loaded.
+
+### NN Work: Extract Personnel Records
 slug:: extract-personnel-records
-parent:: @export-team-directory
 step_type:: task
 next:: @assemble-roster-markdown
 condition:: Procedure starts
@@ -35,9 +30,8 @@ executor:: agent
 scope:: internal
 Iterate through all Person elements, resolving their `position_ref`, assumed Roles via the matrix, associated Skills, and direct contact/contribution details.
 
-## NN Work: Assemble Roster Markdown
+### NN Work: Assemble Roster Markdown
 slug:: assemble-roster-markdown
-parent:: @export-team-directory
 step_type:: task
 condition:: Personnel records extracted
 input:: @personnel-records

@@ -1,28 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Using the Business Blueprint"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Using the Business Blueprint
+## NN Procedure: Using the Business Blueprint
 slug:: using-the-business-blueprint
-step_type:: task
-condition:: You want to describe a business end to end
-input:: @business-model
-output:: @validated-business-model
-tool:: @console
-executor:: human
-scope:: internal
-Getting started with the Business blueprint: describe the business, then compose its sub-models (Analysis, Organization, Projects, Metrics) and run the procedures those include.
+summary:: Getting started with the Business blueprint: describe the business, then compose its sub-models (Analysis, Organization, Projects, Metrics) and run the procedures those include.
+inputs_required:: @business-model
+outputs_expected:: @validated-business-model
 
-## NN Work: Open the Business Model
+It starts when: You want to describe a business end to end.
+
+### NN Work: Open the Business Model
 slug:: open-the-business-model
-parent:: @using-the-business-blueprint
 step_type:: task
 next:: @describe-the-business
 condition:: No business model exists yet
@@ -33,9 +29,8 @@ executor:: human
 scope:: internal
 Create a model on the Business blueprint; its index pulls in the business-model, analysis, organization, projects and metrics apps.
 
-## NN Work: Describe the Business
+### NN Work: Describe the Business
 slug:: describe-the-business
-parent:: @using-the-business-blueprint
 step_type:: task
 next:: @model-organization-and-people
 condition:: Business model created
@@ -46,9 +41,8 @@ executor:: human
 scope:: internal
 Fill the business-model concepts: summary, market, value propositions, solutions, marketing, team, objectives, operations, finance and legal.
 
-## NN Work: Model Organization and People
+### NN Work: Model Organization and People
 slug:: model-organization-and-people
-parent:: @using-the-business-blueprint
 step_type:: task
 next:: @plan-projects
 condition:: Business described
@@ -59,9 +53,8 @@ executor:: human
 scope:: internal
 Populate the Organization concepts (roles, functions, positions, people, skills) inherited from the organization app.
 
-## NN Work: Plan Projects
+### NN Work: Plan Projects
 slug:: plan-projects
-parent:: @using-the-business-blueprint
 step_type:: task
 next:: @set-metrics-and-goals
 condition:: Organization modeled
@@ -72,9 +65,8 @@ executor:: human
 scope:: internal
 Populate the Projects concepts (phases, milestones, deliverables, tasks, risks) inherited from the projects app.
 
-## NN Work: Set Metrics and Goals
+### NN Work: Set Metrics and Goals
 slug:: set-metrics-and-goals
-parent:: @using-the-business-blueprint
 step_type:: task
 next:: @run-included-procedures
 condition:: Projects planned
@@ -85,9 +77,8 @@ executor:: human
 scope:: internal
 Populate the Metrics concepts (metrics, variables, evolution, scenario) and the goals matrix.
 
-## NN Work: Run Included Procedures
+### NN Work: Run Included Procedures
 slug:: run-included-procedures
-parent:: @using-the-business-blueprint
 step_type:: task
 condition:: Sub-models populated
 input:: @business-model

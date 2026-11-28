@@ -1,39 +1,27 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Tabular Data Import & Structure Procedure"
 ---
 
 >
 > **Experimental External Ingestion**: Structured tabular parsing and schema inference (CSV, XLSX, BI exports) are external helper processes assisted by the AI agent. cogNNitive natively manages normalized Markdown representations and semantic model population.
 
-# NN index
+# NN Procedure
 
-* [[Work]]
-* [[Artifact]]
-* [[Tools]]
-* [[Roles]]
-
-# NN Work
-
-## NN Work: Import and Structure Tabular Data
+## NN Procedure: Import and Structure Tabular Data
 slug:: import-and-structure-tabular-data
-step_type:: task
-condition:: Tabular data files (.csv, .xlsx, .json) present in import folder
-input:: @raw-tabular-data-directory
-output:: @verified-target-domain-model
-output_status:: verified
-tool:: @ai-agent
-executor:: agent
-scope:: internal
-Ingest tabular files, inspect column schemas and records, normalize raw tables to Markdown under sources/nn/, map rows to semantic Level 3 domain elements (e.g., Costs, Revenue, Products, Inventory), and validate model integrity.
+summary:: Ingest tabular files, inspect column schemas and records, normalize raw tables to Markdown under sources/nn/, map rows to semantic Level 3 domain elements (e.g., Costs, Revenue, Products, Inventory), and validate model integrity.
+inputs_required:: @raw-tabular-data-directory
+outputs_expected:: @verified-target-domain-model
 
-## NN Work: Discover Raw Tabular Files
+It starts when: Tabular data files (.csv, .xlsx, .json) present in import folder.
+
+### NN Work: Discover Raw Tabular Files
 slug:: discover-raw-tabular-files
-parent:: @import-and-structure-tabular-data
 step_type:: task
 next:: @verify-and-deduplicate-tabular-sources
 condition:: Ingestion workflow triggered
@@ -45,9 +33,8 @@ executor:: agent
 scope:: internal
 Scan sources/import/ or drop folders for tabular spreadsheets (.xlsx, .csv, .tsv, .json).
 
-## NN Work: Verify and Deduplicate Tabular Sources
+### NN Work: Verify and Deduplicate Tabular Sources
 slug:: verify-and-deduplicate-tabular-sources
-parent:: @import-and-structure-tabular-data
 step_type:: decision
 next:: @parse-and-synthesize-tabular-schema
 decision:: whether the queue holds any tabular file whose SHA-256 does not match an already processed file
@@ -60,9 +47,8 @@ executor:: agent
 scope:: internal
 Compute SHA-256 hashes of tabular files to ensure updated or new files only are processed.
 
-## NN Work: Parse and Synthesize Tabular Schema
+### NN Work: Parse and Synthesize Tabular Schema
 slug:: parse-and-synthesize-tabular-schema
-parent:: @import-and-structure-tabular-data
 step_type:: task
 next:: @map-table-rows-to-domain-model-elements
 condition:: Ingestion queue validated
@@ -74,9 +60,8 @@ executor:: agent
 scope:: external
 Parse tabular columns, data types, header rows, and aggregated statistical summaries using external data parsing tools.
 
-## NN Work: Map Table Rows to Domain Model Elements
+### NN Work: Map Table Rows to Domain Model Elements
 slug:: map-table-rows-to-domain-model-elements
-parent:: @import-and-structure-tabular-data
 step_type:: decision
 next:: @normalize-tabular-source-to-markdown
 decision:: which concept field each table column maps to and which model element each row becomes; the workspace maintainer confirms the mapping
@@ -89,9 +74,8 @@ executor:: agent
 scope:: internal
 Map table columns to concept fields and table rows to target Level 3 model elements. Confirm field mappings with the workspace maintainer.
 
-## NN Work: Normalize Tabular Source to Markdown
+### NN Work: Normalize Tabular Source to Markdown
 slug:: normalize-tabular-source-to-markdown
-parent:: @import-and-structure-tabular-data
 step_type:: task
 next:: @populate-and-bind-domain-model-elements
 condition:: Mapping plan approved
@@ -103,9 +87,8 @@ executor:: agent
 scope:: internal
 Convert raw tabular files into structured Markdown tables under sources/nn/ with scanner provenance frontmatter.
 
-## NN Work: Populate and Bind Domain Model Elements
+### NN Work: Populate and Bind Domain Model Elements
 slug:: populate-and-bind-domain-model-elements
-parent:: @import-and-structure-tabular-data
 step_type:: task
 next:: @validate-target-model
 condition:: Normalized table created
@@ -117,9 +100,8 @@ executor:: agent
 scope:: internal
 Instantiate or update Level 3 model elements with properties extracted from table rows and bind provenance citations in sources::.
 
-## NN Work: Validate Target Model
+### NN Work: Validate Target Model
 slug:: validate-target-model
-parent:: @import-and-structure-tabular-data
 step_type:: task
 condition:: Domain model populated
 input:: @updated-domain-model
@@ -129,6 +111,14 @@ tool:: @innfo-mcp
 executor:: agent
 scope:: internal
 Validate the populated domain model using innfo-mcp to ensure reference integrity and schema compliance.
+
+# NN index
+
+* [[Work]]
+* [[Artifact]]
+* [[Tools]]
+* [[Roles]]
+
 
 # NN Tools
 

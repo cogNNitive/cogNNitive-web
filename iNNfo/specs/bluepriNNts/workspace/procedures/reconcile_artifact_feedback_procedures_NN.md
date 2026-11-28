@@ -1,19 +1,11 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-3-0"
+knowledge_version: "V_0-4-0"
 title: "Artifact Dual-Emission, Review & Feedback Reconciliation Procedure"
 ---
-
-# NN index
-
-* [[Procedure]]
-* [[Work]]
-* [[Artifact]]
-* [[Tools]]
-* [[Roles]]
 
 # NN Procedure
 
@@ -23,27 +15,12 @@ category:: transformation
 summary:: Governs dual-emission of deliverables (published vs. reviewer_review), embeds language-aware reviewer instructions and filename conventions, extracts reviewer attribution and annotations forensically from DOCX/Markdown, triages discrepancies in 4 layers, resolves human intent, and updates upstream iNNfo domain models.
 inputs_required:: [[Reviewed Deliverable Document]]
 outputs_expected:: [[Published Final Deliverable]]
-executed_by:: Senior AI Architect
-procedure_model:: procedures/reconcile_artifact_feedback_procedures_NN.md
-
-# NN Work
-
-## NN Work: Artifact Feedback Reconciliation Workflow
-slug:: artifact-feedback-reconciliation-workflow
-step_type:: task
-condition:: Reviewed deliverable dropped in artifacts/ directory
-input:: @reviewed-deliverable-document
-output:: @published-final-deliverable
-output_status:: verified
-tool:: @innfo-mcp-server
-executor:: agent
-scope:: internal
 tags:: [procedure, dual-emission, review, feedback, reconciliation, docx, lineage]
-End-to-end standard operating procedure governing the lifecycle from dual-emission generation, reviewer guidance, annotation harvesting, 4-layer discrepancy triaging, human intent resolution, upstream model mutation, and final publication registration.
 
-## NN Work: Step 0 - Dual-Emission Deliverable Generation
+It starts when: Reviewed deliverable dropped in artifacts/ directory.
+
+### NN Work: Step 0 - Dual-Emission Deliverable Generation
 slug:: step-0-dual-emission-deliverable-generation
-parent:: @artifact-feedback-reconciliation-workflow
 step_type:: task
 next:: @step-1-forensic-ingestion-and-attribution-extraction
 condition:: Generator procedure triggered (e.g. Lean Business Plan compilation)
@@ -56,9 +33,8 @@ scope:: internal
 tags:: [dual-emission, generation, templates, reviewer-banner]
 Compiles two paired artifacts: (1) Clean published deliverable `{Stem}_V_{Version}.docx` without editorial meta-instructions, and (2) Review scaffold `{Stem}_V_{Version}_reviewer_review.docx` embedding the localized Reviewer Instruction Cover Sheet.
 
-## NN Work: Step 1 - Forensic Ingestion and Attribution Extraction
+### NN Work: Step 1 - Forensic Ingestion and Attribution Extraction
 slug:: step-1-forensic-ingestion-and-attribution-extraction
-parent:: @artifact-feedback-reconciliation-workflow
 step_type:: task
 next:: @step-2-lineage-and-upstream-dependency-mapping
 condition:: Reviewed file matching *_review.docx dropped in artifacts/
@@ -71,9 +47,8 @@ scope:: internal
 tags:: [forensics, attribution, pandoc, xml, comments, track-changes]
 Parses filename grammar `^{Stem}_V_{Version}_{reviewer_slug}_review\.docx$` to extract `reviewer_slug`. Converts document to Markdown/Plain text via Pandoc and unzips XML to harvest `<w:comments w:author="...">`, `<w:ins>`, `<w:del>`, highlights, and embedded media.
 
-## NN Work: Step 2 - Lineage and Upstream Dependency Mapping
+### NN Work: Step 2 - Lineage and Upstream Dependency Mapping
 slug:: step-2-lineage-and-upstream-dependency-mapping
-parent:: @artifact-feedback-reconciliation-workflow
 step_type:: task
 next:: @step-3-four-layer-discrepancy-triaging
 condition:: Extraction bundle completed
@@ -86,9 +61,8 @@ scope:: internal
 tags:: [lineage, provenance, derived-from, dependencies]
 Reads baseline artifact registration in `workspace_NN.md` to map `sources::`, determining whether changed data originates in domain models, satellite financial models, or raw transcripts.
 
-## NN Work: Step 3 - Four-Layer Discrepancy Triaging
+### NN Work: Step 3 - Four-Layer Discrepancy Triaging
 slug:: step-3-four-layer-discrepancy-triaging
-parent:: @artifact-feedback-reconciliation-workflow
 step_type:: task
 next:: @step-4-user-intent-decision-gate
 condition:: Upstream map resolved
@@ -101,9 +75,8 @@ scope:: internal
 tags:: [triage, classification, layers, domain-vs-presentation]
 Classifies harvested changes into 4 orthogonal buckets: (1) Scope & Deliverable Format [SCOPE/FORMAT], (2) Satellite Data/Financial Sources [DATA], (3) Domain Knowledge & Business Truth [DECISION], and (4) Reviewer Anomalies/Defects.
 
-## NN Work: Step 4 - User Intent Decision Gate
+### NN Work: Step 4 - User Intent Decision Gate
 slug:: step-4-user-intent-decision-gate
-parent:: @artifact-feedback-reconciliation-workflow
 step_type:: decision
 next:: [@step-5-upstream-model-and-template-mutation, @record-editorial-cut]
 condition:: Layer 3 domain discrepancies without explicit [DECISION] tag identified
@@ -117,9 +90,8 @@ scope:: external
 tags:: [decision-gate, human-in-the-loop, intent-verification]
 If reviewer comments contain explicit tags (`[DECISION]`, `[SCOPE]`), intent is resolved automatically. If untagged direct deletions exist, prompts user with a single focused question: *"Is this an editorial cut for this document only, or has the domain reality changed?"*. Record the answer as the outcome `editorial-cut` or `domain-changed`; the decision is recorded as validated before the run moves on, because it is the only authority for changing the upstream models.
 
-## NN Work: Step 5 - Upstream Model and Template Mutation
+### NN Work: Step 5 - Upstream Model and Template Mutation
 slug:: step-5-upstream-model-and-template-mutation
-parent:: @artifact-feedback-reconciliation-workflow
 step_type:: task
 next:: @step-6-artifact-sanitization-and-lineage-registration
 condition:: outcome == domain-changed
@@ -132,9 +104,8 @@ scope:: internal
 tags:: [mcp, mutation, refactoring, validation]
 Executes deterministic mutations on Level 3 domain models via `innfo-mcp_apply_change` or file tools, re-validates schemas with `innfo-mcp_validate_model`, and updates generator templates if deliverable scope changed.
 
-## NN Work: Record Editorial Cut
+### NN Work: Record Editorial Cut
 slug:: record-editorial-cut
-parent:: @artifact-feedback-reconciliation-workflow
 step_type:: task
 next:: @step-6-artifact-sanitization-and-lineage-registration
 condition:: outcome == editorial-cut
@@ -144,9 +115,8 @@ scope:: internal
 tags:: [editorial-cut, no-mutation, lineage]
 The reviewer's cuts apply to this document only. Record in the run that the upstream Level 3 models and the generator templates are left untouched, and carry the recorded decision into the final deliverable.
 
-## NN Work: Step 6 - Artifact Sanitization and Lineage Registration
+### NN Work: Step 6 - Artifact Sanitization and Lineage Registration
 slug:: step-6-artifact-sanitization-and-lineage-registration
-parent:: @artifact-feedback-reconciliation-workflow
 step_type:: task
 condition:: Upstream models validated, or the cut recorded as editorial
 input:: @updated-domain-model
@@ -157,6 +127,16 @@ executor:: agent
 scope:: internal
 tags:: [lineage-registration, manifest, version-bump, closing]
 Sanitizes artifact defects (truncated text, unresolved placeholders), regenerates the clean final deliverable (`_final.docx` or canonical stem), registers both the review file and final deliverable in `## NN Artifacts` with attribution `reviewer:: [[Human Reviewer]]`, and bumps version.
+
+# NN index
+
+* [[Procedure]]
+* [[Work]]
+* [[Artifact]]
+* [[Tools]]
+* [[Roles]]
+
+
 
 # NN Artifact
 

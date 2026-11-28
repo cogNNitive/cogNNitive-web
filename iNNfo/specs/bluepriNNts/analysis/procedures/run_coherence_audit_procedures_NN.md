@@ -1,29 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Run Coherence Audit Procedure"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Run Coherence Audit
+## NN Procedure: Run Coherence Audit
 slug:: run-coherence-audit
-step_type:: task
-condition:: An analysis model is loaded
-input:: @active-analysis-model
-output:: @strategic-coherence-audit
-output_status:: verified
-tool:: @ai-agent
-executor:: agent
-scope:: internal
-Examine all declared assumptions, risks, keys, and coherence checks to ensure every critical vulnerability has an assigned mitigation or validation experiment.
+summary:: Examine all declared assumptions, risks, keys, and coherence checks to ensure every critical vulnerability has an assigned mitigation or validation experiment.
+inputs_required:: @active-analysis-model
+outputs_expected:: @strategic-coherence-audit
 
-## NN Work: Map Assumptions to Risks
+It starts when: An analysis model is loaded.
+
+### NN Work: Map Assumptions to Risks
 slug:: map-assumptions-to-risks
-parent:: @run-coherence-audit
 step_type:: task
 next:: @verify-experiment-coverage
 condition:: Procedure starts
@@ -35,9 +30,8 @@ executor:: agent
 scope:: internal
 Analyze the assumptions-risks matrix to isolate unmitigated high-impact risks that threaten critical business model hypotheses.
 
-## NN Work: Verify Experiment Coverage
+### NN Work: Verify Experiment Coverage
 slug:: verify-experiment-coverage
-parent:: @run-coherence-audit
 step_type:: task
 next:: @compile-audit-findings
 condition:: Assumptions risk map complete
@@ -49,9 +43,8 @@ executor:: agent
 scope:: internal
 Check the experiments-assumptions matrix to verify whether experiments are scheduled for all high-uncertainty assumptions.
 
-## NN Work: Compile Audit Findings
+### NN Work: Compile Audit Findings
 slug:: compile-audit-findings
-parent:: @run-coherence-audit
 step_type:: task
 condition:: Coverage verification complete
 input:: @experiment-validation-coverage

@@ -5,7 +5,7 @@ level: 2
 parent_spec:
   name: "iNNfo_V_0-6-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"
-blueprint_version: "V_0-7-0"
+blueprint_version: "V_0-8-0"
 title: "Procedures App"
 relationship_types:
   hierarchy:
@@ -31,7 +31,7 @@ nature:
 # NN index
 
 * [[Procedure]]
-* [[Work]]
+  * [[Work]]
 * [[Artifact]]
 * [[Tools]]
 * [[Roles]]
@@ -104,25 +104,10 @@ concept:: Procedure
 type:: string
 description:: References to expected Artifact concepts produced by the procedure.
 
-## NN Field Definition: executed_by
-concept:: Procedure
-type:: string
-description:: Reference to responsible agent or functional role executing the procedure.
-
-## NN Field Definition: procedure_model
-concept:: Procedure
-type:: knowledge
-description:: Link to concrete procedure definition or executable stepper model _NN.md.
-
 ## NN Field Definition: step_type
 concept:: Work
 type:: select
 options:: [task, decision, event]
-
-## NN Field Definition: parent
-concept:: Work
-type:: reference
-target_concepts:: [Work]
 
 ## NN Field Definition: next
 concept:: Work
@@ -145,6 +130,11 @@ concept:: Work
 type:: string
 description:: Shell command an engine step runs; {slot} placeholders take the run's parameters.
 
+## NN Field Definition: call
+concept:: Work
+type:: string
+description:: The procedure this step runs as a sub-procedure: the file name of a procedure document in the same procedures folder, or {slot} naming a procedure slot that a scope fills. A run of the calling procedure does not walk the called one: the actor starts a run of it, and the console opens it.
+
 ## NN Field Definition: produces
 concept:: Work
 type:: string
@@ -154,7 +144,7 @@ description:: Path or address the step produces; {slot} placeholders take the ru
 concept:: Work
 type:: select
 options:: [human, agent, engine]
-description:: Who performs the step. A step without executor is performed by an agent.
+description:: How the step runs: performed by a person (human), by an agent (agent, the default for a step that declares none) or by the runner executing command (engine). Who answers for the step is the work-roles matrix.
 
 ## NN Field Definition: input
 concept:: Work
@@ -174,6 +164,7 @@ type:: string
 concept:: Work
 type:: reference
 target_concepts:: [Tools]
+description:: The Tools element the step uses. It never sets how the step runs: that is executor.
 
 ## NN Field Definition: kind
 concept:: Artifact
@@ -225,8 +216,8 @@ values:: [Creates, Modifies, Validates, Reviews]
 ## Philosophy
 
 The Procedures Template operates on two complementary tiers:
-1. **Catalog Tier (Procedure)**: Enables progressive disclosure of all workspace procedures, capturing concise summaries, categorization, expected I/O, and links to detailed execution models (`procedure_model`).
-2. **Execution Tier (Work, Artifact, Tools, Roles)**: Defines granular FSM step sequences, accountability matrices (RACI), and tool bindings for step-by-step procedure execution.
+1. **Header (Procedure)**: Every procedure document holds exactly one `Procedure` element, its header. Its `summary`, `category`, `inputs_required` and `outputs_expected` are what the derived procedure catalog shows, so an agent can route by summary without opening the steps (progressive disclosure).
+2. **Steps (Work, Artifact, Tools, Roles)**: The `Work` steps nest under the header and are linked by `next`; artifacts, tools and the RACI matrices describe what each step consumes, produces, uses and who answers for it.
 
 ## Specification
 
@@ -234,39 +225,50 @@ The Procedures Template operates on two complementary tiers:
 
 | Concept | Type | Purpose |
 |---|---|---|
-| **Procedure** | `list` | Catalog entry declaring procedure metadata, summary, required inputs, expected outputs, and model links |
-| **Work** | `list` | Hierarchical tree of procedures and steps. Root elements (no `parent`) = procedure; child elements (`parent` set) = step |
+| **Procedure** | `list` | The header of one procedure document: summary, category, required inputs and expected outputs. Exactly one per document |
+| **Work** | `list` | A step of the procedure, nested under its `Procedure` header (`### NN Work:`) and ordered by `next` |
 | **Artifact** | `list` | Documents, deliverables, or data produced or consumed by work steps |
 | **Tools** | `list` | Software or hardware used to execute work steps |
 | **Roles** | `list` | Functional roles with accountability scope (internal/external) |
 
 ## Template
 
-### Level 3 Catalog Template
+### Level 3 Procedure Document Template
+
+A procedure document holds one `Procedure` header and nests its steps under it. The procedure catalog is derived from the headers of every procedure document; no catalog document is written by hand. A header with no steps is a declared procedure: it is listed with its `summary`, and starting a run of it is refused with `PROCEDURE_NOT_IMPLEMENTED`. A procedure an agent skill carries out is one `executor:: agent` step whose `tool` names that skill as a `Tools` element.
 
 ```yaml
 ---
 level: 3
 parent_spec:
-  name: "procedures"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 knowledge_version: "V_0-1-0"
-title: "<Procedures Catalog Name>"
+title: "<Procedure Name>"
 ---
-
-# NN index
-
-* [[Procedure]]
 
 # NN Procedure
 
-## NN Procedure: Workflow Name
-category:: transformation
-summary:: Concise summary of workflow intent and steps.
-inputs_required:: [[Source or Model Name]]
-outputs_expected:: [[Artifact Name]]
-executed_by:: Lead Engineer
-procedure_model:: procedures/workflow_NN.md
+## NN Procedure: Review a Draft
+slug:: review-a-draft
+category:: audit
+summary:: Reviews one draft and either publishes it or sends it back.
+inputs_required:: @draft-doc
+outputs_expected:: @published-doc
+Covers one draft from the moment it is written to the moment it is published or returned.
+
+### NN Work: Write the draft
+slug:: draft
+next:: @review
+output:: @draft-doc
+Write the draft at the declared path.
+
+### NN Work: Review the draft
+slug:: review
+step_type:: decision
+decision:: Approve the draft?
+executor:: human
+next:: [@publish, @rework]
 ```
 
 ### Running a Procedure
@@ -274,8 +276,9 @@ procedure_model:: procedures/workflow_NN.md
 A procedure is run by the procedure runner, which records each run as an `executions` instance model and derives the run's state from its events; a run never writes the procedure definition.
 
 - **Parameters.** The procedure's frontmatter `slots` are the run's parameters: a required slot must be given when the run starts, and a slot's `default` applies otherwise.
-- **Steps.** Every runnable Work step carries a `slug::`: run events reference steps by slug. `next` names the following step; a decision step (`step_type:: decision`) asks its `decision` question and lists several `next` targets, each guarded by the target's `condition`.
-- **Executors.** `executor` says who performs a step: `human`, `agent` (the default) or `engine`, which runs `command` with the slots substituted.
+- **Steps.** A run walks every Work step of one procedure document, starting at the one step with no incoming `next`; a run never addresses part of a document. Every Work step carries a `slug::`: run events reference steps by slug. `next` names the following step; a decision step (`step_type:: decision`) asks its `decision` question and lists several `next` targets, each guarded by the target's `condition`.
+- **Calls.** A step with `call` runs another procedure as a sub-procedure: `call:: review_procedures_NN.md` names a procedure document of the same folder, and `call:: {post_step}` names a procedure slot, so the scope decides which procedure is called. The run of the calling procedure records the step like any other; the called procedure has its own run.
+- **Executors.** `executor` says how a step runs: `human`, `agent` (the default) or `engine`, which runs `command` with the slots substituted. `tool` never sets it. Who performed each attempt is recorded by the run as the author of that attempt's changeset.
 - **Artifacts.** An artifact declares `kind` (`file`, `element`, `changeset`), its output location `at` (with `{slot}` substitution), and its check `verify` (which defaults from `kind` and `at`). A step's `output` artifacts declare `verify`, and `required:: false` exempts an optional one.
 
 ### Step Body Prose
@@ -290,7 +293,7 @@ A Work element's fields are its contract; the Markdown under them is its body, a
 
 **Six defaults.** Each carries the reason it exists. Depart from one when that reason does not apply to your step, and say why in the body or the commit.
 
-- **The element decides the mood.** A root element (no `parent`) documents: third person, what the procedure covers, what it does not cover, and what triggers it. A step performed by `human` or `agent` instructs: it opens with the verb the actor performs. An `engine` step describes: nobody executes it, the command does, so the body states what running that command establishes instead of ordering a person to do it. When `condition` cannot express why a step is optional, open the body with `Optional:`.
+- **The element decides the mood.** The `Procedure` header documents: third person, what the procedure covers, what it does not cover, and what triggers it. A step performed by `human` or `agent` instructs: it opens with the verb the actor performs. An `engine` step describes: nobody executes it, the command does, so the body states what running that command establishes instead of ordering a person to do it. When `condition` cannot express why a step is optional, open the body with `Optional:`.
 - **A decision step states criteria.** Its `decision` field asks the question, and the body makes each answer checkable. A command the decider must run first belongs in a step of its own, not inside the question.
 - **A body does not restate a field.** Repeating `produces` or `tool` in prose creates a second source of truth, and the two drift. Restate one when the reader cannot see the fields at all — an exported runbook — and say that is why.
 - **A body does not restate the grammar.** When a step applies a rule the blueprint already defines, cite the field definition instead of re-explaining it: an explanation that lives in two places ages in one.
@@ -313,10 +316,10 @@ The convention is by file name, not frontmatter, so it never collides with the t
 ## Procedure
 
 ### Summary
-Catalog entry declaring procedure metadata, functional categorization, input requirements, expected outputs, execution owner, and linked submodels.
+The header of one procedure document: its summary, functional category, required inputs and expected outputs.
 
 ### Description
-A Procedure is a high-level operational workflow catalog item. It encapsulates standard operating procedures (SOPs), repeatable transformation routines, verification pipelines, or governance checklists. Each procedure captures its functional domain through `category` (ingestion, transformation, audit, reporting, custom), defines operational prerequisites via `inputs_required`, specifies tangible outcomes in `outputs_expected`, assigns responsibility with `executed_by`, and optionally links to a granular execution model through `procedure_model`.
+A Procedure is the header of a procedure document, and every procedure document holds exactly one. It names a standard operating procedure (SOP), a repeatable transformation routine, a verification pipeline or a governance checklist. It captures its functional domain through `category` (ingestion, transformation, audit, reporting, custom), its prerequisites in `inputs_required` and its outcomes in `outputs_expected`, and its `summary` is what the derived catalog shows. Its body documents the procedure; its steps are the `Work` elements nested under it. Who answers for the procedure and its steps is the `work-roles matrix`.
 
 ### Methodologies
 **Standard Operating Procedure (SOP) Framework**
@@ -332,17 +335,17 @@ Structures procedure categorization and I/O contracts into clean business proces
 `Define a structured procedure catalog entry for our verification gate.`
 `Specify the required inputs and expected deliverables for the release workflow.`
 `Categorize all workspace procedures and map their execution owners.`
-`Link high-level catalog procedures to executable FSM submodels.`
+`Write the summary an agent reads to decide whether this procedure applies.`
 
 ---
 
 ## Work
 
 ### Summary
-Hierarchical execution tree defining end-to-end workflows, stages, decision nodes, and granular action steps.
+One step of a procedure: a task, a decision gate or an event, nested under the document's Procedure header.
 
 ### Description
-Work represents the structural execution elements of a procedure. Root elements (where `parent` is omitted) represent top-level procedures or workflows, while child elements (where `parent` references a parent Work item) represent sequential steps, decision gates, or sub-tasks. Each work element defines its operational character through `step_type` (task, decision, event), establishes execution ordering via `next` and `condition`, links consumed inputs and produced outputs via `input` and `output`, and associates execution tooling via `tool`.
+Work represents one step of a procedure: a task, a decision gate or an event, nested under the document's `Procedure` header. The document is the container, so a step never names its parent. Each work element defines its operational character through `step_type` (task, decision, event), establishes execution ordering via `next` and `condition`, links consumed inputs and produced outputs via `input` and `output`, and associates execution tooling via `tool`.
 
 ### Methodologies
 **Hierarchical Task Analysis (HTA)**
@@ -358,7 +361,7 @@ Visualizes sequential work steps to identify bottlenecks, redundant handoffs, an
 `Decompose this multi-step procedure into structured Work steps.`
 `Define conditional branches and decision gates for the workflow.`
 `Link input and output artifacts to each granular work step.`
-`Construct an end-to-end step sequence using next and parent references.`
+`Construct an end-to-end step sequence using next references.`
 
 ---
 

@@ -1,29 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Audit Skill Gaps Procedure"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Audit Skill Gaps
+## NN Procedure: Audit Skill Gaps
 slug:: audit-skill-gaps
-step_type:: task
-condition:: An organization model is loaded
-input:: @active-organization-model
-output:: @skill-gap-analysis-report
-output_status:: verified
-tool:: @ai-agent
-executor:: agent
-scope:: internal
-Analyze required organizational functions, active positions, and assigned persons against their declared skills to identify competency shortages and hiring/training needs.
+summary:: Analyze required organizational functions, active positions, and assigned persons against their declared skills to identify competency shortages and hiring/training needs.
+inputs_required:: @active-organization-model
+outputs_expected:: @skill-gap-analysis-report
 
-## NN Work: Map Functions to Positions
+It starts when: An organization model is loaded.
+
+### NN Work: Map Functions to Positions
 slug:: map-functions-to-positions
-parent:: @audit-skill-gaps
 step_type:: task
 next:: @evaluate-person-skills
 condition:: Procedure starts
@@ -35,9 +30,8 @@ executor:: agent
 scope:: internal
 Examine the functions-positions matrix and positions-roles matrix to determine the complete functional coverage and accountability required for each seat.
 
-## NN Work: Evaluate Person Skills
+### NN Work: Evaluate Person Skills
 slug:: evaluate-person-skills
-parent:: @audit-skill-gaps
 step_type:: task
 next:: @generate-gap-report
 condition:: Position mapping complete
@@ -49,9 +43,8 @@ executor:: agent
 scope:: internal
 Compare the declared skills of persons currently occupying each position with the competencies necessary to execute assigned organizational functions.
 
-## NN Work: Generate Gap Report
+### NN Work: Generate Gap Report
 slug:: generate-gap-report
-parent:: @audit-skill-gaps
 step_type:: task
 condition:: Competency evaluation complete
 input:: @evaluated-competencies

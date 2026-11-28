@@ -667,50 +667,23 @@ export function coreBlueprintOf(parentSpecName) {
 }
 
 /**
- * A console model is a `knowledge` model or a `procedures` model (never a
- * `procedures/` submodel). See `isConsoleModel` in the naming contract.
+ * A console model is a `knowledge` model or a procedure document, wherever it lives. See
+ * `isConsoleModel` in the naming contract.
  *
  * On top of that, the administrator's core-blueprint catalogs are surfaced too
  * (same console mechanism as any other model): the allowlisted `catalog`-role
  * documents (Sources, Artifacts, Procedures). The core predicate filters these
  * out by role, so the console opts them back in here.
  */
-function isModelDocument(relPath, content, linkedProcedureModels) {
+function isModelDocument(relPath, content) {
   const frontmatter = frontmatterOf(content)
   // Notes without a YAML header are not models.
   if (!frontmatter) return false
-  if (payloadHelper.isConsoleModel({ path: relPath, frontmatter, linkedProcedureModels }))
-    return true
+  if (payloadHelper.isConsoleModel({ path: relPath, frontmatter })) return true
   const parentName = payloadHelper.parentSpecNameOf(frontmatter)
   const role = payloadHelper.roleOf({ path: relPath, parentSpecName: parentName })
   if (role === 'catalog') return CONSOLE_CORE_BLUEPRINTS.has(coreBlueprintOf(parentName))
   return false
-}
-
-/**
- * Repo-relative targets of every `procedure_model::` a document declares for a DIFFERENT
- * file. An execution stepper is reached this way from a catalog `Procedure`; a custom
- * procedure that names itself is self-contained and is NOT added. Used to exclude steppers
- * from the console regardless of which folder holds them.
- */
-function collectForeignProcedureTargets(root, files) {
-  const targets = new Set()
-  for (const f of files) {
-    const rel = relative(root, f).replace(/\\/g, '/')
-    let content
-    try {
-      content = readFileSync(f, 'utf-8')
-    } catch {
-      continue
-    }
-    const re = /^[ \t]*procedure_model::[ \t]*(\S+)[ \t]*$/gim
-    let m
-    while ((m = re.exec(content))) {
-      const target = m[1].replace(/^"|"$/g, '').trim().replace(/\\/g, '/')
-      if (target && target !== rel) targets.add(target)
-    }
-  }
-  return targets
 }
 
 function isLevel3(content) {
@@ -1784,13 +1757,9 @@ async function loadModels(root, onWarning = writeExportWarning) {
   const { compareCodeUnits } = await viewsLibOnce()
   const models = []
   const files = await findModelFiles(root, onWarning)
-  const linkedProcedureModels = collectForeignProcedureTargets(root, files)
   for (const f of files) {
     const content = await readFile(f, 'utf-8')
-    if (
-      isModelDocument(relative(root, f).replace(/\\/g, '/'), content, linkedProcedureModels) &&
-      isLevel3(content)
-    ) {
+    if (isModelDocument(relative(root, f).replace(/\\/g, '/'), content) && isLevel3(content)) {
       const stem = payloadHelper.displayStem(basename(f))
       models.push({
         filePath: f,

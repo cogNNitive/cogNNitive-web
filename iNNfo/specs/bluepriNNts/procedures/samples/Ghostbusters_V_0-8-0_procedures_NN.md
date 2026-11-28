@@ -1,31 +1,26 @@
 ---
 level: 3
-blueprint_version: "V_0-7-0"
+blueprint_version: "V_0-8-0"
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
 knowledge_version: "undefined"
 title: "Ghostbusters Inc. Standard Containment Procedure Model"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Standard Ghost Containment Protocol
+## NN Procedure: Standard Ghost Containment Protocol
 slug:: standard-ghost-containment-protocol
-step_type:: task
-next:: @subterranean-containment-grid-shutdown-recovery
-condition:: Emergency call received
-input:: @client-emergency-intake-call
-output:: @vault-containment-log
-output_status:: verified
-tool:: @high-voltage-subterranean-containment-grid
-scope:: internal
+summary:: Standard operating procedure for responding to NYC spectral emergency calls, entrapping psychokinetic entities, and securing them inside the headquarters containment grid.
+inputs_required:: @client-emergency-intake-call
+outputs_expected:: @vault-containment-log
 tags:: [procedure, standard-protocol, core-workflow, containment]
-Standard operating procedure for responding to NYC spectral emergency calls, entrapping psychokinetic entities, and securing them inside the headquarters containment grid.
 
-## NN Work: Emergency Call Triage
+It starts when: Emergency call received.
+
+### NN Work: Emergency Call Triage
 slug:: emergency-call-triage
-parent:: @standard-ghost-containment-protocol
 step_type:: event
 next:: @site-pke-scanning
 condition:: Client accepts billing retainer terms
@@ -37,9 +32,8 @@ scope:: internal
 tags:: [procedure, triage, dispatch, intake]
 Janine Melnitz logs incoming calls, confirms commercial billing terms, and dispatches the Ecto-1 field crew.
 
-## NN Work: Site PKE Scanning
+### NN Work: Site PKE Scanning
 slug:: site-pke-scanning
-parent:: @standard-ghost-containment-protocol
 step_type:: task
 next:: @proton-stream-target-lock
 condition:: Crew arrives at target location
@@ -51,9 +45,8 @@ scope:: internal
 tags:: [procedure, field-recon, pke-scanning, telemetry]
 Dr. Egon Spengler scans the target location using the PKE Meter to measure psychokinetic energy intensity and locate spectral class-V entities.
 
-## NN Work: Proton Stream Target Lock
+### NN Work: Proton Stream Target Lock
 slug:: proton-stream-target-lock
-parent:: @standard-ghost-containment-protocol
 step_type:: task
 next:: @muon-trap-deployment
 condition:: Target entity identified in PKE map
@@ -65,9 +58,8 @@ scope:: internal
 tags:: [procedure, frontline, particle-beam, high-voltage]
 Dr. Ray Stantz and Winston Zeddemore unholster particle throwers, fire proton streams, and hold the entity in a stable containment field.
 
-## NN Work: Muon Trap Deployment
+### NN Work: Muon Trap Deployment
 slug:: muon-trap-deployment
-parent:: @standard-ghost-containment-protocol
 step_type:: task
 next:: @subterranean-facility-transfer
 condition:: Entity immobilized by proton beam
@@ -79,9 +71,8 @@ scope:: internal
 tags:: [procedure, trap-deployment, capture, muon]
 Dr. Peter Venkman slides the muon trap beneath the entrapped entity, steps on the foot pedal, and seals the entity inside the containment canister.
 
-## NN Work: Subterranean Facility Transfer
+### NN Work: Subterranean Facility Transfer
 slug:: subterranean-facility-transfer
-parent:: @standard-ghost-containment-protocol
 step_type:: task
 condition:: Sealed trap returned to headquarters
 input:: @sealed-ghost-trap-unit
@@ -91,45 +82,6 @@ tool:: @high-voltage-subterranean-containment-grid
 scope:: internal
 tags:: [procedure, facility-transfer, vault, permanent-containment]
 The crew returns to headquarters, inserts the sealed trap into the containment vault access port, and opens the deposit valve.
-
-## NN Work: Subterranean Containment Grid Shutdown Recovery
-slug:: subterranean-containment-grid-shutdown-recovery
-step_type:: task
-condition:: Voltage drop detected in subterranean vault
-input:: @power-failure-alarm
-output:: @restored-high-voltage-grid
-output_status:: verified
-tool:: @auxiliary-diesel-generator
-scope:: internal
-tags:: [procedure, emergency-recovery, backup-power, high-risk]
-Emergency protocol executed in the event of an external grid power failure or Municipal Environmental Protection Agency intervention.
-
-## NN Work: Emergency Alarm Intercept
-slug:: emergency-alarm-intercept
-parent:: @subterranean-containment-grid-shutdown-recovery
-step_type:: event
-next:: @backup-generator-coupling
-condition:: Voltage drops below 99.8% threshold
-input:: @power-failure-alarm
-output:: @system-fault-diagnostic
-output_status:: verified
-tool:: @grid-status-warning-panel
-scope:: internal
-tags:: [procedure, telemetry, alarm-intercept, safety]
-Detection of voltage drop in the subterranean vault, triggering immediate audio-visual alarms across headquarters.
-
-## NN Work: Backup Generator Coupling
-slug:: backup-generator-coupling
-parent:: @subterranean-containment-grid-shutdown-recovery
-step_type:: task
-condition:: Fault diagnostic confirms main grid failure
-input:: @system-fault-diagnostic
-output:: @restored-high-voltage-grid
-output_status:: verified
-tool:: @auxiliary-diesel-generator
-scope:: internal
-tags:: [procedure, manual-override, diesel-coupling, power-restoration]
-Manual engagement of the auxiliary diesel power coupling to maintain grid containment pressure and prevent catastrophic spectral release.
 
 # NN Artifact
 
@@ -229,8 +181,6 @@ Commands field operations, directs client relations, and oversees safety complia
 | Proton Stream Target Lock | - | Responsible | Consulted | Accountable |
 | Muon Trap Deployment | - | Responsible | - | Accountable |
 | Subterranean Facility Transfer | - | Responsible | Accountable | - |
-| Emergency Alarm Intercept | Responsible | - | Accountable | Informed |
-| Backup Generator Coupling | - | Responsible | Accountable | Informed |
 
 # NN matrices: work-tools matrix
 | Work \ Tools | Headquarters Dispatch Console | PKE Meter | Proton Pack Particle Accelerator | Muon Ghost Trap | High-Voltage Subterranean Containment Grid | Grid Status Warning Panel | Auxiliary Diesel Generator |
@@ -240,8 +190,6 @@ Commands field operations, directs client relations, and oversees safety complia
 | Proton Stream Target Lock | - | - | Uses | - | - | - | - |
 | Muon Trap Deployment | - | - | - | Uses | - | - | - |
 | Subterranean Facility Transfer | - | - | - | - | Uses | - | - |
-| Emergency Alarm Intercept | - | - | - | - | - | Uses | - |
-| Backup Generator Coupling | - | - | - | - | - | - | Uses |
 
 # NN matrices: work-artifacts matrix
 | Work \ Artifact | Client Emergency Intake Call | Dispatch Ticket | PKE Survey Map | Class-V Entity Entrapment Beam | Sealed Ghost Trap Unit | Vault Containment Log | Power Failure Alarm | System Fault Diagnostic | Restored High-Voltage Grid |
@@ -251,5 +199,3 @@ Commands field operations, directs client relations, and oversees safety complia
 | Proton Stream Target Lock | - | - | Reviews | Creates | - | - | - | - | - |
 | Muon Trap Deployment | - | - | - | Modifies | Creates | - | - | - | - |
 | Subterranean Facility Transfer | - | - | - | - | Modifies | Creates | - | - | - |
-| Emergency Alarm Intercept | - | - | - | - | - | - | Validates | Creates | - |
-| Backup Generator Coupling | - | - | - | - | - | - | - | Reviews | Creates |

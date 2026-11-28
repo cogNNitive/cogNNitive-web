@@ -1,28 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Using the Innovation Blueprint"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Using the Innovation Blueprint
+## NN Procedure: Using the Innovation Blueprint
 slug:: using-the-innovation-blueprint
-step_type:: task
-condition:: You want to run and rank an innovation portfolio
-input:: @innovation-portfolio
-output:: @scored-pipeline
-tool:: @console
-executor:: human
-scope:: internal
-Getting started with the Innovation blueprint: create a Program, capture Opportunities, shape Initiatives, then score the pipeline.
+summary:: Getting started with the Innovation blueprint: create a Program, capture Opportunities, shape Initiatives, then score the pipeline.
+inputs_required:: @innovation-portfolio
+outputs_expected:: @scored-pipeline
 
-## NN Work: Create a Program
+It starts when: You want to run and rank an innovation portfolio.
+
+### NN Work: Create a Program
 slug:: create-a-program
-parent:: @using-the-innovation-blueprint
 step_type:: task
 next:: @capture-opportunities
 condition:: No innovation model exists yet
@@ -33,9 +29,8 @@ executor:: human
 scope:: internal
 Add the `Program` element that anchors the portfolio.
 
-## NN Work: Capture Opportunities
+### NN Work: Capture Opportunities
 slug:: capture-opportunities
-parent:: @using-the-innovation-blueprint
 step_type:: task
 next:: @shape-initiatives
 condition:: Program created
@@ -46,9 +41,8 @@ executor:: human
 scope:: internal
 Add `Opportunity` elements and the `Person` elements who surface or sponsor them.
 
-## NN Work: Shape Initiatives
+### NN Work: Shape Initiatives
 slug:: shape-initiatives
-parent:: @using-the-innovation-blueprint
 step_type:: task
 next:: @score-the-innovation-pipeline
 condition:: Opportunities captured
@@ -59,9 +53,8 @@ executor:: human
 scope:: internal
 Promote the strongest opportunities into `Initiative` elements with owners.
 
-## NN Work: Score the Innovation Pipeline
+### NN Work: Score the Innovation Pipeline
 slug:: score-the-innovation-pipeline
-parent:: @using-the-innovation-blueprint
 step_type:: task
 condition:: Initiatives shaped
 input:: @innovation-portfolio

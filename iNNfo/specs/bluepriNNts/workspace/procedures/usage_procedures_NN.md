@@ -1,28 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Using the Workspace Blueprint"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Using the Workspace Blueprint
+## NN Procedure: Using the Workspace Blueprint
 slug:: using-the-workspace-blueprint
-step_type:: task
-condition:: You want to set up, configure, and maintain a cognitive workspace
-input:: @workspace-specification
-output:: @validated-workspace
-tool:: @console
-executor:: human
-scope:: internal
-Getting started with the Workspace blueprint: configure the workspace root, register models and domain blueprints, stage and import external sources, and run validation procedures.
+summary:: Getting started with the Workspace blueprint: configure the workspace root, register models and domain blueprints, stage and import external sources, and run validation procedures.
+inputs_required:: @workspace-specification
+outputs_expected:: @validated-workspace
 
-## NN Work: Configure the Workspace Root
+It starts when: You want to set up, configure, and maintain a cognitive workspace.
+
+### NN Work: Configure the Workspace Root
 slug:: configure-the-workspace-root
-parent:: @using-the-workspace-blueprint
 step_type:: task
 next:: @register-models-and-blueprints
 condition:: No workspace root defined yet
@@ -33,9 +29,8 @@ executor:: human
 scope:: internal
 Define the workspace identity, directory structure, conventions, and global configuration.
 
-## NN Work: Register Models and Blueprints
+### NN Work: Register Models and Blueprints
 slug:: register-models-and-blueprints
-parent:: @using-the-workspace-blueprint
 step_type:: task
 next:: @import-sources-and-run-procedures
 condition:: Workspace root defined
@@ -46,9 +41,8 @@ executor:: human
 scope:: internal
 Register models, declare blueprint dependencies, and establish domain hierarchy.
 
-## NN Work: Import Sources and Run Procedures
+### NN Work: Import Sources and Run Procedures
 slug:: import-sources-and-run-procedures
-parent:: @using-the-workspace-blueprint
 step_type:: task
 next:: @validate-workspace-integrity
 condition:: Workspace configured
@@ -59,9 +53,8 @@ executor:: agent
 scope:: internal
 Import visual, audio, video, and tabular sources using workspace procedures.
 
-## NN Work: Validate Workspace Integrity
+### NN Work: Validate Workspace Integrity
 slug:: validate-workspace-integrity
-parent:: @using-the-workspace-blueprint
 step_type:: task
 condition:: Procedures executed
 input:: @processed-sources

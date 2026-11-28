@@ -1,39 +1,27 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Multimodal Video Source Import & Processing Procedure"
 ---
 
 >
 > **Experimental External Ingestion**: Audio extraction, speech-to-text transcription, and keyframe slide OCR are external helper processes assisted by the AI agent or user environment. cogNNitive natively manages the resulting normalized Markdown and provenance tracing.
 
-# NN index
+# NN Procedure
 
-* [[Work]]
-* [[Artifact]]
-* [[Tools]]
-* [[Roles]]
-
-# NN Work
-
-## NN Work: Import and Process Multimodal Video
+## NN Procedure: Import and Process Multimodal Video
 slug:: import-and-process-multimodal-video
-step_type:: task
-condition:: Video recordings or screencasts present in import folder
-input:: @raw-video-recordings-directory
-output:: @verified-target-domain-model
-output_status:: verified
-tool:: @ai-agent
-executor:: agent
-scope:: internal
-Ingest video sources, orchestrate audio extraction/ASR and keyframe slide OCR via external tooling, consolidate into multimodal Markdown under sources/nn/ with companion media linking, bind to domain model elements, and validate integrity.
+summary:: Ingest video sources, orchestrate audio extraction/ASR and keyframe slide OCR via external tooling, consolidate into multimodal Markdown under sources/nn/ with companion media linking, bind to domain model elements, and validate integrity.
+inputs_required:: @raw-video-recordings-directory
+outputs_expected:: @verified-target-domain-model
 
-## NN Work: Discover Raw Video Files
+It starts when: Video recordings or screencasts present in import folder.
+
+### NN Work: Discover Raw Video Files
 slug:: discover-raw-video-files
-parent:: @import-and-process-multimodal-video
 step_type:: task
 next:: @verify-and-deduplicate-video-sources
 condition:: Ingestion workflow triggered
@@ -45,9 +33,8 @@ executor:: agent
 scope:: internal
 Scan sources/import/ or drop directories for video files (.mp4, .mkv, .webm, .mov) lacking transcription or visual summary.
 
-## NN Work: Verify and Deduplicate Video Sources
+### NN Work: Verify and Deduplicate Video Sources
 slug:: verify-and-deduplicate-video-sources
-parent:: @import-and-process-multimodal-video
 step_type:: decision
 next:: @extract-audio-and-key-visual-slides
 decision:: whether the queue holds any video that is not already registered by SHA-256 in sources/nn/
@@ -60,9 +47,8 @@ executor:: agent
 scope:: internal
 Compute SHA-256 hashes for video files and verify against existing normalized sources in sources/nn/ to avoid duplicate compute.
 
-## NN Work: Extract Audio and Key Visual Slides
+### NN Work: Extract Audio and Key Visual Slides
 slug:: extract-audio-and-key-visual-slides
-parent:: @import-and-process-multimodal-video
 step_type:: task
 next:: @transcribe-speech-and-ocr-slides
 condition:: Ingestion queue validated
@@ -74,9 +60,8 @@ executor:: agent
 scope:: external
 Extract audio track to 16 kHz mono WAV and extract key visual slides or chapter scene changes using ffmpeg.
 
-## NN Work: Transcribe Speech and OCR Slides
+### NN Work: Transcribe Speech and OCR Slides
 slug:: transcribe-speech-and-ocr-slides
-parent:: @import-and-process-multimodal-video
 step_type:: task
 next:: @stage-consolidated-multimodal-document
 condition:: Audio and keyframes extracted
@@ -88,9 +73,8 @@ executor:: agent
 scope:: external
 Run speech-to-text on the audio track and OCR on extracted keyframes to generate aligned speech transcripts with embedded slide summaries.
 
-## NN Work: Stage Consolidated Multimodal Document
+### NN Work: Stage Consolidated Multimodal Document
 slug:: stage-consolidated-multimodal-document
-parent:: @import-and-process-multimodal-video
 step_type:: task
 next:: @normalize-multimodal-source-with-media-link
 condition:: Multimodal text synthesized
@@ -102,9 +86,8 @@ executor:: agent
 scope:: internal
 Stage generated Markdown document in sources/import/ matching the base name of the source video for companion media pairing.
 
-## NN Work: Normalize Multimodal Source with Media Link
+### NN Work: Normalize Multimodal Source with Media Link
 slug:: normalize-multimodal-source-with-media-link
-parent:: @import-and-process-multimodal-video
 step_type:: task
 next:: @bind-video-source-to-target-entity
 condition:: Multimodal document staged
@@ -116,9 +99,8 @@ executor:: agent
 scope:: internal
 Run nn-trannsform scanner to produce sources/nn/ Markdown with media_file companion linking and provenance frontmatter.
 
-## NN Work: Bind Video Source to Target Entity
+### NN Work: Bind Video Source to Target Entity
 slug:: bind-video-source-to-target-entity
-parent:: @import-and-process-multimodal-video
 step_type:: task
 next:: @validate-target-model
 condition:: Normalized source created
@@ -130,9 +112,8 @@ executor:: agent
 scope:: internal
 Update the sources:: field of the target Element (e.g. Procedures, Training, Documentation) in the active domain model.
 
-## NN Work: Validate Target Model
+### NN Work: Validate Target Model
 slug:: validate-target-model
-parent:: @import-and-process-multimodal-video
 step_type:: task
 condition:: Domain model updated
 input:: @updated-domain-model
@@ -142,6 +123,14 @@ tool:: @innfo-mcp
 executor:: agent
 scope:: internal
 Validate updated domain model via innfo-mcp to ensure reference integrity.
+
+# NN index
+
+* [[Work]]
+* [[Artifact]]
+* [[Tools]]
+* [[Roles]]
+
 
 # NN Tools
 

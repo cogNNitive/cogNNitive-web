@@ -7688,13 +7688,7 @@ function isConsoleModel(f) {
   const parentSpecName = parentSpecNameOf(f.frontmatter);
   const role = roleOf({ path: f.path, parentSpecName });
   if ((role === "knowledge" || role === "procedure") && isUnderRootSources(f.path)) return false;
-  if (role === "knowledge") return true;
-  if (role === "procedure") {
-    if (!segmentsOf(f.path).includes("procedures")) return true;
-    const linked = f.linkedProcedureModels;
-    if (!linked) return false;
-    return !linked.has(f.path.replace(/\\/g, "/"));
-  }
+  if (role === "knowledge" || role === "procedure") return true;
   return natureOfBlueprint(coreBlueprintKey(parentSpecName))?.structure === "catalog";
 }
 var VERSION_TOKEN_RE = /_V_\d+-\d+-\d+/i;
@@ -7707,7 +7701,8 @@ function checkNameInvariant(path6, bp) {
   const parsed = parseName(base);
   if (parsed.kind !== "nn") return null;
   const lower = base.toLowerCase();
-  if (lower === ENTRYPOINT_FILENAME.toLowerCase() || lower === SPEC_FILENAME.toLowerCase()) return null;
+  if (lower === ENTRYPOINT_FILENAME.toLowerCase() || lower === SPEC_FILENAME.toLowerCase())
+    return null;
   if (STRUCTURAL_STEM_RE.test(parsed.stem)) return null;
   const hasVersion = VERSION_TOKEN_RE.test(parsed.stem);
   const stem = parsed.stem.replace(VERSION_TOKEN_RE, "");

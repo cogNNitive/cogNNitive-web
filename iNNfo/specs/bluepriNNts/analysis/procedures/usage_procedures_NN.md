@@ -1,28 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Using the Analysis Blueprint"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Using the Analysis Blueprint
+## NN Procedure: Using the Analysis Blueprint
 slug:: using-the-analysis-blueprint
-step_type:: task
-condition:: You want to stress-test the assumptions and risks behind a model
-input:: @analysis-model
-output:: @validated-analysis
-tool:: @console
-executor:: human
-scope:: internal
-Getting started with the Analysis blueprint: create an Analysis model, declare its assumptions, risks, keys and suggestions, then validate coherence and prioritise the experiments worth running.
+summary:: Getting started with the Analysis blueprint: create an Analysis model, declare its assumptions, risks, keys and suggestions, then validate coherence and prioritise the experiments worth running.
+inputs_required:: @analysis-model
+outputs_expected:: @validated-analysis
 
-## NN Work: Create the Analysis
+It starts when: You want to stress-test the assumptions and risks behind a model.
+
+### NN Work: Create the Analysis
 slug:: create-the-analysis
-parent:: @using-the-analysis-blueprint
 step_type:: task
 next:: @declare-assumptions-and-risks
 condition:: No analysis model exists yet
@@ -33,9 +29,8 @@ executor:: human
 scope:: internal
 Add an `Analysis` element and populate the `Assumptions`, `Risks`, `Keys` and `Suggestions` elements declared in the index.
 
-## NN Work: Declare Assumptions and Risks
+### NN Work: Declare Assumptions and Risks
 slug:: declare-assumptions-and-risks
-parent:: @using-the-analysis-blueprint
 step_type:: task
 next:: @validate-coherence
 condition:: Assumptions and risks are captured
@@ -46,9 +41,8 @@ executor:: agent
 scope:: internal
 Map each assumption to the risks that would break it in the assumptions-risks matrix.
 
-## NN Work: Validate Coherence
+### NN Work: Validate Coherence
 slug:: validate-coherence
-parent:: @using-the-analysis-blueprint
 step_type:: task
 next:: @run-the-coherence-audit
 condition:: Assumptions risk map complete
@@ -59,9 +53,8 @@ executor:: agent
 scope:: internal
 Fill the validation coherence checks so every high-impact risk carries a mitigation or an experiment.
 
-## NN Work: Run the Coherence Audit
+### NN Work: Run the Coherence Audit
 slug:: run-the-coherence-audit
-parent:: @using-the-analysis-blueprint
 step_type:: task
 next:: @prioritize-experiments
 condition:: Coherence checks present
@@ -72,9 +65,8 @@ executor:: agent
 scope:: internal
 Execute the `run-coherence-audit` procedure to surface orphaned risks and unverified assumptions.
 
-## NN Work: Prioritize Experiments
+### NN Work: Prioritize Experiments
 slug:: prioritize-experiments
-parent:: @using-the-analysis-blueprint
 step_type:: task
 condition:: Strategic coherence audit produced
 input:: @strategic-coherence-audit

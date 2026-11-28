@@ -1,28 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Using the Documentation Blueprint"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Using the Documentation Blueprint
+## NN Procedure: Using the Documentation Blueprint
 slug:: using-the-documentation-blueprint
-step_type:: task
-condition:: You want to publish a documentation site from a model
-input:: @documentation-model
-output:: @docsify-suite
-tool:: @console
-executor:: human
-scope:: internal
-Getting started with the Documentation blueprint: create the DocSite, structure its sections and pages, configure the navbar and assets, then generate the Docsify suite.
+summary:: Getting started with the Documentation blueprint: create the DocSite, structure its sections and pages, configure the navbar and assets, then generate the Docsify suite.
+inputs_required:: @documentation-model
+outputs_expected:: @docsify-suite
 
-## NN Work: Create the DocSite
+It starts when: You want to publish a documentation site from a model.
+
+### NN Work: Create the DocSite
 slug:: create-the-docsite
-parent:: @using-the-documentation-blueprint
 step_type:: task
 next:: @structure-sections-and-pages
 condition:: No documentation model exists yet
@@ -33,9 +29,8 @@ executor:: human
 scope:: internal
 Add the `DocSite` element that anchors the site.
 
-## NN Work: Structure Sections and Pages
+### NN Work: Structure Sections and Pages
 slug:: structure-sections-and-pages
-parent:: @using-the-documentation-blueprint
 step_type:: task
 next:: @configure-navbar-and-assets
 condition:: DocSite created
@@ -46,9 +41,8 @@ executor:: human
 scope:: internal
 Populate `Section` and `Page` elements in the order they should read.
 
-## NN Work: Configure Navbar and Assets
+### NN Work: Configure Navbar and Assets
 slug:: configure-navbar-and-assets
-parent:: @using-the-documentation-blueprint
 step_type:: task
 next:: @generate-the-docsify-suite
 condition:: Pages defined
@@ -59,9 +53,8 @@ executor:: human
 scope:: internal
 Add the `NavbarItem` and `Asset` elements the site needs.
 
-## NN Work: Generate the Docsify Suite
+### NN Work: Generate the Docsify Suite
 slug:: generate-the-docsify-suite
-parent:: @using-the-documentation-blueprint
 step_type:: task
 condition:: Site structure configured
 input:: @documentation-model

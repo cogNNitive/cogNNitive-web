@@ -1,29 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Calculate Critical Path Procedure"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Calculate Critical Path
+## NN Procedure: Calculate Critical Path
 slug:: calculate-critical-path
-step_type:: task
-condition:: A projects model is loaded
-input:: @active-projects-model
-output:: @critical-path-analysis
-output_status:: verified
-tool:: @ai-agent
-executor:: agent
-scope:: internal
-Traverse task dependency chains, deliverable milestones, and risk impacts to compute the critical path sequence and bottleneck points.
+summary:: Traverse task dependency chains, deliverable milestones, and risk impacts to compute the critical path sequence and bottleneck points.
+inputs_required:: @active-projects-model
+outputs_expected:: @critical-path-analysis
 
-## NN Work: Build Dependency Graph
+It starts when: A projects model is loaded.
+
+### NN Work: Build Dependency Graph
 slug:: build-dependency-graph
-parent:: @calculate-critical-path
 step_type:: task
 next:: @compute-path-durations
 condition:: Procedure starts
@@ -35,9 +30,8 @@ executor:: agent
 scope:: internal
 Parse all `depends_on` and `milestone_ref` references across Task and Deliverable elements to construct a directed acyclic dependency graph.
 
-## NN Work: Compute Path Durations
+### NN Work: Compute Path Durations
 slug:: compute-path-durations
-parent:: @calculate-critical-path
 step_type:: task
 next:: @highlight-critical-risks
 condition:: Dependency graph constructed
@@ -49,9 +43,8 @@ executor:: agent
 scope:: internal
 Calculate longest-path sequences across project phases to identify zero-slack activities that govern the final project delivery date.
 
-## NN Work: Highlight Critical Risks
+### NN Work: Highlight Critical Risks
 slug:: highlight-critical-risks
-parent:: @calculate-critical-path
 step_type:: task
 condition:: Schedule sequences calculated
 input:: @schedule-sequences

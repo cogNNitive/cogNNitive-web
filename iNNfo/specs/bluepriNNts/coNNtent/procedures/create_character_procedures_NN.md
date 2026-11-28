@@ -1,72 +1,67 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-1-0"
+knowledge_version: "V_0-2-0"
 blueprint_version: "V_0-32-6"
 title: "Create a Character"
 ---
 
-# NN Work
 
 The file-level authoring guide for a coNNtent Character: the folder, its poses, its voice per
 language and how a series or scene uses it. The `Define a Character` wizard in
 `usage_procedures_NN.md` decides who the character is; this procedure states what is written
 where. A character is used through the cascade fields `character`, `pose` and `background`
 and through `avatar` Layers; it adds no field of its own to a document. Each step declares
-exactly one tool: `agent`, `engine`, `console` or `human`. Engine commands are relative to the
+its `executor`: `agent`, `engine` or `human` (a person deciding, or acting in the console section the step names). Engine commands are relative to the
 installed `nn-conntent` skill folder (`skills/nn-conntent/` in the coNNtent bluepriNNt package).
 
-## NN Work: Author a Character
-slug:: author-a-character
-step_type:: task
-level:: domaiNN or series
-condition:: Set up the Domain is applied. The character name is new at the chosen level.
-output:: @character-folder
-scope:: internal
-Produces `library/characters/<slug>/` with `CHARACTER.md`, its avatar poses and a catalog Voice
-for every language the character speaks.
+# NN Procedure
 
-## NN Work: Choose the slug and level
+## NN Procedure: Author a Character
+slug:: author-a-character
+summary:: Produces `library/characters/<slug>/` with `CHARACTER.md`, its avatar poses and a catalog Voice for every language the character speaks.
+outputs_expected:: @character-folder
+level:: domaiNN or series
+
+It starts when: Set up the Domain is applied. The character name is new at the chosen level.
+
+### NN Work: Choose the slug and level
 slug:: choose-the-slug-and-level
-parent:: @author-a-character
 next:: @collect-the-source-images
 step_type:: decision
-tool:: human
+executor:: human
 decision:: the character slug (kebab-case; it is the `character::` value) and whether it lives at the domaiNN (`library/characters/<slug>/`) or in one series (`series/<s>/library/characters/<slug>/`)
 scope:: internal
 A series-level character shadows a domaiNN-level one with the same slug.
 
-## NN Work: Collect the source images
+### NN Work: Collect the source images
 slug:: collect-the-source-images
-parent:: @author-a-character
 next:: @ask-for-a-file-path
 step_type:: decision
-tool:: human
+executor:: human
 decision:: the image file for each pose (for example `front`, `side`) and, optionally, each background
 scope:: internal
 Every pose is one image file on disk. A prompt-generated pose is produced first and saved as a
 file before it becomes a pose.
 
-## NN Work: Ask for a file path
+### NN Work: Ask for a file path
 slug:: ask-for-a-file-path
-parent:: @author-a-character
 next:: @clone-or-select-a-voice-per-language
 step_type:: decision
-tool:: human
+executor:: human
 decision:: the absolute file path of every image the person supplied in the chat
 scope:: internal
 An image pasted in the chat is not a file on disk, and no script can read it. When the person
 supplies a photo in the chat, ask for the path of the original file (or ask them to save it and
 give the path); never describe, recreate or guess the image instead.
 
-## NN Work: Clone or select a voice per language
+### NN Work: Clone or select a voice per language
 slug:: clone-or-select-a-voice-per-language
-parent:: @author-a-character
 next:: @build-the-character-folder
 step_type:: task
-tool:: engine
+executor:: engine
 command:: node scripts/voice-clone.mjs <name> <sample-audio> --language <code> [--series <slug>]
 scope:: internal
 Run once per language, each with its own sample, or select an existing catalog Voice whose
@@ -75,12 +70,11 @@ step records each Voice slug. A Voice of another language is refused for a slot;
 fallback voice. A re-clone of an
 existing name needs `--force`, which the agent never assumes.
 
-## NN Work: Build the character folder
+### NN Work: Build the character folder
 slug:: build-the-character-folder
-parent:: @author-a-character
 next:: @use-the-character
 step_type:: task
-tool:: agent
+executor:: agent
 produces:: `library/characters/<slug>/CHARACTER.md`, one image per pose in `avatars/<pose>.<ext>`, optional `backgrounds/<name>.<ext>`, and `voice/` holding the voice samples
 scope:: internal
 `CHARACTER.md` frontmatter declares `name` (equal to the folder slug), `voices` (a map of
@@ -91,12 +85,11 @@ speaking and narrative style, the things the character never says and a few exam
 Episode reads it before writing any narration. Copy the images from the paths the person gave;
 never write a field the engine does not read (there is no `variant`).
 
-## NN Work: Use the character
+### NN Work: Use the character
 slug:: use-the-character
-parent:: @author-a-character
 next:: @deliver-the-character-proposal
 step_type:: task
-tool:: agent
+executor:: agent
 produces:: `character:: <slug>` on the Series element (the host) or on a Scene (a guest), `pose::` and `background::` only where they differ from the defaults, and a `type:: avatar` Layer in each scene where the character speaks on screen (its required fields follow the bluepriNNt's Conditional Fields table)
 scope:: internal
 The character supplies the voice for the episode language, the pose and the avatar model through
@@ -107,23 +100,21 @@ Scene with no narration (`avatar-requires-narration`). A character who appears b
 `type:: media` Layer with `asset::` pointing at the pose file and `placement:: full`, `timing:: scene`:
 `pose::` and `background::` resolve no path on their own.
 
-## NN Work: Deliver the character proposal
+### NN Work: Deliver the character proposal
 slug:: deliver-the-character-proposal
-parent:: @author-a-character
 next:: @approve-the-character-proposal
 step_type:: task
-tool:: agent
+executor:: agent
 produces:: a sealed `proposed` changeset written with `writeProposedChangeset` covering the catalog Voice entries and the `character` reference, plus one `produce_artifact` record with the sha256 of each created file
 scope:: internal
 Dry-apply it, then check one episode that uses the character with
 `node scripts/produce.mjs <episode> --dry-run`: it reports the resolved voice, pose and avatar
 image. The agent does not apply the changeset.
 
-## NN Work: Approve the character proposal
+### NN Work: Approve the character proposal
 slug:: approve-the-character-proposal
-parent:: @author-a-character
 step_type:: decision
-tool:: human
+executor:: human
 decision:: approve or reject the proposed changeset in the console (`Series > Config`) or by replying OK
 scope:: internal
 A character whose proposal is not applied is not used by any episode.

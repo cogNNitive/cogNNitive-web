@@ -1,28 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Using the Organization Blueprint"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Using the Organization Blueprint
+## NN Procedure: Using the Organization Blueprint
 slug:: using-the-organization-blueprint
-step_type:: task
-condition:: You want to describe how a team or company is structured
-input:: @organization-model
-output:: @team-directory
-tool:: @console
-executor:: human
-scope:: internal
-Getting started with the Organization blueprint: create the Organization, add its roles, functions, positions, people and skills, then audit skill gaps and export the team directory.
+summary:: Getting started with the Organization blueprint: create the Organization, add its roles, functions, positions, people and skills, then audit skill gaps and export the team directory.
+inputs_required:: @organization-model
+outputs_expected:: @team-directory
 
-## NN Work: Define the Organization
+It starts when: You want to describe how a team or company is structured.
+
+### NN Work: Define the Organization
 slug:: define-the-organization
-parent:: @using-the-organization-blueprint
 step_type:: task
 next:: @add-roles-functions-and-positions
 condition:: No organization model exists yet
@@ -33,9 +29,8 @@ executor:: human
 scope:: internal
 Add the `Organization` element that anchors the model.
 
-## NN Work: Add Roles, Functions and Positions
+### NN Work: Add Roles, Functions and Positions
 slug:: add-roles-functions-and-positions
-parent:: @using-the-organization-blueprint
 step_type:: task
 next:: @add-people-and-skills
 condition:: Organization element created
@@ -46,9 +41,8 @@ executor:: human
 scope:: internal
 Populate the `Roles`, `Functions` and `Position` elements that describe the structure.
 
-## NN Work: Add People and Skills
+### NN Work: Add People and Skills
 slug:: add-people-and-skills
-parent:: @using-the-organization-blueprint
 step_type:: task
 next:: @audit-skill-gaps
 condition:: Positions defined
@@ -59,9 +53,8 @@ executor:: human
 scope:: internal
 Assign `Person` elements to positions and capture the required `Skills`.
 
-## NN Work: Audit Skill Gaps
+### NN Work: Audit Skill Gaps
 slug:: audit-skill-gaps
-parent:: @using-the-organization-blueprint
 step_type:: task
 next:: @export-the-team-directory
 condition:: People and skills captured
@@ -72,9 +65,8 @@ executor:: agent
 scope:: internal
 Execute the `audit-skill-gaps` procedure to flag missing or thin coverage per function.
 
-## NN Work: Export the Team Directory
+### NN Work: Export the Team Directory
 slug:: export-the-team-directory
-parent:: @using-the-organization-blueprint
 step_type:: task
 condition:: Skill gaps reviewed
 input:: @skill-gap-report

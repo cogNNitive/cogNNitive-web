@@ -1,9 +1,9 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-5-0"
+knowledge_version: "V_0-6-0"
 title: "Standard Operating Procedure: Documenting Procedures in iNNfo"
 slots:
   - name: intake
@@ -22,24 +22,19 @@ slots:
     output: { directory: procedures, suffix: _procedures_NN.md }
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Procedure Documentation Lifecycle
+## NN Procedure: Procedure Documentation Lifecycle
 slug:: procedure-documentation-lifecycle
-step_type:: task
-condition:: New business process or operational workflow identified
-input:: @process-intake-brief
-output:: @validated-innfo-level-3-model
-tool:: @cognnitive-modeler
-executor:: agent
-scope:: internal
+summary:: Master lifecycle procedure for transforming unstructured business workflows and operational routines into fully validated iNNfo Level 3 Procedure models.
+inputs_required:: @process-intake-brief
+outputs_expected:: @validated-innfo-level-3-model
 tags:: [procedure, governance, dogfooding, documentation-lifecycle]
 
-Master lifecycle procedure for transforming unstructured business workflows and operational routines into fully validated iNNfo Level 3 Procedure models.
+It starts when: New business process or operational workflow identified.
 
-## NN Work: Scope & Trigger Identification
+### NN Work: Scope & Trigger Identification
 slug:: scope-trigger-identification
-parent:: @procedure-documentation-lifecycle
 step_type:: event
 next:: @scope-approval
 condition:: Process owner submits documentation request
@@ -52,9 +47,8 @@ tags:: [procedure, scoping, intake, boundaries]
 
 Read the process intake brief at `{intake}`. Capture the business rationale, operational boundaries, trigger, and expected outcomes. Present the proposed scope to the domain operations lead before authoring the target model.
 
-## NN Work: Scope Approval
+### NN Work: Scope Approval
 slug:: scope-approval
-parent:: @procedure-documentation-lifecycle
 step_type:: decision
 executor:: human
 decision:: Approve the proposed scope, or reject it and stop this run?
@@ -63,18 +57,16 @@ next:: [@workflow-step-decomposition, @stop-unapproved-scope]
 
 Record `approve` only after the domain operations lead approves the scope. Otherwise record `reject`; do not create or change the target SOP.
 
-## NN Work: Stop for Unapproved Scope
+### NN Work: Stop for Unapproved Scope
 slug:: stop-unapproved-scope
-parent:: @procedure-documentation-lifecycle
 step_type:: task
 executor:: agent
 condition:: outcome == reject
 
 Record the reason in the run and finish with outcome `failed`. Start a new run if a revised intake is submitted.
 
-## NN Work: Workflow Step Decomposition
+### NN Work: Workflow Step Decomposition
 slug:: workflow-step-decomposition
-parent:: @procedure-documentation-lifecycle
 step_type:: task
 next:: @artifact-tool-attachment
 condition:: outcome == approve
@@ -87,9 +79,8 @@ tags:: [procedure, decomposition, fsm-modeling, step-sequencing]
 
 Decompose the end-to-end workflow into sequential tasks, decision gates, and event handlers. Establish chronological ordering with next references and transition guards. Give each step one reader decision — a step that asks two questions is two steps — and keep the path as short as the goal allows: drop a step that changes nothing about the outcome. Write each step's body under the `Step Body Prose` rules of the procedures blueprint.
 
-## NN Work: Artifact & Tool Attachment
+### NN Work: Artifact & Tool Attachment
 slug:: artifact-tool-attachment
-parent:: @procedure-documentation-lifecycle
 step_type:: task
 next:: @raci-governance-assignment
 condition:: Step sequence validated in FSM preview
@@ -102,9 +93,8 @@ tags:: [procedure, data-flow, toolchain-binding, artifact-mapping]
 
 Identify and link tangible input and output deliverables for every step, then bind required execution tooling, software, or CLI utilities.
 
-## NN Work: RACI Governance Assignment
+### NN Work: RACI Governance Assignment
 slug:: raci-governance-assignment
-parent:: @procedure-documentation-lifecycle
 step_type:: task
 next:: @integrity-syntax-verification
 condition:: Inputs, outputs, and tools fully populated
@@ -117,9 +107,8 @@ tags:: [procedure, raci-governance, role-assignment, matrix-mapping]
 
 Populate functional roles and assign formal RACI governance values (Responsible, Accountable, Consulted, Informed) across all decomposed work steps.
 
-## NN Work: Integrity & Syntax Verification
+### NN Work: Integrity & Syntax Verification
 slug:: integrity-syntax-verification
-parent:: @procedure-documentation-lifecycle
 step_type:: decision
 decision:: Has the SOP model passed validation and been recorded, or is it invalid?
 next:: [@confirm-validated-sop, @stop-invalid-model]
@@ -132,9 +121,8 @@ tags:: [procedure, verification, mcp-audit, syntax-gate]
 
 Write the new procedure to the domain-relative `{sop}` path without overwriting an existing model. Use `validate_knowledge` with `intent: verify` and the written model's hierarchical ID (not its file path). Check its workflow and references. This step records no output: it only decides. If the checks pass, record outcome `valid`, and the next step records the validated output. If validation fails and cannot be corrected in this step, record outcome `invalid` and take the stop path.
 
-## NN Work: Confirm Validated SOP
+### NN Work: Confirm Validated SOP
 slug:: confirm-validated-sop
-parent:: @procedure-documentation-lifecycle
 step_type:: task
 executor:: agent
 condition:: outcome == valid
@@ -143,9 +131,8 @@ output:: @validated-innfo-level-3-model
 
 Record the output as `validated`, including its path and SHA-256 revision, then complete this step and finish the run with outcome `completed`. Do not publish the SOP from this run.
 
-## NN Work: Stop for Invalid Model
+### NN Work: Stop for Invalid Model
 slug:: stop-invalid-model
-parent:: @procedure-documentation-lifecycle
 step_type:: task
 executor:: agent
 condition:: outcome == invalid

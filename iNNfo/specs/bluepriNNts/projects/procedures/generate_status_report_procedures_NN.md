@@ -1,29 +1,24 @@
 ---
 level: 3
 parent_spec:
-  name: "procedures_V_0-7-0"
+  name: "procedures_V_0-8-0"
   url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/procedures/spec_NN.md"
-knowledge_version: "V_0-2-0"
+knowledge_version: "V_0-3-0"
 title: "Generate Project Status Report Procedure"
 ---
 
-# NN Work
+# NN Procedure
 
-## NN Work: Generate Project Status Report
+## NN Procedure: Generate Project Status Report
 slug:: generate-project-status-report
-step_type:: task
-condition:: A projects model is loaded
-input:: @active-projects-model
-output:: @project-status-report
-output_status:: verified
-tool:: @ai-agent
-executor:: agent
-scope:: internal
-Synthesize milestone completion, active deliverable progress, open risks, and task assignments into an executive project health report.
+summary:: Synthesize milestone completion, active deliverable progress, open risks, and task assignments into an executive project health report.
+inputs_required:: @active-projects-model
+outputs_expected:: @project-status-report
 
-## NN Work: Aggregate Milestone Progress
+It starts when: A projects model is loaded.
+
+### NN Work: Aggregate Milestone Progress
 slug:: aggregate-milestone-progress
-parent:: @generate-project-status-report
 step_type:: task
 next:: @compile-health-dashboard
 condition:: Procedure starts
@@ -35,9 +30,8 @@ executor:: agent
 scope:: internal
 Evaluate milestone completion markers (`completion`, `health`) and measure deliverable status against target schedule dates.
 
-## NN Work: Compile Health Dashboard
+### NN Work: Compile Health Dashboard
 slug:: compile-health-dashboard
-parent:: @generate-project-status-report
 step_type:: task
 condition:: Milestone metrics compiled
 input:: @milestone-status-metrics

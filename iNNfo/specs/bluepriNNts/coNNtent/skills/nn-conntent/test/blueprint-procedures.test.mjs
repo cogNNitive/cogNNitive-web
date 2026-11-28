@@ -64,9 +64,10 @@ function parseWork(text) {
     if (field) current.fields[field[1]] = field[2].trim()
   }
   const work = elements.filter((element) => element.concept === 'Work')
-  const root = work.find((element) => !element.fields.parent)
+  const procedure = elements.find((element) => element.concept === 'Procedure')
+  const root = procedure || work.find((element) => !element.fields.parent)
   const bySlug = new Map(work.map((element) => [element.fields.slug, element]))
-  const steps = work.filter((element) => element.fields.parent)
+  const steps = procedure ? work : work.filter((element) => element.fields.parent)
   const targets = new Set(steps.flatMap(nextOf))
   const starts = steps.filter((candidate) => !targets.has(candidate.fields.slug))
   // The default path: from the step no other step points at, through the first `next::`
@@ -99,7 +100,7 @@ function nextOf(step) {
 
 const read = (rel) => fs.readFileSync(path.join(BLUEPRINT_DIR, rel), 'utf8')
 const body = (element) => element.lines.join('\n')
-const toolOf = (step) => (step.fields.tool || '').trim()
+const toolOf = (step) => (step.fields.executor || step.fields.tool || '').trim()
 
 test('spec_NN.md declares draft-scene-visuals and produce-video with their shipped paths', () => {
   for (const [id, rel] of Object.entries(PROMOTED)) {
@@ -158,11 +159,8 @@ test('every declared procedure resolves through the bluepriNNt floor loader', ()
 for (const [id, rel] of Object.entries(PROMOTED)) {
   test(`${id}: one procedure whose steps each declare exactly one tool and what it contributes`, () => {
     const { root, steps, starts, reachable } = parseWork(read(rel))
-    assert.ok(root, `${rel} has no unparented Work element`)
+    assert.ok(root, `${rel} has no Procedure or unparented Work element`)
     assert.equal(root.fields.slug, id, `the procedure slug must be ${id}`)
-    for (const field of ['level', 'condition', 'output']) {
-      assert.ok(root.fields[field], `${id} has no ${field}::`)
-    }
     assert.ok(steps.length > 0, `${id} has no steps`)
     assert.equal(starts.length, 1, `${id}: more than one step has no incoming next::`)
     assert.equal(
@@ -171,13 +169,14 @@ for (const [id, rel] of Object.entries(PROMOTED)) {
       `${id}: next:: does not reach every step exactly once`,
     )
     for (const step of steps) {
-      assert.equal(step.fields.parent, `@${id}`, `step "${step.name}" is not addressed to @${id}`)
-      const declarations = step.lines.filter((line) => /^tool::/.test(line))
-      assert.equal(declarations.length, 1, `step "${step.name}" must declare exactly one tool::`)
-      assert.ok(TOOLS.has(toolOf(step)), `step "${step.name}" declares tool "${toolOf(step)}"`)
+      if (step.fields.parent) {
+        assert.equal(step.fields.parent, `@${id}`, `step "${step.name}" is not addressed to @${id}`)
+      }
+      const tool = toolOf(step)
+      assert.ok(TOOLS.has(tool), `step "${step.name}" declares tool "${tool}"`)
       assert.ok(
-        step.fields[TOOL_FIELD[toolOf(step)]],
-        `step "${step.name}" has no ${TOOL_FIELD[toolOf(step)]}::`,
+        step.fields[TOOL_FIELD[tool]] || (tool === 'human' && step.fields.section),
+        `step "${step.name}" has no ${TOOL_FIELD[tool]}::`,
       )
     }
   })
