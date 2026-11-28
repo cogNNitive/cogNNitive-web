@@ -1,0 +1,14 @@
+{
+  "versions": [
+    {
+      "version": "V_0-32-7",
+      "tag": "blueprints-v0.110.1",
+      "commit": "9a3b3143c9141dd535250c4b9d5c27379b10c398"
+    },
+    {
+      "version": "V_0-32-6",
+      "tag": "blueprints-v0.105.0",
+      "commit": "fd497938dec79f42d4c01ca4be09d0eeabbeb2c8"
+    }
+  ]
+}
