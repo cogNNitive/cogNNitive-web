@@ -129,17 +129,17 @@ var require_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    function visit_(key, node, visitor, path2) {
-      const ctrl = callVisitor(key, node, visitor, path2);
+    function visit_(key, node, visitor, path3) {
+      const ctrl = callVisitor(key, node, visitor, path3);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path2, ctrl);
-        return visit_(key, ctrl, visitor, path2);
+        replaceNode(key, path3, ctrl);
+        return visit_(key, ctrl, visitor, path3);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path2 = Object.freeze(path2.concat(node));
+          path3 = Object.freeze(path3.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = visit_(i, node.items[i], visitor, path2);
+            const ci = visit_(i, node.items[i], visitor, path3);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -150,13 +150,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path2 = Object.freeze(path2.concat(node));
-          const ck = visit_("key", node.key, visitor, path2);
+          path3 = Object.freeze(path3.concat(node));
+          const ck = visit_("key", node.key, visitor, path3);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = visit_("value", node.value, visitor, path2);
+          const cv = visit_("value", node.value, visitor, path3);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -177,17 +177,17 @@ var require_visit = __commonJS({
     visitAsync.BREAK = BREAK;
     visitAsync.SKIP = SKIP;
     visitAsync.REMOVE = REMOVE;
-    async function visitAsync_(key, node, visitor, path2) {
-      const ctrl = await callVisitor(key, node, visitor, path2);
+    async function visitAsync_(key, node, visitor, path3) {
+      const ctrl = await callVisitor(key, node, visitor, path3);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path2, ctrl);
-        return visitAsync_(key, ctrl, visitor, path2);
+        replaceNode(key, path3, ctrl);
+        return visitAsync_(key, ctrl, visitor, path3);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path2 = Object.freeze(path2.concat(node));
+          path3 = Object.freeze(path3.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = await visitAsync_(i, node.items[i], visitor, path2);
+            const ci = await visitAsync_(i, node.items[i], visitor, path3);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -198,13 +198,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path2 = Object.freeze(path2.concat(node));
-          const ck = await visitAsync_("key", node.key, visitor, path2);
+          path3 = Object.freeze(path3.concat(node));
+          const ck = await visitAsync_("key", node.key, visitor, path3);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = await visitAsync_("value", node.value, visitor, path2);
+          const cv = await visitAsync_("value", node.value, visitor, path3);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -231,23 +231,23 @@ var require_visit = __commonJS({
       }
       return visitor;
     }
-    function callVisitor(key, node, visitor, path2) {
+    function callVisitor(key, node, visitor, path3) {
       if (typeof visitor === "function")
-        return visitor(key, node, path2);
+        return visitor(key, node, path3);
       if (identity.isMap(node))
-        return visitor.Map?.(key, node, path2);
+        return visitor.Map?.(key, node, path3);
       if (identity.isSeq(node))
-        return visitor.Seq?.(key, node, path2);
+        return visitor.Seq?.(key, node, path3);
       if (identity.isPair(node))
-        return visitor.Pair?.(key, node, path2);
+        return visitor.Pair?.(key, node, path3);
       if (identity.isScalar(node))
-        return visitor.Scalar?.(key, node, path2);
+        return visitor.Scalar?.(key, node, path3);
       if (identity.isAlias(node))
-        return visitor.Alias?.(key, node, path2);
+        return visitor.Alias?.(key, node, path3);
       return void 0;
     }
-    function replaceNode(key, path2, node) {
-      const parent = path2[path2.length - 1];
+    function replaceNode(key, path3, node) {
+      const parent = path3[path3.length - 1];
       if (identity.isCollection(parent)) {
         parent.items[key] = node;
       } else if (identity.isPair(parent)) {
@@ -859,10 +859,10 @@ var require_Collection = __commonJS({
     var createNode = require_createNode();
     var identity = require_identity();
     var Node = require_Node();
-    function collectionFromPath(schema, path2, value) {
+    function collectionFromPath(schema, path3, value) {
       let v = value;
-      for (let i = path2.length - 1; i >= 0; --i) {
-        const k = path2[i];
+      for (let i = path3.length - 1; i >= 0; --i) {
+        const k = path3[i];
         if (typeof k === "number" && Number.isInteger(k) && k >= 0) {
           const a = [];
           a[k] = v;
@@ -881,7 +881,7 @@ var require_Collection = __commonJS({
         sourceObjects: /* @__PURE__ */ new Map()
       });
     }
-    var isEmptyPath = (path2) => path2 == null || typeof path2 === "object" && !!path2[Symbol.iterator]().next().done;
+    var isEmptyPath = (path3) => path3 == null || typeof path3 === "object" && !!path3[Symbol.iterator]().next().done;
     var Collection = class extends Node.NodeBase {
       constructor(type, schema) {
         super(type);
@@ -911,11 +911,11 @@ var require_Collection = __commonJS({
        * be a Pair instance or a `{ key, value }` object, which may not have a key
        * that already exists in the map.
        */
-      addIn(path2, value) {
-        if (isEmptyPath(path2))
+      addIn(path3, value) {
+        if (isEmptyPath(path3))
           this.add(value);
         else {
-          const [key, ...rest] = path2;
+          const [key, ...rest] = path3;
           const node = this.get(key, true);
           if (identity.isCollection(node))
             node.addIn(rest, value);
@@ -929,8 +929,8 @@ var require_Collection = __commonJS({
        * Removes a value from the collection.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path2) {
-        const [key, ...rest] = path2;
+      deleteIn(path3) {
+        const [key, ...rest] = path3;
         if (rest.length === 0)
           return this.delete(key);
         const node = this.get(key, true);
@@ -944,8 +944,8 @@ var require_Collection = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path2, keepScalar) {
-        const [key, ...rest] = path2;
+      getIn(path3, keepScalar) {
+        const [key, ...rest] = path3;
         const node = this.get(key, true);
         if (rest.length === 0)
           return !keepScalar && identity.isScalar(node) ? node.value : node;
@@ -963,8 +963,8 @@ var require_Collection = __commonJS({
       /**
        * Checks if the collection includes a value with the key `key`.
        */
-      hasIn(path2) {
-        const [key, ...rest] = path2;
+      hasIn(path3) {
+        const [key, ...rest] = path3;
         if (rest.length === 0)
           return this.has(key);
         const node = this.get(key, true);
@@ -974,8 +974,8 @@ var require_Collection = __commonJS({
        * Sets a value in this collection. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path2, value) {
-        const [key, ...rest] = path2;
+      setIn(path3, value) {
+        const [key, ...rest] = path3;
         if (rest.length === 0) {
           this.set(key, value);
         } else {
@@ -3490,9 +3490,9 @@ var require_Document = __commonJS({
           this.contents.add(value);
       }
       /** Adds a value to the document. */
-      addIn(path2, value) {
+      addIn(path3, value) {
         if (assertCollection(this.contents))
-          this.contents.addIn(path2, value);
+          this.contents.addIn(path3, value);
       }
       /**
        * Create a new `Alias` node, ensuring that the target `node` has the required anchor.
@@ -3567,14 +3567,14 @@ var require_Document = __commonJS({
        * Removes a value from the document.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path2) {
-        if (Collection.isEmptyPath(path2)) {
+      deleteIn(path3) {
+        if (Collection.isEmptyPath(path3)) {
           if (this.contents == null)
             return false;
           this.contents = null;
           return true;
         }
-        return assertCollection(this.contents) ? this.contents.deleteIn(path2) : false;
+        return assertCollection(this.contents) ? this.contents.deleteIn(path3) : false;
       }
       /**
        * Returns item at `key`, or `undefined` if not found. By default unwraps
@@ -3589,10 +3589,10 @@ var require_Document = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path2, keepScalar) {
-        if (Collection.isEmptyPath(path2))
+      getIn(path3, keepScalar) {
+        if (Collection.isEmptyPath(path3))
           return !keepScalar && identity.isScalar(this.contents) ? this.contents.value : this.contents;
-        return identity.isCollection(this.contents) ? this.contents.getIn(path2, keepScalar) : void 0;
+        return identity.isCollection(this.contents) ? this.contents.getIn(path3, keepScalar) : void 0;
       }
       /**
        * Checks if the document includes a value with the key `key`.
@@ -3603,10 +3603,10 @@ var require_Document = __commonJS({
       /**
        * Checks if the document includes a value at `path`.
        */
-      hasIn(path2) {
-        if (Collection.isEmptyPath(path2))
+      hasIn(path3) {
+        if (Collection.isEmptyPath(path3))
           return this.contents !== void 0;
-        return identity.isCollection(this.contents) ? this.contents.hasIn(path2) : false;
+        return identity.isCollection(this.contents) ? this.contents.hasIn(path3) : false;
       }
       /**
        * Sets a value in this document. For `!!set`, `value` needs to be a
@@ -3623,13 +3623,13 @@ var require_Document = __commonJS({
        * Sets a value in this document. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path2, value) {
-        if (Collection.isEmptyPath(path2)) {
+      setIn(path3, value) {
+        if (Collection.isEmptyPath(path3)) {
           this.contents = value;
         } else if (this.contents == null) {
-          this.contents = Collection.collectionFromPath(this.schema, Array.from(path2), value);
+          this.contents = Collection.collectionFromPath(this.schema, Array.from(path3), value);
         } else if (assertCollection(this.contents)) {
-          this.contents.setIn(path2, value);
+          this.contents.setIn(path3, value);
         }
       }
       /**
@@ -5590,9 +5590,9 @@ var require_cst_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    visit.itemAtPath = (cst, path2) => {
+    visit.itemAtPath = (cst, path3) => {
       let item = cst;
-      for (const [field, index] of path2) {
+      for (const [field, index] of path3) {
         const tok = item?.[field];
         if (tok && "items" in tok) {
           item = tok.items[index];
@@ -5601,23 +5601,23 @@ var require_cst_visit = __commonJS({
       }
       return item;
     };
-    visit.parentCollection = (cst, path2) => {
-      const parent = visit.itemAtPath(cst, path2.slice(0, -1));
-      const field = path2[path2.length - 1][0];
+    visit.parentCollection = (cst, path3) => {
+      const parent = visit.itemAtPath(cst, path3.slice(0, -1));
+      const field = path3[path3.length - 1][0];
       const coll = parent?.[field];
       if (coll && "items" in coll)
         return coll;
       throw new Error("Parent collection not found");
     };
-    function _visit(path2, item, visitor) {
-      let ctrl = visitor(item, path2);
+    function _visit(path3, item, visitor) {
+      let ctrl = visitor(item, path3);
       if (typeof ctrl === "symbol")
         return ctrl;
       for (const field of ["key", "value"]) {
         const token = item[field];
         if (token && "items" in token) {
           for (let i = 0; i < token.items.length; ++i) {
-            const ci = _visit(Object.freeze(path2.concat([[field, i]])), token.items[i], visitor);
+            const ci = _visit(Object.freeze(path3.concat([[field, i]])), token.items[i], visitor);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -5628,10 +5628,10 @@ var require_cst_visit = __commonJS({
             }
           }
           if (typeof ctrl === "function" && field === "key")
-            ctrl = ctrl(item, path2);
+            ctrl = ctrl(item, path3);
         }
       }
-      return typeof ctrl === "function" ? ctrl(item, path2) : ctrl;
+      return typeof ctrl === "function" ? ctrl(item, path3) : ctrl;
     }
     exports2.visit = visit;
   }
@@ -6933,14 +6933,14 @@ var require_parser = __commonJS({
             case "scalar":
             case "single-quoted-scalar":
             case "double-quoted-scalar": {
-              const fs2 = this.flowScalar(this.type);
+              const fs3 = this.flowScalar(this.type);
               if (atNextItem || it.value) {
-                map.items.push({ start, key: fs2, sep: [] });
+                map.items.push({ start, key: fs3, sep: [] });
                 this.onKeyLine = true;
               } else if (it.sep) {
-                this.stack.push(fs2);
+                this.stack.push(fs3);
               } else {
-                Object.assign(it, { key: fs2, sep: [] });
+                Object.assign(it, { key: fs3, sep: [] });
                 this.onKeyLine = true;
               }
               return;
@@ -7068,13 +7068,13 @@ var require_parser = __commonJS({
             case "scalar":
             case "single-quoted-scalar":
             case "double-quoted-scalar": {
-              const fs2 = this.flowScalar(this.type);
+              const fs3 = this.flowScalar(this.type);
               if (!it || it.value)
-                fc.items.push({ start: [], key: fs2, sep: [] });
+                fc.items.push({ start: [], key: fs3, sep: [] });
               else if (it.sep)
-                this.stack.push(fs2);
+                this.stack.push(fs3);
               else
-                Object.assign(it, { key: fs2, sep: [] });
+                Object.assign(it, { key: fs3, sep: [] });
               return;
             }
             case "flow-map-end":
@@ -7501,8 +7501,8 @@ function isSafeRelativeId(id) {
     return false;
   return true;
 }
-function isDriveQualified(path2) {
-  return /^\/?[a-zA-Z]:[/\\]/.test(path2);
+function isDriveQualified(path3) {
+  return /^\/?[a-zA-Z]:[/\\]/.test(path3);
 }
 function normalizeDrivePath(p) {
   return p.replace(/\\/g, "/").replace(/^\/(?=[a-zA-Z]:\/)/, "");
@@ -7513,8 +7513,8 @@ function isDriveContained(rootDir, candidate) {
   const root = normalizeDrivePath(rootDir).replace(/\/+$/, "");
   if (!isDriveQualified(root) || root.endsWith(":"))
     return false;
-  const path2 = normalizeDrivePath(candidate);
-  return path2.length > root.length && path2.toLowerCase().startsWith(`${root.toLowerCase()}/`);
+  const path3 = normalizeDrivePath(candidate);
+  return path3.length > root.length && path3.toLowerCase().startsWith(`${root.toLowerCase()}/`);
 }
 var import_node_path7;
 var init_path_guard = __esm({
@@ -8898,15 +8898,15 @@ function validateStorage2(concepts) {
   const cyclic = /* @__PURE__ */ new Set();
   const seenCycles = /* @__PURE__ */ new Set();
   for (const start of next.keys()) {
-    const path2 = [];
+    const path3 = [];
     let at = start;
-    while (at !== void 0 && !path2.includes(at)) {
-      path2.push(at);
+    while (at !== void 0 && !path3.includes(at)) {
+      path3.push(at);
       at = next.get(at);
     }
     if (at === void 0)
       continue;
-    const members = path2.slice(path2.indexOf(at));
+    const members = path3.slice(path3.indexOf(at));
     members.forEach((m) => cyclic.add(m));
     const key = [...members].sort().join("|");
     if (seenCycles.has(key))
@@ -9909,7 +9909,7 @@ function valueKey(v) {
     return "";
   return String(v).trim().toLowerCase();
 }
-function validateFieldValue2(def, value, path2) {
+function validateFieldValue2(def, value, path3) {
   const diagnostics = [];
   if (value === void 0 || value === null) {
     return diagnostics;
@@ -9917,7 +9917,7 @@ function validateFieldValue2(def, value, path2) {
   if (def.multiple) {
     if (typeof value === "string" && value.includes(",") && !value.trim().startsWith("[")) {
       diagnostics.push({
-        path: path2,
+        path: path3,
         message: `Field "${def.name}" has unbracketed comma-separated value "${value}". Multi-valued fields should use [val1, val2]`,
         severity: "warning",
         code: "MULTI_VALUE_UNBRACKETED"
@@ -9929,7 +9929,7 @@ function validateFieldValue2(def, value, path2) {
       for (const item of items) {
         if (!allowedKeys.has(valueKey(item))) {
           diagnostics.push({
-            path: path2,
+            path: path3,
             message: `Invalid value "${String(item)}" for "${def.name}". Allowed: ${def.options.join(", ")}`,
             severity: "error"
           });
@@ -9940,7 +9940,7 @@ function validateFieldValue2(def, value, path2) {
   }
   if (def.type === "select" && Array.isArray(value)) {
     diagnostics.push({
-      path: path2,
+      path: path3,
       message: `Single-valued field "${def.name}" does not accept array values`,
       severity: "error"
     });
@@ -9950,7 +9950,7 @@ function validateFieldValue2(def, value, path2) {
     const valStr = String(value);
     if (!def.options.includes(valStr)) {
       diagnostics.push({
-        path: path2,
+        path: path3,
         message: `Invalid value "${valStr}" for "${def.name}". Allowed: ${def.options.join(", ")}`,
         severity: "error"
       });
@@ -9958,7 +9958,7 @@ function validateFieldValue2(def, value, path2) {
   } else if (def.type === "number") {
     if (typeof value !== "number" || Number.isNaN(value)) {
       diagnostics.push({
-        path: path2,
+        path: path3,
         message: `Invalid numeric value "${String(value)}" for "${def.name}"`,
         severity: "error"
       });
@@ -9966,7 +9966,7 @@ function validateFieldValue2(def, value, path2) {
       const { min, max, step } = def.widgetConfig;
       if (typeof min === "number" && value < min || typeof max === "number" && value > max) {
         diagnostics.push({
-          path: path2,
+          path: path3,
           message: `Value ${value} for "${def.name}" is outside declared bounds [${min ?? "-Infinity"}..${max ?? "Infinity"}]`,
           severity: "error"
         });
@@ -9976,7 +9976,7 @@ function validateFieldValue2(def, value, path2) {
         const rem = Math.abs((value - base) % step);
         if (rem > 1e-9 && Math.abs(rem - step) > 1e-9) {
           diagnostics.push({
-            path: path2,
+            path: path3,
             message: `Value ${value} for "${def.name}" does not match declared step ${step}`,
             severity: "error"
           });
@@ -9986,7 +9986,7 @@ function validateFieldValue2(def, value, path2) {
   } else if (def.type === "boolean") {
     if (typeof value !== "boolean") {
       diagnostics.push({
-        path: path2,
+        path: path3,
         message: `Invalid boolean value "${String(value)}" for "${def.name}"`,
         severity: "error"
       });
@@ -10150,7 +10150,7 @@ var init_canonical_registry = __esm({
     SOURCES_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\nblueprint_version: "V_0-4-1"\ntitle: "Sources Catalog App"\nrelationship_types:\n  hierarchy:\n    enabled: true\n    via: "index block"\n  evaluable_matrix:\n    enabled: true\n  graph_edge:\n    enabled: false\n  sequence:\n    enabled: false\nnature:\n  structure: catalog\n  ownership: derived\n---\n\n# NN index\n\n* [[Source]]\n* [[Synchronization]]\n\n# NN Concept Definition\n\n## NN Concept Definition: Source\nicon:: file-input\ntype:: list\ncolor:: teal\nweight:: 100\n\n## NN Concept Definition: Synchronization\nicon:: refresh-cw\ntype:: list\ncolor:: teal\nweight:: 90\ndescription:: Declares an origin (a file, a folder or a URL) that `nn-sources --sync` lands into this domaiNN on demand: models as mirrors under `sources/sync/<alias>/`, other files as sources under `sources/import/<alias>/`.\n\n# NN Field Definition\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\ndescription:: Open vocabulary ad-hoc tags and classification labels.\n\n## NN Field Definition: type\nconcept:: Source\ntype:: select\noptions:: [local_file, url_snapshot, dynamic_feed, git_repo, api_export]\ndescription:: Polymorphic origin category of the primary source.\n\n## NN Field Definition: origin_uri\nconcept:: [Source, Synchronization]\ntype:: string\ndescription:: Universal identifier of origin: local path, web URL (https://), or git repository URI.\n\n## NN Field Definition: alias\nconcept:: Synchronization\ntype:: string\ndescription:: Folder-safe slug that names the landing folders `sources/sync/<alias>/` and `sources/import/<alias>/`. Unique within the catalog.\n\n## NN Field Definition: kind\nconcept:: Synchronization\ntype:: select\noptions:: [file, folder]\ndescription:: Whether the origin is a single file or a folder. A URL origin is always a file.\n\n## NN Field Definition: state\nconcept:: Synchronization\ntype:: select\noptions:: [active, paused]\ndescription:: A paused Synchronization is skipped by `nn-sources --sync`.\n\n## NN Field Definition: format\nconcept:: Source\ntype:: select\noptions:: [pdf, docx, html, md, json, csv, audio, xlsx, repo]\ndescription:: Original file or payload format.\n\n## NN Field Definition: raw_path\nconcept:: Source\ntype:: string\ndescription:: Workspace-relative path to the raw/binary asset in sources/import/.\n\n## NN Field Definition: summary\nconcept:: Source\ntype:: string\ndescription:: Recommended concise semantic summary of the source contents for progressive disclosure. A missing summary is valid, and it forces the reader to open the model instead of routing from the catalog.\n\n## NN Field Definition: status\nconcept:: Source\ntype:: select\noptions:: [ready, stale, processing, error]\ndescription:: Operational and synchronization state of the source.\n\n## NN Field Definition: source_model\nconcept:: Source\ntype:: knowledge\ndescription:: Relative link to the source\'s co-located sidecar, `<file>.<ext>_sidecar_NN.md` under sources/import/.\n\n# Sources Catalog Template\n\n## A level-2 template for indexing polymorphic primary sources and normalized source models with progressive disclosure summaries\n\n## Philosophy\n\nThe Sources Catalog serves as the single source of truth for all primary and normalized sources in an iNNfo workspace. By maintaining concise semantic summaries directly in the catalog, AI agents and human users can query source inventories and make informed citation decisions without performing expensive file I/O operations against normalized leaf models. Physical cryptographic metadata (e.g. SHA-256 hashes, timestamps) remains strictly isolated within each source\'s co-located sidecar under `sources/import/`.\n\n## Template\n\n### Level 3 Model Template (Lightweight)\n\n```yaml\n---\nlevel: 3\nparent_spec:\n  name: "sources"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sources/spec_NN.md"\nknowledge_version: "V_0-1-0"\ntitle: "<Sources Catalog Name>"\n---\n\n# NN index\n\n* [[Source]]\n\n# NN Source\n\n## NN Source: Source Name\ntype:: local_file\norigin_uri:: sources/import/document.pdf\nraw_path:: sources/import/document.pdf\nformat:: pdf\nsummary:: Concise summary of the source document contents.\ntags:: [tag1, tag2]\nstatus:: ready\nsource_model:: sources/import/document.pdf_sidecar_NN.md\n```\n\n### Synchronization\n\n```markdown\n# NN Synchronization\n\n## NN Synchronization: Organization\nalias:: org\norigin_uri:: ../organization\nkind:: folder\nstate:: active\n```\n\nA Synchronization is a declaration, not a copy. `nn-sources --sync [alias]` lands the origin on demand: a folder holding a `domaiNN_NN.md` is mirrored model by model, any other folder splits into mirrored models and imported raw files. A consumer points at a mirrored element with a `reference` field whose value is a path address such as `sources/sync/org/organization_NN.md@manager`.\n';
     ARTIFACTS_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\nblueprint_version: "V_0-5-3"\ntitle: "Artifacts Catalog App"\nrelationship_types:\n  hierarchy:\n    enabled: true\n    via: "index block"\n  evaluable_matrix:\n    enabled: true\n  graph_edge:\n    enabled: false\n  sequence:\n    enabled: false\nnature:\n  structure: catalog\n  ownership: derived\n---\n\n# NN index\n\n* [[Artifact]]\n\n# NN Concept Definition\n\n## NN Concept Definition: Artifact\nicon:: file-output\ntype:: list\ncolor:: teal\nweight:: 100\n\n# NN Field Definition\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\ndescription:: Open vocabulary ad-hoc tags and classification labels.\n\n## NN Field Definition: format\nconcept:: Artifact\ntype:: select\noptions:: [model, markdown, html, json, csv, binary]\ndescription:: Format of the deliverable or output artifact.\n\n## NN Field Definition: summary\nconcept:: Artifact\ntype:: string\ndescription:: Recommended concise summary of the artifact contents for progressive disclosure. A missing summary is valid, and it forces the reader to open the model instead of routing from the catalog.\n\n## NN Field Definition: status\nconcept:: Artifact\ntype:: select\noptions:: [draft, verified, published, deprecated]\ndescription:: Lifecycle and verification state of the artifact.\n\n## NN Field Definition: artifact_model\nconcept:: Artifact\ntype:: knowledge\ndescription:: Link to structured output model in artifacts/models/ when format is model.\n\n## NN Field Definition: file_path\nconcept:: Artifact\ntype:: string\ndescription:: Relative path to generated deliverable file when format is non-model.\n\n# Artifacts Catalog Template\n\n## A level-2 template for indexing derivative deliverables, generated reports, structured models, and export artifacts with progressive disclosure summaries\n\n## Philosophy\n\nThe Artifacts Catalog registers all tangible and digital outputs generated within an iNNfo workspace. Artifacts encompass interactive web consoles, compiled HTML hubs, documents, tabular datasets, and structured downstream models. By capturing concise summaries in the catalog, agents and users can discover outputs without scanning raw deliverable files.\n\n## Template\n\n### Level 3 Model Template (Lightweight)\n\n```yaml\n---\nlevel: 3\nparent_spec:\n  name: "artifacts"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/artifacts/spec_NN.md"\nknowledge_version: "V_0-1-0"\ntitle: "<Artifacts Catalog Name>"\n---\n\n# NN index\n\n* [[Artifact]]\n\n# NN Artifact\n\n## NN Artifact: Artifact Name\nformat:: model\nsummary:: Concise summary of the deliverable contents.\nstatus:: verified\ntags:: [report, summary]\nartifact_model:: artifacts/models/report_NN.md\n```\n';
     SIDECAR_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sidecar/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\nblueprint_version: "V_0-2-1"\ntitle: "Sidecar App"\nrelationship_types:\n  hierarchy:\n    enabled: true\n    via: "index block"\n  evaluable_matrix:\n    enabled: true\n  graph_edge:\n    enabled: false\n  sequence:\n    enabled: false\n---\n\n# NN index\n\n* [[Sidecar]]\n\n# NN Concept Definition\n\n## NN Concept Definition: Sidecar\nicon:: file-check\ntype:: list\ncolor:: teal\nweight:: 100\n\n# NN Field Definition\n\n## NN Field Definition: source_file\nconcept:: Sidecar\ntype:: string\ndescription:: Workspace-relative path of the file this sidecar describes (its subject). Must match the subject implied by the sidecar file name.\n\n## NN Field Definition: sha256\nconcept:: Sidecar\ntype:: string\ndescription:: SHA-256 of the subject\'s raw bytes (never of decoded text), as lowercase hex. A changed hash makes the sidecar stale.\n\n## NN Field Definition: size_bytes\nconcept:: Sidecar\ntype:: string\ndescription:: Size of the subject in bytes, written as a decimal integer.\n\n## NN Field Definition: source_format\nconcept:: Sidecar\ntype:: string\ndescription:: Format of the subject, taken from its extension (for example pdf, docx, csv, md, json).\n\n## NN Field Definition: normalized_at\nconcept:: Sidecar\ntype:: string\ndescription:: ISO-8601 UTC instant at which the sidecar was written or last refreshed.\n\n## NN Field Definition: normalized_by\nconcept:: Sidecar\ntype:: string\ndescription:: Optional. Name of the normalizer that produced the body for a binary subject. Absent for text-native subjects, whose sidecar has no body.\n\n## NN Field Definition: synchronization\nconcept:: Sidecar\ntype:: string\ndescription:: Optional. Alias of the Synchronization that landed the subject. Absent for a manual import.\n\n## NN Field Definition: origin_path\nconcept:: Sidecar\ntype:: string\ndescription:: Optional. Path of the subject relative to its origin, in posix form. Tells apart same-named files that come from different origin folders.\n\n## NN Field Definition: origin_uri\nconcept:: Sidecar\ntype:: string\ndescription:: Optional. Where the subject was fetched from: the origin path or the `https://` URL of the Synchronization.\n\n## NN Field Definition: retrieved_at\nconcept:: Sidecar\ntype:: string\ndescription:: Optional. ISO-8601 UTC instant at which the subject was copied or downloaded from its origin.\n\n# Sidecar Template\n\n## A level-2 template for the co-located metadata document that makes any workspace file a citable source\n\n## Philosophy\n\nA sidecar binds metadata to bytes. It sits next to its subject, keeps the subject\'s original extension in its own name, and records the subject\'s hash, size, and format. For binary subjects it also carries a normalized Markdown body, so citations by heading or row stay valid while the raw file stays untouched. Text-native subjects (Markdown, CSV, JSON) need no body: the file is its own text.\n\nA sidecar is a concept, not a new level. It is a kNNowledge-level document that is never a model: model discovery, manifests, console targets, and editor workspace detection all ignore it. Sidecar fields serialize as YAML frontmatter in companion `<file>.<ext>_sidecar_NN.md` files rather than markdown concept blocks in the body. For binary subjects, the optional body holds normalized Markdown headings; for text-native subjects, the body is empty. It is created or refreshed by the `cognitivize` operation, which is the only writer. Raw files and write-once artifacts are never edited; a sidecar is rewritten when the subject\'s hash changes.\n\n## Naming\n\nA sidecar is named `<file>.<ext>_sidecar_NN.md`. The original extension stays in the name, so `report.pdf` is described by `report.pdf_sidecar_NN.md` in the same folder. The name carries the blueprint, so the name invariant holds without exception: the stem `report.pdf_sidecar` ends with `_sidecar`.\n\n## Template\n\n### Level 3 Document Template\n\n```yaml\n---\nlevel: 3\nparent_spec:\n  name: "sidecar"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/sidecar/spec_NN.md"\nsource_file: "sources/import/report.pdf"\nsha256: "<64 lowercase hex characters>"\nsize_bytes: 1048576\nsource_format: "pdf"\nnormalized_at: "2026-10-02T10:15:00Z"\nnormalized_by: "nn-trannsform"\nsynchronization: "org"\norigin_path: "docs/report.pdf"\norigin_uri: "../organization"\nretrieved_at: "2026-10-02T10:14:00Z"\nsources: []\n---\n```\n\nThe body is optional. A sidecar for a binary subject carries the normalized Markdown under ordinary headings; a sidecar for a Markdown, CSV, or JSON subject has no body.\n\n## Rules\n\n1. `source_file`, `sha256`, `size_bytes`, `source_format`, and `normalized_at` are required. `normalized_by`, `sources`, `synchronization`, `origin_path`, `origin_uri` and `retrieved_at` are optional. The four origin keys are written together by `nn-sources --sync` and are absent on a manual import.\n2. A normalizer may add its own metadata keys to the frontmatter; they are preserved on refresh.\n3. A sidecar never declares `derived_from`. The upstream edge of a subject is `sources`; the lineage projection derives its own `derived_from` from it.\n4. The sidecar of a sidecar does not exist. `cognitivize` rejects sidecars, `_NN.md` documents, excluded paths, and over-long paths.\n';
-    CHANGES_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\nblueprint_name: "changes"\nblueprint_version: "V_0-15-0"\ntitle: "Changeset Blueprint"\ndescription: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."\nnature:\n  structure: members\n  ownership: derived\n---\n\n# NN index\n\n* [[Change]]\n\n# NN Concept Definition\n\n## NN Concept Definition: Change\nicon:: git-commit\ntype:: list\ncolor:: blue\nweight:: 100\n\n# NN Field Definition\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\ndescription:: Open vocabulary ad-hoc tags and classification labels.\n\n## NN Field Definition: op\nconcept:: Change\ntype:: select\noptions:: [update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, remove_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default, close_model]\ndescription:: Mutation or review operation.\n\n## NN Field Definition: target\nconcept:: Change\ntype:: address\ndescription:: Canonical D5 target address (model@element&field or model@matrix&row&col).\n\n## NN Field Definition: from\nconcept:: Change\ntype:: string\ndescription:: Precondition check value prior to mutation.\n\n## NN Field Definition: to\nconcept:: Change\ntype:: string\ndescription:: Proposed target value. For bump_version, the version level to bump: patch, minor or major. For add_matrix, the column-axis concept. For move_model, the new instance model id. For extract_instance, the new instance model id the extracted element becomes. For add_element, the optional initial fields, a one-line JSON object field -> serialized value. For set_fields, a one-line JSON object field -> serialized value; from is then an optional JSON object with the expected current value of some of those fields.\n\n## NN Field Definition: base_hash\nconcept:: Change\ntype:: string\ndescription:: Content hash of the target element when the change was written (the console\'s element hash). A different current hash is a precondition failure (conflict). Optional; absent means the change is not guarded by element content.\n\n## NN Field Definition: concept\nconcept:: Change\ntype:: string\ndescription:: Target concept for add_element operations, the row-axis concept for add_matrix, and the distributed concept an add_model instantiates. add_model only: naming a distributed concept makes target the instance\'s hierarchical id (container chain plus slug), and the new model is written at the concept\'s declared placement path, not under kNNowledge/. extract_instance takes the concept from the source element it cuts.\n\n## NN Field Definition: name\nconcept:: Change\ntype:: string\ndescription:: Display name for added or renamed entities; the title of a model created by add_model (defaults to the id); the matrix name for add_matrix.\n\n## NN Field Definition: slug\nconcept:: Change\ntype:: string\ndescription:: Proposed explicit slug.\n\n## NN Field Definition: seed\nconcept:: Change\ntype:: string\ndescription:: add_matrix only. Header elements the matrix is created with, as a JSON object {columns:[...],rows:[...]}. Sealed into proposal_sha. Creates empty cells and records no cell units; each non-empty cell needs its own update_matrix_cell change.\n\n## NN Field Definition: author\nconcept:: Change\ntype:: string\ndescription:: Identifier of author, reviewer, or agent.\n\n## NN Field Definition: notes\nconcept:: Change\ntype:: string\ndescription:: Rationale, commit note, or review critique.\n\n## NN Field Definition: evidence\nconcept:: Change\ntype:: citation\ndescription:: Evidence the change derives from \u2014 the ONLY provenance of the mutation \u2014 in the shared citation grammar (<path>@## <Heading>, <csv>@<row>, <json>@/<pointer>, a bare path, or the literal tokens decision / unknown). Mandatory on every change; written by the proposer at proposal time and sealed into proposal_sha; apply only verifies that it resolves.\n\n## NN Field Definition: blueprint_name\nconcept:: Change\ntype:: string\ndescription:: add_model and extract_instance. Name of the parent bluepriNNt of the model to create.\n\n## NN Field Definition: blueprint_url\nconcept:: Change\ntype:: string\ndescription:: add_model and extract_instance. Immutable URL of the parent bluepriNNt of the model to create.\n\n## NN Field Definition: knowledge_version\nconcept:: Change\ntype:: string\ndescription:: add_model only. Optional initial knowledge_version of the created model (inferred from the bluepriNNt when omitted).\n\n## NN Field Definition: status\nconcept:: Change\ntype:: select\noptions:: [proposed, applied, partially_applied, rejected, conflict]\ndescription:: Execution status annotation assigned by the apply engine. partially_applied is a changeset-level status (some changes applied, some conflicted); a change itself is applied, conflict or rejected. Written once in the changeset frontmatter; a change carries its own status only when it differs.\n\n## NN Field Definition: resolution\nconcept:: Change\ntype:: string\ndescription:: Conflict description or rejection reason, written only on a change that did not apply. A rejected changeset records why it was rejected here and is never re-applied.\n\n## NN Field Definition: resolved_slug\nconcept:: Change\ntype:: string\ndescription:: Disambiguated slug assigned upon insertion.\n\n## NN Field Definition: resolved_target\nconcept:: Change\ntype:: string\ndescription:: Execution fact stamped by the apply engine: the canonical unit address the change resolved to (model@frozen-slug&field, model@frozen-slug&#body, model@matrix-slug&row-slug&col-slug, model@concept:<Name>[&field], or the artifact path; model@frozen-slug for set_fields). Outside the seal; never accepted from a proposal. Written only when it differs from target; otherwise target is the address.\n\n## NN Field Definition: evidence_sha256\nconcept:: Change\ntype:: string\ndescription:: Execution fact stamped by the apply engine: one lowercase hex sha256 per evidence entry, in evidence order, as a positional list [a, b]. Omitted for decision and unknown. Outside the seal; a later mismatch downgrades anchor checks to EVIDENCE_SOURCE_CHANGED. The changeset frontmatter carries one evidence_sha256 map (cited path -> sha256) for the whole batch; a change carries its own list only for a cited path the map does not carry.\n\n## NN Field Definition: applied_at\nconcept:: Change\ntype:: string\ndescription:: Execution fact stamped by the apply engine: when the change was applied, UTC ISO-8601. Outside the seal. Changes of one batch share it; apply clamps it to max(now, latest + 1 ms). Written once in the changeset frontmatter and inherited by every change.\n\n## NN Field Definition: batch\nconcept:: Change\ntype:: string\ndescription:: Execution fact: the batch identity of the apply (the changeset stem). Outside the seal. Written once in the changeset frontmatter and inherited by every change.\n\n## NN Field Definition: atomic\nconcept:: Change\ntype:: boolean\ndescription:: Atomicity of the proposal, in the changeset frontmatter. When true, any conflicted change conflicts every change of the changeset and nothing is written: the batch applies wholly or the changeset is recorded as conflict. Sealed into proposal_sha, because atomicity is part of what was proposed. Absent or false keeps the partial-apply behavior.\n\n## NN Field Definition: run\nconcept:: Change\ntype:: string\ndescription:: Run context, in the changeset frontmatter: <run-id>@<step-slug> when the changeset was written inside a procedure step. Sealed into proposal_sha, because it is part of what was proposed. It is a frontmatter fact rather than evidence because an open run is not citable. A human gate verdict carries none and links to its step through that step\'s evidence.\n\n# Changeset Blueprint\n\n## A level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive\n\n## Philosophy\n\nEvery graph mutation in cogNNitive is represented as a structured changeset document. Rather than performing uncoordinated mutations or relying on informal agent chat transcript promotion, changesets serve as the single authoritative mutation and provenance medium. Changesets are sealed with a proposal hash, an integrity check verified before application that catches an accidental modification of the proposal between proposal and apply, and are recorded permanently to form the chain of provenance. The seal carries no key: anyone able to edit the file can recompute it, and it does not cover the execution facts. The seal is produced at intake when a proposer omits it (see Specification).\n\n## Objectives\n\n- Standardize graph mutation operations across models, elements, fields, and matrices.\n- Seal each proposal with a hash: an integrity check against accidental modification between proposal and apply, not an authentication of who wrote it.\n- Support atomic two-phase transactions with zero partial side-effects on validation failure.\n- The change is the only provenance: no field of a model carries a citation.\n- Enable structured human and agent review feedback as comment operations.\n\n## Specification\n\nA changeset document lives in the changes/ directory at the domain root with the filename pattern <prefix>_<author>_<stamp>_changes_NN.md. The prefix is the workspace_id for a changeset written by the MCP (propose_changeset, init_knowledge, apply_change) and the model slug for a changeset exported by the console review.\n\nEach change is declared as an element of concept Change:\n- op: One of update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, remove_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default, close_model.\n- update_element_text: Replaces the prose body of an element (ElementNode.description), named to mirror update_concept_text. target is model@element; from is the current prose and to the new prose. notes never writes the prose body, and update_field on description is rejected with USE_UPDATE_ELEMENT_TEXT.\n- rename_element: Changes one element\'s display name. target is model@element (with concept when the name is ambiguous) and to is the new display name. The element\'s slug is immutable and is preserved, so every address that uses the slug keeps resolving after the rename; that is why renaming is not a way to change identity. The cascade is part of the same atomic change, never a follow-up: taxonomy parent/child labels, matrix row and column labels, `[[...]]` wikilinks in fields and prose, declared `reference` and `knowledge` field values, and `relationships[].target` are all rewritten on apply. A sibling with the same display name inside the same concept is rejected (D3). On a model whose slugs are not frozen yet, the mutation freezes them first, so the applied change leaves explicit `slug::` declarations behind.\n- produce_artifact: Records that an artifact was produced. target is a workspace-relative artifact path; evidence lists the units or sources consumed; author is the producing procedure. A regenerable view (the console HTML, the impact report family) needs no record.\n- repin_blueprint: Moves a model\'s parent_spec (name and url) and its blueprint_version pin to a target bluepriNNt version. target is the bare model id, to is the target parent_spec.name, blueprint_url is the target url, and from is an optional precondition on the current parent_spec.name. It is the only supported way to repoint a model: patching frontmatter text is not a change and leaves no record. A stale from is MUTATION_FAILED.\n- rename_field: Renames one field key on every element of the model that carries it. target is the bare model id, from is the current field name, to is the new one, and concept optionally scopes the rename to one concept. It replaces text-level rewrites of a field a newer bluepriNNt renamed. Renaming a field no element carries is a successful no-op with a warning.\n- set_field_default: Populates a field introduced by the newer bluepriNNt on every element that lacks it, never overwriting an existing value. target is the bare model id, name is the field, to is the default value, and concept optionally scopes it. It is a successful no-op when every element already carries the field.\n- close_model: The closing event of a model. target is the bare model id; it sets `closed: true` in the model frontmatter, and the changeset that carries it records who closed the model and when. After it, every write to the model is refused with MODEL_CLOSED, in the same changeset too, and a second close_model is MODEL_CLOSED. A log that never ends is closed in segments.\n- add_element: Creates an element with its concept, name and optional explicit slug, and optionally its initial fields in to: a one-line JSON object field -> serialized value, the shape set_fields uses (an empty or non-object to or a repeated key is INVALID_OPERATION; the key description is USE_UPDATE_ELEMENT_TEXT). Every value is validated like update_field validates it, and the element is written with its fields in the one change under its one evidence, all or nothing; an append-only instance is thus written once with its values. The change log records one unit per field (model@slug&field) whose origin is the add_element. There is no fields key. A field whose evidence differs is set afterwards by its own update_field change (no from, because the field does not exist yet). notes is rationale, never prose.\n- set_fields: Sets several fields of one element from one evidence in one change. target is model@element (no &field); to is a one-line JSON object whose keys are field names and whose values are the serialized field values update_field would write; from is optional and holds the expected current value of a subset of the keys of to (a key absent from from has no precondition). It is all or nothing: a failed from or base_hash precondition conflicts the whole change and writes no field. An empty or non-object to, a repeated key, or a from key that to does not set is INVALID_OPERATION; the key description is USE_UPDATE_ELEMENT_TEXT. to and from are sealed as written. The change log records one unit per field (model@slug&field), each with the same history hop, evidence and position. update_field stays for a single field or for fields whose evidence differs.\n- target: Canonical target address identifying the model, element, field, matrix, row, or column.\n- from: Precondition value that must match the live model state.\n- to: Proposed value.\n- add_model: Creates a new Level-3 kNNowledge document. target is the new model id; blueprint_name and blueprint_url are required; name (title) and knowledge_version are optional. It carries no from, to or base_hash and no element payload: initial elements are add_element changes that follow it in the same changeset. With concept it instantiates a distributed concept: target is then the instance\'s hierarchical id (container chain plus slug), the file is written at the concept\'s declared placement path, and the skeleton carries the instance root element (## NN &lt;Concept&gt;: &lt;name&gt; plus slug:: &lt;slug&gt;).\n- move_model: Renames or relocates an instance model, which changes its id and the ids of every descendant instance. target is the old instance model id and to is the new one (same concept). The instance root folder, the file stem and the root slug:: move together inside the same atomic persistence; only the moved model is bumped, and only when its body changed. Recorded targets are never rewritten: the fold carries them forward. Every typed reference to the old id must be retargeted by an update_field in the same changeset, or the move is rejected with MOVE_LEAVES_DANGLING_REFERENCES. A compact model is MOVE_REQUIRES_INSTANCE; an occupied id is MODEL_EXISTS; a missing container is CONTAINER_MISSING.\n- remove_model: Removes one instance model as a recorded change. target is the instance model id and the change carries nothing else: it is a sealed, reviewable change, not an unrecorded filesystem delete, and no copy is kept outside changes/. Applying it deletes the model file inside the same atomic persistence and writes the change\'s execution facts, so the removal is reversible from the model\'s earlier changes and git history; the model\'s units leave the fold and the id becomes a terminal state for MODEL_WITHOUT_FILE instead of a reported loss. A compact model is REMOVE_REQUIRES_INSTANCE; a model whose folder still holds another model is REMOVE_MODEL_HAS_DESCENDANTS (remove the children first); every typed reference to the id or a descendant must be retargeted by an update_field in the same changeset, or the removal is rejected with REMOVE_LEAVES_DANGLING_REFERENCES. An address to a removed id is REF_MODEL_NOT_FOUND, naming the changeset that recorded the removal. A removal records no version transition: a removed model has no next version.\n- freeze_slugs: Writes an explicit slug for every element of the model that lacks one. target is the bare model id; it carries no other payload.\n- extract_instance: Migrates a compact element into its own distributed instance model. target is the source element address (compact model id plus the element slug), to is the instance id it becomes (which must end in that slug), and blueprint_name with blueprint_url name the bluepriNNt that declares the concept distributed. The extracted element becomes the instance root, its descendants move with it, and both models are bumped. The change records the moved slug set as an execution fact (extracted_slugs), so the fold re-keys the units to the new id and no unit fires UNIT_WITHOUT_RECORD. A concept the bluepriNNt does not distribute is EXTRACT_NOT_DISTRIBUTED; an instance model is EXTRACT_REQUIRES_COMPACT; an existing instance or an occupied destination folder is a conflict, and every extraction of the same source then conflicts as DEPENDS_ON_CONFLICTED_CHANGE: the migration is all or nothing. Use remove_element to drop a duplicate, never extract_instance.\n- bump_version: Raises the model knowledge_version by the level named in to (patch, minor or major). target is the bare model id. The apply engine bumps each touched model exactly once: a changeset that carries bump_version applies that level instead of the default patch bump, never both. The unversioned lineage record cannot be bumped.\n- add_matrix: Adds a new matrix table to a Level-3 model. target is model@matrix:&lt;name&gt;; name is the matrix name, concept is the row-axis concept and to is the column-axis concept. seed ({columns, rows}) supplies the header elements; when omitted they default to the axis concepts\' own elements. Every seeded cell starts empty, ready for update_matrix_cell, and records no cell unit. seed is sealed and is refused on any other op. It is refused on a Level-2 bluepriNNt (declare a Matrix Definition element there instead), and rejected when the matrix already exists.\n- base_hash: Optional precondition on the target element content; a mismatch is a conflict.\n- evidence: Mandatory. One citation, a bracketed list of citations, or the literal token decision / unknown (the keywords only ever alone); written by the proposer and sealed with the proposal. The change is the only provenance of the mutation.\n\n#### Origins of a value\n\nEvidence always points outside the living knowledge graph: every value of a model ends in one of these origins.\n\n| Origin | How the change records it |\n|---|---|\n| A person\'s decision | `evidence:: decision` in a changeset with `author_kind: human` |\n| An AI agent\'s decision or proposal | `evidence:: decision` in a changeset with `author_kind: agent`; the proposed changeset is the proposal |\n| A conversation | a citation of the transcript, `conversations/<file>.md@## <heading>` |\n| An external document | a citation of the source, `sources/<path>@<unit>` |\n| A run of a procedure | a citation of the closed run, `<run id>@<event>` (the `executions` bluepriNNt) |\n| A computed value | a citation of the closed run that computed it: the computation is a run whose events record each input read (address, value, version) and the result |\n| Not known | `evidence:: unknown` |\n\nA model is cited by its id (`<model id>@<element>`), never by its file path, and only once it is closed by `close_model`: a closed model is a frozen record, so it is a source, while an open model is knowledge still changing. Citing an open model is CITATION_NOT_CLOSED; the engine stamps the closed model file\'s sha256 in evidence_sha256 like any source.\n- Execution annotations (status, resolution, resolved_slug, applied_at, batch) and the execution facts (resolved_target, evidence_sha256) record the outcome of applying the change. Every change has an applied_at (UTC), status, author and batch. The batch-wide facts are written once, in the changeset frontmatter (applied_at, batch, status, and evidence_sha256 as a map from each cited path to its sha256), and every change inherits them: a change carries a fact only when its value differs (status when it differs from the changeset status, author when it differs from the frontmatter author, resolution only when the change did not apply, resolved_target only when it differs from target, evidence_sha256 only for a cited path the map does not carry; applied_at and batch never). The change log resolves each fact as the change\'s own value, else the changeset\'s, so a changeset whose changes carry every fact themselves resolves the same way. The change chain, ordered by (applied_at, changeset stamp, filename, document index), is a unit\'s history.\n\nChangeset status is one of proposed, applied, partially_applied, rejected, conflict. A changeset is rejected when the proposal itself is invalid (a failed validation or an unresolved citation): the status and the reason (resolution) are persisted and the changeset is never re-applied. A conflict is a failed precondition of the live model and may be fixed and retried.\n\nA changeset MAY declare `run` in its frontmatter as `<run-id>@<step-slug>`, naming the procedure step that wrote it. It is sealed into `proposal_sha` and is a frontmatter fact rather than `evidence`, because an open run is not citable: "what did this step produce" is the set of applied changes carrying that `run`, and "which run produced this element" is the `run` of the element\'s origin change. A human `review_gate` carries no run context and links to its step through that step\'s evidence.\n\nA changeset MAY declare `atomic: true` in its frontmatter. An atomic changeset is all or nothing: when any change conflicts \u2014 a failed `from` or `base_hash`, a missing target, a stale target, a reference conflict \u2014 every change of the changeset is conflicted, nothing is written, and the changeset is recorded as `conflict` with reason `ATOMIC_CHANGESET_CONFLICT`, which names the original failure. An atomic changeset whose changes all apply is `applied`. The declaration is sealed into `proposal_sha`: a changeset sealed as non-atomic cannot be turned into an all-or-nothing one after the fact without breaking the seal. Absent or `false`, the changeset keeps the partial-apply behavior described above.\n\nA changeset MAY be authored by hand (for example a large agent-generated batch) and applied by path with `apply_change`; it does not require a pre-computed `proposal_sha`. When the seal is omitted the runtime computes it at intake; a present but non-matching value means the proposal was modified after it was sealed and is rejected (`PROPOSAL_TAMPERED`), so a hand-authored changeset MUST either omit the seal or carry the exact hash. The document-level `proposal_sha` is therefore optional in the template below.\n\n## Template\n\n### Level 3 Changeset Template\n\n```markdown\n---\nspec_version: "V_0-4-0"\nlevel: 3\nparent_spec:\n  name: changes\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"\nblueprint_version: "V_0-14-0"\nstatus: proposed\nproposal_sha: "<64-character-sha256-hex>"\ntitle: "<Changeset Title>"\nauthor: "<Author>"\n---\n\n# NN index\n\n* [[Change]]\n\n# NN Change\n\n## NN Change: change-1\nop:: update_field\ntarget:: model@element&field\nfrom:: "old_value"\nto:: "new_value"\nevidence:: sources/import/<file>@## <Heading>\n```\n\n## Examples\n\n### Field Update and Review Comment\n\n```markdown\n## NN Change: c-01\nop:: update_field\ntarget:: strategy@vision&statement\nfrom:: "Initial draft"\nto:: "Accelerate renewable adoption"\nauthor:: agent-1\nnotes:: Align with 2026 sustainability roadmap\n\n## NN Change: c-02\nop:: comment\ntarget:: strategy@vision&statement\nauthor:: reviewer-human\nnotes:: Verified alignment with executive briefing\n```\n';
+    CHANGES_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\nblueprint_name: "changes"\nblueprint_version: "V_0-16-0"\ntitle: "Changeset Blueprint"\ndescription: "Level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive."\nnature:\n  structure: members\n  ownership: derived\n---\n\n# NN index\n\n* [[Change]]\n\n# NN Concept Definition\n\n## NN Concept Definition: Change\nicon:: git-commit\ntype:: list\ncolor:: blue\nweight:: 100\n\n# NN Field Definition\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\ndescription:: Open vocabulary ad-hoc tags and classification labels.\n\n## NN Field Definition: op\nconcept:: Change\ntype:: select\noptions:: [update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, move_source, remove_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default, close_model]\ndescription:: Mutation or review operation.\n\n## NN Field Definition: target\nconcept:: Change\ntype:: address\ndescription:: Canonical D5 target address (model@element&field or model@matrix&row&col).\n\n## NN Field Definition: from\nconcept:: Change\ntype:: string\ndescription:: Precondition check value prior to mutation.\n\n## NN Field Definition: to\nconcept:: Change\ntype:: string\ndescription:: Proposed target value. For bump_version, the version level to bump: patch, minor or major. For add_matrix, the column-axis concept. For move_model, the new instance model id. For extract_instance, the new instance model id the extracted element becomes. For add_element, the optional initial fields, a one-line JSON object field -> serialized value. For set_fields, a one-line JSON object field -> serialized value; from is then an optional JSON object with the expected current value of some of those fields.\n\n## NN Field Definition: base_hash\nconcept:: Change\ntype:: string\ndescription:: Content hash of the target element when the change was written (the console\'s element hash). A different current hash is a precondition failure (conflict). Optional; absent means the change is not guarded by element content.\n\n## NN Field Definition: concept\nconcept:: Change\ntype:: string\ndescription:: Target concept for add_element operations, the row-axis concept for add_matrix, and the distributed concept an add_model instantiates. add_model only: naming a distributed concept makes target the instance\'s hierarchical id (container chain plus slug), and the new model is written at the concept\'s declared placement path, not under kNNowledge/. extract_instance takes the concept from the source element it cuts.\n\n## NN Field Definition: name\nconcept:: Change\ntype:: string\ndescription:: Display name for added or renamed entities; the title of a model created by add_model (defaults to the id); the matrix name for add_matrix.\n\n## NN Field Definition: slug\nconcept:: Change\ntype:: string\ndescription:: Proposed explicit slug.\n\n## NN Field Definition: seed\nconcept:: Change\ntype:: string\ndescription:: add_matrix only. Header elements the matrix is created with, as a JSON object {columns:[...],rows:[...]}. Sealed into proposal_sha. Creates empty cells and records no cell units; each non-empty cell needs its own update_matrix_cell change.\n\n## NN Field Definition: author\nconcept:: Change\ntype:: string\ndescription:: Identifier of author, reviewer, or agent.\n\n## NN Field Definition: notes\nconcept:: Change\ntype:: string\ndescription:: Rationale, commit note, or review critique.\n\n## NN Field Definition: evidence\nconcept:: Change\ntype:: citation\ndescription:: Evidence the change derives from \u2014 the ONLY provenance of the mutation \u2014 in the shared citation grammar (<path>@## <Heading>, <csv>@<row>, <json>@/<pointer>, a bare path, or the literal tokens decision / unknown). Mandatory on every change; written by the proposer at proposal time and sealed into proposal_sha; apply only verifies that it resolves.\n\n## NN Field Definition: blueprint_name\nconcept:: Change\ntype:: string\ndescription:: add_model and extract_instance. Name of the parent bluepriNNt of the model to create.\n\n## NN Field Definition: blueprint_url\nconcept:: Change\ntype:: string\ndescription:: add_model and extract_instance. Immutable URL of the parent bluepriNNt of the model to create.\n\n## NN Field Definition: knowledge_version\nconcept:: Change\ntype:: string\ndescription:: add_model only. Optional initial knowledge_version of the created model (inferred from the bluepriNNt when omitted).\n\n## NN Field Definition: status\nconcept:: Change\ntype:: select\noptions:: [proposed, applied, partially_applied, rejected, conflict]\ndescription:: Execution status annotation assigned by the apply engine. partially_applied is a changeset-level status (some changes applied, some conflicted); a change itself is applied, conflict or rejected. Written once in the changeset frontmatter; a change carries its own status only when it differs.\n\n## NN Field Definition: resolution\nconcept:: Change\ntype:: string\ndescription:: Conflict description or rejection reason, written only on a change that did not apply. A rejected changeset records why it was rejected here and is never re-applied.\n\n## NN Field Definition: resolved_slug\nconcept:: Change\ntype:: string\ndescription:: Disambiguated slug assigned upon insertion.\n\n## NN Field Definition: resolved_target\nconcept:: Change\ntype:: string\ndescription:: Execution fact stamped by the apply engine: the canonical unit address the change resolved to (model@frozen-slug&field, model@frozen-slug&#body, model@matrix-slug&row-slug&col-slug, model@concept:<Name>[&field], or the artifact path; model@frozen-slug for set_fields). Outside the seal; never accepted from a proposal. Written only when it differs from target; otherwise target is the address.\n\n## NN Field Definition: evidence_sha256\nconcept:: Change\ntype:: string\ndescription:: Execution fact stamped by the apply engine: one lowercase hex sha256 per evidence entry, in evidence order, as a positional list [a, b]. Omitted for decision and unknown. Outside the seal; a later mismatch downgrades anchor checks to EVIDENCE_SOURCE_CHANGED. The changeset frontmatter carries one evidence_sha256 map (cited path -> sha256) for the whole batch; a change carries its own list only for a cited path the map does not carry.\n\n## NN Field Definition: applied_at\nconcept:: Change\ntype:: string\ndescription:: Execution fact stamped by the apply engine: when the change was applied, UTC ISO-8601. Outside the seal. Changes of one batch share it; apply clamps it to max(now, latest + 1 ms). Written once in the changeset frontmatter and inherited by every change.\n\n## NN Field Definition: batch\nconcept:: Change\ntype:: string\ndescription:: Execution fact: the batch identity of the apply (the changeset stem). Outside the seal. Written once in the changeset frontmatter and inherited by every change.\n\n## NN Field Definition: atomic\nconcept:: Change\ntype:: boolean\ndescription:: Atomicity of the proposal, in the changeset frontmatter. When true, any conflicted change conflicts every change of the changeset and nothing is written: the batch applies wholly or the changeset is recorded as conflict. Sealed into proposal_sha, because atomicity is part of what was proposed. Absent or false keeps the partial-apply behavior.\n\n## NN Field Definition: run\nconcept:: Change\ntype:: string\ndescription:: Run context, in the changeset frontmatter: <run-id>@<step-slug> when the changeset was written inside a procedure step. Sealed into proposal_sha, because it is part of what was proposed. It is a frontmatter fact rather than evidence because an open run is not citable. A human gate verdict carries none and links to its step through that step\'s evidence.\n\n# Changeset Blueprint\n\n## A level-2 blueprint defining the normative document model for graph mutations, proposals, reviews, and version transitions in cogNNitive\n\n## Philosophy\n\nEvery graph mutation in cogNNitive is represented as a structured changeset document. Rather than performing uncoordinated mutations or relying on informal agent chat transcript promotion, changesets serve as the single authoritative mutation and provenance medium. Changesets are sealed with a proposal hash, an integrity check verified before application that catches an accidental modification of the proposal between proposal and apply, and are recorded permanently to form the chain of provenance. The seal carries no key: anyone able to edit the file can recompute it, and it does not cover the execution facts. The seal is produced at intake when a proposer omits it (see Specification).\n\n## Objectives\n\n- Standardize graph mutation operations across models, elements, fields, and matrices.\n- Seal each proposal with a hash: an integrity check against accidental modification between proposal and apply, not an authentication of who wrote it.\n- Support atomic two-phase transactions with zero partial side-effects on validation failure.\n- The change is the only provenance: no field of a model carries a citation.\n- Enable structured human and agent review feedback as comment operations.\n\n## Specification\n\nA changeset document lives in the changes/ directory at the domain root with the filename pattern <prefix>_<author>_<stamp>_changes_NN.md. The prefix is the workspace_id for a changeset written by the MCP (propose_changeset, init_knowledge, apply_change) and the model slug for a changeset exported by the console review.\n\nEach change is declared as an element of concept Change:\n- op: One of update_field, set_fields, add_element, remove_element, rename_element, rename_concept, update_matrix_cell, update_concept_text, update_concept_field, remove_matrix, add_matrix, comment, add_model, move_model, move_source, remove_model, extract_instance, freeze_slugs, bump_version, update_element_text, produce_artifact, repin_blueprint, rename_field, set_field_default, close_model.\n- update_element_text: Replaces the prose body of an element (ElementNode.description), named to mirror update_concept_text. target is model@element; from is the current prose and to the new prose. notes never writes the prose body, and update_field on description is rejected with USE_UPDATE_ELEMENT_TEXT.\n- rename_element: Changes one element\'s display name. target is model@element (with concept when the name is ambiguous) and to is the new display name. The element\'s slug is immutable and is preserved, so every address that uses the slug keeps resolving after the rename; that is why renaming is not a way to change identity. The cascade is part of the same atomic change, never a follow-up: taxonomy parent/child labels, matrix row and column labels, `[[...]]` wikilinks in fields and prose, declared `reference` and `knowledge` field values, and `relationships[].target` are all rewritten on apply. A sibling with the same display name inside the same concept is rejected (D3). On a model whose slugs are not frozen yet, the mutation freezes them first, so the applied change leaves explicit `slug::` declarations behind.\n- produce_artifact: Records that an artifact was produced. target is a workspace-relative artifact path; evidence lists the units or sources consumed; author is the producing procedure. A regenerable view (the console HTML, the impact report family) needs no record.\n- move_source: Records that one source file moved, and performs the move. target is the previous workspace path, to is the new one, and it carries no element payload, no from and no base_hash. If target has no file on disk the change conflicts with MOVE_SOURCE_MISSING_FILE and no record is written, so a typo cannot manufacture a move. A destination that already exists is MOVE_SOURCE_DESTINATION_EXISTS. The applied change is the register: citation resolution follows it. A citation that still spells the previous path resolves at the new one (resolve_sources reports the current path and the previous one as movedFrom, and validation reports KU_SOURCE_MOVED naming the move instead of KU_DANGLING_FILE), and check_domain reports every document whose citations still carry the previous path. Recording a move never rewrites an applied changeset: the evidence_sha256 maps of sealed changesets stay historical, and no citation is edited on disk.- repin_blueprint: Moves a model\'s parent_spec (name and url) and its blueprint_version pin to a target bluepriNNt version. target is the bare model id, to is the target parent_spec.name, blueprint_url is the target url, and from is an optional precondition on the current parent_spec.name. It is the only supported way to repoint a model: patching frontmatter text is not a change and leaves no record. A stale from is MUTATION_FAILED.\n- rename_field: Renames one field key on every element of the model that carries it. target is the bare model id, from is the current field name, to is the new one, and concept optionally scopes the rename to one concept. It replaces text-level rewrites of a field a newer bluepriNNt renamed. Renaming a field no element carries is a successful no-op with a warning.\n- set_field_default: Populates a field introduced by the newer bluepriNNt on every element that lacks it, never overwriting an existing value. target is the bare model id, name is the field, to is the default value, and concept optionally scopes it. It is a successful no-op when every element already carries the field.\n- close_model: The closing event of a model. target is the bare model id; it sets `closed: true` in the model frontmatter, and the changeset that carries it records who closed the model and when. After it, every write to the model is refused with MODEL_CLOSED, in the same changeset too, and a second close_model is MODEL_CLOSED. A log that never ends is closed in segments.\n- add_element: Creates an element with its concept, name and optional explicit slug, and optionally its initial fields in to: a one-line JSON object field -> serialized value, the shape set_fields uses (an empty or non-object to or a repeated key is INVALID_OPERATION; the key description is USE_UPDATE_ELEMENT_TEXT). Every value is validated like update_field validates it, and the element is written with its fields in the one change under its one evidence, all or nothing; an append-only instance is thus written once with its values. The change log records one unit per field (model@slug&field) whose origin is the add_element. There is no fields key. A field whose evidence differs is set afterwards by its own update_field change (no from, because the field does not exist yet). notes is rationale, never prose.\n- set_fields: Sets several fields of one element from one evidence in one change. target is model@element (no &field); to is a one-line JSON object whose keys are field names and whose values are the serialized field values update_field would write; from is optional and holds the expected current value of a subset of the keys of to (a key absent from from has no precondition). It is all or nothing: a failed from or base_hash precondition conflicts the whole change and writes no field. An empty or non-object to, a repeated key, or a from key that to does not set is INVALID_OPERATION; the key description is USE_UPDATE_ELEMENT_TEXT. to and from are sealed as written. The change log records one unit per field (model@slug&field), each with the same history hop, evidence and position. update_field stays for a single field or for fields whose evidence differs.\n- target: Canonical target address identifying the model, element, field, matrix, row, or column.\n- from: Precondition value that must match the live model state.\n- to: Proposed value.\n- add_model: Creates a new Level-3 kNNowledge document. target is the new model id; blueprint_name and blueprint_url are required; name (title) and knowledge_version are optional. It carries no from, to or base_hash and no element payload: initial elements are add_element changes that follow it in the same changeset. With concept it instantiates a distributed concept: target is then the instance\'s hierarchical id (container chain plus slug), the file is written at the concept\'s declared placement path, and the skeleton carries the instance root element (## NN &lt;Concept&gt;: &lt;name&gt; plus slug:: &lt;slug&gt;).\n- move_model: Renames or relocates an instance model, which changes its id and the ids of every descendant instance. target is the old instance model id and to is the new one (same concept). The instance root folder, the file stem and the root slug:: move together inside the same atomic persistence; only the moved model is bumped, and only when its body changed. Recorded targets are never rewritten: the fold carries them forward. Every typed reference to the old id must be retargeted by an update_field in the same changeset, or the move is rejected with MOVE_LEAVES_DANGLING_REFERENCES. A compact model is MOVE_REQUIRES_INSTANCE; an occupied id is MODEL_EXISTS; a missing container is CONTAINER_MISSING.\n- remove_model: Removes one instance model as a recorded change. target is the instance model id and the change carries nothing else: it is a sealed, reviewable change, not an unrecorded filesystem delete, and no copy is kept outside changes/. Applying it deletes the model file inside the same atomic persistence and writes the change\'s execution facts, so the removal is reversible from the model\'s earlier changes and git history; the model\'s units leave the fold and the id becomes a terminal state for MODEL_WITHOUT_FILE instead of a reported loss. A compact model is REMOVE_REQUIRES_INSTANCE; a model whose folder still holds another model is REMOVE_MODEL_HAS_DESCENDANTS (remove the children first); every typed reference to the id or a descendant must be retargeted by an update_field in the same changeset, or the removal is rejected with REMOVE_LEAVES_DANGLING_REFERENCES. An address to a removed id is REF_MODEL_NOT_FOUND, naming the changeset that recorded the removal. A removal records no version transition: a removed model has no next version.\n- freeze_slugs: Writes an explicit slug for every element of the model that lacks one. target is the bare model id; it carries no other payload.\n- extract_instance: Migrates a compact element into its own distributed instance model. target is the source element address (compact model id plus the element slug), to is the instance id it becomes (which must end in that slug), and blueprint_name with blueprint_url name the bluepriNNt that declares the concept distributed. The extracted element becomes the instance root, its descendants move with it, and both models are bumped. The change records the moved slug set as an execution fact (extracted_slugs), so the fold re-keys the units to the new id and no unit fires UNIT_WITHOUT_RECORD. A concept the bluepriNNt does not distribute is EXTRACT_NOT_DISTRIBUTED; an instance model is EXTRACT_REQUIRES_COMPACT; an existing instance or an occupied destination folder is a conflict, and every extraction of the same source then conflicts as DEPENDS_ON_CONFLICTED_CHANGE: the migration is all or nothing. Use remove_element to drop a duplicate, never extract_instance.\n- bump_version: Raises the model knowledge_version by the level named in to (patch, minor or major). target is the bare model id. The apply engine bumps each touched model exactly once: a changeset that carries bump_version applies that level instead of the default patch bump, never both. The unversioned lineage record cannot be bumped.\n- add_matrix: Adds a new matrix table to a Level-3 model. target is model@matrix:&lt;name&gt;; name is the matrix name, concept is the row-axis concept and to is the column-axis concept. seed ({columns, rows}) supplies the header elements; when omitted they default to the axis concepts\' own elements. Every seeded cell starts empty, ready for update_matrix_cell, and records no cell unit. seed is sealed and is refused on any other op. It is refused on a Level-2 bluepriNNt (declare a Matrix Definition element there instead), and rejected when the matrix already exists.\n- base_hash: Optional precondition on the target element content; a mismatch is a conflict.\n- evidence: Mandatory. One citation, a bracketed list of citations, or the literal token decision / unknown (the keywords only ever alone); written by the proposer and sealed with the proposal. The change is the only provenance of the mutation.\n\n#### Origins of a value\n\nEvidence always points outside the living knowledge graph: every value of a model ends in one of these origins.\n\n| Origin | How the change records it |\n|---|---|\n| A person\'s decision | `evidence:: decision` in a changeset with `author_kind: human` |\n| An AI agent\'s decision or proposal | `evidence:: decision` in a changeset with `author_kind: agent`; the proposed changeset is the proposal |\n| A conversation | a citation of the transcript, `conversations/<file>.md@## <heading>` |\n| An external document | a citation of the source, `sources/<path>@<unit>` |\n| A run of a procedure | a citation of the closed run, `<run id>@<event>` (the `executions` bluepriNNt) |\n| A computed value | a citation of the closed run that computed it: the computation is a run whose events record each input read (address, value, version) and the result |\n| Not known | `evidence:: unknown` |\n\nA model is cited by its id (`<model id>@<element>`), never by its file path, and only once it is closed by `close_model`: a closed model is a frozen record, so it is a source, while an open model is knowledge still changing. Citing an open model is CITATION_NOT_CLOSED; the engine stamps the closed model file\'s sha256 in evidence_sha256 like any source.\n- Execution annotations (status, resolution, resolved_slug, applied_at, batch) and the execution facts (resolved_target, evidence_sha256) record the outcome of applying the change. Every change has an applied_at (UTC), status, author and batch. The batch-wide facts are written once, in the changeset frontmatter (applied_at, batch, status, and evidence_sha256 as a map from each cited path to its sha256), and every change inherits them: a change carries a fact only when its value differs (status when it differs from the changeset status, author when it differs from the frontmatter author, resolution only when the change did not apply, resolved_target only when it differs from target, evidence_sha256 only for a cited path the map does not carry; applied_at and batch never). The change log resolves each fact as the change\'s own value, else the changeset\'s, so a changeset whose changes carry every fact themselves resolves the same way. The change chain, ordered by (applied_at, changeset stamp, filename, document index), is a unit\'s history.\n\nChangeset status is one of proposed, applied, partially_applied, rejected, conflict. A changeset is rejected when the proposal itself is invalid (a failed validation or an unresolved citation): the status and the reason (resolution) are persisted and the changeset is never re-applied. A conflict is a failed precondition of the live model and may be fixed and retried.\n\nA changeset MAY declare `run` in its frontmatter as `<run-id>@<step-slug>`, naming the procedure step that wrote it. It is sealed into `proposal_sha` and is a frontmatter fact rather than `evidence`, because an open run is not citable: "what did this step produce" is the set of applied changes carrying that `run`, and "which run produced this element" is the `run` of the element\'s origin change. A human `review_gate` carries no run context and links to its step through that step\'s evidence.\n\nA changeset MAY declare `atomic: true` in its frontmatter. An atomic changeset is all or nothing: when any change conflicts \u2014 a failed `from` or `base_hash`, a missing target, a stale target, a reference conflict \u2014 every change of the changeset is conflicted, nothing is written, and the changeset is recorded as `conflict` with reason `ATOMIC_CHANGESET_CONFLICT`, which names the original failure. An atomic changeset whose changes all apply is `applied`. The declaration is sealed into `proposal_sha`: a changeset sealed as non-atomic cannot be turned into an all-or-nothing one after the fact without breaking the seal. Absent or `false`, the changeset keeps the partial-apply behavior described above.\n\nA changeset MAY be authored by hand (for example a large agent-generated batch) and applied by path with `apply_change`; it does not require a pre-computed `proposal_sha`. When the seal is omitted the runtime computes it at intake; a present but non-matching value means the proposal was modified after it was sealed and is rejected (`PROPOSAL_TAMPERED`), so a hand-authored changeset MUST either omit the seal or carry the exact hash. The document-level `proposal_sha` is therefore optional in the template below.\n\n## Template\n\n### Level 3 Changeset Template\n\n```markdown\n---\nspec_version: "V_0-4-0"\nlevel: 3\nparent_spec:\n  name: changes\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md"\nblueprint_version: "V_0-14-0"\nstatus: proposed\nproposal_sha: "<64-character-sha256-hex>"\ntitle: "<Changeset Title>"\nauthor: "<Author>"\n---\n\n# NN index\n\n* [[Change]]\n\n# NN Change\n\n## NN Change: change-1\nop:: update_field\ntarget:: model@element&field\nfrom:: "old_value"\nto:: "new_value"\nevidence:: sources/import/<file>@## <Heading>\n```\n\n## Examples\n\n### Field Update and Review Comment\n\n```markdown\n## NN Change: c-01\nop:: update_field\ntarget:: strategy@vision&statement\nfrom:: "Initial draft"\nto:: "Accelerate renewable adoption"\nauthor:: agent-1\nnotes:: Align with 2026 sustainability roadmap\n\n## NN Change: c-02\nop:: comment\ntarget:: strategy@vision&statement\nauthor:: reviewer-human\nnotes:: Verified alignment with executive briefing\n```\n';
     DOMAINN_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\ntitle: "DomaiNN Blueprint"\nblueprint_name: "domaiNN"\nblueprint_version: "V_0-4-2"\nrelationship_types:\n  hierarchy:\n    enabled: true\n    via: "index block"\n  evaluable_matrix:\n    enabled: true\n  graph_edge:\n    enabled: false\n  sequence:\n    enabled: false\n---\n\n# NN index\n\n* [[domaiNN]]\n* [[kNNowledge]]\n* [[bluepriNNts]]\n\n# NN Concept Definition\n\n## NN Concept Definition: domaiNN\nicon:: layout-dashboard\ntype:: text\ncolor:: grey\nweight:: 100\n\n## NN Concept Definition: kNNowledge\nicon:: file-symlink\ntype:: knowledge\ncolor:: purple\nweight:: 95\n\n## NN Concept Definition: bluepriNNts\nicon:: copy\ntype:: model\ncolor:: grey\nweight:: 90\n\n# NN Field Definition\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\ndescription:: Open vocabulary ad-hoc tags and classification labels (e.g. verified).\n\n<!-- domaiNN fields: container conventions -->\n\n## NN Field Definition: name\nconcept:: domaiNN\ntype:: string\ndescription:: Display name or title of the domaiNN.\n\n## NN Field Definition: knowledge_dir\nconcept:: domaiNN\ntype:: string\ndescription:: Base relative path for kNNowledge documents in the domaiNN (default: kNNowledge/).\n\n## NN Field Definition: blueprints_dir\nconcept:: domaiNN\ntype:: string\ndescription:: Base relative path for local bluepriNNts in the domaiNN (default: specs/bluepriNNts/).\n\n<!-- kNNowledge fields: inventory + lineage -->\n\n## NN Field Definition: path\nconcept:: kNNowledge\ntype:: knowledge\ndescription:: domaiNN-relative path to the referenced kNNowledge document.\n\n## NN Field Definition: blueprint\nconcept:: kNNowledge\ntype:: string\ndescription:: The level-2 bluepriNNt the referenced kNNowledge document conforms to.\n\n## NN Field Definition: status\nconcept:: kNNowledge\ntype:: select\noptions:: [draft, active, archived]\ndescription:: Lifecycle status of the kNNowledge document within this domaiNN.\n\n## NN Field Definition: author\nconcept:: kNNowledge\ntype:: string\ndescription:: Author or owner of the kNNowledge document within this domaiNN.\n\n<!-- bluepriNNts fields: local blueprint inventory -->\n\n## NN Field Definition: path\nconcept:: bluepriNNts\ntype:: model\ndescription:: domaiNN-relative path to a local bluepriNNt spec (spec_NN.md).\n\n## NN Field Definition: category\nconcept:: bluepriNNts\ntype:: string\ndescription:: Domain classification or strategic focus of the local bluepriNNt.\n\n# DomaiNN Blueprint\n\n## A level-2 blueprint for a domaiNN root \u2014 linking kNNowledge documents, local bluepriNNts, and taxonomy tags\n\n## Philosophy\n\nA domaiNN is the container for a body of kNNowledge. It is itself a kNNowledge document, so a domaiNN can nest inside another domaiNN without a special case:\n* **domaiNN** sets directory conventions and the entry point (`domaiNN_NN.md`).\n* **kNNowledge** links to the Level-3 documents with metadata and blueprint binding.\n* **bluepriNNts** catalogs local bluepriNNt packages.\n\n## Objectives\n\n- Define the domaiNN root as an ordinary Level-3 kNNowledge document governed by this blueprint.\n- Standardize the directory layout: `kNNowledge/` for knowledge and `specs/bluepriNNts/` for local bluepriNNts.\n- Make every domaiNN resolvable offline through the parent chain (`domaiNN` \u2192 iNNfo V_0-6-0 \u2192 defiNNition).\n\n## Specification\n\n### Concepts\n\n| Concept | Type | Purpose |\n|---|---|---|\n| **domaiNN** | text | Prose description, entry point, and directory conventions of the container |\n| **kNNowledge** | knowledge | kNNowledge documents in the domaiNN with metadata and blueprint binding |\n| **bluepriNNts** | model | Local bluepriNNt specs the domaiNN references (path + category) |\n\n### Fields\n\n| Concept | Field | Type | Purpose |\n|---|---|---|---|\n| `*` | `tags` | select (multiple) | Open vocabulary ad-hoc tags and classification labels (e.g. `verified`) |\n| domaiNN | `name` | string | Display name or title of the domaiNN |\n| domaiNN | `knowledge_dir` | string | Base relative path for kNNowledge documents |\n| domaiNN | `blueprints_dir` | string | Base relative path for local bluepriNNts |\n| kNNowledge | `path` | knowledge | domaiNN-relative path to referenced document |\n| kNNowledge | `blueprint` | string | Level-2 bluepriNNt name |\n| kNNowledge | `status` | select | draft, active, archived |\n| kNNowledge | `author` | string | Author or owner |\n| bluepriNNts | `path` | model | domaiNN-relative path to local spec |\n| bluepriNNts | `category` | string | Strategic focus of local bluepriNNt |\n\n### Directory Conventions\n\n| Key | Default | Meaning |\n|---|---|---|\n| `knowledge_dir` | `kNNowledge/` | Base path for Level-3 kNNowledge documents |\n| `blueprints_dir` | `specs/bluepriNNts/` | Base path for local bluepriNNt packages |\n\nThe entry point of a domaiNN is a root document named exactly `domaiNN_NN.md`. Legacy entrypoint names (`workspace*.md`, `*_base_NN.md`) are detected as legacy and are never loaded by current tooling.\n\n## Template\n\n### Level 3 kNNowledge Template (Lightweight)\n\n```yaml\n---\nlevel: 3\nparent_spec:\n  name: "domaiNN"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md"\nknowledge_version: "V_0-1-0"\ntitle: "<DomaiNN Name>"\n---\n\n# NN domaiNN\n\nDescription of the domaiNN: its purpose, scope, and conventions.\n\n# NN kNNowledge\n\n## NN kNNowledge: Core Knowledge\npath:: kNNowledge/core_business_NN.md\nblueprint:: business\nstatus:: active\nauthor:: Lead Architect\ntags:: [verified]\n```\n\n## Examples\n\nA domaiNN that links one business kNNowledge document uses two concepts: `domaiNN` for the container and `kNNowledge` for the linked document. No other structure is required.\n';
     BLANK_SPEC_CONTENT = '---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\nblueprint_version: "V_0-4-2"\ntitle: "Blank App"\nrelationship_types:\n  hierarchy:\n    enabled: true\n    via: "index block"\n  evaluable_matrix:\n    enabled: false\n  graph_edge:\n    enabled: false\n  sequence:\n    enabled: false\n---\n\n# NN index\n\n* [[Content]]\n\n# NN Concept Definition\n\n## NN Concept Definition: Content\nicon:: file-text\ntype:: text\ncolor:: blue\nweight:: 100\n\n# NN Field Definition\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\ndescription:: Open vocabulary ad-hoc tags and classification labels.\n\n## NN Field Definition: summary\nconcept:: Content\ntype:: string\ndescription:: Free-form one-line summary or label for the content block.\n\n# NN Matrix Definition\n\n# Blank Template\n\n## A minimal starting point for defining new concepts and fields from scratch\n\n## Philosophy\n\nThe Blank Template is the empty canvas of the iNNfo ecosystem. Where the Business, Organization, Procedures, and Projects templates ship pre-built domain concepts, the Blank Template declares a single minimal `Content` concept and leaves every other Concept, Field, and Matrix Definition to the model author. Use it to model a domain that has no dedicated template yet, or to bootstrap a custom specialization without inheriting unrelated structure.\n\nBy design it keeps model creation unopinionated: you add `# NN Concept Definition`, `# NN Field Definition`, and `# NN Matrix Definition` elements to this page to shape your own schema, then author Level 3 models against them.\n\n## Objectives\n\n- Provide a minimal, valid Level 2 template that can be used as `parent_spec` for any new or exploratory model.\n- Avoid forcing any domain vocabulary onto the model author.\n- Keep the body valid against the `iNNfo_V_0-6-0` meta-template (the root primitives instantiated in the body, no `concepts:`/`fields:` frontmatter).\n- Serve as the starting point for authoring a specialization that still follows iNNfo conventions.\n\n## Specification\n\n### Concepts\n\n| Concept | Type | Purpose |\n|---|---|---|\n| **Content** | `text` | A single free-form container for notes, prose, or unstructured content |\n\nThe `Content` concept exists so the template has a non-empty, resolvable `# NN index` and a place for the model author to put opening content. Additional Concepts are added by the author through `# NN Concept Definition` elements.\n\n### Fields\n\n| Field | Concept | Type | Purpose |\n|---|---|---|---|\n| `tags` | `*` | `select` (multiple) | Open vocabulary ad-hoc tags and classification labels |\n| `summary` | Content | `string` | Free-form one-line summary or label for the content block |\n\n### Matrices\n\nNone by default. Add `# NN Matrix Definition` elements as your schema grows.\n\n### Relationship Types\n\n| Type | Enabled | Representation |\n|---|---|---|\n| Hierarchy | \u2705 | index block (wikilinks) |\n| Evaluable matrix | \u274C | Not applicable by default |\n| Graph edge | \u274C | Not applicable |\n| Sequence | \u274C | Not applicable |\n\n## Template\n\n### Level 3 Model Template (Lightweight)\n\nTo create a blank model, create a level 3 FILE mode document with:\n\n```yaml\n---\nlevel: 3\nparent_spec:\n  name: "blank"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md"\nknowledge_version: "V_x-y-z"\ntitle: "<Your Model Name>"\n---\n\n# NN index\n* [[Content]]\n\n# NN Content\nYour opening content here.\n```\n\nThe application will resolve the `parent` URL, download this template, and use its Concept, Field, Marker, and Matrix Definitions to validate and render your model. To model a richer domain, extend the template (or create a specialization) with additional `# NN Concept Definition` and `# NN Field Definition` elements following the `iNNfo_V_0-6-0` meta-template.\n\n## Examples\n\n### Canonical Sample\n\nThe Blank Template intentionally ships without a domain sample, because a blank model is defined entirely by its author. For a guided example of a fully populated template, see the Business (`specs/bluepriNNts/business/`), Organization (`specs/bluepriNNts/organization/`), Procedures (`specs/bluepriNNts/procedures/`), or Projects (`specs/bluepriNNts/projects/`) templates.\n\n### Parent Chain\n\n```yaml\n# This template\'s parent:\nparent_spec:\n  name: "iNNfo_V_0-6-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-6-0_NN.md"\n```\n\nModels targeting this template set:\n\n```yaml\nparent_spec:\n  name: "blank"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/blank/spec_NN.md"\n```\n\n# Concept Guidance Documentation\n\n## Content\n\n### Summary\nA free-form container for the model author\'s opening content, notes, or prose.\n\n### Description\nThe `Content` concept is the only concept the Blank Template declares. It is a single-instance `text` block where you can place an introduction, a summary, or unstructured notes before you define your own purposeful Concepts and Fields. Extend the template as needed to model your domain.\n';
     INNFO_V_0_7_0_SPEC_CONTENT = '---\nspec_version: "V_0-7-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"\nlevel: 1\nparent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"\ntitle: "iNNfo Meta-bluepriNNt Specification"\ndescription: "Level-1 meta-bluepriNNt defining the root primitives (Concept Definition, Field Definition, Matrix Definition), multi-concept targets, multi-valued fields, widgets, concept-level inheritance, per-concept storage declaration (compact or distributed), the unified address grammar, stable element identity via immutable slugs, and the unified NN syntax: `# NN` sections, `## NN` elements, and `key:: value` properties."\nauthor: "innV0 Team"\nstatus: "Draft"\n---\n\n> [!NOTE]\n> This is an **iNNfo document** \u2014 a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).\n\n# iNNfo Meta-bluepriNNt Specification\n\n## A concrete specification for semantic modeling with concepts, elements, fields, markers, and relationships, expressed through the unified NN syntax and a self-describing meta-bluepriNNt\n\n## Philosophy\n\niNNfo is designed around five principles:\n\n1. **Rich specs, lean models**: Specification documents (levels 0\u20132) are semantically rich. kNNowledge documents (level 3) carry only data and a parent pointer. The application resolves and caches the parent chain.\n2. **Self-describing**: Every iNNfo document is valid Markdown with YAML frontmatter and the unified `NN` syntax. No proprietary tooling required to read it.\n3. **Meta-bluepriNNt**: The level-1 specification is itself a *meta-bluepriNNt*. Level-2 bluepriNNts are ordinary iNNfo documents that instantiate the root primitives \u2014 `Concept Definition`, `Field Definition`, and `Matrix Definition` \u2014 as ordinary elements in their body. There is no separate declaration format.\n4. **Relationship polymorphism**: Relationships between concepts and elements are expressed through a typed system \u2014 hierarchy, evaluable matrices, graph edges, and sequences.\n5. **Stable identity via immutable slugs**: Every entity (element, concept, matrix) possesses an explicit, immutable slug identifier (`slug::`). Display names are decoupled from identity and scoped to their concept, allowing identical display names across distinct concepts. Once assigned, a slug is permanent across renames and edits.\n\n## Objectives\n\n- Define a unified, minimal syntax: `# NN <Concept>`, `## NN <Concept>: <Element>`, immutable `slug::` declarations, and `key:: value` properties.\n- Define the **Metaplantilla Nivel 1**: the root primitives that every level-2 bluepriNNt instantiates.\n- Establish immutable slugs for elements, concepts, and matrices to preserve citations and graph stability across renames (D1).\n- Support cross-concept duplicate display names while scoping sibling display names within each concept (D3).\n- Define extension-less model identity (`model_slug`) and universal `@` addressing grammar for elements, fields, and matrix cells (D4, D5).\n- Enforce slug freezing (`freeze_slugs`) on mutation and domain-wide upgrades (D19).\n- Remove the `concepts:` / `markers:` / `matrices:` frontmatter blocks from level-2 bluepriNNts; their schema is expressed as body elements.\n- Enable machine parsing, validation, and visual rendering of kNNowledge via the parent chain resolver.\n- Maintain full human readability and Git-diffability.\n- Ensure that kNNowledge files are lightweight and never duplicate specification content.\n\n## Unified Syntax\n\niNNfo uses three structural markers. The `NN` token is required and distinguishes iNNfo structure from ordinary Markdown.\n\n| Construct | Syntax | Example |\n|---|---|---|\n| Concept section | `# NN <Concept>` (H1) | `# NN Stakeholders` |\n| Element | `## NN <Concept>: <Element>` (H2) | `## NN Stakeholders: Customer` |\n| Nested Element | `#{3,6} NN <Concept>: <Element>` (H3\u2013H6) | `### NN Layer: Title` |\n| Identity slug | `slug:: <slug>` (first property line) | `slug:: customer` |\n| Property | `key:: value` (consecutive lines) | `importance:: high` |\n\nA **Concept** is a named type declared by a bluepriNNt. A Concept section is introduced by an H1 heading `# NN <Concept>`.\n\nAn **Element** is a single instance of a Concept, declared as an H2 heading `## NN <Concept>: <Element>` within the Concept section. The `<Concept>` token names the owning concept (it MUST match the enclosing section concept for top-level H2 headings).\n\n### Hierarchical Element Headings (Level-3 Documents)\n\nLevel-3 kNNowledge documents may author child elements inline beneath their parent element using deeper Markdown headings (`### NN`, `#### NN`, up to `###### NN`), without requiring separate top-level `# NN <ChildConcept>` sections.\n\n- **Nesting Rules**: A child heading `#{3,6} NN <ChildConcept>: <Element>` attaches to the nearest shallower element heading on the heading stack. The parentage relationship (`ParentConcept -> ChildConcept`) MUST be declared as a valid direct parent-child edge in the governing bluepriNNt\'s `# NN index` (`schema.taxonomy`). Disallowed nesting is rejected by validation (`INVALID_NESTED_CONCEPT`).\n- **Parent Identity**: The child element receives `parentSlug` referencing the parent element\'s slug.\n- **Prose Separation**: Any prose body authored for the parent element belongs exclusively to the parent and concludes immediately before the child\'s heading.\n- **Backward Compatibility**: Flat H2 headings in separate `# NN <ChildConcept>` sections remain 100% valid and supported.\n\nAn **Element Slug** is declared on the line immediately following the `## NN` heading via `slug:: <slug>`. The slug MUST be lowercase kebab-case conforming to `^[a-z0-9]+(?:-[a-z0-9]+)*$`. The slug is immutable: renaming an element modifies its display name in the `## NN` heading but preserves `slug::` unchanged.\n\nA **Field** is a typed key-value property of an Element. Element properties are written on consecutive `key:: value` lines immediately after the `slug::` line (or heading), before any free-form description text.\n\n```markdown\n# NN Stakeholders\n\n## NN Stakeholders: Customer\nslug:: customer\nimportance:: high\nneeds:: [speed, accuracy]\nCustomer description text follows the properties.\n```\n\nProperty values follow a small value grammar:\n\n- Plain text \u2014 `relationship_model:: Dedicated`\n- Quoted text \u2014 `brand_name:: "Acme Inc."`\n- Numbers \u2014 `weight:: 90`\n- Booleans \u2014 `published:: true`\n- Inline arrays \u2014 `options:: [Ideation, MVP, Validation]`\n- Inline objects (JSON) \u2014 `config:: {"a": 1}`\n\nThere is exactly ONE syntax. Older documents that use the legacy `_NN` markers or\nfenced ```yaml blocks are not supported and MUST be migrated to the unified syntax.\n\n## Unified Address Grammar\n\nThere is exactly ONE grammar for pointing at a model, an element, a field, a body or a matrix cell. Every typed reference, citation, change target and tool argument uses it. A title is display text and never resolves: the title of an element can change freely without breaking a single reference.\n\n```\naddress   = model-id [ "@" unit ] / relative\nrelative  = "@" unit                      ; only inside a model document, same model\nmodel-id  = head *( "/" slug )\nhead      = 1*alnum *( ( "-" / "_" ) 1*alnum )\nslug      = 1*lower-alnum *( "-" 1*lower-alnum )\nunit      = element [ "&" ( field / "#body" ) ]\n          / slug "&" slug "&" slug        ; matrix cell: matrix & row & column\n          / "concept:" Name [ "&" field ]\n          / "matrix:" slug\n```\n\n| Target | Syntax | Resolves To |\n|---|---|---|\n| Entire model | `model-id` | The model document root |\n| Element | `model-id@element-slug` | One element instance |\n| Element field | `model-id@element-slug&field` | The value of one field |\n| Element body | `model-id@element-slug&#body` | The prose body of one element |\n| Matrix | `model-id@matrix:matrix-slug` | One matrix definition and table |\n| Matrix cell | `model-id@matrix-slug&row-slug&col-slug` | The cell at row and column |\n| Concept | `model-id@concept:Name` | One concept section; `&field` addresses a concept-level field |\n| Same model | `@element-slug` | An element of the model that contains the reference |\n\n- **Model identity.** A `model-id` is hierarchical and derived, never stored. A compact model (`kNNowledge/<stem>_NN.md`) has the stem without its `_NN` suffix as its id. An instance model (see Storage Declaration) has an id made of its container chain and its own slug, for example `villabotijos-today/intro`. The same slug under two containers is two distinct models.\n- **Reserved head.** `specs` is reserved as the head of a model id: `specs/<family>@concept:<Name>` addresses a bluepriNNt definition, not a model.\n- **Typed fields.** A field whose type is `reference`, `knowledge`, `model` or `address` holds addresses only. A relative address (`@slug`) is the canonical form inside the model that holds the element; an absolute address to the same model is not canonical.\n- **Removed forms.** A model addressed by file path, a change document addressed by heading, a title-qualified wikilink (a title, `::`, then a name inside double brackets) and a bare title are not addresses. They are rejected naming the form and the address that replaces them.\n- **Raw-file citations.** A citation of a raw file under `sources/`, and of any file that is not a model (sidecars, CSV rows, JSON pointers, plain Markdown), keeps its path grammar: `<path>.<md|csv|json>@<unit>`.\n- **Prose wikilinks.** A `[[target]]` wikilink inside Markdown prose is not a typed reference. It still resolves inside its own model by element slug first, then by display name, and a display name shared by elements of different concepts is rejected as ambiguous (`AMBIGUOUS_ELEMENT_NAME`); qualify it by using the element\'s `slug`.\n- **Resolution.** An address resolves exactly or not at all. An unresolved address reports the candidate model ids that share its last segment, and a stale address names its recorded successor when the history holds one.\n\n## Root Primitives (Metaplantilla Nivel 1)\n\nA level-2 **bluepriNNt** is an iNNfo document (level 2) that instantiates the root primitives. Each primitive is a reserved Concept name whose Elements carry the schema of the bluepriNNt.\n\n| Primitive | Reserved Concept | Purpose | Instantiation |\n|---|---|---|---|\n| `Concept Definition` | `# NN Concept Definition` | Declares one Concept of the bluepriNNt | `## NN Concept Definition: <Name>` |\n| `Field Definition` | `# NN Field Definition` | Declares one typed Field of a Concept | `## NN Field Definition: <Name>` |\n| `Matrix Definition` | `# NN Matrix Definition` | Declares one evaluable Matrix | `## NN Matrix Definition: <Name>` |\n\n### Concept Definition\n\nDeclares a Concept. The Element name is the Concept name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `type` | `text` \\| `category` \\| `weight` \\| `list` \\| `steps` \\| `sequence` \\| `knowledge` \\| `model` | Representation of the Concept (required) |\n| `icon` | string | Lucide icon identifier |\n| `color` | string | Theme color |\n| `weight` | number | Display priority (higher = more prominent) |\n| `storage` | `compact` \\| `distributed` | Where the instances of the Concept live. Absent means `compact` |\n| `container` | string | Name of the distributed Concept an instance is stored under. Only for `storage:: distributed` |\n| `placement` | string | Folder template of an instance model. Required for `storage:: distributed`, forbidden otherwise |\n\n```markdown\n# NN Concept Definition\n\n## NN Concept Definition: Stakeholders\nslug:: stakeholders\nicon:: users\ntype:: weight\ncolor:: blue\nweight:: 80\n```\n\n#### Storage Declaration\n\nA Concept declares where its instances live. The declaration is per Concept, so one bluepriNNt MAY mix both forms, and it is the only source of truth: no tool infers storage from the shape of a folder.\n\n- `storage:: compact` (the default when the property is absent): the instances are elements of one kNNowledge model.\n- `storage:: distributed`: each instance is the root of its own kNNowledge model, called an **instance model**. The child Concepts of a distributed Concept remain elements of that instance model.\n\n`placement::` is a POSIX path relative to the domaiNN root, ending in `/`. It is made of kebab-case literal segments, exactly one `{slug}` token (the instance slug) and, only when `container::` is declared, `{container}` as the first segment (it expands to the container instance\'s root folder, so containment is physical nesting). A placement MUST NOT contain `..` or a `.`-prefixed segment, MUST NOT use the literals `archive`, `staging`, `specs`, `backups` or `kNNowledge`, and MUST NOT begin with the literal `sources`. A literal after `{slug}` is allowed (`proyectos/{slug}/models/`). The container of a distributed Concept MUST itself be a distributed Concept of the same bluepriNNt, and the chain of containers MUST NOT loop. Two placements of one bluepriNNt MUST NOT be able to match the same folder.\n\n```markdown\n## NN Concept Definition: Series\nslug:: series\ntype:: list\nstorage:: distributed\nplacement:: "series/{slug}/"\n\n## NN Concept Definition: Video\nslug:: video\ntype:: list\nstorage:: distributed\ncontainer:: Series\nplacement:: "{container}/assets/{slug}/"\n```\n\nStorage composes like any other Concept property: a bluepriNNt that `includes` another inherits its declarations unchanged. The declaration changes neither the scope chain nor the way values are inherited.\n\n### Field Definition\n\nDeclares a typed Field of a Concept. The Element name is the Field name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `concept` | string or array | Name of the owning Concept Definition, list of Concepts, or `*` for all non-text concepts (required) |\n| `type` | `string` \\| `number` \\| `boolean` \\| `select` \\| `reference` \\| `markdown_inline` \\| `markdown_file` \\| `image` \\| `file` \\| `video` \\| `audio` \\| `url` \\| `knowledge` \\| `model` \\| `address` \\| `citation` | Field type (required) |\n| `multiple` | boolean | Multi-valued field flag (allowed only on `type:: select`) |\n| `widget` | `boolean` \\| `cycle` \\| `scale` \\| `set` \\| `text` | Field interaction widget |\n| `widget_config` | object | Widget configuration parameters (JSON object) |\n| `options` | array | Allowed values for `select` fields |\n| `target_concepts` | array | Target concepts for `reference` fields |\n| `description` | string | Human-readable explanation |\n| `target_blueprint` | string | Required bluepriNNt name or URL for fields of type knowledge |\n\n```markdown\n# NN Field Definition\n\n## NN Field Definition: status\nconcept:: Stakeholders\ntype:: select\noptions:: [Ideation, MVP, Validation]\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\n```\n\n**Reference Fields (`type:: reference`).** Property values for fields declared with `type:: reference` MUST be formatted using WikiLink syntax `[[Target Element]]` (e.g. `location:: [[Sal\xF3n-Comedor]]`). Bare string values without WikiLink delimiters are not parsed as active element-to-element graph references.\n\n**Knowledge Fields (`type:: knowledge` or `type:: model`).** A Field of any Concept MAY be declared `type:: knowledge` or `type:: model`. Its value is a domain-relative path, a `./`-relative path, or a WikiLink wrapping either (`[[kNNowledge/acme_business_NN.md]]`). When the Field declares `target_blueprint`, the referenced kNNowledge document\'s `parent_spec` MUST identify that bluepriNNt. Knowledge fields are followed during domaiNN traversal, so a document referenced by two parents appears once in the graph with both incoming edges \u2014 a diamond is not a cycle.\n\n**Citation Fields (`type:: citation`).** A Field declared `type:: citation` is RESERVED for the changes collection: the ONE allowed citation is `changes.evidence`, the provenance of an applied change. A kNNowledge document MUST NOT declare its own citation Field, and MUST NOT write the reserved `sources::`/`source::` property: a unit declares no provenance of its own, because its history, origin and drift are derived from the applied changes. The fields `type` may take are otherwise unchanged; `address` remains valid everywhere.\n\n**Reserved `sources::`.** `sources::` (and its singular `source::`) is reserved and banned on L3. A kNNowledge document that carries it is INVALID (`SOURCES_FIELD_BANNED`); a document that declares a `type:: citation` field is INVALID (`CITATION_FIELD_BANNED`). Evidence lives in the change that set the value, never in the model.\n\n**Address Fields (`type:: address`).** A Field declared `type:: address` holds one structural address `<target>@<unit>`: `<target>` is a workspace-relative path or a `knowledge_slug`; `<unit>` is `## Heading`, `RowID&col`, `/json/pointer`, `element-slug`, `element-slug&field`, or `matrix&row&col`. Its value MUST resolve to an existing unit; a dangling address is an **error**. `address` is the base of the address grammar: `citation` is an `address` that additionally asserts derivation (evidence), and `knowledge` is an `address` that is traversed. All three share the same parser.\n\n**Qualified Cross-Knowledge References.** A `reference` or `knowledge` Field MAY target an Element in another kNNowledge document in the same domaiNN using the qualified form `[[Document Title :: Element Name]]` or `[[model_slug@element-slug]]`.\n\n### Matrix Definition\n\nDeclares an evaluable Matrix. The Element name is the Matrix name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `source` | string | Source Concept (rows) \u2014 required |\n| `target` | string | Target Concept or reserved pseudo-Concept (columns) \u2014 required |\n| `values` | array | Allowed cell values (empty cell `-` and boolean marker `X` are always accepted) |\n| `widget` | `boolean` \\| `cycle` \\| `scale` \\| `set` \\| `text` | Cell interaction widget |\n| `widget_config` | object | Widget-specific configuration \u2014 see Widget Configuration |\n| `description` | string | Human-readable explanation |\n\n```markdown\n# NN Matrix Definition\n\n## NN Matrix Definition: problems-value propositions matrix\nslug:: problems-value-propositions\nsource:: Problems\ntarget:: Value propositions\nwidget:: set\nvalues:: [Max, Very High, High]\n```\n\n### Widget Configuration\n\n`widget_config` is an OPTIONAL inline JSON object that parameterizes the cell\ninteraction widget. It MUST be valid JSON on a single line.\n\n| Widget | Key | Type | Default | Description |\n|---|---|---|---|---|\n| `scale` | `min` | number | `0` | Minimum numeric score |\n| | `max` | number | `100` | Maximum numeric score |\n| | `step` | number | `1` | Step increment |\n| | `unit` | string | `""` | Optional display suffix (e.g. `"%"` or `"pts"`) |\n| `set` | `max_selections` | number | `undefined` | Maximum number of simultaneous selections |\n| `cycle` | (none) | | | Cycle through values in order |\n| `boolean` | `true_label` | string | `"X"` | Display text when true |\n| | `false_label` | string | `"-"` | Display text when false |\n| `text` | `max_length` | number | `200` | Character limit for cell input |\n\n### Free Matrices\n\nAn evaluable relationship between two domain Concepts (e.g. `Problems` \xD7 `Value propositions`).\n\n```markdown\n# NN matrices: problems-value propositions matrix\n\n| Problems | Solution A | Solution B |\n|---|---|---|\n| High latency | Max | High |\n| Data loss | Max | Very High |\n```\n\n### Relationship Types Block (Frontmatter)\n\nLevel-2 bluepriNNts MAY declare custom graph edge types in frontmatter under\n`relationship_types:`. A relationship type defines a typed directed connection\nbetween elements.\n\n```yaml\n---\nrelationship_types:\n  depends_on:\n    directed: true\n    label: "Depends on"\n    inverse: "Required by"\n    color: "#e06c75"\n    style: "dashed"\n  influences:\n    directed: true\n    label: "Influences"\n    color: "#61afef"\n    style: "solid"\n---\n```\n\nGraph edges are written in the kNNowledge document\'s element section using `->` syntax:\n\n```markdown\n## NN Work: Deploy\ndepends_on -> [[Build]]\ninfluences -> [[Monitoring]]\n```\n\n### Custom Guidance Headings in BluepriNNts\n\nLevel-2 bluepriNNts MAY include prose documentation sections after the schema definitions.\nThese sections provide human-readable guidance for authors and AI assistants filling out\nkNNowledge documents based on the bluepriNNt.\n\nTo prevent guidance text from being parsed as model elements, bluepriNNt authors MUST use\nregular Markdown headings (without the `NN` token) for guidance sections:\n\n```markdown\n# Concept Guidance Documentation\n\n## Stakeholders\n### Summary\nStakeholders are individuals, groups, or organizations that have an interest in or are affected by the system.\n\n### Identification Strategy\n1. Identify direct users who interact with the system daily.\n2. Identify decision makers who approve funding and strategy.\n3. Identify external parties subject to compliance or regulation.\n\n### Fields Reference\n- `importance`: Relative business impact (high, medium, low).\n- `needs`: Bulleted list of explicit operational requirements.\n```\n\n- Headings starting with `# NN` or `## NN` are **structural** (parsed as schema).\n- Headings starting with `#` or `##` (without `NN`) are **descriptive** (ignored by the schema parser).\n\n## Level 2 BluepriNNt Structure\n\nA level 2 bluepriNNt MUST follow this structure:\n\nFrontmatter:\n\n```yaml\n---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/<name>/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-5-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"\ntitle: "<BluepriNNt Title>"\nblueprint_name: "<blueprint-name>"\nblueprint_version: "V_x-y-z"\nincludes:                        # OPTIONAL \u2014 additive schema composition\n  - name: "<blueprint>"\n    url: "<immutable-URL>"\nrelationship_types:              # OPTIONAL \u2014 custom graph edges\n  ...\n---\n```\n\n### Schema Composition (`includes`)\n\nA level-2 bluepriNNt MAY declare `includes:`, an array of `{name, url}` references to\npeer level-2 bluepriNNts. `includes` composes the schemas of the included bluepriNNts into\nthe including bluepriNNt additively.\n\n#### Collision Rules\n\nWhen two included bluepriNNts (or an included bluepriNNt and the including bluepriNNt) declare a\nDefinition with the same name:\n\n1. If their canonical forms are **identical**, the collision is resolved cleanly: they\n   carry a shared Definition and still compose.\n2. If their canonical forms **differ**, it is a validation ERROR that MUST name\n   both source documents and the Definition.\n\nThe **canonical form** of a Definition is its parsed body with: property order\nnormalized, surrounding whitespace in values trimmed, and set-like arrays\n(`options`, `target_concepts`) treated as order-insensitive. Every\nactual value \u2014 `type`, `source`, `target`, `values`, `weight`,\n`description`, a Concept\'s Field set, etc. \u2014 is significant. This rule applies\nacross the whole `includes` graph (transitively, depth-first, left to right); the\n`includes` cycle check is unaffected (a diamond is not a cycle).\n\nBody:\n\n```markdown\n> [!NOTE]\n> This is an **iNNfo document**...\n\n# NN index\n* [[...]]  (the blueprint\'s root concepts)\n\n# NN Concept Definition\n## NN Concept Definition: <Concept>\nslug:: <concept-slug>\nicon:: <icon>\ntype:: <type>\ncolor:: <color>\nweight:: <n>\n\n# NN Field Definition\n## NN Field Definition: <Field>\nslug:: <field-slug>\nconcept:: <Concept>\ntype:: <type>\noptions:: [...]\ntarget_concepts:: [...]\n\n# NN Matrix Definition\n## NN Matrix Definition: <Matrix>\nslug:: <matrix-slug>\nsource:: <Concept>\ntarget:: <Concept>\nvalues:: [..]\nwidget:: set\n\n# <Blueprint Name>       (prose: Philosophy, Objectives, Specification)\n# Concept Guidance Documentation   (## <Concept> with ### Summary/Description/...)\n```\n\n## Level 3 kNNowledge Structure (Lightweight)\n\n```yaml\n---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"\nmodel_slug: "<model-slug>"\nworkspace_id: "<workspace-id>"\nlevel: 3\nparent_spec:\n  name: "<blueprint-name>"\n  url: "<immutable-url>"\nknowledge_version: "V_x-y-z"\ntitle: "..."\n---\n\n> [!NOTE]\n> ...\n# NN index\n...\n# NN Concept\ntags:: [inherited-tag]\n\n## NN Concept: Element\nslug:: <element-slug>\nkey:: value\n...\n```\n\n## DomaiNN Structure\n\nAn iNNfo DomaiNN is a workspace directory containing one or more kNNowledge documents. The entry point is a\n`domaiNN_NN.md` (or root index) file at the DomaiNN root.\n\nStandard directory conventions:\n- `knowledge_dir`: `kNNowledge/`\n- `blueprints_dir`: `specs/bluepriNNts/`\n\n## Immutable Versioning Policy\n\n- **Published specs are frozen.** Once a specification version is released, its file is\n  never modified. Corrections or improvements require a new spec version.\n- **Migrating a kNNowledge document** to a new spec version means creating a new copy of the document\n  adapted to the new version.\n- **Parent chain resolution** always resolves to the version the document was authored\n  against.\n\n## Removed Constructs\n\nThe following are NOT part of iNNfo:\n\n- **FOLDER mode / `_F` markers** \u2014 documents are single files using `NN` markers only.\n- **Hierarchy matrices** \u2014 hierarchy is expressed only through the index block.\n- **`_FORMAT.md` filenames** \u2014 the canonical suffix is `_NN.md`.\n- **`* _NN` element bullets and fenced ```yaml property blocks** \u2014 replaced by the\n  unified `## NN` headings and `key:: value` properties.\n- **Marker Definition and item-markers matrix** \u2014 replaced by typed Field Definitions and concept-level values.\n\n## Metaschema (Self-Description)\n\nThe root primitives are described by the prose tables above **and** expressed\nmechanically, in iNNfo\'s own syntax, by the metaschema below. An application MUST\nbe able to validate any level-2 bluepriNNt by resolving this metaschema and checking\nthe bluepriNNt\'s `\u2026 Definition` elements against it.\n\n### The Metaschema\n\n```markdown\n# NN Concept Definition\n\n## NN Concept Definition: Concept Definition\ntype:: list\n\n## NN Concept Definition: Field Definition\ntype:: list\n\n## NN Concept Definition: Matrix Definition\ntype:: list\n\n# NN Field Definition\n\n## NN Field Definition: type\nconcept:: Concept Definition\ntype:: select\noptions:: [text, category, weight, list, steps, sequence, knowledge, model]\ndescription:: Representation of the Concept (required).\n\n## NN Field Definition: icon\nconcept:: Concept Definition\ntype:: string\ndescription:: Lucide icon identifier.\n\n## NN Field Definition: color\nconcept:: Concept Definition\ntype:: string\ndescription:: Theme color.\n\n## NN Field Definition: weight\nconcept:: Concept Definition\ntype:: string\ndescription:: Display priority (higher = more prominent).\n\n## NN Field Definition: storage\nconcept:: Concept Definition\ntype:: select\noptions:: [compact, distributed]\ndescription:: Where the instances of the Concept live. Absent means compact.\n\n## NN Field Definition: container\nconcept:: Concept Definition\ntype:: string\ndescription:: Name of the distributed Concept an instance is stored under.\n\n## NN Field Definition: placement\nconcept:: Concept Definition\ntype:: string\ndescription:: Folder template of an instance model (required when storage is distributed).\n\n## NN Field Definition: concept\nconcept:: Field Definition\ntype:: string\ndescription:: Name of the owning Concept Definition, list of concepts, or * (required).\n\n## NN Field Definition: type\nconcept:: Field Definition\ntype:: select\noptions:: [string, number, boolean, select, reference, markdown_inline, markdown_file, image, file, video, audio, url, knowledge, model, address, citation]\ndescription:: Field type (required).\n\n## NN Field Definition: multiple\nconcept:: Field Definition\ntype:: boolean\ndescription:: Multi-valued field flag (allowed only on select fields).\n\n## NN Field Definition: widget\nconcept:: Field Definition\ntype:: select\noptions:: [boolean, cycle, scale, set, text]\ndescription:: Field interaction widget.\n\n## NN Field Definition: widget_config\nconcept:: Field Definition\ntype:: string\ndescription:: Widget-specific configuration (inline JSON object).\n\n## NN Field Definition: options\nconcept:: Field Definition\ntype:: string\ndescription:: Allowed values for select fields (inline array).\n\n## NN Field Definition: target_concepts\nconcept:: Field Definition\ntype:: string\ndescription:: Target concepts for reference fields (inline array).\n\n## NN Field Definition: target_blueprint\nconcept:: Field Definition\ntype:: string\ndescription:: Required blueprint name or URL for fields of type knowledge or model.\n\n## NN Field Definition: description\nconcept:: Field Definition\ntype:: string\ndescription:: Human-readable explanation.\n\n## NN Field Definition: source\nconcept:: Matrix Definition\ntype:: string\ndescription:: Source Concept (rows) \u2014 required.\n\n## NN Field Definition: target\nconcept:: Matrix Definition\ntype:: string\ndescription:: Target Concept or reserved pseudo-Concept (columns) \u2014 required.\n\n## NN Field Definition: values\nconcept:: Matrix Definition\ntype:: string\ndescription:: Allowed cell values (inline array). Empty cell - and boolean marker X are always accepted.\n\n## NN Field Definition: widget\nconcept:: Matrix Definition\ntype:: select\noptions:: [boolean, cycle, scale, set, text]\ndescription:: Cell interaction widget.\n\n## NN Field Definition: widget_config\nconcept:: Matrix Definition\ntype:: string\ndescription:: Widget-specific configuration (inline JSON object).\n\n## NN Field Definition: description\nconcept:: Matrix Definition\ntype:: string\ndescription:: Human-readable explanation.\n```\n\n### Bootstrap Axiom\n\nThe metaschema is written in the very syntax it constrains. Its own conformance is\nthe single irreducible axiom of the system: an application **asserts** \u2014 it does\nnot derive \u2014 that the metaschema\'s `Field Definition` elements are valid\n`Field Definition` instances. Every other conformance check in the ecosystem\n(L2 against L1, L3 against L2) is mechanical and follows from it. This mirrors MOF\nbeing defined in MOF and `Ecore.ecore` describing Ecore.\n\n## Self-Description\n\nThis document (`iNNfo_V_0-7-0_NN.md`) is itself a level 1 specification following\ndefiNNition. It declares `parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"` and defines\nthe root primitives \u2014 plus the mechanical metaschema above \u2014 that every\nlevel-2 bluepriNNt instantiates.\n';
@@ -10358,7 +10358,7 @@ var init_canonical_registry = __esm({
       },
       changes: {
         name: "changes",
-        version: "V_0-15-0",
+        version: "V_0-16-0",
         aliases: [
           "changes",
           "changes_spec_nn",
@@ -10458,12 +10458,12 @@ function parseSpecName(name) {
 }
 async function getMarkdownFiles(dir) {
   const { readdir: readdir5 } = await import("node:fs/promises");
-  const { join: join20 } = await import("node:path");
+  const { join: join21 } = await import("node:path");
   const files = [];
   try {
     const entries = await readdir5(dir, { withFileTypes: true });
     for (const entry of entries) {
-      const fullPath = join20(dir, entry.name);
+      const fullPath = join21(dir, entry.name);
       if (entry.isDirectory()) {
         if (entry.name === "node_modules" || entry.name.startsWith("."))
           continue;
@@ -10556,7 +10556,7 @@ async function findLocalSpec(specsDir, reqName) {
 }
 async function findSpecInPackageDir(dir, base) {
   const { readdir: readdir5 } = await import("node:fs/promises");
-  const { join: join20 } = await import("node:path");
+  const { join: join21 } = await import("node:path");
   try {
     const entries = await readdir5(dir, { withFileTypes: true });
     const files = entries.filter((e) => e.isFile() && /\.(md|markdown)$/i.test(e.name)).map((e) => e.name);
@@ -10564,20 +10564,20 @@ async function findSpecInPackageDir(dir, base) {
       return null;
     const specNN = files.find((f) => f.toLowerCase() === "spec_nn.md");
     if (specNN)
-      return join20(dir, specNN);
+      return join21(dir, specNN);
     const baseV = files.find((f) => f.toLowerCase().startsWith(`${base.toLowerCase()}_v_`));
     if (baseV)
-      return join20(dir, baseV);
+      return join21(dir, baseV);
     const baseNN = files.find((f) => f.toLowerCase() === `${base.toLowerCase()}_nn.md`);
     if (baseNN)
-      return join20(dir, baseNN);
+      return join21(dir, baseNN);
     const specMd = files.find((f) => f.toLowerCase() === "spec.md");
     if (specMd)
-      return join20(dir, specMd);
+      return join21(dir, specMd);
     const baseMd = files.find((f) => f.toLowerCase() === `${base.toLowerCase()}.md`);
     if (baseMd)
-      return join20(dir, baseMd);
-    return join20(dir, files[0]);
+      return join21(dir, baseMd);
+    return join21(dir, files[0]);
   } catch (err) {
     if (err?.code !== "ENOENT") {
       console.warn(`[resolver] Failed to scan package dir ${dir}: ${err}`);
@@ -10591,22 +10591,22 @@ function isDirectSpecEntryName(filePath, base) {
 }
 async function packageDirOf(rootDir, base) {
   const { readdir: readdir5 } = await import("node:fs/promises");
-  const { join: join20 } = await import("node:path");
-  const direct = join20(rootDir, "specs", "bluepriNNts", base);
+  const { join: join21 } = await import("node:path");
+  const direct = join21(rootDir, "specs", "bluepriNNts", base);
   try {
-    const entries = await readdir5(join20(rootDir, "specs", "bluepriNNts"), { withFileTypes: true });
+    const entries = await readdir5(join21(rootDir, "specs", "bluepriNNts"), { withFileTypes: true });
     const match = entries.find((e) => e.isDirectory() && e.name.toLowerCase() === base);
-    return match ? join20(rootDir, "specs", "bluepriNNts", match.name) : direct;
+    return match ? join21(rootDir, "specs", "bluepriNNts", match.name) : direct;
   } catch {
     return direct;
   }
 }
 async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
   const { readdir: readdir5, readFile: readFile10 } = await import("node:fs/promises");
-  const { join: join20 } = await import("node:path");
+  const { join: join21 } = await import("node:path");
   const { homedir: homedir3 } = await import("node:os");
-  const globalDir = options?.globalDir ?? process.env.INNFO_GLOBAL_DIR ?? join20(homedir3(), ".agents", "bluepriNNts");
-  const skillsDir = options?.skillsDir ?? process.env.INNFO_SKILLS_DIR ?? join20(homedir3(), ".agents", "skills");
+  const globalDir = options?.globalDir ?? process.env.INNFO_GLOBAL_DIR ?? join21(homedir3(), ".agents", "bluepriNNts");
+  const skillsDir = options?.skillsDir ?? process.env.INNFO_SKILLS_DIR ?? join21(homedir3(), ".agents", "skills");
   const parsed = parseSpecName(reqName);
   const base = parsed.base;
   const targetVersion = reqVersion ? normalizeVersion(reqVersion) : parsed.version;
@@ -10633,7 +10633,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
     if (targetVersion) {
       for (const d of verDirs) {
         if (normalizeVersion(d.name) === targetVersion) {
-          matchDir = join20(wsPackageBaseDir, d.name);
+          matchDir = join21(wsPackageBaseDir, d.name);
           matchVer = targetVersion;
           break;
         }
@@ -10644,7 +10644,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
         const v = normalizeVersion(d.name);
         if (!bestVer || compareDottedVersions(v, bestVer) > 0) {
           bestVer = v;
-          matchDir = join20(wsPackageBaseDir, d.name);
+          matchDir = join21(wsPackageBaseDir, d.name);
           matchVer = v;
         }
       }
@@ -10667,7 +10667,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
       console.warn(`[resolver] Failed to scan package tier dir: ${err}`);
     }
   }
-  const flatSearchDirs = [join20(rootDir, "specs")];
+  const flatSearchDirs = [join21(rootDir, "specs")];
   for (const dir of flatSearchDirs) {
     const matchFile = await findLocalSpec(dir, reqName);
     if (matchFile) {
@@ -10683,7 +10683,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
       };
     }
   }
-  const globalBaseDir = join20(globalDir, base);
+  const globalBaseDir = join21(globalDir, base);
   try {
     const entries = await readdir5(globalBaseDir, { withFileTypes: true });
     const verDirs = entries.filter((e) => e.isDirectory() && isVersionDirName(e.name));
@@ -10692,7 +10692,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
     if (targetVersion) {
       for (const d of verDirs) {
         if (normalizeVersion(d.name) === targetVersion) {
-          matchDir = join20(globalBaseDir, d.name);
+          matchDir = join21(globalBaseDir, d.name);
           matchVer = targetVersion;
           break;
         }
@@ -10703,7 +10703,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
         const v = normalizeVersion(d.name);
         if (!bestVer || compareDottedVersions(v, bestVer) > 0) {
           bestVer = v;
-          matchDir = join20(globalBaseDir, d.name);
+          matchDir = join21(globalBaseDir, d.name);
           matchVer = v;
         }
       }
@@ -10757,7 +10757,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
     const skillEntries = await readdir5(skillsDir, { withFileTypes: true });
     const skillDirs = skillEntries.filter((e) => e.isDirectory()).map((e) => e.name);
     for (const skillName of skillDirs) {
-      const skillPkgBase = join20(skillsDir, skillName, "bluepriNNts", base);
+      const skillPkgBase = join21(skillsDir, skillName, "bluepriNNts", base);
       try {
         const entries = await readdir5(skillPkgBase, { withFileTypes: true });
         const verDirs = entries.filter((e) => e.isDirectory() && isVersionDirName(e.name));
@@ -10766,7 +10766,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
         if (targetVersion) {
           for (const d of verDirs) {
             if (normalizeVersion(d.name) === targetVersion) {
-              matchDir = join20(skillPkgBase, d.name);
+              matchDir = join21(skillPkgBase, d.name);
               matchVer = targetVersion;
               break;
             }
@@ -10777,7 +10777,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
             const v = normalizeVersion(d.name);
             if (!bestVer || compareDottedVersions(v, bestVer) > 0) {
               bestVer = v;
-              matchDir = join20(skillPkgBase, d.name);
+              matchDir = join21(skillPkgBase, d.name);
               matchVer = v;
             }
           }
@@ -10796,7 +10796,7 @@ async function resolveBlueprintPackage(rootDir, reqName, reqVersion, options) {
           }
         }
       } catch {
-        const matchFile = await findLocalSpec(join20(skillsDir, skillName, "bluepriNNts"), reqName) || await findLocalSpec(join20(skillsDir, skillName), reqName);
+        const matchFile = await findLocalSpec(join21(skillsDir, skillName, "bluepriNNts"), reqName) || await findLocalSpec(join21(skillsDir, skillName), reqName);
         if (matchFile) {
           const content = await readFile10(matchFile, "utf-8").catch(() => "");
           const v = targetVersion || versionFromFrontmatter(content) || "0.1.0";
@@ -10869,13 +10869,13 @@ var init_diagnostics = __esm({
         return this;
       }
       /** Record an error at `path`. */
-      error(path2, message, extra) {
-        this._errors.push({ path: path2, message, severity: "error", ...extra });
+      error(path3, message, extra) {
+        this._errors.push({ path: path3, message, severity: "error", ...extra });
         return this;
       }
       /** Record a warning at `path`. */
-      warn(path2, message, extra) {
-        this._warnings.push({ path: path2, message, severity: "warning", ...extra });
+      warn(path3, message, extra) {
+        this._warnings.push({ path: path3, message, severity: "warning", ...extra });
         return this;
       }
       /**
@@ -10883,8 +10883,8 @@ var init_diagnostics = __esm({
        * in the warnings bucket but keep `severity: 'info'` so reporters can
        * distinguish them; they never affect `valid`.
        */
-      info(path2, message, extra) {
-        this._warnings.push({ path: path2, message, severity: "info", ...extra });
+      info(path3, message, extra) {
+        this._warnings.push({ path: path3, message, severity: "info", ...extra });
         return this;
       }
       /**
@@ -10951,9 +10951,9 @@ var init_blueprintMatching = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/naming/contract.js
-function baseOf2(path2) {
-  const i = Math.max(path2.lastIndexOf("/"), path2.lastIndexOf("\\"));
-  return i < 0 ? path2 : path2.slice(i + 1);
+function baseOf2(path3) {
+  const i = Math.max(path3.lastIndexOf("/"), path3.lastIndexOf("\\"));
+  return i < 0 ? path3 : path3.slice(i + 1);
 }
 function parseName2(basename10) {
   if (NN_SUFFIX_RE2.test(basename10)) {
@@ -10985,9 +10985,9 @@ function formatNNName(stem, blueprint) {
 function instanceFileName(folderSlug, blueprint) {
   return formatNNName(folderSlug, blueprint);
 }
-function checkInstanceName(path2, folderSlug, blueprint) {
+function checkInstanceName(path3, folderSlug, blueprint) {
   const expected = instanceFileName(folderSlug, blueprint);
-  return baseOf2(path2).toLowerCase() === expected.toLowerCase() ? null : { expected };
+  return baseOf2(path3).toLowerCase() === expected.toLowerCase() ? null : { expected };
 }
 function displayStem2(basename10) {
   if (NN_SUFFIX_RE2.test(basename10))
@@ -10997,8 +10997,8 @@ function displayStem2(basename10) {
 function coreBlueprintKey2(parentSpecName) {
   return (parentSpecName ?? "").trim().toLowerCase().split("_")[0];
 }
-function segmentsOf(path2) {
-  return path2.replace(/\\/g, "/").split("/").filter((s) => s && s !== ".");
+function segmentsOf(path3) {
+  return path3.replace(/\\/g, "/").split("/").filter((s) => s && s !== ".");
 }
 function roleOf2(i) {
   const base = baseOf2(i.path);
@@ -11018,8 +11018,8 @@ function roleOf2(i) {
   }
   return CORE_BLUEPRINT_ROLE2[bp] ?? "knowledge";
 }
-function isExcludedPath(path2) {
-  const segs = segmentsOf(path2);
+function isExcludedPath(path3) {
+  const segs = segmentsOf(path3);
   if (segs.length > 0 && IGNORED_DIRECTORIES.has(segs[0]))
     return true;
   return segs.some((s) => s === "archive" || s === "staging" || s.startsWith(".") && s !== "..");
@@ -11048,8 +11048,8 @@ function parentSpecNameOf(frontmatter) {
   }
   return void 0;
 }
-function isUnderRootSources2(path2) {
-  return segmentsOf(path2)[0]?.toLowerCase() === "sources";
+function isUnderRootSources2(path3) {
+  return segmentsOf(path3)[0]?.toLowerCase() === "sources";
 }
 function isModelCandidate(f) {
   if (f.frontmatter["level"] !== 3)
@@ -11067,8 +11067,8 @@ function isModelCandidate(f) {
 function blueprintNameOf(parentSpecName) {
   return parentSpecName.trim().replace(/_V_\d+-\d+-\d+$/i, "");
 }
-function checkNameInvariant(path2, bp) {
-  const base = baseOf2(path2);
+function checkNameInvariant(path3, bp) {
+  const base = baseOf2(path3);
   const parsed = parseName2(base);
   if (parsed.kind !== "nn")
     return null;
@@ -11166,10 +11166,10 @@ function removedForm2(raw, form, shape) {
     message: `The ${form} \`${shape}\` is removed and is never resolved by title; ${GRAMMAR_HINT2}.`
   };
 }
-function parseSourceClass2(path2, raw) {
-  const base = path2.slice(path2.lastIndexOf("/") + 1);
+function parseSourceClass2(path3, raw) {
+  const base = path3.slice(path3.lastIndexOf("/") + 1);
   const parsed = parseName2(base);
-  const sourcePrefix = path2.startsWith("sources/");
+  const sourcePrefix = path3.startsWith("sources/");
   if (!sourcePrefix && parsed.kind === "nn" && parsed.sidecarOf === void 0) {
     const isChangeset = CHANGES_STEM_RE2.test(parsed.stem);
     const role = roleOf2({ path: base, parentSpecName: isChangeset ? "changes" : void 0 });
@@ -11185,8 +11185,8 @@ function parseSourceClass2(path2, raw) {
       return {
         kind: "error",
         code: "MODEL_CITED_BY_PATH",
-        segment: path2,
-        message: `A model is not cited by file path (\`${path2}\`); ${GRAMMAR_HINT2}.`
+        segment: path3,
+        message: `A model is not cited by file path (\`${path3}\`); ${GRAMMAR_HINT2}.`
       };
     }
   }
@@ -11393,15 +11393,15 @@ function parseMirrorAddress2(raw) {
     return null;
   if (segments.some((s) => s === "" || s === "." || s === ".."))
     return null;
-  const path2 = segments.slice(1).join("/");
-  if (!isNNName2(path2) || !/\.md$/i.test(path2))
+  const path3 = segments.slice(1).join("/");
+  if (!isNNName2(path3) || !/\.md$/i.test(path3))
     return null;
   const unit = parseUnit2(value.slice(at + 1));
   if ("code" in unit)
     return null;
   if (unit.kind !== "element" && unit.kind !== "body")
     return null;
-  return { alias: segments[0], path: path2, unit };
+  return { alias: segments[0], path: path3, unit };
 }
 var SYNC_DIR;
 var init_address2 = __esm({
@@ -12116,9 +12116,9 @@ function checkProvenanceBan(model, schema, d, l1Version) {
     for (const el of elements) {
       for (const fieldName of Object.keys(el.fields ?? {})) {
         const lower = fieldName.toLowerCase();
-        const path2 = `${concept}#${el.name}.${fieldName}`;
+        const path3 = `${concept}#${el.name}.${fieldName}`;
         if (lower === "sources" || lower === "source") {
-          d.error(path2, `"${fieldName}::" is banned on L3; provenance is the applied change's evidence`, {
+          d.error(path3, `"${fieldName}::" is banned on L3; provenance is the applied change's evidence`, {
             code: "SOURCES_FIELD_BANNED"
           });
           continue;
@@ -12127,7 +12127,7 @@ function checkProvenanceBan(model, schema, d, l1Version) {
           continue;
         const declared2 = schema ? findDeclaredField2(schema, concept, fieldName) : void 0;
         if (declared2?.type === "citation" && !(isChangesDocument && lower === "evidence")) {
-          d.error(path2, `a "citation" field is banned on L3 (the only allowed citation is changes.evidence): "${fieldName}::"`, { code: "CITATION_FIELD_BANNED" });
+          d.error(path3, `a "citation" field is banned on L3 (the only allowed citation is changes.evidence): "${fieldName}::"`, { code: "CITATION_FIELD_BANNED" });
         }
       }
     }
@@ -12422,8 +12422,8 @@ function parentSpecOf(frontmatter) {
   const url = frontmatter["parent_spec"]?.url;
   return { name: parentSpecNameOf(frontmatter), url: typeof url === "string" ? url : void 0 };
 }
-function directoriesOf(path2) {
-  return path2.replace(/\\/g, "/").split("/").slice(0, -1).filter((s) => s !== "" && s !== ".");
+function directoriesOf(path3) {
+  return path3.replace(/\\/g, "/").split("/").slice(0, -1).filter((s) => s !== "" && s !== ".");
 }
 function matchFolder(dirs, rule) {
   if (dirs.length !== rule.folder.length)
@@ -12493,7 +12493,7 @@ var init_classify = __esm({
     init_grammar();
     init_contract();
     byText = (a, b) => a < b ? -1 : a > b ? 1 : 0;
-    basenameOf = (path2) => path2.replace(/\\/g, "/").split("/").pop() ?? path2;
+    basenameOf = (path3) => path3.replace(/\\/g, "/").split("/").pop() ?? path3;
   }
 });
 
@@ -12581,23 +12581,23 @@ function placementFor(declarations, concept, id, blueprint) {
     file: instanceFileName(segments[depth - 1], blueprintNameOf(blueprint))
   };
 }
-function registryDiagnostic(path2, problem, alsoStoredAt) {
+function registryDiagnostic(path3, problem, alsoStoredAt) {
   const { concept, slugs, rule } = problem;
   const would = slugs.map((s) => rule.container ? `<${rule.container.toLowerCase()}>/${s}` : s);
   const plural = slugs.length > 1 ? "s" : "";
   const also = alsoStoredAt.length > 0 ? ` (also stored as instance model ${alsoStoredAt.join(", ")})` : "";
-  return layoutDiagnostic("DISTRIBUTED_CONCEPT_IN_COMPACT_MODEL", `${path2} - ${concept} is distributed but this model holds ${slugs.length} ${concept} element${plural} (${slugs.join(", ")}), which would be instance${plural} ${would.join(", ")}${also}; run extract_instance for each or remove_element`, [path2, ...alsoStoredAt], { meta: { concept, slugs } });
+  return layoutDiagnostic("DISTRIBUTED_CONCEPT_IN_COMPACT_MODEL", `${path3} - ${concept} is distributed but this model holds ${slugs.length} ${concept} element${plural} (${slugs.join(", ")}), which would be instance${plural} ${would.join(", ")}${also}; run extract_instance for each or remove_element`, [path3, ...alsoStoredAt], { meta: { concept, slugs } });
 }
 function localDiagnostics(input, c, rules, alsoStoredAt = () => []) {
-  const path2 = input.path;
+  const path3 = input.path;
   if (c.kind === "compact") {
     if (c.problem?.type === "mixed") {
       return [
-        layoutDiagnostic("MIXED_INSTANCE_MODEL", `${path2} - holds elements of two distributed concepts (${c.problem.concepts.join(", ")}); each distributed concept is its own model`, [path2])
+        layoutDiagnostic("MIXED_INSTANCE_MODEL", `${path3} - holds elements of two distributed concepts (${c.problem.concepts.join(", ")}); each distributed concept is its own model`, [path3])
       ];
     }
     if (c.problem?.type === "registry") {
-      return [registryDiagnostic(path2, c.problem, alsoStoredAt(c.problem.concept, c.problem.slugs))];
+      return [registryDiagnostic(path3, c.problem, alsoStoredAt(c.problem.concept, c.problem.slugs))];
     }
     return [];
   }
@@ -12606,18 +12606,18 @@ function localDiagnostics(input, c, rules, alsoStoredAt = () => []) {
   if (!matched) {
     const expected = expectedFolder(rule, [...c.partial, rootSlug]);
     return [
-      layoutDiagnostic("PLACEMENT_MISMATCH", `${path2} holds ${rootConcept} "${rootSlug}" - ${rootConcept} instances live at ${expected}; move the file there`, [path2], { id })
+      layoutDiagnostic("PLACEMENT_MISMATCH", `${path3} holds ${rootConcept} "${rootSlug}" - ${rootConcept} instances live at ${expected}; move the file there`, [path3], { id })
     ];
   }
   const out = [];
   const folderSlug = matched[matched.length - 1];
   if (rootSlug !== folderSlug) {
-    out.push(layoutDiagnostic("INSTANCE_SLUG_MISMATCH", `${path2} - root ${rootConcept} has slug "${rootSlug}" but its folder is "${folderSlug}"; set slug:: ${folderSlug} or move the folder`, [path2], { id }));
+    out.push(layoutDiagnostic("INSTANCE_SLUG_MISMATCH", `${path3} - root ${rootConcept} has slug "${rootSlug}" but its folder is "${folderSlug}"; set slug:: ${folderSlug} or move the folder`, [path3], { id }));
   }
   const blueprint = blueprintNameOf(parentSpecOf(input.frontmatter).name ?? "");
-  const name = checkInstanceName(path2, folderSlug, blueprint);
+  const name = checkInstanceName(path3, folderSlug, blueprint);
   if (name) {
-    out.push(layoutDiagnostic("INSTANCE_NAME_MISMATCH", `${path2} - the instance in folder ${folderSlug}/ must be named ${name.expected}; rename the file`, [path2], { id }));
+    out.push(layoutDiagnostic("INSTANCE_NAME_MISMATCH", `${path3} - the instance in folder ${folderSlug}/ must be named ${name.expected}; rename the file`, [path3], { id }));
   }
   return out;
 }
@@ -12738,8 +12738,8 @@ function versionSkew(models) {
   for (const [key, { blueprint, members }] of [...groups].sort(([a], [b]) => byText(a, b))) {
     void key;
     const byVersion = /* @__PURE__ */ new Map();
-    for (const { version, path: path2 } of members)
-      byVersion.set(version, [...byVersion.get(version) ?? [], path2]);
+    for (const { version, path: path3 } of members)
+      byVersion.set(version, [...byVersion.get(version) ?? [], path3]);
     if (byVersion.size < 2)
       continue;
     const versions = [...byVersion].map(([version, paths]) => ({ version, count: paths.length, paths: [...paths].sort(byText) })).sort((a, b) => b.count - a.count || byText(a.version, b.version));
@@ -12860,7 +12860,7 @@ ${url ?? ""}`;
     const group = byIdGroups.get(id);
     return group?.length === 1 ? group[0].model : void 0;
   };
-  const resolve14 = (address, from, expect) => {
+  const resolve15 = (address, from, expect) => {
     const parsed = typeof address === "string" ? parseAddress2(address) : address;
     const text = typeof address === "string" ? address.trim() : formatAddress2(address);
     const fail3 = (code, message) => ({
@@ -12916,8 +12916,8 @@ ${url ?? ""}`;
     if (!flagsByPath) {
       flagsByPath = /* @__PURE__ */ new Map();
       for (const d of diagnostics) {
-        for (const path2 of d.paths)
-          flagsByPath.set(path2, [.../* @__PURE__ */ new Set([...flagsByPath.get(path2) ?? [], d.code])]);
+        for (const path3 of d.paths)
+          flagsByPath.set(path3, [.../* @__PURE__ */ new Set([...flagsByPath.get(path3) ?? [], d.code])]);
       }
     }
     const members = [];
@@ -12942,8 +12942,8 @@ ${url ?? ""}`;
     models,
     byId,
     collection,
-    byPath: (path2) => pathMap.get(path2),
-    resolve: resolve14,
+    byPath: (path3) => pathMap.get(path3),
+    resolve: resolve15,
     placementFor: (concept, id, blueprint) => {
       const declared2 = lookup(blueprint);
       if (!declared2) {
@@ -13853,6 +13853,62 @@ function moveModelProblems2(change) {
   }
   return problems;
 }
+function moveSourceProblems2(change) {
+  if (change.op !== "move_source")
+    return [];
+  const problems = [];
+  const id = change.id;
+  const unsafe = (value) => {
+    if (value === "")
+      return "is empty";
+    if (value.startsWith("/"))
+      return "starts at the domain root";
+    if (/^[a-zA-Z]:/.test(value))
+      return "is absolute";
+    if (value.includes("\\"))
+      return 'uses a backslash (write the path with "/")';
+    if (value.includes(".."))
+      return "escapes the domain";
+    if (value.includes("@") || value.includes("&"))
+      return "addresses an element or a field, not a file";
+    return void 0;
+  };
+  const target = String(change.target ?? "").trim();
+  const targetProblem = unsafe(target);
+  if (targetProblem !== void 0) {
+    problems.push(`change "${id}": move_source target (the previous path) ${targetProblem}`);
+  }
+  const to = String(change.to ?? "").trim();
+  if (!to) {
+    problems.push(`change "${id}": move_source requires "to" (the new path)`);
+  } else {
+    const toProblem = unsafe(to);
+    if (toProblem !== void 0) {
+      problems.push(`change "${id}": move_source "to" ${toProblem}`);
+    } else if (to === target) {
+      problems.push(`change "${id}": move_source "to" is the same path as target`);
+    }
+  }
+  if (change.from !== void 0) {
+    problems.push(`change "${id}": move_source must not carry "from"; the previous path is target and the new one is "to"`);
+  }
+  for (const key of [
+    "base_hash",
+    "concept",
+    "name",
+    "knowledge_version",
+    "blueprint_name",
+    "blueprint_url",
+    "slug",
+    "fields",
+    "seed"
+  ]) {
+    if (change[key] !== void 0) {
+      problems.push(`change "${id}": move_source must not carry "${key}"`);
+    }
+  }
+  return problems;
+}
 function removeModelProblems2(change) {
   if (change.op !== "remove_model")
     return [];
@@ -14104,6 +14160,7 @@ var init_types2 = __esm({
       "comment",
       "add_model",
       "move_model",
+      "move_source",
       "remove_model",
       "extract_instance",
       "freeze_slugs",
@@ -14170,10 +14227,10 @@ function evidencePaths(evidence) {
     return void 0;
   const paths = [];
   for (const item of items) {
-    const path2 = evidencePath(item);
-    if (path2 === void 0)
+    const path3 = evidencePath(item);
+    if (path3 === void 0)
       return void 0;
-    paths.push(path2);
+    paths.push(path3);
   }
   return paths;
 }
@@ -14184,8 +14241,8 @@ function inheritedEvidenceShas2(evidence, map) {
   if (!paths)
     return void 0;
   const shas = [];
-  for (const path2 of paths) {
-    const sha = map[path2];
+  for (const path3 of paths) {
+    const sha = map[path3];
     if (typeof sha !== "string")
       return void 0;
     shas.push(sha);
@@ -14477,6 +14534,10 @@ function parseChangeset2(rawContent) {
   if (moveProblems.length > 0) {
     throw new Error(`Invalid move_model change: ${moveProblems.join("; ")}`);
   }
+  const sourceMoveProblems = changes.flatMap(moveSourceProblems2);
+  if (sourceMoveProblems.length > 0) {
+    throw new Error(`Invalid move_source change: ${sourceMoveProblems.join("; ")}`);
+  }
   const extractProblems = changes.flatMap(extractInstanceProblems2);
   if (extractProblems.length > 0) {
     throw new Error(`Invalid extract_instance change: ${extractProblems.join("; ")}`);
@@ -14688,6 +14749,7 @@ function foldChanges2(changes) {
   const models = /* @__PURE__ */ new Map();
   const relinks = /* @__PURE__ */ new Map();
   const rekeys = [];
+  const sourceMoves = [];
   const addRelink = (model, from, to, order) => {
     if (!from || !to)
       return;
@@ -14837,6 +14899,14 @@ function foldChanges2(changes) {
         }
         return;
       }
+      case "move_source": {
+        const from = String(change.target ?? "").trim();
+        const to = String(change.to ?? "").trim();
+        if (!from || !to || from === to)
+          return;
+        sourceMoves.push({ from, to, order, change });
+        return;
+      }
       case "remove_model": {
         const id = address.trim();
         const inModel = (key) => {
@@ -14870,7 +14940,7 @@ function foldChanges2(changes) {
         return;
     }
   });
-  return { units, cleared, tombstones, epochs, elements, models, relinks, rekeys };
+  return { units, cleared, tombstones, epochs, elements, models, relinks, rekeys, sourceMoves };
 }
 function applyRelinks2(unit, relinks) {
   if (unit.kind === "cell" || unit.kind === "artifact")
@@ -15103,6 +15173,28 @@ var init_changelog = __esm({
       get rekeys() {
         return this.fold.rekeys;
       }
+      get sourceMoves() {
+        return this.fold.sourceMoves;
+      }
+      /**
+       * Walks the chain forward: the first recorded move a path matches renames it, and
+       * a later move of the new path keeps going, so a chained move yields the current
+       * location. An unmoved path answers `undefined`, never itself.
+       */
+      resolveSourceMove(path3) {
+        const wanted = String(path3 ?? "").trim();
+        if (!wanted)
+          return void 0;
+        let current = wanted;
+        let moved = false;
+        for (const move of this.fold.sourceMoves) {
+          if (current !== move.from)
+            continue;
+          current = move.to;
+          moved = true;
+        }
+        return moved ? current : void 0;
+      }
       /** Canonical position of a change: its index in the sorted `all` list. */
       orderOf(change) {
         return this.orderIndex.get(change) ?? -1;
@@ -15119,19 +15211,19 @@ var init_changelog = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/changelog/load.js
-function isChangesetPath(path2) {
-  if (isUnderRootSources2(path2))
+function isChangesetPath(path3) {
+  if (isUnderRootSources2(path3))
     return false;
-  const name = path2.split("/").pop() ?? "";
+  const name = path3.split("/").pop() ?? "";
   if (!isNNName2(name) || isSidecarName2(name))
     return false;
   const parsed = parseName2(name);
   return parsed.kind === "nn" && parsed.stem.endsWith("_changes");
 }
-function changesetLikeOf2(path2, doc) {
+function changesetLikeOf2(path3, doc) {
   const fm = doc.frontmatter;
   return {
-    path: path2,
+    path: path3,
     status: fm.status,
     author: fm.author,
     appliedAt: fm.applied_at,
@@ -15329,8 +15421,8 @@ var init_resolved_target = __esm({
         return unitTarget(model, { kind: "element", slug: assertPresent(elementSlug, "elementSlug") });
       },
       /** A workspace-relative artifact path, POSIX separators. */
-      artifact(path2) {
-        return assertPresent(path2, "path").replace(/\\/g, "/");
+      artifact(path3) {
+        return assertPresent(path3, "path").replace(/\\/g, "/");
       }
     };
   }
@@ -15520,9 +15612,9 @@ var init_report = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/scope/root.js
-function isFile2(path2) {
+function isFile2(path3) {
   try {
-    return (0, import_node_fs6.statSync)(path2).isFile();
+    return (0, import_node_fs6.statSync)(path3).isFile();
   } catch {
     return false;
   }
@@ -15530,8 +15622,8 @@ function isFile2(path2) {
 function isDomainRoot2(dir) {
   return isFile2((0, import_node_path8.join)(dir, ENTRYPOINT_FILENAME2));
 }
-function findDomainRoot2(path2) {
-  let dir = (0, import_node_path8.resolve)(path2);
+function findDomainRoot2(path3) {
+  let dir = (0, import_node_path8.resolve)(path3);
   if (isFile2(dir))
     dir = (0, import_node_path8.dirname)(dir);
   for (; ; ) {
@@ -17403,9 +17495,11 @@ function resolveCitation(raw, field, resolver, modelPath = "") {
   if (!resolved || !resolved.exists) {
     return { path: ref.filePath, anchor, exists: false, field, origin: "document", error: "DANGLING_FILE" };
   }
+  const currentPath = resolved.movedTo ?? ref.filePath;
+  const moved = currentPath !== ref.filePath ? { movedFrom: ref.filePath } : {};
   const content = resolved.content;
   if (!content) {
-    return { path: ref.filePath, href: ref.filePath, anchor, exists: true, field, origin: "document" };
+    return { path: currentPath, href: currentPath, anchor, exists: true, field, origin: "document", ...moved };
   }
   const fm = parseFrontmatter2(content);
   const sha2562 = fm?.sha256;
@@ -17417,12 +17511,13 @@ function resolveCitation(raw, field, resolver, modelPath = "") {
     if (!unitResult) {
       const fmOnly = classifyFromFrontmatter(fm);
       return {
-        path: ref.filePath,
+        path: currentPath,
         anchor,
         exists: true,
         field,
         origin: fmOnly.origin,
         ...fmOnly.author ? { author: fmOnly.author } : {},
+        ...moved,
         error: "UNKNOWN_ANCHOR"
       };
     }
@@ -17432,12 +17527,13 @@ function resolveCitation(raw, field, resolver, modelPath = "") {
     if (!section) {
       const fmOnly = classifyFromFrontmatter(fm);
       return {
-        path: ref.filePath,
+        path: currentPath,
         anchor,
         exists: true,
         field,
         origin: fmOnly.origin,
         ...fmOnly.author ? { author: fmOnly.author } : {},
+        ...moved,
         error: "UNKNOWN_ANCHOR"
       };
     }
@@ -17446,13 +17542,14 @@ function resolveCitation(raw, field, resolver, modelPath = "") {
   }
   const classified = classifyOrigin(content, fm, ref);
   return {
-    path: ref.filePath,
-    href: ref.filePath,
+    path: currentPath,
+    href: currentPath,
     anchor,
     exists: true,
     field,
     origin: classified.origin,
     ...classified.author ? { author: classified.author } : {},
+    ...moved,
     ...excerpt ? { excerpt: excerpt.text, ...excerpt.truncated ? { truncated: true } : {} } : {},
     ...sha2562 ? { sha256: sha2562 } : {},
     ...mediaSha256 ? { media_sha256: mediaSha256 } : {},
@@ -17556,19 +17653,19 @@ function indexedChangesets(rootDir, candidates, listing) {
   const out = /* @__PURE__ */ new Map();
   for (const rel of candidates) {
     const abs = path.join(rootDir, rel);
-    let stat3;
+    let stat4;
     try {
-      stat3 = fs.statSync(abs, { throwIfNoEntry: false });
+      stat4 = fs.statSync(abs, { throwIfNoEntry: false });
     } catch {
-      stat3 = void 0;
+      stat4 = void 0;
     }
-    if (!stat3 || !stat3.isFile()) {
+    if (!stat4 || !stat4.isFile()) {
       if (entries.delete(rel))
         dirty = true;
       continue;
     }
     const known = entries.get(rel);
-    if (known && known.s === stat3.size && known.m === stat3.mtimeMs && known.c === stat3.ctimeMs) {
+    if (known && known.s === stat4.size && known.m === stat4.mtimeMs && known.c === stat4.ctimeMs) {
       out.set(rel, known.d);
       continue;
     }
@@ -17581,7 +17678,7 @@ function indexedChangesets(rootDir, candidates, listing) {
       continue;
     }
     const doc = parseForIndex(content);
-    entries.set(rel, { s: stat3.size, m: stat3.mtimeMs, c: stat3.ctimeMs, d: doc });
+    entries.set(rel, { s: stat4.size, m: stat4.mtimeMs, c: stat4.ctimeMs, d: doc });
     dirty = true;
     out.set(rel, doc === null ? null : JSON.parse(JSON.stringify(doc)));
   }
@@ -17667,8 +17764,35 @@ var init_files_inventory = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/console/fs-source-resolver.js
-function createFsSourceResolver(rootDir) {
+function resolveRecordedSourceMove(path3, moves) {
+  let current = path3;
+  let moved = false;
+  for (const move of moves) {
+    if (current !== move.from)
+      continue;
+    current = move.to;
+    moved = true;
+  }
+  return moved ? current : void 0;
+}
+function createFsSourceResolver(rootDir, options = {}) {
   const rootResolved = (0, import_node_path11.resolve)(rootDir);
+  const moves = options.moves ?? [];
+  const readUnder = (candidateDirs, refPath) => {
+    for (const dir of candidateDirs) {
+      const abs = (0, import_node_path11.resolve)(dir, refPath);
+      if (!isInsideRoot2(dir, abs))
+        continue;
+      if (!(0, import_node_fs7.existsSync)(abs))
+        continue;
+      try {
+        return { found: true, content: (0, import_node_fs7.readFileSync)(abs, "utf-8") };
+      } catch {
+        return { found: false };
+      }
+    }
+    return { found: false };
+  };
   return (refPath, referringPath) => {
     const candidateDirs = [];
     if (referringPath) {
@@ -17691,23 +17815,25 @@ function createFsSourceResolver(rootDir) {
     if (!candidateDirs.includes(rootResolved)) {
       candidateDirs.push(rootResolved);
     }
-    for (const dir of candidateDirs) {
-      const abs = (0, import_node_path11.resolve)(dir, refPath);
-      if (!isInsideRoot2(dir, abs)) {
-        continue;
+    const movedTo = moves.length > 0 ? resolveRecordedSourceMove(refPath, moves) : void 0;
+    if (movedTo !== void 0) {
+      const moved = readUnder(candidateDirs, movedTo);
+      if (moved.found) {
+        return {
+          exists: true,
+          movedTo,
+          headings: extractHeadings(moved.content).map((h) => h.slug),
+          content: moved.content
+        };
       }
-      if ((0, import_node_fs7.existsSync)(abs)) {
-        try {
-          const content = (0, import_node_fs7.readFileSync)(abs, "utf-8");
-          return {
-            exists: true,
-            headings: extractHeadings(content).map((h) => h.slug),
-            content
-          };
-        } catch {
-          return { exists: false };
-        }
-      }
+    }
+    const hit = readUnder(candidateDirs, refPath);
+    if (hit.found) {
+      return {
+        exists: true,
+        headings: extractHeadings(hit.content).map((h) => h.slug),
+        content: hit.content
+      };
     }
     const primaryDir = candidateDirs[0] ?? rootResolved;
     const targetAbs = (0, import_node_path11.resolve)(primaryDir, refPath);
@@ -17999,11 +18125,27 @@ var init_fs_snapshot = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/changelog/node.js
+function loadSourceMoves(rootDir) {
+  const dir = path2.join(path2.resolve(rootDir), "changes");
+  if (!fs2.existsSync(dir))
+    return [];
+  const changesets = [];
+  for (const { name, doc } of readChangesDir2(dir, isNNName2)) {
+    if (doc === null)
+      continue;
+    changesets.push(changesetLikeOf2(`changes/${name}`, doc));
+  }
+  return buildChangeLogFromChangesets2(changesets).sourceMoves;
+}
+var fs2, path2;
 var init_node = __esm({
   "iNNfo/packages/nn-core/dist/changelog/node.js"() {
     "use strict";
+    fs2 = __toESM(require("node:fs"), 1);
+    path2 = __toESM(require("node:path"), 1);
     init_fs_snapshot();
     init_changeset_index();
+    init_contract();
     init_load();
   }
 });
@@ -18934,14 +19076,14 @@ async function loadStalenessHistory2(changesDir) {
   for (const { name, doc } of read) {
     if (doc === null)
       continue;
-    const path2 = `changes/${name}`;
+    const path3 = `changes/${name}`;
     const fm = doc.frontmatter;
-    changesets.push(changesetLikeOf2(path2, doc));
+    changesets.push(changesetLikeOf2(path3, doc));
     const transitions = /* @__PURE__ */ new Map();
     for (const [modelKey, transition] of Object.entries(fm.models ?? {})) {
       transitions.set(modelKey.toLowerCase(), transition);
     }
-    transitionsByPath.set(path2, transitions);
+    transitionsByPath.set(path3, transitions);
   }
   return { log: buildChangeLogFromChangesets2(changesets), transitions: transitionsByPath };
 }
@@ -19141,6 +19283,18 @@ async function partitionChangeset(changes, loadedModels, changesDir, modelBaseVe
         conflictDiagnostics.set(change.id, blockedArtifact);
         change.status = "conflict";
         change.resolution = blockedArtifact.message;
+        conflictedSubset.push(change);
+      } else {
+        cleanSubset.push(change);
+      }
+      continue;
+    }
+    if (change.op === "move_source") {
+      const blockedMove = blockedChanges?.get(change.id);
+      if (blockedMove) {
+        conflictDiagnostics.set(change.id, blockedMove);
+        change.status = "conflict";
+        change.resolution = blockedMove.message;
         conflictedSubset.push(change);
       } else {
         cleanSubset.push(change);
@@ -19676,8 +19830,8 @@ var init_chain = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/scope/fs-chain.js
-function startDirOf2(path2) {
-  const abs = (0, import_node_path14.resolve)(path2);
+function startDirOf2(path3) {
+  const abs = (0, import_node_path14.resolve)(path3);
   try {
     return (0, import_node_fs8.statSync)(abs).isFile() ? (0, import_node_path14.dirname)(abs) : abs;
   } catch {
@@ -19702,21 +19856,21 @@ function knowledgeDocsOf2(dir) {
     return parsed.kind === "nn" && parsed.sidecarOf === void 0;
   }).sort();
 }
-function posix2(root, path2) {
-  return (0, import_node_path14.relative)(root, path2).split(import_node_path14.sep).join("/");
+function posix2(root, path3) {
+  return (0, import_node_path14.relative)(root, path3).split(import_node_path14.sep).join("/");
 }
 function probeDir2(dir, root, failures) {
   const scopeMarkers = [];
   for (const name of knowledgeDocsOf2(dir)) {
-    const path2 = (0, import_node_path14.join)(dir, name);
+    const path3 = (0, import_node_path14.join)(dir, name);
     let text;
     try {
-      text = (0, import_node_fs8.readFileSync)(path2, "utf-8");
+      text = (0, import_node_fs8.readFileSync)(path3, "utf-8");
     } catch (error) {
       failures.push({
         ok: false,
         code: "UNREADABLE_DOCUMENT",
-        path: posix2(root, path2),
+        path: posix2(root, path3),
         detail: error instanceof Error ? error.message : String(error)
       });
       continue;
@@ -19727,13 +19881,13 @@ function probeDir2(dir, root, failures) {
       failures.push({
         ok: false,
         code: "MALFORMED_FRONTMATTER",
-        path: posix2(root, path2),
+        path: posix2(root, path3),
         detail: problems.join("; ")
       });
       continue;
     }
     if (fm?.["scope"] === true)
-      scopeMarkers.push({ path: path2, isolate: fm["isolate"] === true });
+      scopeMarkers.push({ path: path3, isolate: fm["isolate"] === true });
   }
   return { hasEntrypoint: dir === root, scopeMarkers };
 }
@@ -19749,8 +19903,8 @@ function toRelative2(chain) {
     }))
   };
 }
-function findScopeChain2(path2) {
-  const start = startDirOf2(path2);
+function findScopeChain2(path3) {
+  const start = startDirOf2(path3);
   const root = findDomainRoot2(start);
   if (root === null)
     return buildScopeChain2(start, () => NO_MARKERS2, parentOf2);
@@ -19815,8 +19969,8 @@ function fillsOf2(frontmatter) {
   ]));
   return Object.keys(fills).length > 0 ? fills : null;
 }
-function readValuesDoc2(path2) {
-  const parsed = parseKnowledge2((0, import_node_fs9.readFileSync)(path2, "utf-8"));
+function readValuesDoc2(path3) {
+  const parsed = parseKnowledge2((0, import_node_fs9.readFileSync)(path3, "utf-8"));
   const fills = fillsOf2(parsed.frontmatter);
   for (const [, elements] of parsed.elements.entries()) {
     const first = elements[0];
@@ -19826,12 +19980,12 @@ function readValuesDoc2(path2) {
   }
   return { values: {}, fills };
 }
-function nodeOf3(base, path2, shown) {
-  if (path2 === null)
+function nodeOf3(base, path3, shown) {
+  if (path3 === null)
     return { ...base, values: {} };
   let read;
   try {
-    read = readValuesDoc2(path2);
+    read = readValuesDoc2(path3);
   } catch (error) {
     return { ok: false, code: "UNREADABLE_DOCUMENT", path: shown, detail: error instanceof Error ? error.message : String(error) };
   }
@@ -20277,23 +20431,23 @@ async function fetchBlueprintPackageFromRemote(base, version, options = {}) {
     throw new Error(message);
   }
 }
-async function atomicWriteFile(path2, content) {
-  const tmpPath = `${path2}.tmp-${uniqueSuffix()}`;
+async function atomicWriteFile(path3, content) {
+  const tmpPath = `${path3}.tmp-${uniqueSuffix()}`;
   await (0, import_promises3.writeFile)(tmpPath, content, "utf-8");
-  await (0, import_promises3.rename)(tmpPath, path2);
+  await (0, import_promises3.rename)(tmpPath, path3);
 }
 async function saveSpecOnce(specsDir, filename, content) {
   await (0, import_promises3.mkdir)(specsDir, { recursive: true });
-  const path2 = (0, import_node_path16.join)(specsDir, filename);
+  const path3 = (0, import_node_path16.join)(specsDir, filename);
   try {
-    await (0, import_promises3.readFile)(path2, "utf-8");
+    await (0, import_promises3.readFile)(path3, "utf-8");
     return;
   } catch (err) {
     if (err?.code !== "ENOENT") {
-      console.warn(`[resolver-node] Failed to probe write-once spec ${path2}: ${err}`);
+      console.warn(`[resolver-node] Failed to probe write-once spec ${path3}: ${err}`);
     }
   }
-  await atomicWriteFile(path2, content);
+  await atomicWriteFile(path3, content);
 }
 async function resolveParentChainNode(rootDir, parentUrl, parentName, options = {}) {
   const maxDepth = options.maxDepth ?? MAX_DEPTH_DEFAULT;
@@ -20641,8 +20795,8 @@ async function findKnowledgeFile(rootDir, id, opts) {
     const sameText = index.models.filter((m) => m.id.toLowerCase() === lower);
     const ids = [...new Set(sameText.map((m) => m.id))];
     if (ids.length === 1) {
-      const path2 = pathOf2(ids[0]);
-      if (path2) return path2;
+      const path3 = pathOf2(ids[0]);
+      if (path3) return path3;
     }
     if (sameText.length > 0) {
       throw new ModelIdError("DUPLICATE_MODEL_ID", id, sameText.map((m) => m.path));
@@ -20770,9 +20924,9 @@ var SPEC_FILENAME = "spec_NN.md";
 var NN_SUFFIX_RE = /_NN\.md$/i;
 var SIDECAR_PATH_RE = /^(.*\.[^./\\]+)_sidecar_NN\.md$/i;
 var STAMP_SUFFIX_RE = /^(.+)_(\d{8}T\d{6}Z)(?:-(\d+))?$/;
-function baseOf(path2) {
-  const i = Math.max(path2.lastIndexOf("/"), path2.lastIndexOf("\\"));
-  return i < 0 ? path2 : path2.slice(i + 1);
+function baseOf(path3) {
+  const i = Math.max(path3.lastIndexOf("/"), path3.lastIndexOf("\\"));
+  return i < 0 ? path3 : path3.slice(i + 1);
 }
 function parseName(basename10) {
   if (NN_SUFFIX_RE.test(basename10)) {
@@ -20831,9 +20985,9 @@ function isProcedureDocument(nameOrPath) {
 }
 
 // iNNfo/packages/nn-core/src/scope/root.ts
-function isFile(path2) {
+function isFile(path3) {
   try {
-    return (0, import_node_fs.statSync)(path2).isFile();
+    return (0, import_node_fs.statSync)(path3).isFile();
   } catch {
     return false;
   }
@@ -20841,8 +20995,8 @@ function isFile(path2) {
 function isDomainRoot(dir) {
   return isFile((0, import_node_path.join)(dir, ENTRYPOINT_FILENAME));
 }
-function findDomainRoot(path2) {
-  let dir = (0, import_node_path.resolve)(path2);
+function findDomainRoot(path3) {
+  let dir = (0, import_node_path.resolve)(path3);
   if (isFile(dir)) dir = (0, import_node_path.dirname)(dir);
   for (; ; ) {
     if (isDomainRoot(dir)) return dir;
@@ -21974,8 +22128,8 @@ function parseKnowledge(content) {
 
 // iNNfo/packages/nn-core/src/scope/fs-chain.ts
 var NO_MARKERS = { hasEntrypoint: false, scopeMarkers: [] };
-function startDirOf(path2) {
-  const abs = (0, import_node_path3.resolve)(path2);
+function startDirOf(path3) {
+  const abs = (0, import_node_path3.resolve)(path3);
   try {
     return (0, import_node_fs2.statSync)(abs).isFile() ? (0, import_node_path3.dirname)(abs) : abs;
   } catch {
@@ -21999,21 +22153,21 @@ function knowledgeDocsOf(dir) {
     return parsed.kind === "nn" && parsed.sidecarOf === void 0;
   }).sort();
 }
-function posix(root, path2) {
-  return (0, import_node_path3.relative)(root, path2).split(import_node_path3.sep).join("/");
+function posix(root, path3) {
+  return (0, import_node_path3.relative)(root, path3).split(import_node_path3.sep).join("/");
 }
 function probeDir(dir, root, failures) {
   const scopeMarkers = [];
   for (const name of knowledgeDocsOf(dir)) {
-    const path2 = (0, import_node_path3.join)(dir, name);
+    const path3 = (0, import_node_path3.join)(dir, name);
     let text;
     try {
-      text = (0, import_node_fs2.readFileSync)(path2, "utf-8");
+      text = (0, import_node_fs2.readFileSync)(path3, "utf-8");
     } catch (error) {
       failures.push({
         ok: false,
         code: "UNREADABLE_DOCUMENT",
-        path: posix(root, path2),
+        path: posix(root, path3),
         detail: error instanceof Error ? error.message : String(error)
       });
       continue;
@@ -22024,12 +22178,12 @@ function probeDir(dir, root, failures) {
       failures.push({
         ok: false,
         code: "MALFORMED_FRONTMATTER",
-        path: posix(root, path2),
+        path: posix(root, path3),
         detail: problems.join("; ")
       });
       continue;
     }
-    if (fm?.["scope"] === true) scopeMarkers.push({ path: path2, isolate: fm["isolate"] === true });
+    if (fm?.["scope"] === true) scopeMarkers.push({ path: path3, isolate: fm["isolate"] === true });
   }
   return { hasEntrypoint: dir === root, scopeMarkers };
 }
@@ -22045,8 +22199,8 @@ function toRelative(chain) {
     }))
   };
 }
-function findScopeChain(path2) {
-  const start = startDirOf(path2);
+function findScopeChain(path3) {
+  const start = startDirOf(path3);
   const root = findDomainRoot(start);
   if (root === null) return buildScopeChain(start, () => NO_MARKERS, parentOf);
   const failures = [];
@@ -22112,8 +22266,8 @@ function fillsOf(frontmatter) {
   );
   return Object.keys(fills).length > 0 ? fills : null;
 }
-function readValuesDoc(path2) {
-  const parsed = parseKnowledge((0, import_node_fs3.readFileSync)(path2, "utf-8"));
+function readValuesDoc(path3) {
+  const parsed = parseKnowledge((0, import_node_fs3.readFileSync)(path3, "utf-8"));
   const fills = fillsOf(parsed.frontmatter);
   for (const [, elements] of parsed.elements.entries()) {
     const first = elements[0];
@@ -22123,11 +22277,11 @@ function readValuesDoc(path2) {
   }
   return { values: {}, fills };
 }
-function nodeOf(base, path2, shown) {
-  if (path2 === null) return { ...base, values: {} };
+function nodeOf(base, path3, shown) {
+  if (path3 === null) return { ...base, values: {} };
   let read;
   try {
-    read = readValuesDoc(path2);
+    read = readValuesDoc(path3);
   } catch (error) {
     return { ok: false, code: "UNREADABLE_DOCUMENT", path: shown, detail: error instanceof Error ? error.message : String(error) };
   }
@@ -22208,12 +22362,12 @@ function checkSlotSteps(slots, text, id, scope, docPath, diagnostics) {
     delete slot.step;
   }
 }
-function readProcedureDoc(path2, name, scope, docPath, diagnostics) {
+function readProcedureDoc(path3, name, scope, docPath, diagnostics) {
   const id = procedureIdOf(name);
   let frontmatter;
   let text;
   try {
-    text = (0, import_node_fs4.readFileSync)(path2, "utf-8");
+    text = (0, import_node_fs4.readFileSync)(path3, "utf-8");
     frontmatter = parseFrontmatter(text) ?? {};
   } catch (error) {
     diagnostics.push({
@@ -22650,10 +22804,10 @@ function removedForm(raw, form, shape) {
     message: `The ${form} \`${shape}\` is removed and is never resolved by title; ${GRAMMAR_HINT}.`
   };
 }
-function parseSourceClass(path2, raw) {
-  const base = path2.slice(path2.lastIndexOf("/") + 1);
+function parseSourceClass(path3, raw) {
+  const base = path3.slice(path3.lastIndexOf("/") + 1);
   const parsed = parseName(base);
-  const sourcePrefix = path2.startsWith("sources/");
+  const sourcePrefix = path3.startsWith("sources/");
   if (!sourcePrefix && parsed.kind === "nn" && parsed.sidecarOf === void 0) {
     const isChangeset = CHANGES_STEM_RE.test(parsed.stem);
     const role = roleOf({ path: base, parentSpecName: isChangeset ? "changes" : void 0 });
@@ -22669,8 +22823,8 @@ function parseSourceClass(path2, raw) {
       return {
         kind: "error",
         code: "MODEL_CITED_BY_PATH",
-        segment: path2,
-        message: `A model is not cited by file path (\`${path2}\`); ${GRAMMAR_HINT}.`
+        segment: path3,
+        message: `A model is not cited by file path (\`${path3}\`); ${GRAMMAR_HINT}.`
       };
     }
   }
@@ -22895,11 +23049,11 @@ function inDocumentOrder(text, parsed) {
   return ordered;
 }
 var declared = (decls, concept) => decls.find((d) => typeof d.concept === "string" && d.concept.toLowerCase() === concept.toLowerCase());
-function open(path2) {
-  const found = findScopeChain(path2);
+function open(path3) {
+  const found = findScopeChain(path3);
   if (!found.ok) return chainFailure(found);
   const { chain } = found;
-  const abs = (0, import_node_path6.resolve)(path2);
+  const abs = (0, import_node_path6.resolve)(path3);
   const doc = (0, import_node_path6.relative)(chain.root, abs).split(import_node_path6.sep).join("/");
   let parsed;
   let text;
@@ -22922,14 +23076,14 @@ function open(path2) {
   const scopeFlag = isPlainObject3(parsed.frontmatter) && parsed.frontmatter["scope"] === true;
   return { chain, doc, source: { doc, decls, elements, scopeFlag } };
 }
-function loadElementChain(path2, target, opts = {}) {
+function loadElementChain(path3, target, opts = {}) {
   if (target === null) {
-    const found = findScopeChain(path2);
+    const found = findScopeChain(path3);
     if (!found.ok) return chainFailure(found);
     const folder2 = loadChain(found.chain, opts);
     return folder2.ok ? { ok: true, loaded: folder2.loaded, chain: found.chain } : documentFailure(folder2);
   }
-  const opened = open(path2);
+  const opened = open(path3);
   if (!("source" in opened)) return opened;
   const folder = loadChain(opened.chain, opts);
   if (!folder.ok) return documentFailure(folder);
@@ -22941,8 +23095,8 @@ function placeOn(opened, folder, target) {
   if (!placed.ok) return fail2(placed.code, placed.detail);
   return { ok: true, loaded: { floor: folder.floor, nodes: [...folder.nodes, ...placed.nodes] }, chain: opened.chain };
 }
-function loadElementChains(path2, opts = {}) {
-  const opened = open(path2);
+function loadElementChains(path3, opts = {}) {
+  const opened = open(path3);
   if (!("source" in opened)) return opened;
   const { source, doc } = opened;
   if (source.scopeFlag === true && source.decls.length > 0) {
@@ -22961,8 +23115,8 @@ function loadElementChains(path2, opts = {}) {
     }))
   };
 }
-function listScopeElements(path2) {
-  const opened = open(path2);
+function listScopeElements(path3) {
+  const opened = open(path3);
   if (!("source" in opened)) return opened;
   const { source, doc } = opened;
   if (source.scopeFlag === true && source.decls.length > 0) {
@@ -23068,6 +23222,7 @@ var CHANGE_OPS = [
   "comment",
   "add_model",
   "move_model",
+  "move_source",
   "remove_model",
   "extract_instance",
   "freeze_slugs",
@@ -23122,6 +23277,58 @@ function moveModelProblems(change) {
   if (!to) problems.push(`change "${id}": move_model requires "to" (the new instance model id)`);
   else if (!bareModelId(to) || to.startsWith("/")) {
     problems.push(`change "${id}": move_model "to" must be the new instance model id`);
+  }
+  return problems;
+}
+function moveSourceProblems(change) {
+  if (change.op !== "move_source") return [];
+  const problems = [];
+  const id = change.id;
+  const unsafe = (value) => {
+    if (value === "") return "is empty";
+    if (value.startsWith("/")) return "starts at the domain root";
+    if (/^[a-zA-Z]:/.test(value)) return "is absolute";
+    if (value.includes("\\")) return 'uses a backslash (write the path with "/")';
+    if (value.includes("..")) return "escapes the domain";
+    if (value.includes("@") || value.includes("&"))
+      return "addresses an element or a field, not a file";
+    return void 0;
+  };
+  const target = String(change.target ?? "").trim();
+  const targetProblem = unsafe(target);
+  if (targetProblem !== void 0) {
+    problems.push(`change "${id}": move_source target (the previous path) ${targetProblem}`);
+  }
+  const to = String(change.to ?? "").trim();
+  if (!to) {
+    problems.push(`change "${id}": move_source requires "to" (the new path)`);
+  } else {
+    const toProblem = unsafe(to);
+    if (toProblem !== void 0) {
+      problems.push(`change "${id}": move_source "to" ${toProblem}`);
+    } else if (to === target) {
+      problems.push(`change "${id}": move_source "to" is the same path as target`);
+    }
+  }
+  if (change.from !== void 0) {
+    problems.push(
+      `change "${id}": move_source must not carry "from"; the previous path is target and the new one is "to"`
+    );
+  }
+  for (const key of [
+    "base_hash",
+    "concept",
+    "name",
+    "knowledge_version",
+    "blueprint_name",
+    "blueprint_url",
+    "slug",
+    "fields",
+    "seed"
+  ]) {
+    if (change[key] !== void 0) {
+      problems.push(`change "${id}": move_source must not carry "${key}"`);
+    }
   }
   return problems;
 }
@@ -23589,6 +23796,10 @@ function parseChangeset(rawContent) {
   if (moveProblems.length > 0) {
     throw new Error(`Invalid move_model change: ${moveProblems.join("; ")}`);
   }
+  const sourceMoveProblems = changes.flatMap(moveSourceProblems);
+  if (sourceMoveProblems.length > 0) {
+    throw new Error(`Invalid move_source change: ${sourceMoveProblems.join("; ")}`);
+  }
   const extractProblems = changes.flatMap(extractInstanceProblems);
   if (extractProblems.length > 0) {
     throw new Error(`Invalid extract_instance change: ${extractProblems.join("; ")}`);
@@ -24024,11 +24235,11 @@ function mutationArgsForChange(change, model, schema) {
 
 // iNNfo/packages/nn-mcp/src/tools/model-citation.ts
 async function resolveModelCitation(index, modelId, elementSlug) {
-  const path2 = index.pathOf(modelId);
-  if (!path2) return { ok: false, code: "CITATION_UNRESOLVED", detail: `which does not resolve (MODEL_NOT_FOUND)` };
+  const path3 = index.pathOf(modelId);
+  if (!path3) return { ok: false, code: "CITATION_UNRESOLVED", detail: `which does not resolve (MODEL_NOT_FOUND)` };
   let model;
   try {
-    model = parseKnowledge2(await (0, import_promises6.readFile)(path2, "utf-8"));
+    model = parseKnowledge2(await (0, import_promises6.readFile)(path3, "utf-8"));
   } catch {
     return { ok: false, code: "CITATION_UNRESOLVED", detail: "which does not resolve (UNREADABLE)" };
   }
@@ -24042,7 +24253,7 @@ async function resolveModelCitation(index, modelId, elementSlug) {
       detail: `but model "${modelId}" has no closing event; only a closed model (close_model) is a citable record`
     };
   }
-  return { ok: true, path: path2 };
+  return { ok: true, path: path3 };
 }
 
 // iNNfo/packages/nn-mcp/src/tools/model-id.ts
@@ -24874,7 +25085,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         };
       }
     }
-    const citationResolver = createFsSourceResolver(rootDir);
+    const citationResolver = createFsSourceResolver(rootDir, {
+      // A recorded move is the register: evidence that still spells the previous path of
+      // a moved source resolves at the current one (move-source-relink).
+      moves: loadSourceMoves(rootDir)
+    });
     const citedModelFiles = /* @__PURE__ */ new Map();
     let citationIndex = null;
     for (const change of csDoc.changes) {
@@ -24952,15 +25167,15 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
     }
     const loadedModels = /* @__PURE__ */ new Map();
-    const rejectPhase1 = (code, path2, message) => ({
+    const rejectPhase1 = (code, path3, message) => ({
       success: false,
       changesetPath: relChangesetPath,
       status: "rejected",
       models: {},
       appliedCount: 0,
-      errors: [{ path: path2, message: `${code}: ${message}`, code }]
+      errors: [{ path: path3, message: `${code}: ${message}`, code }]
     });
-    const rejectProposal = (code, path2, message, changeId) => recordRejection([{ path: path2, message: `${code}: ${message}`, code }], changeId);
+    const rejectProposal = (code, path3, message, changeId) => recordRejection([{ path: path3, message: `${code}: ${message}`, code }], changeId);
     const idAliases = modelIdAliases(csDoc.changes);
     for (const change of csDoc.changes) change.target = canonicalizeTarget(change.target, idAliases);
     const addModelIndex = /* @__PURE__ */ new Map();
@@ -25183,8 +25398,8 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           change.id
         );
       }
-      const path2 = (0, import_node_path21.join)(rootDir, placed.folder, placed.file);
-      if (!isInsideRoot2(rootDir, path2)) {
+      const path3 = (0, import_node_path21.join)(rootDir, placed.folder, placed.file);
+      if (!isInsideRoot2(rootDir, path3)) {
         return rejectProposal(
           "EXTRACT_INVALID_TARGET",
           toId,
@@ -25192,16 +25407,16 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           change.id
         );
       }
-      const occupiedById = domainIndex.byId(toId) !== void 0 || await (0, import_promises11.stat)(path2).then(
+      const occupiedById = domainIndex.byId(toId) !== void 0 || await (0, import_promises11.stat)(path3).then(
         (s) => s.isFile(),
         () => false
       );
-      const occupiedFolder = await (0, import_promises11.stat)((0, import_node_path21.dirname)(path2)).then(
+      const occupiedFolder = await (0, import_promises11.stat)((0, import_node_path21.dirname)(path3)).then(
         (s) => s.isDirectory(),
         () => false
       );
       if (occupiedById || occupiedFolder) {
-        const where = occupiedById ? `instance "${toId}" already exists` : `"${(0, import_node_path21.relative)(rootDir, (0, import_node_path21.dirname)(path2)).replace(/\\/g, "/")}/" already exists`;
+        const where = occupiedById ? `instance "${toId}" already exists` : `"${(0, import_node_path21.relative)(rootDir, (0, import_node_path21.dirname)(path3)).replace(/\\/g, "/")}/" already exists`;
         blockedChanges.set(change.id, {
           code: occupiedById ? "MODEL_EXISTS" : "EXTRACT_DESTINATION_OCCUPIED",
           message: `${occupiedById ? "MODEL_EXISTS" : "EXTRACT_DESTINATION_OCCUPIED"}: ${where}, so extracting into "${toId}" would write into it; remove the registry copy with remove_element instead`
@@ -25225,12 +25440,12 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         blueprintUrl,
         folder: placed.folder,
         file: placed.file,
-        path: path2
+        path: path3
       });
       plannedConcepts.set(toId.toLowerCase(), subtree.concept);
     }
     for (const [index, change] of csDoc.changes.entries()) {
-      if (isNonMutating(change.op) || change.op === "add_model" || change.op === "produce_artifact")
+      if (isNonMutating(change.op) || change.op === "add_model" || change.op === "produce_artifact" || change.op === "move_source")
         continue;
       const targetModel = parseTargetAddress(change.target).modelSlug;
       const createdAt = addModelIndex.get(targetModel.toLowerCase());
@@ -25386,6 +25601,60 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         });
       }
     }
+    const sourceMovePlans = /* @__PURE__ */ new Map();
+    for (const change of csDoc.changes) {
+      if (change.op !== "move_source") continue;
+      const problem = moveSourceProblems2(change)[0];
+      if (problem !== void 0) {
+        return rejectProposal("MOVE_SOURCE_INVALID_TARGET", change.target, problem, change.id);
+      }
+      const from = change.target.trim();
+      const to = String(change.to ?? "").trim();
+      const fromPath = (0, import_node_path21.join)(rootDir, from);
+      const toPath = (0, import_node_path21.join)(rootDir, to);
+      if (!isInsideRoot2(rootDir, fromPath) || !isInsideRoot2(rootDir, toPath)) {
+        return rejectProposal(
+          "MOVE_SOURCE_INVALID_TARGET",
+          change.target,
+          `change "${change.id}" moves a path outside the domain`,
+          change.id
+        );
+      }
+      const clash = [...sourceMovePlans.values()].find(
+        (plan) => plan.from === from || plan.to === to
+      );
+      if (clash) {
+        return rejectProposal(
+          "MOVE_SOURCE_DUPLICATE",
+          change.target,
+          `change "${change.id}" moves "${from}" to "${to}", which change "${clash.changeId}" already moves`,
+          change.id
+        );
+      }
+      const source = await (0, import_promises11.stat)(fromPath).then(
+        (s) => s.isFile(),
+        () => false
+      );
+      if (!source) {
+        blockedChanges.set(change.id, {
+          code: "MOVE_SOURCE_MISSING_FILE",
+          message: `MOVE_SOURCE_MISSING_FILE: "${from}" has no file on disk, so no move from it is recorded; a typo cannot manufacture a move`
+        });
+        continue;
+      }
+      const occupied = await (0, import_promises11.stat)(toPath).then(
+        () => true,
+        () => false
+      );
+      if (occupied) {
+        blockedChanges.set(change.id, {
+          code: "MOVE_SOURCE_DESTINATION_EXISTS",
+          message: `MOVE_SOURCE_DESTINATION_EXISTS: "${to}" already exists; a move never overwrites a file`
+        });
+        continue;
+      }
+      sourceMovePlans.set(change.id, { changeId: change.id, from, to, fromPath, toPath });
+    }
     let needsKnowledgeDir = false;
     for (const change of csDoc.changes) {
       if (change.op !== "add_model") continue;
@@ -25411,7 +25680,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           message: `MODEL_EXISTS: model "${change.target}" already exists; add_model never overwrites or repairs a model`
         });
         for (const other of csDoc.changes) {
-          if (other.id === change.id || isNonMutating(other.op) || other.op === "produce_artifact")
+          if (other.id === change.id || isNonMutating(other.op) || other.op === "produce_artifact" || other.op === "move_source")
             continue;
           if (parseTargetAddress(other.target).modelSlug.toLowerCase() !== key) continue;
           blockedChanges.set(other.id, {
@@ -25565,8 +25834,8 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           change.id
         );
       }
-      const path2 = pathOf2(id);
-      if (!path2) {
+      const path3 = pathOf2(id);
+      if (!path3) {
         return rejectPhase1("MODEL_NOT_FOUND", id, `remove_model target "${id}" has no file`);
       }
       const folder = (0, import_node_path21.resolve)(rootDir, (0, import_node_path21.dirname)(target.path));
@@ -25582,7 +25851,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           change.id
         );
       }
-      removePlans.set(change.id, { changeId: change.id, id, path: path2 });
+      removePlans.set(change.id, { changeId: change.id, id, path: path3 });
     }
     const schemaFor = async (entry) => {
       if (entry.schema === void 0) {
@@ -25635,7 +25904,8 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       return null;
     };
     for (const change of csDoc.changes) {
-      if (change.op === "comment" || change.op === "produce_artifact") continue;
+      if (change.op === "comment" || change.op === "produce_artifact" || change.op === "move_source")
+        continue;
       const { modelSlug } = parseTargetAddress(change.target);
       if (!modelSlug) continue;
       if (existingAddModelIds.has(modelSlug.toLowerCase())) continue;
@@ -26034,6 +26304,19 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         change.resolution = `Recorded artifact ${change.target}`;
         continue;
       }
+      if (change.op === "move_source") {
+        const plan = sourceMovePlans.get(change.id);
+        if (!plan) {
+          return rejectPhase1(
+            "MOVE_SOURCE_INVALID_TARGET",
+            change.target,
+            `change "${change.id}" has no move plan`
+          );
+        }
+        change.status = "applied";
+        change.resolution = `Moved source "${plan.from}" to "${plan.to}"`;
+        continue;
+      }
       const { modelSlug, parts, remainder } = parseTargetAddress(change.target);
       const entry = loadedModels.get(modelSlug.toLowerCase());
       if (!entry) continue;
@@ -26382,9 +26665,9 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         if (parent === current) break;
         current = parent;
       }
-      for (const path2 of missing.reverse()) {
-        await (0, import_promises11.mkdir)(path2);
-        createdDirectories.push(path2);
+      for (const path3 of missing.reverse()) {
+        await (0, import_promises11.mkdir)(path3);
+        createdDirectories.push(path3);
       }
     };
     for (const [, entry] of loadedModels) {
@@ -26401,6 +26684,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
     }
     const performedMoves = [];
+    const performedSourceMoves = [];
     const rollbackPersistence = async () => {
       for (const move of [...performedMoves].reverse()) {
         const oldDir = (0, import_node_path21.dirname)(move.fromPath);
@@ -26412,6 +26696,15 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         } catch (rollbackErr) {
           console.warn(
             `[apply-change] Failed to reverse the move of "${move.fromPath}": ${rollbackErr}`
+          );
+        }
+      }
+      for (const move of [...performedSourceMoves].reverse()) {
+        try {
+          await (0, import_promises11.rename)(move.toPath, move.fromPath);
+        } catch (rollbackErr) {
+          console.warn(
+            `[apply-change] Failed to reverse the source move of "${move.fromPath}": ${rollbackErr}`
           );
         }
       }
@@ -26444,8 +26737,8 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
           });
         }
       }
-      for (const path2 of [...createdDirectories].sort((a, b) => b.length - a.length)) {
-        await (0, import_promises11.rmdir)(path2).catch(() => {
+      for (const path3 of [...createdDirectories].sort((a, b) => b.length - a.length)) {
+        await (0, import_promises11.rmdir)(path3).catch(() => {
         });
       }
     };
@@ -26465,6 +26758,11 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
         performedMoves.push({ fromPath: oldPath, toPath: plan.toPath });
         entry.filePath = plan.toPath;
         entry.movedFrom = oldPath;
+      }
+      for (const plan of sourceMovePlans.values()) {
+        await ensureDirectory((0, import_node_path21.dirname)(plan.toPath));
+        await (0, import_promises11.rename)(plan.fromPath, plan.toPath);
+        performedSourceMoves.push({ fromPath: plan.fromPath, toPath: plan.toPath });
       }
       for (const [, entry] of loadedModels) {
         if (!entry.mutated) continue;
@@ -26542,8 +26840,8 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       const shas = await evidenceShas(rootDir, change.evidence, citedModelFiles);
       if (shas) {
         change.evidence_sha256 = shas;
-        evidencePaths(change.evidence)?.forEach((path2, i) => {
-          evidenceMap[path2] ??= shas[i];
+        evidencePaths(change.evidence)?.forEach((path3, i) => {
+          evidenceMap[path3] ??= shas[i];
         });
       } else delete change.evidence_sha256;
     }

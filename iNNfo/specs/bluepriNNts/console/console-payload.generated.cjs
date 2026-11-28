@@ -7437,6 +7437,7 @@ __export(index_exports, {
   resolveConsoleModulePath: () => resolveConsoleModulePath,
   resolveConsoleSchema: () => resolveConsoleSchema,
   resolveEvidenceCitation: () => resolveEvidenceCitation,
+  resolveRecordedSourceMove: () => resolveRecordedSourceMove,
   roleOf: () => roleOf,
   runModelOf: () => runModelOf,
   serializeConsoleSlot: () => serializeConsoleSlot,
@@ -9021,7 +9022,7 @@ var REQUIRED_BY_PRIMITIVE = {
 
 // stub:canonical-registry-stub
 function findCanonicalBlueprint(key) {
-  return key === "changes" ? { name: "changes", version: "V_0-15-0", aliases: [], specContent: "" } : null;
+  return key === "changes" ? { name: "changes", version: "V_0-16-0", aliases: [], specContent: "" } : null;
 }
 
 // iNNfo/packages/nn-core/src/schema/nature.ts
@@ -11186,6 +11187,7 @@ var CHANGE_OPS = [
   "comment",
   "add_model",
   "move_model",
+  "move_source",
   "remove_model",
   "extract_instance",
   "freeze_slugs",
@@ -11240,6 +11242,58 @@ function moveModelProblems(change) {
   if (!to) problems.push(`change "${id}": move_model requires "to" (the new instance model id)`);
   else if (!bareModelId(to) || to.startsWith("/")) {
     problems.push(`change "${id}": move_model "to" must be the new instance model id`);
+  }
+  return problems;
+}
+function moveSourceProblems(change) {
+  if (change.op !== "move_source") return [];
+  const problems = [];
+  const id = change.id;
+  const unsafe = (value) => {
+    if (value === "") return "is empty";
+    if (value.startsWith("/")) return "starts at the domain root";
+    if (/^[a-zA-Z]:/.test(value)) return "is absolute";
+    if (value.includes("\\")) return 'uses a backslash (write the path with "/")';
+    if (value.includes("..")) return "escapes the domain";
+    if (value.includes("@") || value.includes("&"))
+      return "addresses an element or a field, not a file";
+    return void 0;
+  };
+  const target = String(change.target ?? "").trim();
+  const targetProblem = unsafe(target);
+  if (targetProblem !== void 0) {
+    problems.push(`change "${id}": move_source target (the previous path) ${targetProblem}`);
+  }
+  const to = String(change.to ?? "").trim();
+  if (!to) {
+    problems.push(`change "${id}": move_source requires "to" (the new path)`);
+  } else {
+    const toProblem = unsafe(to);
+    if (toProblem !== void 0) {
+      problems.push(`change "${id}": move_source "to" ${toProblem}`);
+    } else if (to === target) {
+      problems.push(`change "${id}": move_source "to" is the same path as target`);
+    }
+  }
+  if (change.from !== void 0) {
+    problems.push(
+      `change "${id}": move_source must not carry "from"; the previous path is target and the new one is "to"`
+    );
+  }
+  for (const key of [
+    "base_hash",
+    "concept",
+    "name",
+    "knowledge_version",
+    "blueprint_name",
+    "blueprint_url",
+    "slug",
+    "fields",
+    "seed"
+  ]) {
+    if (change[key] !== void 0) {
+      problems.push(`change "${id}": move_source must not carry "${key}"`);
+    }
   }
   return problems;
 }
@@ -11681,6 +11735,10 @@ function parseChangeset(rawContent) {
   if (moveProblems.length > 0) {
     throw new Error(`Invalid move_model change: ${moveProblems.join("; ")}`);
   }
+  const sourceMoveProblems = changes.flatMap(moveSourceProblems);
+  if (sourceMoveProblems.length > 0) {
+    throw new Error(`Invalid move_source change: ${sourceMoveProblems.join("; ")}`);
+  }
   const extractProblems = changes.flatMap(extractInstanceProblems);
   if (extractProblems.length > 0) {
     throw new Error(`Invalid extract_instance change: ${extractProblems.join("; ")}`);
@@ -11846,6 +11904,7 @@ function foldChanges(changes) {
   const models = /* @__PURE__ */ new Map();
   const relinks = /* @__PURE__ */ new Map();
   const rekeys = [];
+  const sourceMoves = [];
   const addRelink = (model, from, to, order) => {
     if (!from || !to) return;
     const bucket = relinks.get(model);
@@ -11981,6 +12040,13 @@ function foldChanges(changes) {
         }
         return;
       }
+      case "move_source": {
+        const from = String(change.target ?? "").trim();
+        const to = String(change.to ?? "").trim();
+        if (!from || !to || from === to) return;
+        sourceMoves.push({ from, to, order, change });
+        return;
+      }
       case "remove_model": {
         const id = address.trim();
         const inModel = (key) => {
@@ -12010,7 +12076,7 @@ function foldChanges(changes) {
         return;
     }
   });
-  return { units, cleared, tombstones, epochs, elements, models, relinks, rekeys };
+  return { units, cleared, tombstones, epochs, elements, models, relinks, rekeys, sourceMoves };
 }
 function applyRelinks(unit, relinks) {
   if (unit.kind === "cell" || unit.kind === "artifact") return unit.value;
@@ -12203,6 +12269,26 @@ var ChangeLogImpl = class {
   }
   get rekeys() {
     return this.fold.rekeys;
+  }
+  get sourceMoves() {
+    return this.fold.sourceMoves;
+  }
+  /**
+   * Walks the chain forward: the first recorded move a path matches renames it, and
+   * a later move of the new path keeps going, so a chained move yields the current
+   * location. An unmoved path answers `undefined`, never itself.
+   */
+  resolveSourceMove(path3) {
+    const wanted = String(path3 ?? "").trim();
+    if (!wanted) return void 0;
+    let current = wanted;
+    let moved = false;
+    for (const move of this.fold.sourceMoves) {
+      if (current !== move.from) continue;
+      current = move.to;
+      moved = true;
+    }
+    return moved ? current : void 0;
   }
   /** Canonical position of a change: its index in the sorted `all` list. */
   orderOf(change) {
@@ -13490,9 +13576,11 @@ function resolveCitation(raw, field, resolver2, modelPath = "") {
   if (!resolved || !resolved.exists) {
     return { path: ref.filePath, anchor, exists: false, field, origin: "document", error: "DANGLING_FILE" };
   }
+  const currentPath = resolved.movedTo ?? ref.filePath;
+  const moved = currentPath !== ref.filePath ? { movedFrom: ref.filePath } : {};
   const content = resolved.content;
   if (!content) {
-    return { path: ref.filePath, href: ref.filePath, anchor, exists: true, field, origin: "document" };
+    return { path: currentPath, href: currentPath, anchor, exists: true, field, origin: "document", ...moved };
   }
   const fm = parseFrontmatter(content);
   const sha256 = fm?.sha256;
@@ -13504,12 +13592,13 @@ function resolveCitation(raw, field, resolver2, modelPath = "") {
     if (!unitResult) {
       const fmOnly = classifyFromFrontmatter(fm);
       return {
-        path: ref.filePath,
+        path: currentPath,
         anchor,
         exists: true,
         field,
         origin: fmOnly.origin,
         ...fmOnly.author ? { author: fmOnly.author } : {},
+        ...moved,
         error: "UNKNOWN_ANCHOR"
       };
     }
@@ -13519,12 +13608,13 @@ function resolveCitation(raw, field, resolver2, modelPath = "") {
     if (!section) {
       const fmOnly = classifyFromFrontmatter(fm);
       return {
-        path: ref.filePath,
+        path: currentPath,
         anchor,
         exists: true,
         field,
         origin: fmOnly.origin,
         ...fmOnly.author ? { author: fmOnly.author } : {},
+        ...moved,
         error: "UNKNOWN_ANCHOR"
       };
     }
@@ -13533,13 +13623,14 @@ function resolveCitation(raw, field, resolver2, modelPath = "") {
   }
   const classified = classifyOrigin(content, fm, ref);
   return {
-    path: ref.filePath,
-    href: ref.filePath,
+    path: currentPath,
+    href: currentPath,
     anchor,
     exists: true,
     field,
     origin: classified.origin,
     ...classified.author ? { author: classified.author } : {},
+    ...moved,
     ...excerpt ? { excerpt: excerpt.text, ...excerpt.truncated ? { truncated: true } : {} } : {},
     ...sha256 ? { sha256 } : {},
     ...mediaSha256 ? { media_sha256: mediaSha256 } : {},
@@ -13989,8 +14080,32 @@ function calculateFilesStats(inventory) {
 // iNNfo/packages/nn-core/src/console/fs-source-resolver.ts
 var import_node_fs3 = require("node:fs");
 var import_node_path6 = require("node:path");
-function createFsSourceResolver(rootDir) {
+function resolveRecordedSourceMove(path3, moves) {
+  let current = path3;
+  let moved = false;
+  for (const move of moves) {
+    if (current !== move.from) continue;
+    current = move.to;
+    moved = true;
+  }
+  return moved ? current : void 0;
+}
+function createFsSourceResolver(rootDir, options = {}) {
   const rootResolved = (0, import_node_path6.resolve)(rootDir);
+  const moves = options.moves ?? [];
+  const readUnder = (candidateDirs, refPath) => {
+    for (const dir of candidateDirs) {
+      const abs = (0, import_node_path6.resolve)(dir, refPath);
+      if (!isInsideRoot(dir, abs)) continue;
+      if (!(0, import_node_fs3.existsSync)(abs)) continue;
+      try {
+        return { found: true, content: (0, import_node_fs3.readFileSync)(abs, "utf-8") };
+      } catch {
+        return { found: false };
+      }
+    }
+    return { found: false };
+  };
   return (refPath, referringPath) => {
     const candidateDirs = [];
     if (referringPath) {
@@ -14013,23 +14128,25 @@ function createFsSourceResolver(rootDir) {
     if (!candidateDirs.includes(rootResolved)) {
       candidateDirs.push(rootResolved);
     }
-    for (const dir of candidateDirs) {
-      const abs = (0, import_node_path6.resolve)(dir, refPath);
-      if (!isInsideRoot(dir, abs)) {
-        continue;
+    const movedTo = moves.length > 0 ? resolveRecordedSourceMove(refPath, moves) : void 0;
+    if (movedTo !== void 0) {
+      const moved = readUnder(candidateDirs, movedTo);
+      if (moved.found) {
+        return {
+          exists: true,
+          movedTo,
+          headings: extractHeadings(moved.content).map((h) => h.slug),
+          content: moved.content
+        };
       }
-      if ((0, import_node_fs3.existsSync)(abs)) {
-        try {
-          const content = (0, import_node_fs3.readFileSync)(abs, "utf-8");
-          return {
-            exists: true,
-            headings: extractHeadings(content).map((h) => h.slug),
-            content
-          };
-        } catch {
-          return { exists: false };
-        }
-      }
+    }
+    const hit = readUnder(candidateDirs, refPath);
+    if (hit.found) {
+      return {
+        exists: true,
+        headings: extractHeadings(hit.content).map((h) => h.slug),
+        content: hit.content
+      };
     }
     const primaryDir = candidateDirs[0] ?? rootResolved;
     const targetAbs = (0, import_node_path6.resolve)(primaryDir, refPath);
@@ -15042,6 +15159,7 @@ function auditModelRecords(log, models) {
   resolveConsoleModulePath,
   resolveConsoleSchema,
   resolveEvidenceCitation,
+  resolveRecordedSourceMove,
   roleOf,
   runModelOf,
   serializeConsoleSlot,
