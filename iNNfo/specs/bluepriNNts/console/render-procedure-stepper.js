@@ -1370,7 +1370,35 @@
       order.forEach(function (s) {
         ;(rows[layer[s]] = rows[layer[s]] || []).push(s)
       })
-      return { layer: layer, rows: rows.filter(Boolean) }
+      var banded = rows.filter(Boolean)
+      /**
+       * Lanes: a step keeps the lane of the first step that leads to it, so one branch runs
+       * down a straight rail instead of drifting toward the middle on every layer. A
+       * convergence takes the rail of its lowest predecessor -- the run arrives by one of
+       * them, never both, so the two rails meeting is the whole story.
+       */
+      var lane = {}
+      var lanes = 0
+      banded.forEach(function (row) {
+        var used = {}
+        row.forEach(function (slug) {
+          var from = order.filter(function (s) {
+            return lane[s] !== undefined && (steps[s].next || []).indexOf(slug) !== -1
+          })
+          var pick
+          from.forEach(function (s) {
+            if (pick === undefined || lane[s] < pick) pick = lane[s]
+          })
+          if (pick === undefined || used[pick]) {
+            pick = 0
+            while (used[pick]) pick++
+          }
+          lane[slug] = pick
+          used[pick] = true
+          if (pick + 1 > lanes) lanes = pick + 1
+        })
+      })
+      return { layer: layer, rows: banded, lane: lane, lanes: lanes }
     }
 
     function stepStatusIn(state, slug) {
@@ -1561,7 +1589,10 @@
       var widest = lay.rows.reduce(function (n, r) {
         return Math.max(n, r.length)
       }, 1)
-      var nodeW = Math.max(84, Math.min(200, Math.floor(widthPx / widest) - 10))
+      // A branch keeps its rail for the whole flow, so the rails -- not the longest layer --
+      // are what the boxes have to fit across.
+      var slots = Math.max(widest, lay.lanes || 1)
+      var nodeW = Math.max(84, Math.min(200, Math.floor(widthPx / slots) - 10))
       var compact = nodeW < 140
       // The box has to hold the whole step name. Instead of cutting the name by a made-up
       // characters-per-line ratio, wrap it and let the tallest name set the height of every
@@ -1578,12 +1609,13 @@
       lines = Math.max(1, Math.min(4, lines))
       var subLineH = 15
       var titleLineH = 18
-      var nodeH = 9 + subLineH + lines * titleLineH + 9
+      var nodeH = 9 + lines * titleLineH + subLineH + 9
       var rowH = nodeH + 30
       var pos = {}
       lay.rows.forEach(function (row, r) {
-        row.forEach(function (slug, i) {
-          pos[slug] = { x: 0.5 + (i - (row.length - 1) / 2) / widest, y: r }
+        row.forEach(function (slug) {
+          var lane = lay.lane && lay.lane[slug] !== undefined ? lay.lane[slug] : 0
+          pos[slug] = { x: 0.5 + (lane - (slots - 1) / 2) / slots, y: r }
         })
       })
       return {
@@ -1603,6 +1635,14 @@
       var state = viewState()
       var w = geo.nodeW
       var h = geo.nodeH
+      // How many definitions reach a step. More than one is a convergence, and the flow says
+      // so in words: the run arrives by one of them, it does not wait for all.
+      var inbound = {}
+      Object.keys(graph.steps).forEach(function (s) {
+        ;(graph.steps[s].next || []).forEach(function (t) {
+          inbound[t] = (inbound[t] || 0) + 1
+        })
+      })
       // A faint wash, not a fill: a flow of green and amber slabs was the heaviest thing on the page.
       var tint = function (c) {
         return blend(c, pal.surface, 0.07)
@@ -1627,6 +1667,9 @@
         } else if (status === 'waiting') {
           border = pal.warning
           fill = tint(pal.warning)
+        } else if (status === 'reopened') {
+          border = pal.warning
+          type = 'dashed'
         } else if (status === 'active') {
           border = pal.primary
           fill = tint(pal.primary)
@@ -1642,10 +1685,12 @@
           type = 'solid'
         }
         if (projected) type = 'dotted'
+        var attempt = state && state.steps && state.steps[slug] ? state.steps[slug].attempt : 0
+        var inboundCount = inbound[slug] || 0
         var sub = [
           status !== 'definition' ? status : null,
-          step.stepType || 'task',
-          step.executor || null,
+          inboundCount > 1 ? inboundCount + ' in' : null,
+          attempt > 1 ? 'attempt ' + attempt : null,
           projected ? 'projected' : null,
           isSelected ? 'open' : null,
         ]
@@ -1708,14 +1753,14 @@
             show: true,
             position: 'inside',
             formatter:
-              '{sub|' +
-              cut(clean(sub.toUpperCase()), subSize, 0.68) +
-              '}\n' +
               wrap(clean(step.name || slug))
                 .map(function (line) {
                   return '{title|' + line + '}'
                 })
-                .join('\n'),
+                .join('\n') +
+              '\n{sub|' +
+              cut(clean(sub), subSize, 0.6) +
+              '}',
             rich: {
               sub: {
                 width: inner,
@@ -1849,6 +1894,29 @@
           symbolSize: [w + 12, h + 12],
           itemStyle: { color: 'rgba(0,0,0,0)', borderColor: pal.text, borderWidth: 2 },
           data: [{ id: focusSlug, value: at(focusSlug) }],
+        })
+      }
+      // The run's cursor, the way Git draws HEAD: a ref on the step it points at, not a colour
+      // the reader has to decode. The pulse stays; this is the label that says which one it is.
+      if (current && geo.pos[current]) {
+        series.push({
+          type: 'scatter',
+          coordinateSystem: 'cartesian2d',
+          silent: true,
+          z: 5,
+          symbol: 'roundRect',
+          symbolSize: [38, 13],
+          symbolOffset: [0, -(h / 2 + 7)],
+          itemStyle: { color: pal.primary, borderColor: pal.primary, borderWidth: 0 },
+          label: {
+            show: true,
+            formatter: 'HEAD',
+            position: 'inside',
+            color: pal.surface,
+            fontSize: 8,
+            fontWeight: 700,
+          },
+          data: [{ id: 'head', value: at(current) }],
         })
       }
       return {
@@ -2098,6 +2166,26 @@
       return box
     }
 
+    /**
+     * The graph's own key. Four marks carry the whole drawing: the rail the run walked, the
+     * rail it did not take, a step two branches reach, and the run's cursor.
+     */
+    function flowLegend() {
+      var box = make('div', 'dag-legend')
+      ;[
+        ['taken', 'walked'],
+        ['off', 'not taken'],
+        ['join', '2 in · takes 1'],
+        ['ref', 'HEAD · def_rev'],
+      ].forEach(function (pair) {
+        var item = make('span', 'dag-legend-item')
+        item.appendChild(make('span', 'dag-legend-swatch ' + pair[0]))
+        item.appendChild(make('span', 'dag-legend-label', pair[1]))
+        box.appendChild(item)
+      })
+      return box
+    }
+
     function renderGraph(hostEl) {
       disposeGraph()
       var graph = active.graph
@@ -2110,6 +2198,19 @@
       head.appendChild(
         make('span', 'count-badge count', Object.keys(graph.steps).length + ' steps'),
       )
+      // The definition revision the run is pinned to, as a tag: a run that moved past it says
+      // so here, in the same place Git shows a ref, instead of in a paragraph further down.
+      var defRev = graph.defRev
+      if (defRev) {
+        var drift = state && state.drift
+        head.appendChild(
+          make(
+            'span',
+            'proc-flow-refs' + (drift ? ' drifted' : ''),
+            'def_rev ' + defRev + (drift ? ' \u2192 ' + drift.current : ''),
+          ),
+        )
+      }
       col.appendChild(head)
       var view = make('div', 'exec-dag-view graphbox')
       col.appendChild(view)
@@ -2126,6 +2227,8 @@
       if (!drawChartGraph(view, lay, current)) {
         view.className += ' exec-dag-view-native'
         view.appendChild(buildNativeGraph(lay, current))
+      } else {
+        col.insertBefore(flowLegend(), hint)
       }
     }
 

@@ -11022,6 +11022,43 @@ button.proc-run.proc-run-unsent {
 .dag-chart {
   width: 100%;
 }
+.nn-map-tree-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+.nn-map-crumb {
+  background: none;
+  border: none;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  color: var(--primary, #2563eb);
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.nn-map-crumb:hover {
+  background: var(--surface-hover, #f1f5f9);
+}
+.nn-map-crumb.current {
+  color: var(--text, #111827);
+  font-weight: 600;
+  cursor: default;
+}
+.nn-map-sep {
+  color: var(--muted, #64748b);
+}
+.nn-map-dive-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted, #64748b);
+}
 .dag-live {
   position: absolute;
   width: 1px;
@@ -11029,6 +11066,58 @@ button.proc-run.proc-run-unsent {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+/* Flow refs: the definition revision the run is pinned to, drawn where Git draws a tag. */
+.proc-flow-refs {
+  margin-left: auto;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  font-family: var(--mono, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+.proc-flow-refs.drifted {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+/* The key to the flow, in the four marks the drawing actually uses. */
+.dag-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 2px 13px 8px;
+  font-size: 10.5px;
+  color: var(--faint);
+}
+.dag-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.dag-legend-swatch {
+  width: 14px;
+  border-top: 2px solid var(--success);
+}
+.dag-legend-swatch.off {
+  border-top-style: dashed;
+  border-top-color: var(--border-strong);
+}
+.dag-legend-swatch.join {
+  border-top-style: dotted;
+  border-top-color: var(--warning);
+}
+.dag-legend-swatch.ref {
+  width: 12px;
+  height: 9px;
+  border: 1px solid var(--primary);
+  border-radius: 3px;
+  background: var(--primary);
 }
 .dag-node:focus {
   outline: none;
@@ -11969,4 +12058,36 @@ button.proc-run.active {
 /* An element badge is never bold, even inside a table header, which is bold by default. */
 .nn-ku[data-ku-kind='element'] {
   font-weight: 400;
+}
+
+/* Map, deepest level: the elements of one concept, as buttons that carry their badge. */
+.nn-map-leaves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+}
+.nn-map-leaf {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.nn-map-leaf:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.nn-map-leaf:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.nn-map-leaf-name {
+  font-weight: 600;
 }
