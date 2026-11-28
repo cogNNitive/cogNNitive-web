@@ -242,10 +242,18 @@ Proceed directly to **Phase B (Model Design)**. Only branch to customization if 
 **A2b. If [e] Blank was selected, or the user confirmed customization in A2a [b]:**
 Design from scratch, in this order, consulting `nn-mcp_get_spec` for the exact grammar of each primitive (never invent it):
 
-1. **Concepts**: which Concepts the app will have (the root categories of the model).
+1. **Concepts**: which Concepts the app will have (the root categories of the model) — apply the **Entity-vs-Field Heuristic** (below) before turning a 1:1 relation into a Concept.
 2. **Fields per Concept**, with their `type::` — apply the **Type Heuristic** (below) before assigning `string` to any field.
 3. **Matrices**: which relationships between Concepts warrant a matrix — apply the **Matrix Heuristic** (below). Each Matrix Definition can declare `values::` (set of allowed cell values), `widget::` (`boolean` | `cycle` | `scale` | `set` | `text`), and `widget_config::` (JSON object: `scale`→`{min,max,step}`, `cycle`→`{order}`, `set`→`{max_selections}`, `text`→`{max_length}`). `widget:: scale` without `min`/`max` in `widget_config` is a validation ERROR.
 4. **`includes` (additive composition, optional)**: if the app should reuse Concepts/Fields/Matrices from other *peer* apps, declare them in frontmatter as `includes:` with entries `{ name, url }`. This is horizontal composition (app ∪ app), additive: NOTHING is overridden or deleted, and a name collision between two sources is an ERROR. This is a different axis from `parent_spec` (vertical chain to L1) and `specializes` (inert). See §9.
+
+##### Entity-vs-Field Heuristic (Concept vs. Field)
+
+Before creating a Concept for something another Concept relates to, ask: **does this thing need an identity of its own?**
+- 1:1 relation with no independent lifecycle → a field on the owning Concept (or the Element body, for prose), never a Concept.
+- A repeating many-side, or cross-attributes on the relation → matrix.
+- Create a Concept only when the related thing needs its own identity: its own fields, its own crossings, or a referenceable / approvable state of its own.
+- Never create an entity to hold history: every Level-3 mutation is a sealed changeset that records `from::` and `to::` (`update_element_text` for the Element body), so the change log already carries the field history (§4). An entity is justified only when one *specific version* must be citable, crossable or approvable as an object of its own.
 
 ##### Type Heuristic (String vs. Reference)
 
@@ -285,6 +293,8 @@ Only upon confirming [a] is the app file written: `<Template>_spec_NN.md` if com
 #### Phase B — Model Design (Level 3)
 
 Once the Phase A app is approved (or confirmed as-is):
+
+**Never present "overwrite vs. versioned entity" as a user choice.** Writing a field is already a recorded, reversible change: a sealed changeset carries `from::` and `to::` (§4), so overwriting loses no history and is no reason to add a Concept.
 
 **B1. Elements and Crossings Plan (mandatory gate):**
 Present what Elements will be created for each Concept, and what matrix crossings will be populated, BEFORE writing content:
