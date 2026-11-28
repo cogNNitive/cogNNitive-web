@@ -1816,16 +1816,38 @@ async function buildExportDomainIndex(root, models, schemaResolutions) {
   )
 }
 
-/** Atomic replace: write `<file>.tmp`, then rename it over `file`. */
-async function writeFileAtomic(file, text) {
+/**
+ * Atomic replace: write `<file>.tmp`, then rename it over `file`.
+ * On Windows, handles transient EPERM/EBUSY/EACCES locks with backoff retries (#188, Decision D23).
+ * A copy fallback is deliberately refused: it abandons atomicity and can leave a half-written console.
+ */
+export async function writeFileAtomic(file, text, options = {}) {
   await mkdir(dirname(file), { recursive: true })
   const tmp = `${file}.${process.pid}.${Date.now()}.tmp`
+  const maxRetries = options.maxRetries ?? 5
+  const renameFn = options.rename ?? rename
+  const sleepFn = options.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)))
   try {
     await writeFile(tmp, text, 'utf-8')
-    await rename(tmp, file)
   } catch (err) {
     await rm(tmp, { force: true }).catch(() => {})
     throw err
+  }
+  let attempt = 0
+  while (true) {
+    try {
+      await renameFn(tmp, file)
+      return
+    } catch (err) {
+      const isLockError = err.code === 'EPERM' || err.code === 'EBUSY' || err.code === 'EACCES'
+      if (isLockError && attempt < maxRetries) {
+        attempt++
+        await sleepFn(attempt * 25)
+        continue
+      }
+      await rm(tmp, { force: true }).catch(() => {})
+      throw err
+    }
   }
 }
 
