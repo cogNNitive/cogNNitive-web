@@ -1638,9 +1638,20 @@ function fillRunSlots(text, params, runId) {
   )
 }
 
-/** A domain-relative file path that stays inside `root`, or null. */
+/**
+ * A domain-relative file path that stays inside `root`, or null: the containment rule of
+ * nn-mcp's `resolveArtifactPath` (relative, no escape, never a `*_NN.md` model), plus symlink
+ * resolution. Kept local because this script carries no runtime dependency on nn-mcp.
+ */
 function insideRoot(root, path) {
-  if (typeof path !== 'string' || !path.trim() || isAbsolute(path) || /\{[^}]*\}/.test(path))
+  payloadHelper ??= loadPayloadHelper(resolveConsoleDir())
+  if (
+    typeof path !== 'string' ||
+    !path.trim() ||
+    isAbsolute(path) ||
+    /\{[^}]*\}/.test(path) ||
+    payloadHelper.isNNName(path.trim())
+  )
     return null
   const abs = resolve(root, path)
   const rel = relative(root, abs)
@@ -1668,13 +1679,19 @@ export function embedRunArtifacts(root, graph, record, budget = { left: EMBED_TO
     const row = record.artifacts?.[slug]
     if (!row || (row.status !== 'produced' && row.status !== 'validated')) continue
     if (row.kind && row.kind !== 'file') continue
+    // The order nn-mcp's `artifactPathCandidate` resolves: the recorded value, the declared
+    // `at`, then the file a `verify: file:` check names.
     const verify = typeof def.verify === 'string' ? /^file:\s*(.+)$/.exec(def.verify.trim()) : null
+    const at =
+      typeof def.at === 'string' ? fillRunSlots(def.at, record.params, record.id).trim() : ''
     const path =
       typeof row.value === 'string' && row.value.trim()
         ? row.value.trim()
-        : verify
-          ? fillRunSlots(verify[1].trim(), record.params, null)
-          : ''
+        : at
+          ? at
+          : verify
+            ? fillRunSlots(verify[1].trim(), record.params, record.id)
+            : ''
     if (!path) continue
     const shown = path.replace(/\\/g, '/')
     const abs = insideRoot(root, path)

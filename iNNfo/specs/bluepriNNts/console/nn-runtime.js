@@ -1,5 +1,4 @@
 /* global module: writable */
-/* global echarts */
 ;(function (root, factory) {
   if (typeof module === 'object' && module.exports) {
     module.exports = factory(require('./ui-kit.js'), require('./review.js'), require('./studio.js'))
@@ -3971,17 +3970,23 @@
     })
   }
 
-  // Renders ECharts line charts from the pure-data series mapping (charts capability).
+  // Renders Chart.js line charts from the pure-data series mapping (charts capability).
   // Delegates to Studio (studio.js).
   function renderCharts(host, model, meta) {
     return Studio.renderCharts(host, model, meta)
   }
 
-  // Draws any ECharts option into `host` with the console defaults (white
-  // background, palette) and returns the chart instance, or null without ECharts.
-  // The chart entry point for custom views. Delegates to Studio (studio.js).
-  function renderChart(host, option, opts) {
-    return Studio.renderChart(host, option, opts)
+  // Draws a native Chart.js config ({ type, data, options }) into `host` and returns the
+  // Chart, or null without Chart.js. The chart entry point for custom views; the contract
+  // is documented on Studio.renderChart (studio.js).
+  function renderChart(host, config, opts) {
+    return Studio.renderChart(host, config, opts)
+  }
+
+  // Draws a node-and-edge diagram as SVG from the console's own spec and returns the svg.
+  // The diagram entry point for custom views; the spec is documented on Studio.renderGraph.
+  function renderGraph(host, spec, opts) {
+    return Studio.renderGraph(host, spec, opts)
   }
 
   // Delegates timeline grid and studio view to Studio (studio.js).
@@ -6954,7 +6959,7 @@
   }
 
   // Each model card: title, bluepriNNt, size, completeness and a stacked bar of its
-  // elements by concept (ECharts; the card still reads without it).
+  // elements by concept (CSS segments; the card still reads without them).
   function renderSummaryModelCard(doc, m, elements, schema) {
     var own = elements.filter(function (e) {
       return e.modelId === m.id
@@ -7647,19 +7652,11 @@
         title: m.title || m.id,
         name: (m.title || m.id) + (m.blueprint ? ' · ' + m.blueprint : ''),
         children: Object.keys(byConcept).map(function (c) {
-          var color = conceptMetaOf(schema && schema.concepts, c).hexColor
           return {
             name: c,
-            value: byConcept[c].length,
-            itemStyle: { color: color },
-            label: { formatter: '{b} ({c})' },
+            color: conceptMetaOf(schema && schema.concepts, c).hexColor,
             children: byConcept[c].map(function (e) {
-              return {
-                name: e.name || e.id,
-                value: 1,
-                elementId: e.id,
-                itemStyle: { color: color },
-              }
+              return { name: e.name || e.id, elementId: e.id }
             }),
           }
         }),
@@ -7727,32 +7724,23 @@
       nav.appendChild(hint)
     }
 
+    // One record per element, the way the treemap plugin groups them: l0 is the model's
+    // name, l1 the concept. A cell's colour is its concept's.
+    var conceptColor = {}
+    var records = []
+    tree.forEach(function (m) {
+      ;(m.children || []).forEach(function (c) {
+        conceptColor[c.name] = c.color
+        ;(c.children || []).forEach(function (e) {
+          records.push({ l0: m.name, l1: c.name, name: e.name, value: 1, elementId: e.elementId })
+        })
+      })
+    })
+
+    var chart = null
+
     function renderLevel() {
       updateNav()
-      var subTree = tree
-      var groups = ['l0', 'l1']
-
-      if (currentModelIdx !== null) {
-        var m = tree[currentModelIdx]
-        if (currentConcept !== null) {
-          var c = (m.children || []).find(function (child) {
-            return child.name === currentConcept
-          })
-          if (c) {
-            subTree = [
-              {
-                name: c.name,
-                children: c.children,
-              },
-            ]
-            groups = ['l1', 'name']
-          }
-        } else {
-          subTree = [m]
-          groups = ['l0', 'l1']
-        }
-      }
-
       // The deepest level is no longer a map: it is a handful of elements. Draw them as real
       // buttons, so each one carries its badge and is reachable by keyboard, instead of areas
       // whose only affordance is a pixel region.
@@ -7767,9 +7755,8 @@
           // dispatched, and the treemap plugin then reads a detached element and throws.
           // One frame later the event is over and the swap is safe.
           var paintLeaves = function () {
-            if (chartBox.__chartInstance && chartBox.__chartInstance.destroy) {
-              chartBox.__chartInstance.destroy()
-            }
+            if (chart) chart.destroy()
+            chart = null
             chartBox.innerHTML = ''
             var leafGrid = el('div', 'nn-map-leaves')
             leaves.forEach(function (leaf) {
@@ -7794,73 +7781,70 @@
         }
       }
 
-      var chart = Studio.renderChart(chartBox, {
-        animation: false,
-        tooltip: { formatter: '{b}: {c}' },
-        series: [
-          {
-            type: 'treemap',
-            name: domainTitle,
-            data: subTree,
-            groups: groups,
-            leafDepth: 2,
-            roam: false,
-            nodeClick: 'zoomToNode',
-            breadcrumb: { show: true, bottom: 6 },
-            upperLabel: { show: true, height: 24, color: '#111827', fontWeight: 'bold' },
-            label: { show: true, color: '#ffffff', fontSize: 11 },
-          },
-        ],
-      })
-
-      if (chart) {
-        chart.on('click', function (params) {
-          var d = params.data || {}
-          if (d.elementId) {
-            onPick(d.elementId)
-            return
-          }
-          if (currentModelIdx === null) {
-            var mName = d.l0 || (d.raw && d.raw.l0) || d.name || ''
-            var idx = tree.findIndex(function (item) {
-              return (
-                item.name === mName ||
-                item.title === mName ||
-                (typeof mName === 'string' && mName.indexOf(item.title) !== -1)
-              )
+      var rows =
+        currentModelIdx === null
+          ? records
+          : records.filter(function (r) {
+              return r.l0 === tree[currentModelIdx].name
             })
-            if (idx >= 0) {
-              currentModelIdx = idx
-              currentConcept = null
-              renderLevel()
+      chart = Studio.renderChart(
+        chartBox,
+        {
+          type: 'treemap',
+          data: {
+            datasets: [
+              {
+                label: domainTitle,
+                tree: rows,
+                key: 'value',
+                groups: ['l0', 'l1'],
+                borderColor: '#ffffff',
+                borderWidth: 2,
+                spacing: 1,
+                backgroundColor: function (ctx) {
+                  if (ctx.type !== 'data') return 'transparent'
+                  var d = ctx.raw && ctx.raw._data
+                  return (d && d.l1 && conceptColor[d.l1]) || '#2563eb'
+                },
+                captions: { display: true, color: '#ffffff', font: { size: 12, weight: 'bold' } },
+                labels: {
+                  display: true,
+                  color: '#ffffff',
+                  font: { size: 11, weight: 'bold' },
+                  formatter: function (ctx) {
+                    return (ctx.raw && ctx.raw.g) || ''
+                  },
+                },
+              },
+            ],
+          },
+          options: { plugins: { legend: { display: false } } },
+        },
+        {
+          onPick: function (d) {
+            if (!d) return
+            if (currentModelIdx === null) {
+              // The model's own name, exactly: one title can be the start of another.
+              var idx = tree.findIndex(function (item) {
+                return item.name === d.l0
+              })
+              if (idx >= 0) {
+                currentModelIdx = idx
+                currentConcept = null
+                renderLevel()
+              }
               return
             }
-          }
-          if (currentModelIdx !== null && currentConcept === null) {
-            var cName = d.l1 || (d.raw && d.raw.l1) || d.name
-            if (cName) {
-              currentConcept = cName
+            if (currentConcept === null && d.l1) {
+              currentConcept = d.l1
               renderLevel()
-              return
             }
-          }
-        })
-      }
+          },
+        },
+      )
     }
 
     renderLevel()
-
-    host.__chartInstance = chartBox.__chartInstance || {}
-    host.__chartInstance.getOption = function () {
-      return {
-        series: [
-          {
-            type: 'treemap',
-            data: tree,
-          },
-        ],
-      }
-    }
   }
 
   function renderMapView(doc, model, schema, meta) {
@@ -7985,73 +7969,51 @@
       outs.concat(ins).forEach(function (n) {
         if (ids.indexOf(n.id) < 0) ids.push(n.id)
       })
-      var chart = Studio.renderChart(
+      Studio.renderGraph(
         egoHost,
         {
-          animation: false,
-          tooltip: { formatter: '{b}' },
-          series: [
-            {
-              type: 'graph',
-              layout: 'circular',
-              circular: { rotateLabel: false },
-              roam: true,
-              top: 50,
-              bottom: 60,
-              left: 120,
-              right: 120,
-              edgeSymbol: ['none', 'arrow'],
-              edgeSymbolSize: 9,
-              label: { show: true, position: 'bottom', fontSize: 11, color: '#1f2937' },
-              data: ids.map(function (nid) {
-                var e = links.byId[nid]
-                var isCenter = nid === id
-                return {
-                  id: nid,
-                  name: nameOf(nid),
-                  symbolSize: isCenter ? 46 : 26,
-                  itemStyle: {
-                    color: conceptMetaOf(schema && schema.concepts, e.concept).hexColor,
-                    borderColor: isCenter ? '#111827' : '#ffffff',
-                    borderWidth: isCenter ? 3 : 1,
-                  },
-                  label: { fontWeight: isCenter ? 'bold' : 'normal' },
-                }
+          layout: 'circular',
+          height: 340,
+          nodes: ids.map(function (nid) {
+            var e = links.byId[nid]
+            var isCenter = nid === id
+            return {
+              id: nid,
+              shape: 'circle',
+              center: isCenter,
+              label: nameOf(nid),
+              fill: conceptMetaOf(schema && schema.concepts, e.concept).hexColor,
+              stroke: isCenter ? '#111827' : '#ffffff',
+              strokeWidth: isCenter ? 3 : 1,
+            }
+          }),
+          edges: outs
+            .map(function (n) {
+              return { source: id, target: n.id, field: n.field }
+            })
+            .concat(
+              ins.map(function (n) {
+                return { source: n.id, target: id, field: n.field }
               }),
-              links: outs
-                .map(function (n) {
-                  return { source: id, target: n.id, field: n.field }
-                })
-                .concat(
-                  ins.map(function (n) {
-                    return { source: n.id, target: id, field: n.field }
-                  }),
-                )
-                .map(function (l) {
-                  return {
-                    source: l.source,
-                    target: l.target,
-                    lineStyle: { color: '#64748b', width: 1.5, curveness: 0.1 },
-                    label: {
-                      show: !!l.field,
-                      formatter: l.field,
-                      fontSize: 10,
-                      color: '#334155',
-                      backgroundColor: '#ffffff',
-                    },
-                  }
-                }),
-            },
-          ],
+            )
+            .map(function (l) {
+              return {
+                source: l.source,
+                target: l.target,
+                color: '#64748b',
+                width: 1.5,
+                curveness: 0.1,
+                label: l.field || '',
+                labelColor: '#334155',
+              }
+            }),
         },
-        { height: 340 },
+        {
+          onPick: function (node) {
+            if (node.id !== id) show(node.id)
+          },
+        },
       )
-      if (chart) {
-        chart.on('click', function (params) {
-          if (params.dataType === 'node' && params.data && params.data.id !== id)
-            show(params.data.id)
-        })
-      }
     }
 
     open.addEventListener('click', function () {
@@ -8089,7 +8051,6 @@
   var SCHEMA_LINE = 17
   var SCHEMA_HEADER = 34
   var SCHEMA_PAD = 20
-  var SCHEMA_ANCHOR = '__nn-schema-anchor-'
 
   // The relationships between concepts: declared matrices, reference fields of the
   // schema, and references found in the data. One entry per source, target and label.
@@ -8234,7 +8195,7 @@
     var root = el('div', 'nn-schema')
     var legend = el('p', 'nn-schema-legend')
     legend.textContent =
-      'Each box is a concept with its fields, grouped by bluepriNNt. A solid line is a matrix; a dashed line is a field that points to another concept. Click a box to see its elements; drag or scroll to move around.'
+      'Each box is a concept with its fields, grouped by bluepriNNt. A solid line is a matrix; a dashed line is a field that points to another concept. Click a box to see its elements.'
     root.appendChild(legend)
     var chartHost = el('div', 'nn-schema-chart')
     root.appendChild(chartHost)
@@ -8269,149 +8230,66 @@
     })
     var width = cols * SCHEMA_BOX_WIDTH + (cols - 1) * SCHEMA_GAP_X + 2 * SCHEMA_PAD
     var height = Math.max(200, y - SCHEMA_GAP_Y + 2 * SCHEMA_PAD)
-    // ECharts fits the node centres into the view. Two invisible anchors at the
-    // canvas corners make that box the whole canvas, so the scale stays 1:1 and
-    // no box is cut or squeezed.
-    var anchors = [
-      [SCHEMA_ANCHOR + 'start', 0, 0],
-      [SCHEMA_ANCHOR + 'end', width, height],
-    ].map(function (a) {
-      return {
-        name: a[0],
-        x: a[1],
-        y: a[2],
-        symbolSize: 0,
-        silent: true,
-        label: { show: false },
-        tooltip: { show: false },
-      }
-    })
     chartHost.style.height = height + 'px'
     chartHost.style.width = width + 'px'
 
-    var chart = null
     try {
-      chart = Studio.renderChart(
+      Studio.renderGraph(
         chartHost,
         {
-          animation: false,
-          tooltip: { trigger: 'item', confine: true },
-          series: [
-            {
-              type: 'graph',
-              layout: 'none',
-              roam: true,
-              draggable: true,
-              left: 0,
-              top: 0,
-              width: width,
-              height: height,
-              edgeSymbol: ['none', 'arrow'],
-              edgeSymbolSize: 9,
-              autoCurveness: true,
-              data: anchors.concat(
-                nodes.map(function (n) {
-                  var color = conceptMetaOf(schema && schema.concepts, n.name).hexColor
-                  var fields = fieldsOf[n.name] || []
-                  var lines = fields.slice(0, SCHEMA_MAX_FIELDS).map(function (f) {
-                    return '{f|' + f.name + '}  {k|' + (f.type || 'text') + '}'
-                  })
-                  if (fields.length > SCHEMA_MAX_FIELDS)
-                    lines.push('{k|+' + (fields.length - SCHEMA_MAX_FIELDS) + ' more fields}')
-                  if (!lines.length) lines.push('{k|no fields}')
-                  return {
-                    name: n.name,
-                    x: n.x,
-                    y: n.y,
-                    symbol: 'rect',
-                    symbolSize: [SCHEMA_BOX_WIDTH, n.h],
-                    itemStyle: { color: '#ffffff', borderColor: color, borderWidth: 1 },
-                    label: {
-                      show: true,
-                      // Inside the 1px border, so the header band is flush with the box.
-                      position: [1, 1],
-                      align: 'left',
-                      verticalAlign: 'top',
-                      width: SCHEMA_BOX_WIDTH - 2,
-                      overflow: 'truncate',
-                      formatter:
-                        '{t|' +
-                        n.name +
-                        '  ·  ' +
-                        plural(counts[n.name] || 0, 'element', 'elements') +
-                        '}\n' +
-                        lines.join('\n'),
-                      rich: {
-                        t: {
-                          // The 8px side padding adds to the width, so take it off here.
-                          width: SCHEMA_BOX_WIDTH - 2 - 16,
-                          backgroundColor: color,
-                          color: '#ffffff',
-                          fontWeight: 600,
-                          fontSize: 12,
-                          padding: [5, 8],
-                        },
-                        f: {
-                          fontSize: 11,
-                          color: '#1f2937',
-                          lineHeight: SCHEMA_LINE,
-                          padding: [0, 0, 0, 8],
-                        },
-                        k: { fontSize: 10, color: '#6b7280', lineHeight: SCHEMA_LINE },
-                      },
-                    },
-                    tooltip: {
-                      formatter:
-                        n.name +
-                        ': ' +
-                        (fields.length
-                          ? fields
-                              .map(function (f) {
-                                return f.name
-                              })
-                              .join(', ')
-                          : 'no fields'),
-                    },
-                  }
-                }),
-              ),
-              links: edges.map(function (e) {
-                return {
-                  source: e.source,
-                  target: e.target,
-                  lineStyle: {
-                    type: e.kind === 'matrix' ? 'solid' : 'dashed',
-                    width: 1,
-                    color: '#64748b',
-                  },
-                  // The name rides just above the line instead of cutting through it.
-                  label: {
-                    show: !!e.label,
-                    formatter: e.label,
-                    position: 'middle',
-                    align: 'center',
-                    verticalAlign: 'bottom',
-                    distance: 4,
-                    fontSize: 10,
-                    color: '#475569',
-                  },
-                }
-              }),
-            },
-          ],
+          width: width,
+          height: height,
+          nodes: nodes.map(function (n) {
+            var fields = fieldsOf[n.name] || []
+            var lines = fields.slice(0, SCHEMA_MAX_FIELDS).map(function (f) {
+              return f.name + '  ' + (f.type || 'text')
+            })
+            if (fields.length > SCHEMA_MAX_FIELDS)
+              lines.push('+' + (fields.length - SCHEMA_MAX_FIELDS) + ' more fields')
+            if (!lines.length) lines.push('no fields')
+            return {
+              id: n.name,
+              x: n.x,
+              y: n.y,
+              width: SCHEMA_BOX_WIDTH,
+              height: n.h,
+              fill: '#ffffff',
+              stroke: conceptMetaOf(schema && schema.concepts, n.name).hexColor,
+              header: n.name + '  ·  ' + plural(counts[n.name] || 0, 'element', 'elements'),
+              lines: lines,
+              tooltip:
+                n.name +
+                ': ' +
+                (fields.length
+                  ? fields
+                      .map(function (f) {
+                        return f.name
+                      })
+                      .join(', ')
+                  : 'no fields'),
+            }
+          }),
+          edges: edges.map(function (e) {
+            return {
+              source: e.source,
+              target: e.target,
+              dash: e.kind === 'matrix' ? 'solid' : 'dashed',
+              width: 1,
+              color: '#64748b',
+              label: e.label || '',
+            }
+          }),
         },
-        { width: width, height: height },
+        {
+          onPick: function (node) {
+            revealInKnowledge(doc, formatFacetToken('concept', node.id))
+          },
+        },
       )
     } catch (err) {
       // The schema in words below still explains the domaiNN without the diagram.
       if (typeof console !== 'undefined' && console.warn)
         console.warn('nn-console: schema diagram failed', err)
-    }
-    if (chart) {
-      chart.on('click', function (params) {
-        if (params.dataType === 'node')
-          revealInKnowledge(doc, formatFacetToken('concept', params.name))
-      })
     }
   }
 
@@ -11365,6 +11243,7 @@
     compileChartSeries: compileChartSeries,
     monthAxis: monthAxis,
     renderChart: renderChart,
+    renderGraph: renderGraph,
     renderCharts: renderCharts,
     renderTimelineGrid: renderTimelineGrid,
     createViewRegistry: createViewRegistry,

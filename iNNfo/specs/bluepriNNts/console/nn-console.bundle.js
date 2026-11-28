@@ -23,21 +23,23 @@
  *    https://github.com/developit/htm
  *    Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
  *
- * 3. Apache ECharts 6.1.0 (Apache-2.0)
- *    Copyright 2017-2026 The Apache Software Foundation
- *    https://github.com/apache/echarts
- *    Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
+ * 3. Chart.js 4.4.7 (MIT)
+ *    Copyright (c) 2014-2024 Chart.js Contributors
+ *    https://github.com/chartjs/Chart.js
  *
- *    Apache ECharts NOTICE:
- *    Apache ECharts
- *    Copyright 2017-2026 The Apache Software Foundation
- *    This product includes software developed at
- *    The Apache Software Foundation (https://www.apache.org/).
+ * 4. chartjs-chart-treemap 2.3.0 (MIT)
+ *    Copyright (c) 2020-2023 Jukka Kurkela
+ *    https://github.com/kurkle/chartjs-chart-treemap
  *
- *    Includes third-party code:
- *    - d3 (BSD-3-Clause, Copyright 2010-2016 Mike Bostock)
- *    - ZRender 6.1.0 (BSD-3-Clause, Copyright (c) 2017, Baidu Inc.)
- *    - tslib (0BSD, Copyright (c) Microsoft Corporation)
+ *    MIT permission notice for 3 and 4:
+ *    Permission is hereby granted, free of charge, to any person obtaining a copy
+ *    of this software and associated documentation files (the "Software"), to deal
+ *    in the Software without restriction, including without limitation the rights
+ *    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *    copies of the Software, and to permit persons to whom the Software is
+ *    furnished to do so, subject to the following conditions:
+ *    The above copyright notice and this permission notice shall be included in all
+ *    copies or substantial portions of the Software.
  *
  * Full third-party notices and license texts: THIRD_PARTY.md
  */
@@ -9025,7 +9027,7 @@ if (typeof globalThis !== "undefined") globalThis.nnAddress = nnAddress;
 
 /* ===== studio.js (defines nnStudio) ===== */
 /* global module: writable */
-/* global echarts */
+/* global Chart */
 ;(function (root, factory) {
   if (typeof module === 'object' && module.exports) {
     module.exports = factory(require('./ui-kit.js'))
@@ -9163,9 +9165,12 @@ if (typeof globalThis !== "undefined") globalThis.nnAddress = nnAddress;
     return labels
   }
 
-  // ---- Charts (ECharts) ----------------------------------------------------
-  // The one chart entry point for built-in tabs and custom views: it takes a plain
-  // ECharts option and applies the console defaults (white background, palette).
+  // ---- Charts (Chart.js) and diagrams (SVG) --------------------------------
+  // Two entry points for built-in tabs and custom views, neither of them an emulation of
+  // another library:
+  // - renderChart(host, config, opts) draws a native Chart.js config ({ type, data, options }).
+  // - renderGraph(host, spec, opts) draws a node-and-edge diagram as SVG from the small spec
+  //   documented on it.
   var CHART_PALETTE = [
     '#2563eb',
     '#dc2626',
@@ -9179,9 +9184,7 @@ if (typeof globalThis !== "undefined") globalThis.nnAddress = nnAddress;
 
   function chartLibrary() {
     if (typeof Chart !== 'undefined') return Chart
-    if (typeof self !== 'undefined' && self.Chart) return self.Chart
-    if (typeof echarts !== 'undefined') return echarts
-    return (typeof self !== 'undefined' && self.echarts) || null
+    return (typeof self !== 'undefined' && self.Chart) || null
   }
 
   function warnChartLibraryMissing() {
@@ -9191,878 +9194,543 @@ if (typeof globalThis !== "undefined") globalThis.nnAddress = nnAddress;
       )
   }
 
-  function flattenTreemapData(tree) {
-    var result = []
-    function walk(nodes, parentNames, parentColor) {
-      if (!Array.isArray(nodes)) return
-      nodes.forEach(function (n) {
-        if (!n) return
-        var color = (n.itemStyle && n.itemStyle.color) || parentColor
-        var levels = parentNames.concat([n.name || ''])
-        if (Array.isArray(n.children) && n.children.length > 0) {
-          walk(n.children, levels, color)
-        } else {
-          result.push({
-            l0: levels[0] || 'Domain',
-            l1: levels[1] || n.name || '',
-            l2: levels[2] || n.name || '',
-            name: n.name || '',
-            value: Number(n.value) || 1,
-            elementId: n.elementId || '',
-            color: color || CHART_PALETTE[0],
-          })
-        }
-      })
-    }
-    walk(tree, [], null)
-    return result
+  /** The chart types this page can draw: the controllers Chart.js has registered. */
+  function chartTypes(lib) {
+    var items = lib.registry && lib.registry.controllers && lib.registry.controllers.items
+    return items ? Object.keys(items) : []
   }
 
-  function toChartJsConfig(option, o) {
-    if (!option) return { type: 'line', data: { labels: [], datasets: [] } }
-    if (option.type && (option.data || option.options)) return option
-
-    var series = option.series || []
-    var firstSeries = series[0] || {}
-    var sType = firstSeries.type || 'line'
-
-    if (sType === 'treemap') {
-      var rawTree = firstSeries.data || []
-      var hasNested =
-        Array.isArray(rawTree) &&
-        rawTree.some(function (d) {
-          return d && Array.isArray(d.children) && d.children.length > 0
-        })
-      var flat = hasNested ? flattenTreemapData(rawTree) : rawTree
-      var groups = firstSeries.groups || (hasNested ? ['l0', 'l1'] : ['name'])
-      return {
-        type: 'treemap',
-        data: {
-          datasets: [
-            {
-              tree: flat,
-              key: 'value',
-              groups: groups,
-              backgroundColor: function (ctx) {
-                if (ctx.type !== 'data') return 'transparent'
-                var d = ctx.raw && (ctx.raw._data || ctx.raw)
-                return (d && (d.color || (d.itemStyle && d.itemStyle.color))) || CHART_PALETTE[0]
-              },
-              borderColor: '#ffffff',
-              borderWidth: 2,
-              spacing: 1,
-              labels: {
-                display: true,
-                formatter: function (ctx) {
-                  var d = ctx.raw && (ctx.raw._data || ctx.raw)
-                  return ctx.raw.g || (d && (d.name || d.label)) || ''
-                },
-                color: '#ffffff',
-                font: { size: 11, weight: 'bold' },
-              },
-            },
-          ],
-        },
-        options: {
-          animation: false,
-          responsive: false,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-          },
-        },
-      }
-    }
-
-    var xData = (option.xAxis && option.xAxis.data) || []
-    var datasets = series.map(function (s, i) {
-      var color =
-        (s.itemStyle && s.itemStyle.color) ||
-        (s.lineStyle && s.lineStyle.color) ||
-        CHART_PALETTE[i % CHART_PALETTE.length]
-      return {
-        label: s.name || 'Series ' + (i + 1),
-        data: s.data || [],
-        borderColor: color,
-        backgroundColor: color,
-        borderWidth: (s.lineStyle && s.lineStyle.width) || 2,
-        pointRadius: s.showSymbol ? 3 : 0,
-        spanGaps: s.connectNulls || false,
-      }
-    })
-
-    return {
-      type: sType === 'bar' ? 'bar' : 'line',
-      data: {
-        labels: xData,
-        datasets: datasets,
-      },
-      options: {
-        responsive: false,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: option.legend && option.legend.show !== false,
-            position: 'top',
-          },
-          tooltip: {
-            mode: option.tooltip && option.tooltip.trigger === 'axis' ? 'index' : 'nearest',
-            intersect: !(option.tooltip && option.tooltip.trigger === 'axis'),
-          },
-        },
-        scales: {
-          x: {
-            display: !(option.xAxis && option.xAxis.show === false),
-            grid: { display: false },
-          },
-          y: {
-            display: !(option.yAxis && option.yAxis.show === false),
-            beginAtZero: false,
-          },
-        },
-      },
-    }
-  }
-
-  function renderSvgGraph(host, option, opts) {
-    var o = opts || {}
-    var seriesList = (option && option.series) || []
-    var graph =
-      seriesList.find(function (s) {
-        return s.type === 'graph'
-      }) ||
-      seriesList[0] ||
-      {}
-    var linesSeries = seriesList.find(function (s) {
-      return s.type === 'lines'
-    })
-    var scatterSeries = seriesList.filter(function (s) {
-      return s.type === 'scatter'
-    })
-
+  /** Replaces the host's content with a visible error and returns it, ready to throw. */
+  function chartError(host, message) {
     var doc = host.ownerDocument || document
     host.innerHTML = ''
-
-    var autoW = o.width === undefined
-    var autoH = o.height === undefined
-    var width = autoW ? graph.width || host.clientWidth || 960 : o.width
-    var height = autoH ? graph.height || host.clientHeight || 450 : o.height
-    if (typeof width === 'string') width = parseInt(width, 10) || 960
-    if (typeof height === 'string') height = parseInt(height, 10) || 450
-    if (height < 200) height = 200
-
-    var isCircular = graph.layout === 'circular'
-    var rawNodes = graph.data || []
-
-    var xAxis = option.xAxis || {}
-    var yAxis = option.yAxis || {}
-    var hasCartesian =
-      xAxis.min !== undefined &&
-      xAxis.max !== undefined &&
-      yAxis.min !== undefined &&
-      yAxis.max !== undefined
-    var xMin = Number(xAxis.min) || 0
-    var xMax = Number(xAxis.max) || 1
-    var yMin = Number(yAxis.min) || 0
-    var yMax = Number(yAxis.max) || 1
-
-    function posOf(val, defX, defY) {
-      if (hasCartesian && Array.isArray(val)) {
-        var rx = (val[0] - xMin) / (xMax - xMin)
-        var ry = (val[1] - yMin) / (yMax - yMin)
-        return { x: rx * width, y: ry * height }
-      }
-      return {
-        x: defX !== undefined ? defX : Array.isArray(val) ? val[0] : 0,
-        y: defY !== undefined ? defY : Array.isArray(val) ? val[1] : 0,
-      }
-    }
-
-    var nodePos = {}
-    if (isCircular) {
-      var cx = width / 2
-      var cy = height / 2
-      var centerNode =
-        rawNodes.find(function (n) {
-          return n.symbolSize > 30
-        }) || rawNodes[0]
-      var centerId = centerNode ? centerNode.id || centerNode.name : null
-      var otherNodes = rawNodes.filter(function (n) {
-        return (n.id || n.name) !== centerId
-      })
-      var R = Math.max(60, Math.min(width, height) / 2 - 50)
-      if (centerId) nodePos[centerId] = { x: cx, y: cy, isCenter: true }
-      otherNodes.forEach(function (n, idx) {
-        var id = n.id || n.name
-        var angle = (2 * Math.PI * idx) / (otherNodes.length || 1) - Math.PI / 2
-        nodePos[id] = {
-          x: cx + R * Math.cos(angle),
-          y: cy + R * Math.sin(angle),
-          isCenter: false,
-        }
-      })
-    } else {
-      rawNodes.forEach(function (n) {
-        var id = n.id || n.name
-        nodePos[id] = posOf(n.value, n.x, n.y)
-      })
-    }
-
-    var svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg')
-    svg.setAttribute('width', String(width))
-    svg.setAttribute('height', String(height))
-    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height)
-    svg.setAttribute('class', 'nn-svg-graph')
-    svg.style.display = 'block'
-    svg.style.width = '100%'
-    svg.style.height = '100%'
-    svg.style.overflow = 'visible'
-
-    var defs = doc.createElementNS('http://www.w3.org/2000/svg', 'defs')
-    defs.innerHTML =
-      '<marker id="nn-graph-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">' +
-      '<path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b" />' +
-      '</marker>' +
-      '<marker id="nn-graph-arrow-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">' +
-      '<path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />' +
-      '</marker>'
-    svg.appendChild(defs)
-
-    var linksG = doc.createElementNS('http://www.w3.org/2000/svg', 'g')
-    linksG.setAttribute('class', 'nn-graph-links')
-
-    if (linesSeries && Array.isArray(linesSeries.data)) {
-      linesSeries.data.forEach(function (stroke) {
-        var p1 = posOf(stroke.coords[0])
-        var p2 = posOf(stroke.coords[1])
-        var path = doc.createElementNS('http://www.w3.org/2000/svg', 'path')
-        path.setAttribute('d', 'M ' + p1.x + ' ' + p1.y + ' L ' + p2.x + ' ' + p2.y)
-        var st = stroke.lineStyle || {}
-        path.setAttribute('stroke', st.color || '#64748b')
-        path.setAttribute('stroke-width', String(st.width || 1))
-        if (st.type === 'dashed') path.setAttribute('stroke-dasharray', '5,5')
-        if (st.opacity) path.setAttribute('opacity', String(st.opacity))
-        path.setAttribute('marker-end', 'url(#nn-graph-arrow)')
-        path.setAttribute('fill', 'none')
-        linksG.appendChild(path)
-      })
-    }
-
-    var links = graph.links || []
-    links.forEach(function (link) {
-      var sPos = nodePos[link.source]
-      var tPos = nodePos[link.target]
-      if (!sPos || !tPos) return
-
-      if (!linesSeries) {
-        var path = doc.createElementNS('http://www.w3.org/2000/svg', 'path')
-        var st = link.lineStyle || {}
-        var isDashed = st.type === 'dashed'
-        var curveness = st.curveness || 0
-        var d = ''
-        if (curveness) {
-          var mx = (sPos.x + tPos.x) / 2 - (tPos.y - sPos.y) * curveness
-          var my = (sPos.y + tPos.y) / 2 + (tPos.x - sPos.x) * curveness
-          d = 'M ' + sPos.x + ' ' + sPos.y + ' Q ' + mx + ' ' + my + ' ' + tPos.x + ' ' + tPos.y
-        } else {
-          d = 'M ' + sPos.x + ' ' + sPos.y + ' L ' + tPos.x + ' ' + tPos.y
-        }
-        path.setAttribute('d', d)
-        path.setAttribute('stroke', st.color || '#94a3b8')
-        path.setAttribute('stroke-width', String(st.width || 1.5))
-        if (isDashed) path.setAttribute('stroke-dasharray', '5,5')
-        path.setAttribute('fill', 'none')
-        path.setAttribute('marker-end', 'url(#nn-graph-arrow)')
-        linksG.appendChild(path)
-      }
-
-      var lbl = link.label
-      var labelText = (lbl && (lbl.formatter || lbl.text)) || ''
-      if (labelText && lbl.show !== false) {
-        var lmx = (sPos.x + tPos.x) / 2
-        var lmy = (sPos.y + tPos.y) / 2
-        var gLabel = doc.createElementNS('http://www.w3.org/2000/svg', 'g')
-        var textEl = doc.createElementNS('http://www.w3.org/2000/svg', 'text')
-        textEl.setAttribute('x', String(lmx))
-        textEl.setAttribute('y', String(lmy + 3))
-        textEl.setAttribute('font-size', '10')
-        textEl.setAttribute('font-weight', '500')
-        textEl.setAttribute('text-anchor', 'middle')
-        textEl.setAttribute('fill', lbl.color || '#475569')
-        textEl.textContent = labelText
-
-        var textLen = labelText.length * 6 + 12
-        var bg = doc.createElementNS('http://www.w3.org/2000/svg', 'rect')
-        bg.setAttribute('x', String(lmx - textLen / 2))
-        bg.setAttribute('y', String(lmy - 8))
-        bg.setAttribute('width', String(textLen))
-        bg.setAttribute('height', '16')
-        bg.setAttribute('rx', '4')
-        bg.setAttribute('fill', lbl.backgroundColor || '#ffffff')
-        bg.setAttribute('stroke', '#cbd5e1')
-        bg.setAttribute('stroke-width', '1')
-        gLabel.appendChild(bg)
-        gLabel.appendChild(textEl)
-        linksG.appendChild(gLabel)
-      }
-    })
-    svg.appendChild(linksG)
-
-    var nodesG = doc.createElementNS('http://www.w3.org/2000/svg', 'g')
-    nodesG.setAttribute('class', 'nn-graph-nodes')
-
-    var chartInstance = {
-      _isDisposed: false,
-      handlers: {},
-      on: function (event, handler) {
-        this.handlers[event] = handler
-      },
-      getOption: function () {
-        return option
-      },
-      setOption: function (newOpt) {
-        if (newOpt) option = newOpt
-        // A rebuild makes a new instance and new DOM listeners: the handlers registered on
-        // the old one would be lost, which is how the flow graph kept redrawing itself dead
-        // to clicks after every focus or resize.
-        var carried = this.handlers
-        var next = renderSvgGraph(host, option, o)
-        if (next) next.handlers = carried
-      },
-      resize: function () {},
-      dispose: function () {
-        this._isDisposed = true
-        host.innerHTML = ''
-        if (host.__chartInstance === this) host.__chartInstance = null
-      },
-      destroy: function () {
-        this.dispose()
-      },
-      isDisposed: function () {
-        return this._isDisposed
-      },
-      getWidth: function () {
-        return width
-      },
-      getHeight: function () {
-        return height
-      },
-    }
-
-    rawNodes.forEach(function (node) {
-      if (node.name && node.name.startsWith('__nn-schema-anchor-')) return
-      var id = node.id || node.name
-      var p = nodePos[id]
-      if (!p) return
-
-      var g = doc.createElementNS('http://www.w3.org/2000/svg', 'g')
-      g.setAttribute('class', 'nn-node-g')
-      g.setAttribute('data-id', id)
-      g.setAttribute('data-name', node.name || id)
-      g.style.cursor = 'pointer'
-
-      var isRect = !isCircular && (node.symbol === 'rect' || Array.isArray(node.symbolSize))
-      var st = node.itemStyle || {}
-      var borderColor = st.borderColor || '#3b82f6'
-      var fill = st.color || '#ffffff'
-      var borderWidth = st.borderWidth !== undefined ? st.borderWidth : 1
-
-      if (isRect) {
-        var w = Array.isArray(node.symbolSize) ? node.symbolSize[0] : node.symbolSize || 120
-        var h = Array.isArray(node.symbolSize) ? node.symbolSize[1] : 40
-        var x = p.x - w / 2
-        var y = p.y - h / 2
-
-        var rect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect')
-        rect.setAttribute('x', String(x))
-        rect.setAttribute('y', String(y))
-        rect.setAttribute('width', String(w))
-        rect.setAttribute('height', String(h))
-        rect.setAttribute('rx', '6')
-        rect.setAttribute('fill', fill)
-        rect.setAttribute('stroke', borderColor)
-        rect.setAttribute('stroke-width', String(borderWidth))
-        if (st.borderType === 'dashed') rect.setAttribute('stroke-dasharray', '5,5')
-        if (st.borderType === 'dotted') rect.setAttribute('stroke-dasharray', '2,2')
-        if (st.opacity) rect.setAttribute('opacity', String(st.opacity))
-        g.appendChild(rect)
-
-        var lbl = node.label || {}
-        var formatter = lbl.formatter || node.name || ''
-
-        if (typeof formatter === 'string' && formatter.indexOf('{t|') !== -1) {
-          var matchT = formatter.match(/\{t\|([^}]+)\}/)
-          var headerText = matchT ? matchT[1] : node.name
-          var headerBand = doc.createElementNS('http://www.w3.org/2000/svg', 'path')
-          headerBand.setAttribute(
-            'd',
-            'M ' +
-              x +
-              ' ' +
-              (y + 6) +
-              ' Q ' +
-              x +
-              ' ' +
-              y +
-              ' ' +
-              (x + 6) +
-              ' ' +
-              y +
-              ' L ' +
-              (x + w - 6) +
-              ' ' +
-              y +
-              ' Q ' +
-              (x + w) +
-              ' ' +
-              y +
-              ' ' +
-              (x + w) +
-              ' ' +
-              (y + 6) +
-              ' L ' +
-              (x + w) +
-              ' ' +
-              (y + 26) +
-              ' L ' +
-              x +
-              ' ' +
-              (y + 26) +
-              ' Z',
-          )
-          headerBand.setAttribute('fill', borderColor)
-          g.appendChild(headerBand)
-
-          var tHeader = doc.createElementNS('http://www.w3.org/2000/svg', 'text')
-          tHeader.setAttribute('x', String(x + 8))
-          tHeader.setAttribute('y', String(y + 17))
-          tHeader.setAttribute('font-size', '12')
-          tHeader.setAttribute('font-weight', '600')
-          tHeader.setAttribute('fill', '#ffffff')
-          tHeader.textContent = headerText
-          g.appendChild(tHeader)
-
-          var lines = formatter.split('\n').slice(1)
-          var tFields = doc.createElementNS('http://www.w3.org/2000/svg', 'text')
-          tFields.setAttribute('x', String(x + 8))
-          tFields.setAttribute('y', String(y + 42))
-          tFields.setAttribute('font-size', '11')
-          tFields.setAttribute('fill', '#374151')
-          lines.forEach(function (line, li) {
-            var clean = line.replace(/\{[a-z]\|([^}]+)\}/g, '$1')
-            var tspan = doc.createElementNS('http://www.w3.org/2000/svg', 'tspan')
-            tspan.setAttribute('x', String(x + 8))
-            tspan.setAttribute('dy', li === 0 ? '0' : '16')
-            tspan.textContent = clean
-            tFields.appendChild(tspan)
-          })
-          g.appendChild(tFields)
-        } else if (typeof formatter === 'string' && formatter.indexOf('{title|') !== -1) {
-          var titles = []
-          var subText = ''
-          formatter.split('\n').forEach(function (line) {
-            var mT = line.match(/\{title\|([^}]+)\}/)
-            var mS = line.match(/\{sub\|([^}]+)\}/)
-            if (mT) titles.push(mT[1])
-            if (mS) subText = mS[1]
-          })
-          var textG = doc.createElementNS('http://www.w3.org/2000/svg', 'text')
-          textG.setAttribute('x', String(x + 8))
-          textG.setAttribute('y', String(y + 18))
-          textG.setAttribute('font-size', '12')
-          textG.setAttribute('font-weight', '600')
-          textG.setAttribute('fill', '#111827')
-          titles.forEach(function (t, ti) {
-            var tspan = doc.createElementNS('http://www.w3.org/2000/svg', 'tspan')
-            tspan.setAttribute('x', String(x + 8))
-            tspan.setAttribute('dy', ti === 0 ? '0' : '15')
-            tspan.textContent = t
-            textG.appendChild(tspan)
-          })
-          if (subText) {
-            var tspanSub = doc.createElementNS('http://www.w3.org/2000/svg', 'tspan')
-            tspanSub.setAttribute('x', String(x + 8))
-            tspanSub.setAttribute('dy', '15')
-            tspanSub.setAttribute('font-size', '10')
-            tspanSub.setAttribute('font-weight', '400')
-            tspanSub.setAttribute('fill', '#6b7280')
-            tspanSub.textContent = subText
-            textG.appendChild(tspanSub)
-          }
-          g.appendChild(textG)
-        } else {
-          var textEl = doc.createElementNS('http://www.w3.org/2000/svg', 'text')
-          textEl.setAttribute('x', String(x + 8))
-          textEl.setAttribute('y', String(y + h / 2 + 4))
-          textEl.setAttribute('font-size', '12')
-          textEl.setAttribute('fill', '#1f2937')
-          textEl.textContent = formatter || node.name || id
-          g.appendChild(textEl)
-        }
-      } else {
-        var r = p.isCenter ? 24 : 15
-        var circle = doc.createElementNS('http://www.w3.org/2000/svg', 'circle')
-        circle.setAttribute('cx', String(p.x))
-        circle.setAttribute('cy', String(p.y))
-        circle.setAttribute('r', String(r))
-        circle.setAttribute('fill', fill)
-        circle.setAttribute('stroke', borderColor)
-        circle.setAttribute('stroke-width', String(borderWidth || (p.isCenter ? 3 : 1)))
-        g.appendChild(circle)
-
-        var labelText = node.name || id
-        var textNode = doc.createElementNS('http://www.w3.org/2000/svg', 'text')
-        textNode.setAttribute('x', String(p.x))
-        textNode.setAttribute('y', String(p.y + r + 14))
-        textNode.setAttribute('font-size', '11')
-        textNode.setAttribute('font-weight', p.isCenter ? '600' : '400')
-        textNode.setAttribute('text-anchor', 'middle')
-        textNode.setAttribute('fill', '#1f2937')
-        textNode.textContent = labelText
-        g.appendChild(textNode)
-      }
-
-      if (node.tooltipText || node.name || id) {
-        var titleEl = doc.createElementNS('http://www.w3.org/2000/svg', 'title')
-        titleEl.textContent = (node.tooltipText || node.name || id).replace(/<br\s*\/?>/g, ' ')
-        g.appendChild(titleEl)
-      }
-
-      if (node.selected || node.focused) {
-        g.setAttribute('data-selected', 'true')
-        var halo = doc.createElementNS('http://www.w3.org/2000/svg', 'rect')
-        halo.setAttribute('x', String(x - 4))
-        halo.setAttribute('y', String(y - 4))
-        halo.setAttribute('width', String(w + 8))
-        halo.setAttribute('height', String(h + 8))
-        halo.setAttribute('rx', '8')
-        halo.setAttribute('fill', 'none')
-        halo.setAttribute('stroke', '#2563eb')
-        halo.setAttribute('stroke-width', '2.5')
-        halo.style.pointerEvents = 'none'
-        g.appendChild(halo)
-      }
-
-      g.setAttribute('data-node-id', String(id))
-
-      nodesG.appendChild(g)
-    })
-    svg.appendChild(nodesG)
-
-    // One listener on the root, not one per node. A redraw rebuilds every group, and a
-    // listener bound to a group dies with it; delegating keeps the graph clickable across
-    // rebuilds and needs nothing from the node that was drawn.
-    svg.addEventListener('click', function (ev) {
-      var el = ev && ev.target
-      var group = el && el.closest ? el.closest('g[data-node-id]') : null
-      if (!group) return
-      var nodeId = group.getAttribute('data-node-id')
-      var handler = chartInstance.handlers && chartInstance.handlers.click
-      if (!handler) return
-      var item = null
-      for (var i = 0; i < rawNodes.length; i++) {
-        if (String(rawNodes[i].id || rawNodes[i].name) === nodeId) {
-          item = rawNodes[i]
-          break
-        }
-      }
-      handler({
-        dataType: 'node',
-        data: item || { id: nodeId },
-        name: item ? item.name || nodeId : nodeId,
-        id: nodeId,
-      })
-    })
-
-    scatterSeries.forEach(function (sc) {
-      if (!Array.isArray(sc.data)) return
-      sc.data.forEach(function (item) {
-        var p = posOf(item.value)
-        var isHeadBadge = (sc.label && sc.label.formatter === 'HEAD') || item.id === 'head'
-
-        if (isHeadBadge) {
-          var gHead = doc.createElementNS('http://www.w3.org/2000/svg', 'g')
-          gHead.setAttribute('class', 'nn-graph-head-badge')
-          gHead.style.pointerEvents = 'none'
-
-          var sw = sc.symbolSize ? sc.symbolSize[0] : 38
-          var sh = sc.symbolSize ? sc.symbolSize[1] : 13
-          var offY = sc.symbolOffset ? sc.symbolOffset[1] : -22
-          var hx = p.x - sw / 2
-          var hy = p.y + offY - sh / 2
-          var hrect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect')
-          hrect.setAttribute('x', String(hx))
-          hrect.setAttribute('y', String(hy))
-          hrect.setAttribute('width', String(sw))
-          hrect.setAttribute('height', String(sh))
-          hrect.setAttribute('rx', '3')
-          hrect.setAttribute('fill', (sc.itemStyle && sc.itemStyle.color) || '#2563eb')
-          gHead.appendChild(hrect)
-
-          var txt = doc.createElementNS('http://www.w3.org/2000/svg', 'text')
-          txt.setAttribute('x', String(p.x))
-          txt.setAttribute('y', String(hy + 9.5))
-          txt.setAttribute('font-size', '8')
-          txt.setAttribute('font-weight', '700')
-          txt.setAttribute('text-anchor', 'middle')
-          txt.setAttribute('fill', '#ffffff')
-          txt.textContent = 'HEAD'
-          gHead.appendChild(txt)
-          svg.appendChild(gHead)
-        } else {
-          var gFocus = doc.createElementNS('http://www.w3.org/2000/svg', 'g')
-          gFocus.setAttribute('class', 'nn-graph-focus-ring')
-          gFocus.style.pointerEvents = 'none'
-
-          var fw = sc.symbolSize ? sc.symbolSize[0] : 150
-          var fh = sc.symbolSize ? sc.symbolSize[1] : 50
-          var fx = p.x - fw / 2
-          var fy = p.y - fh / 2
-          var frect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect')
-          frect.setAttribute('x', String(fx))
-          frect.setAttribute('y', String(fy))
-          frect.setAttribute('width', String(fw))
-          frect.setAttribute('height', String(fh))
-          frect.setAttribute('rx', '8')
-          frect.setAttribute('fill', 'none')
-          frect.setAttribute('stroke', (sc.itemStyle && sc.itemStyle.borderColor) || '#2563eb')
-          frect.setAttribute(
-            'stroke-width',
-            String((sc.itemStyle && sc.itemStyle.borderWidth) || 2.5),
-          )
-          gFocus.appendChild(frect)
-          svg.appendChild(gFocus)
-        }
-      })
-    })
-
-    host.appendChild(svg)
-    host.__chartInstance = chartInstance
-    if (typeof window !== 'undefined') {
-      window.echarts = window.echarts || {}
-      window.echarts.getInstanceByDom = function (h) {
-        if (!h) return null
-        var c = h.tagName === 'CANVAS' ? h : h.querySelector('canvas')
-        return (c && c.__chartInstance) || h.__chartInstance || null
-      }
-    }
-    return chartInstance
+    var p = doc.createElement('p')
+    p.className = 'nn-chart-error'
+    p.setAttribute('role', 'alert')
+    p.textContent = message
+    host.appendChild(p)
+    return new Error(message)
   }
 
-  function renderChart(host, option, opts) {
+  function disposeChart(lib, host) {
+    if (host.__nnChartObserver) {
+      host.__nnChartObserver.disconnect()
+      host.__nnChartObserver = null
+    }
+    var canvas = host.querySelector && host.querySelector('canvas')
+    var previous = canvas && lib.getChart ? lib.getChart(canvas) : null
+    if (previous) previous.destroy()
+  }
+
+  /**
+   * The element under a click, deepest first: a treemap cell inside its group, a bar, a
+   * point. Resolved from the elements' own geometry (`inRange`), so every chart type picks
+   * the same way. Returns { item, datasetIndex, index } or null.
+   */
+  function pickAt(chart, canvas, event) {
+    var box = canvas.getBoundingClientRect()
+    var sx = box.width ? chart.width / box.width : 1
+    var sy = box.height ? chart.height / box.height : 1
+    var x = (event.clientX - box.left) * sx
+    var y = (event.clientY - box.top) * sy
+    var best = null
+    ;(chart.data.datasets || []).forEach(function (ds, di) {
+      var meta = chart.getDatasetMeta(di)
+      if (!meta || meta.hidden) return
+      ;(meta.data || []).forEach(function (cell, i) {
+        if (!cell || typeof cell.inRange !== 'function' || !cell.inRange(x, y, true)) return
+        var area =
+          typeof cell.width === 'number' && typeof cell.height === 'number'
+            ? Math.abs(cell.width * cell.height)
+            : 0
+        if (!best || area < best.area) best = { cell: cell, area: area, di: di, i: i }
+      })
+    })
+    if (!best) return null
+    var raw = best.cell.$context ? best.cell.$context.raw : null
+    var ds = chart.data.datasets[best.di]
+    var item = raw && raw._data ? raw._data : ds && ds.data ? ds.data[best.i] : raw
+    return { item: item, datasetIndex: best.di, index: best.i }
+  }
+
+  /**
+   * Draws a native Chart.js config into `host` on a fresh canvas and returns the Chart.
+   * The console sizes the canvas itself (a hidden tab has no size to respond to): `opts`
+   * takes `width` and `height` in px, else the host's size, else 960x400. A dataset with no
+   * colour takes the console palette. `opts.onPick(item, hit)` is called with the data item
+   * of the element clicked (a treemap cell's own record, a bar's value). A type Chart.js has
+   * not registered is an error shown in the host and thrown, never another type.
+   */
+  function renderChart(host, config, opts) {
     if (!host) return null
     var o = opts || {}
-    var seriesList = (option && option.series) || []
-    var firstSeries = seriesList[0] || {}
-    var sType = firstSeries.type || 'line'
-
     var lib = chartLibrary()
     if (!lib) {
       warnChartLibraryMissing()
       return null
     }
+    if (!isObject(config) || typeof config.type !== 'string' || !config.type) {
+      throw chartError(
+        host,
+        'nn-console: renderChart takes a Chart.js config { type, data, options }',
+      )
+    }
+    var types = chartTypes(lib)
+    if (types.indexOf(config.type) === -1) {
+      throw chartError(
+        host,
+        'nn-console: chart type "' +
+          config.type +
+          '" is not available; this console draws ' +
+          types.join(', '),
+      )
+    }
+    disposeChart(lib, host)
+    var doc = host.ownerDocument || document
+    var canvas = doc.createElement('canvas')
+    host.innerHTML = ''
+    host.appendChild(canvas)
+    var autoWidth = o.width === undefined
+    var autoHeight = o.height === undefined
+    canvas.width = autoWidth ? host.clientWidth || 960 : o.width
+    canvas.height = autoHeight ? host.clientHeight || 400 : o.height
+    canvas.style.backgroundColor = '#ffffff'
+    if (!autoHeight) canvas.style.height = o.height + 'px'
+    if (!autoWidth) canvas.style.width = o.width + 'px'
 
-    if (
-      sType === 'graph' ||
-      seriesList.some(function (s) {
-        return s.type === 'graph'
+    var options = isObject(config.options) ? config.options : {}
+    if (options.responsive === undefined) options.responsive = false
+    if (options.maintainAspectRatio === undefined) options.maintainAspectRatio = false
+    if (options.animation === undefined) options.animation = false
+    config.options = options
+    ;((config.data && config.data.datasets) || []).forEach(function (ds, i) {
+      var color = CHART_PALETTE[i % CHART_PALETTE.length]
+      if (ds.borderColor === undefined) ds.borderColor = color
+      if (ds.backgroundColor === undefined) ds.backgroundColor = color
+    })
+
+    var chart = new lib(canvas, config)
+    if (typeof o.onPick === 'function') {
+      canvas.addEventListener('click', function (event) {
+        var hit = pickAt(chart, canvas, event)
+        if (hit) o.onPick(hit.item, hit)
       })
-    ) {
-      return renderSvgGraph(host, option, o)
     }
-    var o = opts || {}
-
-    // Support Chart.js natively
-    if (lib.register || lib.registry) {
-      var canvas = host.tagName === 'CANVAS' ? host : host.querySelector('canvas')
-      if (!canvas) {
-        canvas = (host.ownerDocument || document).createElement('canvas')
-        host.innerHTML = ''
-        host.appendChild(canvas)
-      }
-      var autoWidth = o.width === undefined
-      var autoHeight = o.height === undefined
-      canvas.width = autoWidth ? host.clientWidth || 960 : o.width
-      canvas.height = autoHeight ? host.clientHeight || 400 : o.height
-      if (o.height) canvas.style.height = typeof o.height === 'number' ? o.height + 'px' : o.height
-      if (o.width) canvas.style.width = typeof o.width === 'number' ? o.width + 'px' : o.width
-
-      var prev = lib.getChart ? lib.getChart(canvas) : canvas.__chartInstance || null
-      if (prev && typeof prev.destroy === 'function') prev.destroy()
-      if (host.__nnChartObserver) {
-        host.__nnChartObserver.disconnect()
-        host.__nnChartObserver = null
-      }
-
-      var chartConfig = toChartJsConfig(option, o)
-      var chart = new lib(canvas, chartConfig)
-      canvas.__chartInstance = chart
-      host.__chartInstance = chart
-      if (!lib.getInstanceByDom) {
-        lib.getInstanceByDom = function (el) {
-          if (!el) return null
-          var c = el.tagName === 'CANVAS' ? el : el.querySelector('canvas')
-          return (c && c.__chartInstance) || el.__chartInstance || null
-        }
-      }
-      if (typeof window !== 'undefined') {
-        window.echarts = window.echarts || {
-          getInstanceByDom: function (h) {
-            return lib.getInstanceByDom(h)
-          },
-        }
-      }
-      chart._isDisposed = false
-      chart.getWidth = function () {
-        return canvas.width
-      }
-      chart.getHeight = function () {
-        return canvas.height
-      }
-      chart.isDisposed = function () {
-        return chart._isDisposed || !canvas.__chartInstance
-      }
-      var origDestroy = chart.destroy.bind(chart)
-      chart.destroy = function () {
-        chart._isDisposed = true
-        if (canvas.__chartInstance === chart) canvas.__chartInstance = null
-        if (host.__chartInstance === chart) host.__chartInstance = null
-        return origDestroy()
-      }
-      chart.dispose = chart.destroy
-      if (!lib.prototype.getOption) {
-        lib.prototype.getOption = function () {
-          var c = this
-          return {
-            backgroundColor:
-              (c.canvas && c.canvas.style && c.canvas.style.backgroundColor) || '#ffffff',
-            xAxis: [{ data: (c.data && c.data.labels) || [] }],
-            series: ((c.data && c.data.datasets) || []).map(function (ds) {
-              return {
-                type: (c.config && c.config.type) || 'line',
-                name: ds.label,
-                data: ds.tree || ds.data || [],
-              }
-            }),
-          }
-        }
-      }
-      chart.on = function (event, handler) {
-        if (event !== 'click') return
-        canvas.addEventListener('click', function (e) {
-          var meta = chart.getDatasetMeta && chart.getDatasetMeta(0)
-          var els = (meta && meta.data) || []
-          var isTreemap = !!(chart.config && chart.config.type === 'treemap')
-          // The treemap plugin throws inside Chart.js hit-testing ("nearest" walks a null
-          // canvas), which swallows the click; the cells carry their own geometry, so the hit
-          // is resolved here instead and the deepest containing cell wins.
-          if (isTreemap && els.length) {
-            var box = canvas.getBoundingClientRect()
-            var px = e.clientX - box.left
-            var py = e.clientY - box.top
-            var found = null
-            for (var i = 0; i < els.length; i++) {
-              var cell = els[i]
-              if (!cell || typeof cell.x !== 'number' || typeof cell.width !== 'number') continue
-              if (px < cell.x || px > cell.x + cell.width) continue
-              if (py < cell.y || py > cell.y + cell.height) continue
-              if (!found || cell.width * cell.height < found.width * found.height) found = cell
-            }
-            if (!found) return
-            var rawCell = found.$context ? found.$context.raw : null
-            if (rawCell && rawCell._data) rawCell = rawCell._data
-            handler({ data: rawCell, raw: rawCell, seriesName: null })
-            return
-          }
-          var activeEls = chart.getElementsAtEventForMode
-            ? chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, false)
-            : []
-          if (activeEls && activeEls.length) {
-            var first = activeEls[0]
-            var ds = chart.data.datasets[first.datasetIndex]
-            var elem =
-              first.element ||
-              (chart.getDatasetMeta &&
-                chart.getDatasetMeta(first.datasetIndex) &&
-                chart.getDatasetMeta(first.datasetIndex).data[first.index])
-            var elemRaw = elem && elem.$context ? elem.$context.raw : null
-            var raw =
-              (elemRaw && elemRaw._data) ||
-              elemRaw ||
-              (ds && ds.data && ds.data[first.index] && ds.data[first.index]._data) ||
-              (ds && ds.data && ds.data[first.index]) ||
-              (ds && ds.tree && ds.tree[first.index])
-            handler({ data: raw, raw: raw, seriesName: ds && ds.label })
-          }
-        })
-      }
-      chart.getOption = function () {
-        return {
-          backgroundColor: (canvas.style && canvas.style.backgroundColor) || '#ffffff',
-          xAxis: [
-            {
-              data:
-                (chart.data && chart.data.labels) ||
-                (option && option.xAxis && option.xAxis.data) ||
-                [],
-            },
-          ],
-          series:
-            option && option.series && option.series.length
-              ? option.series
-              : ((chart.data && chart.data.datasets) || []).map(function (ds) {
-                  return {
-                    type: chartConfig.type || 'line',
-                    name: ds.label,
-                    data: ds.tree || ds.data || [],
-                  }
-                }),
-        }
-      }
-
-      if (typeof ResizeObserver !== 'undefined' && (autoWidth || autoHeight)) {
-        host.__nnChartObserver = new ResizeObserver(function () {
-          if (canvas.__chartInstance && host.clientWidth) {
-            chart.resize()
-          }
-        })
-        host.__nnChartObserver.observe(host)
-      }
-      return chart
-    }
-
-    var previous = lib.getInstanceByDom(host)
-    if (previous) previous.dispose()
-    if (host.__nnChartObserver) {
-      host.__nnChartObserver.disconnect()
-      host.__nnChartObserver = null
-    }
-    var autoW = o.width === undefined
-    var autoH = o.height === undefined
-    var echartsChart = lib.init(host, null, {
-      renderer: o.renderer || 'svg',
-      width: autoW ? (host.clientWidth ? undefined : 960) : o.width,
-      height: autoH ? (host.clientHeight ? undefined : 400) : o.height,
-    })
-    var merged = {}
-    Object.keys(option || {}).forEach(function (key) {
-      merged[key] = option[key]
-    })
-    if (merged.backgroundColor === undefined) merged.backgroundColor = '#ffffff'
-    if (merged.color === undefined) merged.color = CHART_PALETTE
-    echartsChart.setOption(merged)
-    if (typeof ResizeObserver !== 'undefined' && (autoW || autoH)) {
+    if (typeof ResizeObserver !== 'undefined' && (autoWidth || autoHeight)) {
       host.__nnChartObserver = new ResizeObserver(function () {
-        if (!echartsChart.isDisposed() && host.clientWidth) {
-          echartsChart.resize({
-            width: autoW ? 'auto' : o.width,
-            height: autoH ? 'auto' : o.height,
-          })
-        }
+        if (chart.canvas && host.clientWidth) chart.resize()
       })
       host.__nnChartObserver.observe(host)
     }
-    return echartsChart
+    return chart
+  }
+
+  var SVG_NS = 'http://www.w3.org/2000/svg'
+
+  function svgEl(doc, tag, attrs) {
+    var node = doc.createElementNS(SVG_NS, tag)
+    Object.keys(attrs || {}).forEach(function (k) {
+      if (attrs[k] !== undefined && attrs[k] !== null) node.setAttribute(k, String(attrs[k]))
+    })
+    return node
+  }
+
+  function dashOf(kind) {
+    if (kind === 'dashed') return '5,5'
+    if (kind === 'dotted') return '2,2'
+    return undefined
+  }
+
+  function circularPositions(nodes, width, height) {
+    var pos = {}
+    var centre =
+      nodes.filter(function (n) {
+        return n.center
+      })[0] || nodes[0]
+    var others = nodes.filter(function (n) {
+      return n !== centre
+    })
+    var radius = Math.max(60, Math.min(width, height) / 2 - 50)
+    if (centre) pos[centre.id] = { x: width / 2, y: height / 2 }
+    others.forEach(function (n, i) {
+      var angle = (2 * Math.PI * i) / (others.length || 1) - Math.PI / 2
+      pos[n.id] = {
+        x: width / 2 + radius * Math.cos(angle),
+        y: height / 2 + radius * Math.sin(angle),
+      }
+    })
+    return pos
+  }
+
+  function drawRectNode(doc, g, node, p) {
+    var w = node.width || 120
+    var h = node.height || 40
+    var x = p.x - w / 2
+    var y = p.y - h / 2
+    var stroke = node.stroke || '#3b82f6'
+    g.appendChild(
+      svgEl(doc, 'rect', {
+        x: x,
+        y: y,
+        width: w,
+        height: h,
+        rx: 6,
+        fill: node.fill || '#ffffff',
+        stroke: stroke,
+        'stroke-width': node.strokeWidth !== undefined ? node.strokeWidth : 1,
+        'stroke-dasharray': dashOf(node.dash),
+        opacity: node.opacity !== undefined && node.opacity !== 1 ? node.opacity : undefined,
+      }),
+    )
+    var lines = Array.isArray(node.lines) ? node.lines : []
+    if (node.header) {
+      // A band in the stroke colour with the name in it, then one line per entry below.
+      g.appendChild(
+        svgEl(doc, 'path', {
+          d:
+            'M ' +
+            x +
+            ' ' +
+            (y + 6) +
+            ' Q ' +
+            x +
+            ' ' +
+            y +
+            ' ' +
+            (x + 6) +
+            ' ' +
+            y +
+            ' L ' +
+            (x + w - 6) +
+            ' ' +
+            y +
+            ' Q ' +
+            (x + w) +
+            ' ' +
+            y +
+            ' ' +
+            (x + w) +
+            ' ' +
+            (y + 6) +
+            ' L ' +
+            (x + w) +
+            ' ' +
+            (y + 26) +
+            ' L ' +
+            x +
+            ' ' +
+            (y + 26) +
+            ' Z',
+          fill: stroke,
+        }),
+      )
+      var head = svgEl(doc, 'text', {
+        class: 'nn-graph-header',
+        x: x + 8,
+        y: y + 17,
+        'font-size': 12,
+        'font-weight': 600,
+        fill: '#ffffff',
+      })
+      head.textContent = node.header
+      g.appendChild(head)
+      var body = svgEl(doc, 'text', {
+        class: 'nn-graph-lines',
+        x: x + 8,
+        y: y + 42,
+        'font-size': 11,
+        fill: '#374151',
+      })
+      lines.forEach(function (line, i) {
+        var span = svgEl(doc, 'tspan', { x: x + 8, dy: i === 0 ? 0 : 16 })
+        span.textContent = line
+        body.appendChild(span)
+      })
+      g.appendChild(body)
+      return
+    }
+    var titles = Array.isArray(node.title) ? node.title : node.title ? [node.title] : []
+    if (!titles.length && !node.sub) titles = [node.label || node.id]
+    var text = svgEl(doc, 'text', {
+      class: 'nn-graph-title',
+      x: x + 8,
+      y: node.sub ? y + 18 : y + h / 2 + 4,
+      'font-size': 12,
+      'font-weight': node.sub ? 600 : 400,
+      fill: node.color || '#111827',
+    })
+    titles.forEach(function (t, i) {
+      var span = svgEl(doc, 'tspan', { x: x + 8, dy: i === 0 ? 0 : 15 })
+      span.textContent = t
+      text.appendChild(span)
+    })
+    g.appendChild(text)
+    if (node.sub) {
+      var sub = svgEl(doc, 'text', {
+        class: 'nn-graph-sub',
+        x: x + 8,
+        y: y + 18 + titles.length * 15,
+        'font-size': 10,
+        fill: node.subColor || '#6b7280',
+      })
+      sub.textContent = node.sub
+      g.appendChild(sub)
+    }
+    if (node.ring) {
+      var halo = svgEl(doc, 'rect', {
+        class: 'nn-graph-ring',
+        x: x - 4,
+        y: y - 4,
+        width: w + 8,
+        height: h + 8,
+        rx: 8,
+        fill: 'none',
+        stroke: '#2563eb',
+        'stroke-width': 2.5,
+      })
+      halo.style.pointerEvents = 'none'
+      g.appendChild(halo)
+    }
+  }
+
+  function drawCircleNode(doc, g, node, p) {
+    var r = node.r || (node.center ? 24 : 15)
+    g.appendChild(
+      svgEl(doc, 'circle', {
+        cx: p.x,
+        cy: p.y,
+        r: r,
+        fill: node.fill || '#ffffff',
+        stroke: node.stroke || '#3b82f6',
+        'stroke-width': node.strokeWidth || (node.center ? 3 : 1),
+      }),
+    )
+    var label = svgEl(doc, 'text', {
+      class: 'nn-graph-title',
+      x: p.x,
+      y: p.y + r + 14,
+      'font-size': 11,
+      'font-weight': node.center ? 600 : 400,
+      'text-anchor': 'middle',
+      fill: '#1f2937',
+    })
+    label.textContent = node.label || node.id
+    g.appendChild(label)
+  }
+
+  /** A filled arrowhead at `to`, drawn as a path (an svg marker would need a page-wide id). */
+  function arrowHead(doc, back, to, edge) {
+    var dx = to.x - back.x
+    var dy = to.y - back.y
+    var len = Math.sqrt(dx * dx + dy * dy) || 1
+    var ux = dx / len
+    var uy = dy / len
+    var size = 8
+    var bx = to.x - ux * size
+    var by = to.y - uy * size
+    return svgEl(doc, 'path', {
+      class: 'nn-graph-arrow',
+      d:
+        'M ' +
+        to.x +
+        ' ' +
+        to.y +
+        ' L ' +
+        (bx - uy * size * 0.5) +
+        ' ' +
+        (by + ux * size * 0.5) +
+        ' L ' +
+        (bx + uy * size * 0.5) +
+        ' ' +
+        (by - ux * size * 0.5) +
+        ' Z',
+      fill: edge.color || '#94a3b8',
+      opacity: edge.opacity !== undefined && edge.opacity !== 1 ? edge.opacity : undefined,
+    })
+  }
+
+  function drawEdgeLabel(doc, parent, edge, a, b) {
+    var mx = (a.x + b.x) / 2
+    var my = (a.y + b.y) / 2
+    var g = svgEl(doc, 'g', { class: 'nn-graph-edge-label' })
+    var len = edge.label.length * 6 + 12
+    g.appendChild(
+      svgEl(doc, 'rect', {
+        x: mx - len / 2,
+        y: my - 8,
+        width: len,
+        height: 16,
+        rx: 4,
+        fill: edge.labelBackground || '#ffffff',
+        stroke: '#cbd5e1',
+        'stroke-width': 1,
+      }),
+    )
+    var text = svgEl(doc, 'text', {
+      x: mx,
+      y: my + 3,
+      'font-size': 10,
+      'font-weight': 500,
+      'text-anchor': 'middle',
+      fill: edge.labelColor || '#475569',
+    })
+    text.textContent = edge.label
+    g.appendChild(text)
+    parent.appendChild(g)
+  }
+
+  function drawMark(doc, svg, mark) {
+    var w = mark.width || 38
+    var h = mark.height || 13
+    var g = svgEl(doc, 'g', { class: 'nn-graph-' + mark.kind })
+    g.style.pointerEvents = 'none'
+    if (mark.kind === 'badge') {
+      g.appendChild(
+        svgEl(doc, 'rect', {
+          x: mark.x - w / 2,
+          y: mark.y - h / 2,
+          width: w,
+          height: h,
+          rx: 3,
+          fill: mark.color || '#2563eb',
+        }),
+      )
+      var text = svgEl(doc, 'text', {
+        x: mark.x,
+        y: mark.y + 3,
+        'font-size': 8,
+        'font-weight': 700,
+        'text-anchor': 'middle',
+        fill: mark.textColor || '#ffffff',
+      })
+      text.textContent = mark.text || ''
+      g.appendChild(text)
+    } else {
+      g.appendChild(
+        svgEl(doc, 'rect', {
+          x: mark.x - w / 2,
+          y: mark.y - h / 2,
+          width: w,
+          height: h,
+          rx: 8,
+          fill: 'none',
+          stroke: mark.color || '#2563eb',
+          'stroke-width': mark.strokeWidth || 2.5,
+        }),
+      )
+    }
+    svg.appendChild(g)
+  }
+
+  /**
+   * Draws a node-and-edge diagram into `host` as SVG and returns the svg element. Calling it
+   * again on the same host replaces the drawing.
+   *
+   * spec = { width?, height?, layout?: 'circular', nodes, edges?, marks? }, all in px.
+   *   node: { id, x, y, shape?: 'rect' | 'circle', width?, height?, r?, center?,
+   *           fill?, stroke?, strokeWidth?, dash?: 'dashed' | 'dotted', opacity?,
+   *           header?, lines?: string[]   (a coloured band with the name, then lines)
+   *           title?: string | string[], sub?, color?, subColor?   (bold lines, a sub line)
+   *           label?   (a circle's caption), tooltip?, ring?, className?, attrs? }
+   *     Under layout 'circular' the `center` node sits in the middle and the rest around it.
+   *   edge: { source, target, from?: [x, y], to?: [x, y], color?, width?, dash?, opacity?,
+   *           curveness?, label?, labelColor?, labelBackground? }
+   *     Drawn between the node centres unless `from` and `to` are given.
+   *   mark: { kind: 'ring' | 'badge', x, y, width?, height?, color?, strokeWidth?, text? }
+   * opts.onPick(node) is called with the spec node that was clicked.
+   */
+  function renderGraph(host, spec, opts) {
+    if (!host) return null
+    var o = opts || {}
+    var s = spec || {}
+    var doc = host.ownerDocument || document
+    var width = s.width || host.clientWidth || 960
+    var height = Math.max(200, s.height || host.clientHeight || 450)
+    var nodes = Array.isArray(s.nodes) ? s.nodes : []
+    var pos = {}
+    if (s.layout === 'circular') pos = circularPositions(nodes, width, height)
+    else
+      nodes.forEach(function (n) {
+        pos[n.id] = { x: Number(n.x) || 0, y: Number(n.y) || 0 }
+      })
+
+    host.innerHTML = ''
+    var svg = svgEl(doc, 'svg', {
+      width: width,
+      height: height,
+      viewBox: '0 0 ' + width + ' ' + height,
+      class: 'nn-svg-graph',
+    })
+    svg.style.display = 'block'
+    svg.style.width = '100%'
+    svg.style.height = '100%'
+    svg.style.overflow = 'visible'
+    var edgesG = svgEl(doc, 'g', { class: 'nn-graph-links' })
+    ;(Array.isArray(s.edges) ? s.edges : []).forEach(function (edge) {
+      var a = pos[edge.source]
+      var b = pos[edge.target]
+      if (!a || !b) return
+      var from = edge.from ? { x: edge.from[0], y: edge.from[1] } : a
+      var to = edge.to ? { x: edge.to[0], y: edge.to[1] } : b
+      var d = 'M ' + from.x + ' ' + from.y + ' L ' + to.x + ' ' + to.y
+      // The arrowhead points along the last stretch of the line: from the curve's control
+      // point, or from the start of a straight one.
+      var back = from
+      if (edge.curveness) {
+        back = {
+          x: (from.x + to.x) / 2 - (to.y - from.y) * edge.curveness,
+          y: (from.y + to.y) / 2 + (to.x - from.x) * edge.curveness,
+        }
+        d = 'M ' + from.x + ' ' + from.y + ' Q ' + back.x + ' ' + back.y + ' ' + to.x + ' ' + to.y
+      }
+      edgesG.appendChild(
+        svgEl(doc, 'path', {
+          class: 'nn-graph-edge',
+          'data-source': edge.source,
+          'data-target': edge.target,
+          d: d,
+          fill: 'none',
+          stroke: edge.color || '#94a3b8',
+          'stroke-width': edge.width || 1.5,
+          'stroke-dasharray': dashOf(edge.dash),
+          opacity: edge.opacity !== undefined && edge.opacity !== 1 ? edge.opacity : undefined,
+        }),
+      )
+      edgesG.appendChild(arrowHead(doc, back, to, edge))
+      if (edge.label) drawEdgeLabel(doc, edgesG, edge, a, b)
+    })
+    svg.appendChild(edgesG)
+
+    var nodesG = svgEl(doc, 'g', { class: 'nn-graph-nodes' })
+    nodes.forEach(function (node) {
+      var p = pos[node.id]
+      if (!p) return
+      var g = svgEl(doc, 'g', {
+        class: 'nn-graph-node' + (node.className ? ' ' + node.className : ''),
+        'data-node-id': node.id,
+      })
+      Object.keys(node.attrs || {}).forEach(function (k) {
+        g.setAttribute(k, String(node.attrs[k]))
+      })
+      if (node.shape === 'circle') drawCircleNode(doc, g, node, p)
+      else drawRectNode(doc, g, node, p)
+      var tip = svgEl(doc, 'title')
+      tip.textContent = node.tooltip || node.label || node.id
+      g.appendChild(tip)
+      if (typeof o.onPick === 'function') {
+        g.style.cursor = 'pointer'
+        g.addEventListener('click', function () {
+          o.onPick(node)
+        })
+      }
+      nodesG.appendChild(g)
+    })
+    svg.appendChild(nodesG)
+    ;(Array.isArray(s.marks) ? s.marks : []).forEach(function (mark) {
+      drawMark(doc, svg, mark)
+    })
+    host.appendChild(svg)
+    return svg
   }
 
   function renderCharts(host, model, meta) {
@@ -10094,26 +9762,26 @@ if (typeof globalThis !== "undefined") globalThis.nnAddress = nnAddress;
         renderChart(
           canvas,
           {
-            tooltip: { trigger: 'axis' },
-            legend: { show: true, top: 0 },
-            grid: { left: 48, right: 16, top: 32, bottom: 32 },
-            xAxis: {
-              type: 'category',
-              data: chart.xs.map(function (x) {
+            type: 'line',
+            data: {
+              labels: chart.xs.map(function (x) {
                 return labels[x] != null ? labels[x] : String(x)
               }),
+              datasets: chart.variants.map(function (variant) {
+                return {
+                  label: variant.label,
+                  data: variant.values,
+                  borderWidth: 2,
+                  pointRadius: 0,
+                  spanGaps: false,
+                }
+              }),
             },
-            yAxis: { type: 'value' },
-            series: chart.variants.map(function (variant) {
-              return {
-                type: 'line',
-                name: variant.label,
-                data: variant.values,
-                connectNulls: false,
-                showSymbol: false,
-                lineStyle: { width: 2 },
-              }
-            }),
+            options: {
+              interaction: { mode: 'index', intersect: false },
+              plugins: { legend: { display: true, position: 'top' } },
+              scales: { x: { grid: { display: false } } },
+            },
           },
           { height: 240 },
         )
@@ -11209,6 +10877,7 @@ if (typeof globalThis !== "undefined") globalThis.nnAddress = nnAddress;
     compileChartSeries: compileChartSeries,
     monthAxis: monthAxis,
     renderChart: renderChart,
+    renderGraph: renderGraph,
     renderCharts: renderCharts,
     renderTimelineGrid: renderTimelineGrid,
     formatGridNumber: formatGridNumber,
@@ -12014,7 +11683,6 @@ if (typeof window !== 'undefined') {
 
 /* ===== nn-runtime.js (defines nnConsole) ===== */
 /* global module: writable */
-/* global echarts */
 ;(function (root, factory) {
   if (typeof module === 'object' && module.exports) {
     module.exports = factory(require('./ui-kit.js'), require('./review.js'), require('./studio.js'))
@@ -15986,17 +15654,23 @@ if (typeof window !== 'undefined') {
     })
   }
 
-  // Renders ECharts line charts from the pure-data series mapping (charts capability).
+  // Renders Chart.js line charts from the pure-data series mapping (charts capability).
   // Delegates to Studio (studio.js).
   function renderCharts(host, model, meta) {
     return Studio.renderCharts(host, model, meta)
   }
 
-  // Draws any ECharts option into `host` with the console defaults (white
-  // background, palette) and returns the chart instance, or null without ECharts.
-  // The chart entry point for custom views. Delegates to Studio (studio.js).
-  function renderChart(host, option, opts) {
-    return Studio.renderChart(host, option, opts)
+  // Draws a native Chart.js config ({ type, data, options }) into `host` and returns the
+  // Chart, or null without Chart.js. The chart entry point for custom views; the contract
+  // is documented on Studio.renderChart (studio.js).
+  function renderChart(host, config, opts) {
+    return Studio.renderChart(host, config, opts)
+  }
+
+  // Draws a node-and-edge diagram as SVG from the console's own spec and returns the svg.
+  // The diagram entry point for custom views; the spec is documented on Studio.renderGraph.
+  function renderGraph(host, spec, opts) {
+    return Studio.renderGraph(host, spec, opts)
   }
 
   // Delegates timeline grid and studio view to Studio (studio.js).
@@ -18969,7 +18643,7 @@ if (typeof window !== 'undefined') {
   }
 
   // Each model card: title, bluepriNNt, size, completeness and a stacked bar of its
-  // elements by concept (ECharts; the card still reads without it).
+  // elements by concept (CSS segments; the card still reads without them).
   function renderSummaryModelCard(doc, m, elements, schema) {
     var own = elements.filter(function (e) {
       return e.modelId === m.id
@@ -19662,19 +19336,11 @@ if (typeof window !== 'undefined') {
         title: m.title || m.id,
         name: (m.title || m.id) + (m.blueprint ? ' · ' + m.blueprint : ''),
         children: Object.keys(byConcept).map(function (c) {
-          var color = conceptMetaOf(schema && schema.concepts, c).hexColor
           return {
             name: c,
-            value: byConcept[c].length,
-            itemStyle: { color: color },
-            label: { formatter: '{b} ({c})' },
+            color: conceptMetaOf(schema && schema.concepts, c).hexColor,
             children: byConcept[c].map(function (e) {
-              return {
-                name: e.name || e.id,
-                value: 1,
-                elementId: e.id,
-                itemStyle: { color: color },
-              }
+              return { name: e.name || e.id, elementId: e.id }
             }),
           }
         }),
@@ -19742,32 +19408,23 @@ if (typeof window !== 'undefined') {
       nav.appendChild(hint)
     }
 
+    // One record per element, the way the treemap plugin groups them: l0 is the model's
+    // name, l1 the concept. A cell's colour is its concept's.
+    var conceptColor = {}
+    var records = []
+    tree.forEach(function (m) {
+      ;(m.children || []).forEach(function (c) {
+        conceptColor[c.name] = c.color
+        ;(c.children || []).forEach(function (e) {
+          records.push({ l0: m.name, l1: c.name, name: e.name, value: 1, elementId: e.elementId })
+        })
+      })
+    })
+
+    var chart = null
+
     function renderLevel() {
       updateNav()
-      var subTree = tree
-      var groups = ['l0', 'l1']
-
-      if (currentModelIdx !== null) {
-        var m = tree[currentModelIdx]
-        if (currentConcept !== null) {
-          var c = (m.children || []).find(function (child) {
-            return child.name === currentConcept
-          })
-          if (c) {
-            subTree = [
-              {
-                name: c.name,
-                children: c.children,
-              },
-            ]
-            groups = ['l1', 'name']
-          }
-        } else {
-          subTree = [m]
-          groups = ['l0', 'l1']
-        }
-      }
-
       // The deepest level is no longer a map: it is a handful of elements. Draw them as real
       // buttons, so each one carries its badge and is reachable by keyboard, instead of areas
       // whose only affordance is a pixel region.
@@ -19782,9 +19439,8 @@ if (typeof window !== 'undefined') {
           // dispatched, and the treemap plugin then reads a detached element and throws.
           // One frame later the event is over and the swap is safe.
           var paintLeaves = function () {
-            if (chartBox.__chartInstance && chartBox.__chartInstance.destroy) {
-              chartBox.__chartInstance.destroy()
-            }
+            if (chart) chart.destroy()
+            chart = null
             chartBox.innerHTML = ''
             var leafGrid = el('div', 'nn-map-leaves')
             leaves.forEach(function (leaf) {
@@ -19809,73 +19465,70 @@ if (typeof window !== 'undefined') {
         }
       }
 
-      var chart = Studio.renderChart(chartBox, {
-        animation: false,
-        tooltip: { formatter: '{b}: {c}' },
-        series: [
-          {
-            type: 'treemap',
-            name: domainTitle,
-            data: subTree,
-            groups: groups,
-            leafDepth: 2,
-            roam: false,
-            nodeClick: 'zoomToNode',
-            breadcrumb: { show: true, bottom: 6 },
-            upperLabel: { show: true, height: 24, color: '#111827', fontWeight: 'bold' },
-            label: { show: true, color: '#ffffff', fontSize: 11 },
-          },
-        ],
-      })
-
-      if (chart) {
-        chart.on('click', function (params) {
-          var d = params.data || {}
-          if (d.elementId) {
-            onPick(d.elementId)
-            return
-          }
-          if (currentModelIdx === null) {
-            var mName = d.l0 || (d.raw && d.raw.l0) || d.name || ''
-            var idx = tree.findIndex(function (item) {
-              return (
-                item.name === mName ||
-                item.title === mName ||
-                (typeof mName === 'string' && mName.indexOf(item.title) !== -1)
-              )
+      var rows =
+        currentModelIdx === null
+          ? records
+          : records.filter(function (r) {
+              return r.l0 === tree[currentModelIdx].name
             })
-            if (idx >= 0) {
-              currentModelIdx = idx
-              currentConcept = null
-              renderLevel()
+      chart = Studio.renderChart(
+        chartBox,
+        {
+          type: 'treemap',
+          data: {
+            datasets: [
+              {
+                label: domainTitle,
+                tree: rows,
+                key: 'value',
+                groups: ['l0', 'l1'],
+                borderColor: '#ffffff',
+                borderWidth: 2,
+                spacing: 1,
+                backgroundColor: function (ctx) {
+                  if (ctx.type !== 'data') return 'transparent'
+                  var d = ctx.raw && ctx.raw._data
+                  return (d && d.l1 && conceptColor[d.l1]) || '#2563eb'
+                },
+                captions: { display: true, color: '#ffffff', font: { size: 12, weight: 'bold' } },
+                labels: {
+                  display: true,
+                  color: '#ffffff',
+                  font: { size: 11, weight: 'bold' },
+                  formatter: function (ctx) {
+                    return (ctx.raw && ctx.raw.g) || ''
+                  },
+                },
+              },
+            ],
+          },
+          options: { plugins: { legend: { display: false } } },
+        },
+        {
+          onPick: function (d) {
+            if (!d) return
+            if (currentModelIdx === null) {
+              // The model's own name, exactly: one title can be the start of another.
+              var idx = tree.findIndex(function (item) {
+                return item.name === d.l0
+              })
+              if (idx >= 0) {
+                currentModelIdx = idx
+                currentConcept = null
+                renderLevel()
+              }
               return
             }
-          }
-          if (currentModelIdx !== null && currentConcept === null) {
-            var cName = d.l1 || (d.raw && d.raw.l1) || d.name
-            if (cName) {
-              currentConcept = cName
+            if (currentConcept === null && d.l1) {
+              currentConcept = d.l1
               renderLevel()
-              return
             }
-          }
-        })
-      }
+          },
+        },
+      )
     }
 
     renderLevel()
-
-    host.__chartInstance = chartBox.__chartInstance || {}
-    host.__chartInstance.getOption = function () {
-      return {
-        series: [
-          {
-            type: 'treemap',
-            data: tree,
-          },
-        ],
-      }
-    }
   }
 
   function renderMapView(doc, model, schema, meta) {
@@ -20000,73 +19653,51 @@ if (typeof window !== 'undefined') {
       outs.concat(ins).forEach(function (n) {
         if (ids.indexOf(n.id) < 0) ids.push(n.id)
       })
-      var chart = Studio.renderChart(
+      Studio.renderGraph(
         egoHost,
         {
-          animation: false,
-          tooltip: { formatter: '{b}' },
-          series: [
-            {
-              type: 'graph',
-              layout: 'circular',
-              circular: { rotateLabel: false },
-              roam: true,
-              top: 50,
-              bottom: 60,
-              left: 120,
-              right: 120,
-              edgeSymbol: ['none', 'arrow'],
-              edgeSymbolSize: 9,
-              label: { show: true, position: 'bottom', fontSize: 11, color: '#1f2937' },
-              data: ids.map(function (nid) {
-                var e = links.byId[nid]
-                var isCenter = nid === id
-                return {
-                  id: nid,
-                  name: nameOf(nid),
-                  symbolSize: isCenter ? 46 : 26,
-                  itemStyle: {
-                    color: conceptMetaOf(schema && schema.concepts, e.concept).hexColor,
-                    borderColor: isCenter ? '#111827' : '#ffffff',
-                    borderWidth: isCenter ? 3 : 1,
-                  },
-                  label: { fontWeight: isCenter ? 'bold' : 'normal' },
-                }
+          layout: 'circular',
+          height: 340,
+          nodes: ids.map(function (nid) {
+            var e = links.byId[nid]
+            var isCenter = nid === id
+            return {
+              id: nid,
+              shape: 'circle',
+              center: isCenter,
+              label: nameOf(nid),
+              fill: conceptMetaOf(schema && schema.concepts, e.concept).hexColor,
+              stroke: isCenter ? '#111827' : '#ffffff',
+              strokeWidth: isCenter ? 3 : 1,
+            }
+          }),
+          edges: outs
+            .map(function (n) {
+              return { source: id, target: n.id, field: n.field }
+            })
+            .concat(
+              ins.map(function (n) {
+                return { source: n.id, target: id, field: n.field }
               }),
-              links: outs
-                .map(function (n) {
-                  return { source: id, target: n.id, field: n.field }
-                })
-                .concat(
-                  ins.map(function (n) {
-                    return { source: n.id, target: id, field: n.field }
-                  }),
-                )
-                .map(function (l) {
-                  return {
-                    source: l.source,
-                    target: l.target,
-                    lineStyle: { color: '#64748b', width: 1.5, curveness: 0.1 },
-                    label: {
-                      show: !!l.field,
-                      formatter: l.field,
-                      fontSize: 10,
-                      color: '#334155',
-                      backgroundColor: '#ffffff',
-                    },
-                  }
-                }),
-            },
-          ],
+            )
+            .map(function (l) {
+              return {
+                source: l.source,
+                target: l.target,
+                color: '#64748b',
+                width: 1.5,
+                curveness: 0.1,
+                label: l.field || '',
+                labelColor: '#334155',
+              }
+            }),
         },
-        { height: 340 },
+        {
+          onPick: function (node) {
+            if (node.id !== id) show(node.id)
+          },
+        },
       )
-      if (chart) {
-        chart.on('click', function (params) {
-          if (params.dataType === 'node' && params.data && params.data.id !== id)
-            show(params.data.id)
-        })
-      }
     }
 
     open.addEventListener('click', function () {
@@ -20104,7 +19735,6 @@ if (typeof window !== 'undefined') {
   var SCHEMA_LINE = 17
   var SCHEMA_HEADER = 34
   var SCHEMA_PAD = 20
-  var SCHEMA_ANCHOR = '__nn-schema-anchor-'
 
   // The relationships between concepts: declared matrices, reference fields of the
   // schema, and references found in the data. One entry per source, target and label.
@@ -20249,7 +19879,7 @@ if (typeof window !== 'undefined') {
     var root = el('div', 'nn-schema')
     var legend = el('p', 'nn-schema-legend')
     legend.textContent =
-      'Each box is a concept with its fields, grouped by bluepriNNt. A solid line is a matrix; a dashed line is a field that points to another concept. Click a box to see its elements; drag or scroll to move around.'
+      'Each box is a concept with its fields, grouped by bluepriNNt. A solid line is a matrix; a dashed line is a field that points to another concept. Click a box to see its elements.'
     root.appendChild(legend)
     var chartHost = el('div', 'nn-schema-chart')
     root.appendChild(chartHost)
@@ -20284,149 +19914,66 @@ if (typeof window !== 'undefined') {
     })
     var width = cols * SCHEMA_BOX_WIDTH + (cols - 1) * SCHEMA_GAP_X + 2 * SCHEMA_PAD
     var height = Math.max(200, y - SCHEMA_GAP_Y + 2 * SCHEMA_PAD)
-    // ECharts fits the node centres into the view. Two invisible anchors at the
-    // canvas corners make that box the whole canvas, so the scale stays 1:1 and
-    // no box is cut or squeezed.
-    var anchors = [
-      [SCHEMA_ANCHOR + 'start', 0, 0],
-      [SCHEMA_ANCHOR + 'end', width, height],
-    ].map(function (a) {
-      return {
-        name: a[0],
-        x: a[1],
-        y: a[2],
-        symbolSize: 0,
-        silent: true,
-        label: { show: false },
-        tooltip: { show: false },
-      }
-    })
     chartHost.style.height = height + 'px'
     chartHost.style.width = width + 'px'
 
-    var chart = null
     try {
-      chart = Studio.renderChart(
+      Studio.renderGraph(
         chartHost,
         {
-          animation: false,
-          tooltip: { trigger: 'item', confine: true },
-          series: [
-            {
-              type: 'graph',
-              layout: 'none',
-              roam: true,
-              draggable: true,
-              left: 0,
-              top: 0,
-              width: width,
-              height: height,
-              edgeSymbol: ['none', 'arrow'],
-              edgeSymbolSize: 9,
-              autoCurveness: true,
-              data: anchors.concat(
-                nodes.map(function (n) {
-                  var color = conceptMetaOf(schema && schema.concepts, n.name).hexColor
-                  var fields = fieldsOf[n.name] || []
-                  var lines = fields.slice(0, SCHEMA_MAX_FIELDS).map(function (f) {
-                    return '{f|' + f.name + '}  {k|' + (f.type || 'text') + '}'
-                  })
-                  if (fields.length > SCHEMA_MAX_FIELDS)
-                    lines.push('{k|+' + (fields.length - SCHEMA_MAX_FIELDS) + ' more fields}')
-                  if (!lines.length) lines.push('{k|no fields}')
-                  return {
-                    name: n.name,
-                    x: n.x,
-                    y: n.y,
-                    symbol: 'rect',
-                    symbolSize: [SCHEMA_BOX_WIDTH, n.h],
-                    itemStyle: { color: '#ffffff', borderColor: color, borderWidth: 1 },
-                    label: {
-                      show: true,
-                      // Inside the 1px border, so the header band is flush with the box.
-                      position: [1, 1],
-                      align: 'left',
-                      verticalAlign: 'top',
-                      width: SCHEMA_BOX_WIDTH - 2,
-                      overflow: 'truncate',
-                      formatter:
-                        '{t|' +
-                        n.name +
-                        '  ·  ' +
-                        plural(counts[n.name] || 0, 'element', 'elements') +
-                        '}\n' +
-                        lines.join('\n'),
-                      rich: {
-                        t: {
-                          // The 8px side padding adds to the width, so take it off here.
-                          width: SCHEMA_BOX_WIDTH - 2 - 16,
-                          backgroundColor: color,
-                          color: '#ffffff',
-                          fontWeight: 600,
-                          fontSize: 12,
-                          padding: [5, 8],
-                        },
-                        f: {
-                          fontSize: 11,
-                          color: '#1f2937',
-                          lineHeight: SCHEMA_LINE,
-                          padding: [0, 0, 0, 8],
-                        },
-                        k: { fontSize: 10, color: '#6b7280', lineHeight: SCHEMA_LINE },
-                      },
-                    },
-                    tooltip: {
-                      formatter:
-                        n.name +
-                        ': ' +
-                        (fields.length
-                          ? fields
-                              .map(function (f) {
-                                return f.name
-                              })
-                              .join(', ')
-                          : 'no fields'),
-                    },
-                  }
-                }),
-              ),
-              links: edges.map(function (e) {
-                return {
-                  source: e.source,
-                  target: e.target,
-                  lineStyle: {
-                    type: e.kind === 'matrix' ? 'solid' : 'dashed',
-                    width: 1,
-                    color: '#64748b',
-                  },
-                  // The name rides just above the line instead of cutting through it.
-                  label: {
-                    show: !!e.label,
-                    formatter: e.label,
-                    position: 'middle',
-                    align: 'center',
-                    verticalAlign: 'bottom',
-                    distance: 4,
-                    fontSize: 10,
-                    color: '#475569',
-                  },
-                }
-              }),
-            },
-          ],
+          width: width,
+          height: height,
+          nodes: nodes.map(function (n) {
+            var fields = fieldsOf[n.name] || []
+            var lines = fields.slice(0, SCHEMA_MAX_FIELDS).map(function (f) {
+              return f.name + '  ' + (f.type || 'text')
+            })
+            if (fields.length > SCHEMA_MAX_FIELDS)
+              lines.push('+' + (fields.length - SCHEMA_MAX_FIELDS) + ' more fields')
+            if (!lines.length) lines.push('no fields')
+            return {
+              id: n.name,
+              x: n.x,
+              y: n.y,
+              width: SCHEMA_BOX_WIDTH,
+              height: n.h,
+              fill: '#ffffff',
+              stroke: conceptMetaOf(schema && schema.concepts, n.name).hexColor,
+              header: n.name + '  ·  ' + plural(counts[n.name] || 0, 'element', 'elements'),
+              lines: lines,
+              tooltip:
+                n.name +
+                ': ' +
+                (fields.length
+                  ? fields
+                      .map(function (f) {
+                        return f.name
+                      })
+                      .join(', ')
+                  : 'no fields'),
+            }
+          }),
+          edges: edges.map(function (e) {
+            return {
+              source: e.source,
+              target: e.target,
+              dash: e.kind === 'matrix' ? 'solid' : 'dashed',
+              width: 1,
+              color: '#64748b',
+              label: e.label || '',
+            }
+          }),
         },
-        { width: width, height: height },
+        {
+          onPick: function (node) {
+            revealInKnowledge(doc, formatFacetToken('concept', node.id))
+          },
+        },
       )
     } catch (err) {
       // The schema in words below still explains the domaiNN without the diagram.
       if (typeof console !== 'undefined' && console.warn)
         console.warn('nn-console: schema diagram failed', err)
-    }
-    if (chart) {
-      chart.on('click', function (params) {
-        if (params.dataType === 'node')
-          revealInKnowledge(doc, formatFacetToken('concept', params.name))
-      })
     }
   }
 
@@ -23380,6 +22927,7 @@ if (typeof window !== 'undefined') {
     compileChartSeries: compileChartSeries,
     monthAxis: monthAxis,
     renderChart: renderChart,
+    renderGraph: renderGraph,
     renderCharts: renderCharts,
     renderTimelineGrid: renderTimelineGrid,
     createViewRegistry: createViewRegistry,
