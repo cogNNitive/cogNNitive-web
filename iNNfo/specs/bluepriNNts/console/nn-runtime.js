@@ -7070,11 +7070,18 @@
     if (!host) return
     host.innerHTML = ''
     var models = summaryModels(meta)
-    var elements = (model && Array.isArray(model.elements) ? model.elements : []).filter(
-      function (e) {
-        return e && e.modelId !== 'changes'
-      },
-    )
+    // Elements counts domain content. A derived document — the changes ledger, a procedure
+    // catalog — is scaffolding the exporter fabricates, so counting its elements makes the
+    // number follow the change history instead of the model (#948).
+    var derivedModelIds = {}
+    models.forEach(function (m) {
+      if (m && m.ownership === 'derived') derivedModelIds[String(m.id)] = true
+    })
+    var allElements = model && Array.isArray(model.elements) ? model.elements : []
+    var elements = allElements.filter(function (e) {
+      return e && e.modelId !== 'changes' && !derivedModelIds[String(e.modelId)]
+    })
+    var derivedElements = allElements.length - elements.length
     var conceptNames = metamodelConceptNames(schema, elements)
     var changes = model && Array.isArray(model.changes) ? model.changes : []
     var pending = changes.filter(function (c) {
@@ -7157,7 +7164,13 @@
     kpis.appendChild(kpiCard('Instances', String(instanceModels.length), instanceSub))
 
     kpis.appendChild(kpiCard('Concepts', String(conceptNames.length), 'types of card'))
-    kpis.appendChild(kpiCard('Elements', String(elements.length), 'cards across all models'))
+    kpis.appendChild(
+      kpiCard(
+        'Elements',
+        String(elements.length),
+        derivedElements > 0 ? derivedElements + ' in derived documents' : 'cards of content models',
+      ),
+    )
     kpis.appendChild(
       kpiCard('Sources', String(Number(domain.sourceCount) || 0), 'documents the models cite'),
     )
