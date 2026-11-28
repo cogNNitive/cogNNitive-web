@@ -72,56 +72,56 @@ agent-bootstrap:
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/domaiNN/spec_NN.md
       version: "V_0-4-2"
-      ref: "blueprints-v0.109.1"
-      commit: "2e806033c7cdeae4c2350c24a52c1ddc858a41d4"
+      ref: "blueprints-v0.110.0"
+      commit: "1a651a87a8dc4b63c5aa72525ab3339855ecea7c"
     - name: changes
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/changes/spec_NN.md
       version: "V_0-15-0"
-      ref: "blueprints-v0.109.1"
-      commit: "2e806033c7cdeae4c2350c24a52c1ddc858a41d4"
+      ref: "blueprints-v0.110.0"
+      commit: "1a651a87a8dc4b63c5aa72525ab3339855ecea7c"
     - name: sidecar
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/sidecar/spec_NN.md
       version: "V_0-2-1"
-      ref: "blueprints-v0.109.1"
-      commit: "2e806033c7cdeae4c2350c24a52c1ddc858a41d4"
+      ref: "blueprints-v0.110.0"
+      commit: "1a651a87a8dc4b63c5aa72525ab3339855ecea7c"
     - name: sources
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/sources/spec_NN.md
       version: "V_0-4-0"
-      ref: "blueprints-v0.109.1"
-      commit: "2e806033c7cdeae4c2350c24a52c1ddc858a41d4"
+      ref: "blueprints-v0.110.0"
+      commit: "1a651a87a8dc4b63c5aa72525ab3339855ecea7c"
     - name: artifacts
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/artifacts/spec_NN.md
       version: "V_0-5-2"
-      ref: "blueprints-v0.109.1"
-      commit: "2e806033c7cdeae4c2350c24a52c1ddc858a41d4"
+      ref: "blueprints-v0.110.0"
+      commit: "1a651a87a8dc4b63c5aa72525ab3339855ecea7c"
     - name: procedures
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/procedures/spec_NN.md
       version: "V_0-7-0"
-      ref: "blueprints-v0.109.1"
-      commit: "2e806033c7cdeae4c2350c24a52c1ddc858a41d4"
+      ref: "blueprints-v0.110.0"
+      commit: "1a651a87a8dc4b63c5aa72525ab3339855ecea7c"
     - name: executions
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/executions/spec_NN.md
       version: "V_0-7-2"
-      ref: "blueprints-v0.109.1"
-      commit: "2e806033c7cdeae4c2350c24a52c1ddc858a41d4"
+      ref: "blueprints-v0.110.0"
+      commit: "1a651a87a8dc4b63c5aa72525ab3339855ecea7c"
     - name: blank
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/blank/spec_NN.md
       version: "V_0-4-2"
-      ref: "blueprints-v0.109.1"
-      commit: "2e806033c7cdeae4c2350c24a52c1ddc858a41d4"
+      ref: "blueprints-v0.110.0"
+      commit: "1a651a87a8dc4b63c5aa72525ab3339855ecea7c"
     - name: coNNtent
       repo: cogNNitive/cogNNitive-web
       path: iNNfo/specs/bluepriNNts/coNNtent/spec_NN.md
       version: "V_0-32-7"
-      ref: "blueprints-v0.109.1"
-      commit: "2e806033c7cdeae4c2350c24a52c1ddc858a41d4"
+      ref: "blueprints-v0.110.0"
+      commit: "1a651a87a8dc4b63c5aa72525ab3339855ecea7c"
   console-assets:
     - file: iNNfo/specs/bluepriNNts/console/nn-console.bundle.js
       version: "0.64.0"
