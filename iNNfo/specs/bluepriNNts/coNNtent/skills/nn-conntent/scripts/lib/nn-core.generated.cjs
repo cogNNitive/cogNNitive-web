@@ -7383,12 +7383,12 @@ var require_dist = __commonJS({
 });
 
 // iNNfo/packages/nn-core/dist/types/parser.js
-function normalizeConceptType(type) {
+function normalizeConceptType2(type) {
   if (type === "model")
     return "knowledge";
   return type;
 }
-function normalizeFieldType(type) {
+function normalizeFieldType2(type) {
   if (type === "model")
     return "knowledge";
   return type;
@@ -8692,7 +8692,7 @@ function invalid(template, why) {
     message: `placement "${template}" is invalid: ${why}`
   };
 }
-function parsePlacement(template, opts) {
+function parsePlacement2(template, opts) {
   if (template.trim() === "")
     return invalid(template, "the template is empty");
   if (template.includes("\\"))
@@ -8750,7 +8750,7 @@ function parsePlacement(template, opts) {
 function nonEmpty(v) {
   return typeof v === "string" && v.trim() !== "" ? v.trim() : void 0;
 }
-function readStorage(fields) {
+function readStorage2(fields) {
   const rawMode = nonEmpty(fields["storage"]);
   const container = nonEmpty(fields["container"]);
   const placement = nonEmpty(fields["placement"]);
@@ -8758,7 +8758,7 @@ function readStorage(fields) {
     return void 0;
   const storage = { mode: "compact" };
   if (rawMode) {
-    const mode = STORAGE_MODES.find((m) => m === rawMode.toLowerCase());
+    const mode = STORAGE_MODES2.find((m) => m === rawMode.toLowerCase());
     if (mode)
       storage.mode = mode;
     else
@@ -8770,7 +8770,7 @@ function readStorage(fields) {
     storage.placement = placement;
   return storage;
 }
-function validateStorage(concepts) {
+function validateStorage2(concepts) {
   const diagnostics = [];
   const byName = new Map(concepts.map((c) => [c.name.toLowerCase(), c]));
   const report = (code, concept, property, detail) => {
@@ -8788,7 +8788,7 @@ function validateStorage(concepts) {
       continue;
     const name = concept.name;
     if (storage.unknownMode !== void 0) {
-      report("STORAGE_UNKNOWN_MODE", name, "storage", `storage "${storage.unknownMode}" is not a known mode; use one of: ${STORAGE_MODES.join(", ")}`);
+      report("STORAGE_UNKNOWN_MODE", name, "storage", `storage "${storage.unknownMode}" is not a known mode; use one of: ${STORAGE_MODES2.join(", ")}`);
       continue;
     }
     if (storage.mode === "compact") {
@@ -8802,7 +8802,7 @@ function validateStorage(concepts) {
       report("PLACEMENT_REQUIRED", name, "placement", 'a distributed concept must declare placement:: (for example placement:: "series/{slug}/"); add it');
       continue;
     }
-    const result = parsePlacement(storage.placement, { hasContainer: storage.container !== void 0 });
+    const result = parsePlacement2(storage.placement, { hasContainer: storage.container !== void 0 });
     if (!result.ok) {
       report("PLACEMENT_INVALID", name, "placement", `${result.message}; fix the template`);
       continue;
@@ -8888,11 +8888,11 @@ function validateStorage(concepts) {
   }
   return diagnostics;
 }
-var STORAGE_MODES, LITERAL_RE, RESERVED_LITERALS, SLUG_TOKEN, CONTAINER_TOKEN;
+var STORAGE_MODES2, LITERAL_RE, RESERVED_LITERALS, SLUG_TOKEN, CONTAINER_TOKEN;
 var init_storage = __esm({
   "iNNfo/packages/nn-core/dist/schema/storage.js"() {
     "use strict";
-    STORAGE_MODES = ["compact", "distributed"];
+    STORAGE_MODES2 = ["compact", "distributed"];
     LITERAL_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
     RESERVED_LITERALS = /* @__PURE__ */ new Set(["archive", "staging", "specs", "backups"]);
     SLUG_TOKEN = "{slug}";
@@ -9111,23 +9111,23 @@ var init_resolve = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/schema/writePolicy.js
-function isModelClosed(frontmatter) {
-  return frontmatter?.[MODEL_CLOSED_KEY] === true;
+function isModelClosed2(frontmatter) {
+  return frontmatter?.[MODEL_CLOSED_KEY2] === true;
 }
-function parseWritePolicy(raw) {
+function parseWritePolicy2(raw) {
   if (typeof raw !== "string")
     return void 0;
   const value = raw.trim().toLowerCase();
-  return WRITE_POLICIES.find((p) => p === value);
+  return WRITE_POLICIES2.find((p) => p === value);
 }
-function readWritePolicy(fields) {
-  const raw = fields[WRITE_POLICY_KEY];
+function readWritePolicy2(fields) {
+  const raw = fields[WRITE_POLICY_KEY2];
   if (raw === void 0 || raw === null || typeof raw === "string" && raw.trim() === "")
     return void 0;
-  const policy = parseWritePolicy(raw);
+  const policy = parseWritePolicy2(raw);
   return policy ? { policy } : { unknown: String(raw).trim() };
 }
-function validateWritePolicy(concepts) {
+function validateWritePolicy2(concepts) {
   const diagnostics = [];
   for (const concept of concepts) {
     const unknown = concept.writePolicy?.unknown;
@@ -9136,13 +9136,13 @@ function validateWritePolicy(concepts) {
     diagnostics.push({
       code: "WRITE_POLICY_UNKNOWN",
       severity: "error",
-      path: `Concept Definition.${concept.name}.${WRITE_POLICY_KEY}`,
-      message: `WRITE_POLICY_UNKNOWN: concept "${concept.name}" - write_policy "${unknown}" is not a known policy; use one of: ${WRITE_POLICIES.join(", ")}`
+      path: `Concept Definition.${concept.name}.${WRITE_POLICY_KEY2}`,
+      message: `WRITE_POLICY_UNKNOWN: concept "${concept.name}" - write_policy "${unknown}" is not a known policy; use one of: ${WRITE_POLICIES2.join(", ")}`
     });
   }
   return diagnostics;
 }
-function writeOperationOf(op) {
+function writeOperationOf2(op) {
   switch (op) {
     case "add_element":
     case "add_model":
@@ -9169,17 +9169,17 @@ function policyOfAllowed(allowed) {
     return "append-only";
   return "read-only";
 }
-function resolveWritePolicy(input) {
+function resolveWritePolicy2(input) {
   let base;
   let declaredBy;
   if (input.concept) {
     base = input.concept.policy ?? "read-only";
     declaredBy = "concept";
   } else if (input.blueprint !== void 0 && input.blueprint !== null && String(input.blueprint).trim() !== "") {
-    base = parseWritePolicy(input.blueprint) ?? "read-only";
+    base = parseWritePolicy2(input.blueprint) ?? "read-only";
     declaredBy = "blueprint";
   } else {
-    base = DEFAULT_WRITE_POLICY;
+    base = DEFAULT_WRITE_POLICY2;
     declaredBy = "default";
   }
   const scopes = input.scopes ?? [];
@@ -9188,13 +9188,13 @@ function resolveWritePolicy(input) {
     return { policy: base, allowed: ALLOWED[base], declaredBy, unknownScopes, explain: null };
   }
   const nodes = scopes.map((node) => {
-    if (!Object.hasOwn(node.values, WRITE_POLICY_KEY))
+    if (!Object.hasOwn(node.values, WRITE_POLICY_KEY2))
       return { ...node, isolate: false };
-    const raw = node.values[WRITE_POLICY_KEY];
-    const parsed = parseWritePolicy(raw);
+    const raw = node.values[WRITE_POLICY_KEY2];
+    const parsed = parseWritePolicy2(raw);
     if (!parsed)
       unknownScopes.push({ scope: node.id, value: String(raw) });
-    const values = { ...node.values, [WRITE_POLICY_KEY]: [...ALLOWED[parsed ?? "read-only"]] };
+    const values = { ...node.values, [WRITE_POLICY_KEY2]: [...ALLOWED[parsed ?? "read-only"]] };
     return { ...node, isolate: false, values };
   });
   const floor = {
@@ -9202,9 +9202,9 @@ function resolveWritePolicy(input) {
     kind: "floor",
     doc: null,
     isolate: false,
-    values: { [WRITE_POLICY_KEY]: [...ALLOWED[base]] }
+    values: { [WRITE_POLICY_KEY2]: [...ALLOWED[base]] }
   };
-  const folded = resolve6({ floor, nodes }, WRITE_POLICY_KEY, "restrict");
+  const folded = resolve6({ floor, nodes }, WRITE_POLICY_KEY2, "restrict");
   if (!folded.ok) {
     return { policy: "read-only", allowed: [], declaredBy, unknownScopes, explain: null };
   }
@@ -9212,8 +9212,8 @@ function resolveWritePolicy(input) {
   const policy = policyOfAllowed(allowedRaw);
   return { policy, allowed: ALLOWED[policy], declaredBy, unknownScopes, explain: folded.explain };
 }
-function writePolicyViolation(policy, op, concept) {
-  const operation = writeOperationOf(op);
+function writePolicyViolation2(policy, op, concept) {
+  const operation = writeOperationOf2(op);
   if (operation === null || ALLOWED[policy].includes(operation))
     return null;
   return {
@@ -9221,15 +9221,15 @@ function writePolicyViolation(policy, op, concept) {
     message: `WRITE_POLICY_DENIED: concept "${concept}" is ${policy}; "${op}" is a ${operation} and only ${ALLOWED[policy].length === 0 ? "no write" : ALLOWED[policy].join(", ")} is allowed`
   };
 }
-var WRITE_POLICIES, WRITE_POLICY_KEY, DEFAULT_WRITE_POLICY, MODEL_CLOSED_KEY, ALLOWED;
+var WRITE_POLICIES2, WRITE_POLICY_KEY2, DEFAULT_WRITE_POLICY2, MODEL_CLOSED_KEY2, ALLOWED;
 var init_writePolicy = __esm({
   "iNNfo/packages/nn-core/dist/schema/writePolicy.js"() {
     "use strict";
     init_resolve();
-    WRITE_POLICIES = ["mutable", "append-only", "read-only"];
-    WRITE_POLICY_KEY = "write_policy";
-    DEFAULT_WRITE_POLICY = "mutable";
-    MODEL_CLOSED_KEY = "closed";
+    WRITE_POLICIES2 = ["mutable", "append-only", "read-only"];
+    WRITE_POLICY_KEY2 = "write_policy";
+    DEFAULT_WRITE_POLICY2 = "mutable";
+    MODEL_CLOSED_KEY2 = "closed";
     ALLOWED = {
       mutable: ["add", "update", "remove"],
       "append-only": ["add"],
@@ -9244,7 +9244,7 @@ function declaredTransitionsFor2(declared2, concept, fieldName) {
     return void 0;
   return declared2.get(concept.toLowerCase())?.get(fieldName.toLowerCase());
 }
-function buildDeclaredTransitions(concepts) {
+function buildDeclaredTransitions2(concepts) {
   const out = /* @__PURE__ */ new Map();
   for (const concept of concepts) {
     if (!concept.fields)
@@ -9261,7 +9261,7 @@ function buildDeclaredTransitions(concepts) {
   }
   return out;
 }
-function parseTransitions(raw) {
+function parseTransitions2(raw) {
   let value = raw;
   if (typeof raw === "string") {
     const trimmed = raw.trim();
@@ -9292,7 +9292,7 @@ var init_transitions = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/schema/extract.js
-function asString(v) {
+function asString2(v) {
   return typeof v === "string" && v.trim() !== "" ? v : void 0;
 }
 function asStringArray(v) {
@@ -9307,11 +9307,11 @@ function asNumber(v) {
     return Number(v);
   return void 0;
 }
-function asObject(v) {
+function asObject2(v) {
   return v && typeof v === "object" && !Array.isArray(v) ? v : void 0;
 }
 function cleanWikilink(v) {
-  const str3 = asString(v);
+  const str3 = asString2(v);
   if (!str3)
     return void 0;
   const trimmed = str3.trim();
@@ -9321,33 +9321,33 @@ function cleanWikilink(v) {
   }
   return trimmed !== "" ? trimmed : void 0;
 }
-function extractBlueprintSchema(parsed) {
+function extractBlueprintSchema2(parsed) {
   const concepts = [];
   const fieldsByConcept = /* @__PURE__ */ new Map();
   const globalFields = [];
-  for (const el of parsed.elements.get(CONCEPT_DEFINITION) ?? []) {
+  for (const el of parsed.elements.get(CONCEPT_DEFINITION2) ?? []) {
     const parent = cleanWikilink(el.fields["parent"]);
     const concept = {
       name: el.name,
       parent,
-      type: normalizeConceptType(asString(el.fields["type"]) ?? "text"),
-      icon: asString(el.fields["icon"]),
-      color: asString(el.fields["color"]),
+      type: normalizeConceptType2(asString2(el.fields["type"]) ?? "text"),
+      icon: asString2(el.fields["icon"]),
+      color: asString2(el.fields["color"]),
       weight: asNumber(el.fields["weight"])
     };
-    const conceptDescription = asString(el.fields["description"]);
+    const conceptDescription = asString2(el.fields["description"]);
     if (conceptDescription)
       concept.description = conceptDescription;
-    const storage = readStorage(el.fields);
+    const storage = readStorage2(el.fields);
     if (storage)
       concept.storage = storage;
-    const writePolicy = readWritePolicy(el.fields);
+    const writePolicy = readWritePolicy2(el.fields);
     if (writePolicy)
       concept.writePolicy = writePolicy;
     concepts.push(concept);
     fieldsByConcept.set(concept.name, []);
   }
-  for (const el of parsed.elements.get(FIELD_DEFINITION) ?? []) {
+  for (const el of parsed.elements.get(FIELD_DEFINITION2) ?? []) {
     const rawConcept = el.fields["concept"];
     let scope = "concept";
     let targets;
@@ -9371,13 +9371,13 @@ function extractBlueprintSchema(parsed) {
     }
     if (!owner && !targets && scope !== "*")
       continue;
-    const targetBlueprint = asString(el.fields["target_blueprint"]);
+    const targetBlueprint = asString2(el.fields["target_blueprint"]);
     const multiple = el.fields["multiple"] === true || el.fields["multiple"] === "true";
-    const widget = asString(el.fields["widget"]);
-    const widgetConfig = asObject(el.fields["widget_config"]);
+    const widget = asString2(el.fields["widget"]);
+    const widgetConfig = asObject2(el.fields["widget_config"]);
     const field = {
       name: el.name,
-      type: normalizeFieldType(asString(el.fields["type"]) ?? "string"),
+      type: normalizeFieldType2(asString2(el.fields["type"]) ?? "string"),
       options: asStringArray(el.fields["options"]),
       target_concepts: asStringArray(el.fields["target_concepts"]),
       target_blueprint: targetBlueprint,
@@ -9389,13 +9389,13 @@ function extractBlueprintSchema(parsed) {
       field.widget = widget;
     if (widgetConfig)
       field.widgetConfig = widgetConfig;
-    const fieldDescription = asString(el.fields["description"]);
+    const fieldDescription = asString2(el.fields["description"]);
     if (fieldDescription)
       field.description = fieldDescription;
-    const optionsFrom = asString(el.fields["options_from"]);
+    const optionsFrom = asString2(el.fields["options_from"]);
     if (optionsFrom)
       field.options_from = optionsFrom;
-    const transitions = parseTransitions(el.fields["transitions"]);
+    const transitions = parseTransitions2(el.fields["transitions"]);
     if (transitions)
       field.transitions = transitions;
     if (scope === "concept" && owner) {
@@ -9418,23 +9418,23 @@ function extractBlueprintSchema(parsed) {
     if (fields && fields.length > 0)
       concept.fields = fields;
   }
-  const matrices = (parsed.elements.get(MATRIX_DEFINITION) ?? []).map((el) => {
+  const matrices = (parsed.elements.get(MATRIX_DEFINITION2) ?? []).map((el) => {
     const decl = {
       name: el.name,
-      source: asString(el.fields["source"]) ?? "",
-      target: asString(el.fields["target"]) ?? "",
-      params: asString(el.fields["params"]) ?? ""
+      source: asString2(el.fields["source"]) ?? "",
+      target: asString2(el.fields["target"]) ?? "",
+      params: asString2(el.fields["params"]) ?? ""
     };
     const values = asStringArray(el.fields["values"]);
     if (values)
       decl.values = values;
-    const widget = asString(el.fields["widget"]);
+    const widget = asString2(el.fields["widget"]);
     if (widget)
       decl.widgetType = widget;
-    const widgetConfig = asObject(el.fields["widget_config"]);
+    const widgetConfig = asObject2(el.fields["widget_config"]);
     if (widgetConfig)
       decl.widgetConfig = widgetConfig;
-    const description = asString(el.fields["description"]);
+    const description = asString2(el.fields["description"]);
     if (description)
       decl.description = description;
     return decl;
@@ -9461,7 +9461,7 @@ function extractBlueprintSchema(parsed) {
   }
   return result;
 }
-var CONCEPT_DEFINITION, FIELD_DEFINITION, MATRIX_DEFINITION;
+var CONCEPT_DEFINITION2, FIELD_DEFINITION2, MATRIX_DEFINITION2;
 var init_extract = __esm({
   "iNNfo/packages/nn-core/dist/schema/extract.js"() {
     "use strict";
@@ -9470,9 +9470,9 @@ var init_extract = __esm({
     init_storage();
     init_writePolicy();
     init_transitions();
-    CONCEPT_DEFINITION = "Concept Definition";
-    FIELD_DEFINITION = "Field Definition";
-    MATRIX_DEFINITION = "Matrix Definition";
+    CONCEPT_DEFINITION2 = "Concept Definition";
+    FIELD_DEFINITION2 = "Field Definition";
+    MATRIX_DEFINITION2 = "Matrix Definition";
   }
 });
 
@@ -9504,10 +9504,10 @@ function canonicalValue2(v, key) {
     return v.trim();
   return v;
 }
-function canonicalizeDefinition(def) {
+function canonicalizeDefinition2(def) {
   return JSON.stringify(canonicalValue2(def));
 }
-function applyAliasToSchema(schema, alias) {
+function applyAliasToSchema2(schema, alias) {
   if (!alias || !alias.concepts && !alias.fields) {
     return schema;
   }
@@ -9605,7 +9605,7 @@ function expandFieldTargets(concepts, globalFields, sourceLabel, errors, provena
         const key = gf.field.name.toLowerCase();
         const prior = provenance.starField.get(key);
         if (prior) {
-          if (canonicalizeDefinition(prior.def) !== canonicalizeDefinition(gf.field)) {
+          if (canonicalizeDefinition2(prior.def) !== canonicalizeDefinition2(gf.field)) {
             errors.push({
               path: `includes.Field.${gf.field.name}`,
               message: `[COMPOSITION_COLLISION] Field Definition "${gf.field.name}" with concept:: * collision detected between included templates "${prior.source}" and "${sourceLabel}". Use frontmatter \`alias\` to resolve collisions.`,
@@ -9654,7 +9654,7 @@ function mergeDefinition(incoming, incomingSource, kindLabel, seen, target, erro
   const key = incoming.name.toLowerCase();
   const prior = seen.get(key);
   if (prior) {
-    if (canonicalizeDefinition(prior.def) !== canonicalizeDefinition(incoming)) {
+    if (canonicalizeDefinition2(prior.def) !== canonicalizeDefinition2(incoming)) {
       if (!isHost && prior.source !== incomingSource) {
         errors.push({
           path: `includes.${kindLabel}.${incoming.name}`,
@@ -9710,9 +9710,9 @@ function mergeSchemaInto(acc, incoming, incomingSource, provenance, errors, isHo
     }
   }
 }
-function resolveBlueprintSchema(templateContent, resolveInclude, _seen = /* @__PURE__ */ new Set(), _depth = 0, _provenance) {
+function resolveBlueprintSchema2(templateContent, resolveInclude, _seen = /* @__PURE__ */ new Set(), _depth = 0, _provenance) {
   const parsed = parseKnowledge2(templateContent);
-  const local = extractBlueprintSchema(parsed);
+  const local = extractBlueprintSchema2(parsed);
   const includes = parsed.frontmatter?.includes ?? [];
   const selfLabel = String(parsed.frontmatter?.title ?? "this template");
   const errors = [];
@@ -9731,7 +9731,7 @@ function resolveBlueprintSchema(templateContent, resolveInclude, _seen = /* @__P
     }
     attachDeclaredBy(local, provenance, declMetaOf(parsed.frontmatter, selfLabel));
     if (_depth === 0 && includes.length === 0) {
-      errors.push(...validateStorage(local.concepts), ...validateWritePolicy(local.concepts));
+      errors.push(...validateStorage2(local.concepts), ...validateWritePolicy2(local.concepts));
     }
     return { schema: local, errors };
   }
@@ -9767,9 +9767,9 @@ function resolveBlueprintSchema(templateContent, resolveInclude, _seen = /* @__P
       });
       continue;
     }
-    const nested = resolveBlueprintSchema(content, resolveInclude, /* @__PURE__ */ new Set([..._seen, key]), _depth + 1, provenance);
+    const nested = resolveBlueprintSchema2(content, resolveInclude, /* @__PURE__ */ new Set([..._seen, key]), _depth + 1, provenance);
     errors.push(...nested.errors);
-    const aliasedSchema = ref.alias ? applyAliasToSchema(nested.schema, ref.alias) : nested.schema;
+    const aliasedSchema = ref.alias ? applyAliasToSchema2(nested.schema, ref.alias) : nested.schema;
     const includedLabel = String(parseKnowledge2(content).frontmatter?.title ?? ref.name);
     provenance.meta.set(includedLabel, declMetaOf(parseKnowledge2(content).frontmatter, includedLabel, ref.url || ref.name));
     mergeSchemaInto(base, aliasedSchema, includedLabel, provenance, errors, false);
@@ -9804,7 +9804,7 @@ function resolveBlueprintSchema(templateContent, resolveInclude, _seen = /* @__P
   if (_depth === 0) {
     attachDeclaredBy(base, provenance, declMetaOf(parsed.frontmatter, selfLabel));
     if (!errors.some((e) => e.path.startsWith("includes.") && /could not be resolved/.test(e.message))) {
-      errors.push(...validateStorage(base.concepts), ...validateWritePolicy(base.concepts));
+      errors.push(...validateStorage2(base.concepts), ...validateWritePolicy2(base.concepts));
     }
   }
   return { schema: base, errors };
@@ -9822,7 +9822,7 @@ var init_compose = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/schema/declaredField.js
-function findDeclaredField(schema, conceptType, fieldName) {
+function findDeclaredField2(schema, conceptType, fieldName) {
   const concept = schema?.concepts.find((c) => c.name.toLowerCase() === (conceptType ?? "").toLowerCase());
   const field = concept?.fields?.find((f) => f.name.toLowerCase() === fieldName.toLowerCase());
   if (!field)
@@ -9841,7 +9841,7 @@ function valueKey(v) {
     return "";
   return String(v).trim().toLowerCase();
 }
-function validateFieldValue(def, value, path2) {
+function validateFieldValue2(def, value, path2) {
   const diagnostics = [];
   if (value === void 0 || value === null) {
     return diagnostics;
@@ -9933,13 +9933,13 @@ var init_field_values = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/validator/constants.js
-var RESERVED_CONCEPT_NAMES, WIDGET_CONFIG_KEYS;
+var RESERVED_CONCEPT_NAMES2, WIDGET_CONFIG_KEYS2;
 var init_constants = __esm({
   "iNNfo/packages/nn-core/dist/validator/constants.js"() {
     "use strict";
     init_parser();
-    RESERVED_CONCEPT_NAMES = /* @__PURE__ */ new Set(["Concepts", "Elements", "Markers"]);
-    WIDGET_CONFIG_KEYS = {
+    RESERVED_CONCEPT_NAMES2 = /* @__PURE__ */ new Set(["Concepts", "Elements", "Markers"]);
+    WIDGET_CONFIG_KEYS2 = {
       scale: ["min", "max", "step", "unit"],
       set: ["max_selections"],
       cycle: [],
@@ -9950,7 +9950,7 @@ var init_constants = __esm({
 });
 
 // iNNfo/packages/nn-core/dist/schema/metaschema.js
-function checkElementsAgainstSchema(elementGroups, concepts, opts = {}) {
+function checkElementsAgainstSchema2(elementGroups, concepts, opts = {}) {
   const unknownProperty = opts.unknownProperty ?? "warning";
   const conceptByName = new Map(concepts.map((c) => [c.name.toLowerCase(), c]));
   const diagnostics = [];
@@ -9991,14 +9991,14 @@ function checkElementsAgainstSchema(elementGroups, concepts, opts = {}) {
           }
           continue;
         }
-        const fieldDiags = validateFieldValue(fieldDef, rawVal, `${def.name}.${el.name}.${key}`);
+        const fieldDiags = validateFieldValue2(fieldDef, rawVal, `${def.name}.${el.name}.${key}`);
         diagnostics.push(...fieldDiags);
       }
     }
   }
   return diagnostics;
 }
-var REQUIRED_BY_PRIMITIVE;
+var REQUIRED_BY_PRIMITIVE2;
 var init_metaschema = __esm({
   "iNNfo/packages/nn-core/dist/schema/metaschema.js"() {
     "use strict";
@@ -10007,10 +10007,10 @@ var init_metaschema = __esm({
     init_field_values();
     init_transitions();
     init_constants();
-    REQUIRED_BY_PRIMITIVE = {
-      [CONCEPT_DEFINITION]: ["type"],
-      [FIELD_DEFINITION]: ["concept", "type"],
-      [MATRIX_DEFINITION]: ["source", "target"]
+    REQUIRED_BY_PRIMITIVE2 = {
+      [CONCEPT_DEFINITION2]: ["type"],
+      [FIELD_DEFINITION2]: ["concept", "type"],
+      [MATRIX_DEFINITION2]: ["source", "target"]
     };
   }
 });
@@ -10019,19 +10019,19 @@ var init_metaschema = __esm({
 function normalizeKey(str3) {
   return str3.trim().toLowerCase().replace(/\.(md|markdown)$/i, "").replace(/_(nn|format|f)$/i, "");
 }
-function findCanonicalBlueprint(identifier) {
+function findCanonicalBlueprint2(identifier) {
   if (!identifier)
     return null;
   const rawClean = identifier.trim();
   const lower = rawClean.toLowerCase();
-  if (CANONICAL_BLUEPRINTS[lower]) {
-    return CANONICAL_BLUEPRINTS[lower];
+  if (CANONICAL_BLUEPRINTS2[lower]) {
+    return CANONICAL_BLUEPRINTS2[lower];
   }
   const normalized = normalizeKey(rawClean);
-  if (CANONICAL_BLUEPRINTS[normalized]) {
-    return CANONICAL_BLUEPRINTS[normalized];
+  if (CANONICAL_BLUEPRINTS2[normalized]) {
+    return CANONICAL_BLUEPRINTS2[normalized];
   }
-  for (const tmpl of Object.values(CANONICAL_BLUEPRINTS)) {
+  for (const tmpl of Object.values(CANONICAL_BLUEPRINTS2)) {
     if (tmpl.name.toLowerCase() === lower || normalizeKey(tmpl.name) === normalized) {
       return tmpl;
     }
@@ -10047,23 +10047,23 @@ function findCanonicalBlueprint(identifier) {
   const parentPart = urlParts.length > 1 ? urlParts[urlParts.length - 2] : "";
   if (lastPart) {
     const lastNorm = normalizeKey(lastPart);
-    if (CANONICAL_BLUEPRINTS[lastNorm]) {
-      return CANONICAL_BLUEPRINTS[lastNorm];
+    if (CANONICAL_BLUEPRINTS2[lastNorm]) {
+      return CANONICAL_BLUEPRINTS2[lastNorm];
     }
     if (parentPart) {
       const parentNorm = normalizeKey(parentPart);
-      if (CANONICAL_BLUEPRINTS[parentNorm]) {
-        return CANONICAL_BLUEPRINTS[parentNorm];
+      if (CANONICAL_BLUEPRINTS2[parentNorm]) {
+        return CANONICAL_BLUEPRINTS2[parentNorm];
       }
     }
   }
   const stemMatch = lastPart.match(/^([A-Za-z][A-Za-z0-9_-]*?)_V_\d+-\d+-\d+_NN\.md$/i);
   if (stemMatch) {
     const stemNorm = normalizeKey(stemMatch[1]);
-    if (CANONICAL_BLUEPRINTS[stemNorm]) {
-      return CANONICAL_BLUEPRINTS[stemNorm];
+    if (CANONICAL_BLUEPRINTS2[stemNorm]) {
+      return CANONICAL_BLUEPRINTS2[stemNorm];
     }
-    for (const tmpl of Object.values(CANONICAL_BLUEPRINTS)) {
+    for (const tmpl of Object.values(CANONICAL_BLUEPRINTS2)) {
       if (tmpl.aliases.some((a) => normalizeKey(a) === stemNorm)) {
         return tmpl;
       }
@@ -10071,7 +10071,7 @@ function findCanonicalBlueprint(identifier) {
   }
   return null;
 }
-var INNFO_V_0_5_0_SPEC_CONTENT, DEFINNITION_SPEC_CONTENT, PROCEDURES_SPEC_CONTENT, EXECUTIONS_SPEC_CONTENT, SOURCES_SPEC_CONTENT, ARTIFACTS_SPEC_CONTENT, SIDECAR_SPEC_CONTENT, CHANGES_SPEC_CONTENT, DOMAINN_SPEC_CONTENT, BLANK_SPEC_CONTENT, INNFO_V_0_7_0_SPEC_CONTENT, INNFO_V_0_8_0_SPEC_CONTENT, INNFO_V_0_9_0_SPEC_CONTENT, CANONICAL_BLUEPRINTS;
+var INNFO_V_0_5_0_SPEC_CONTENT, DEFINNITION_SPEC_CONTENT, PROCEDURES_SPEC_CONTENT, EXECUTIONS_SPEC_CONTENT, SOURCES_SPEC_CONTENT, ARTIFACTS_SPEC_CONTENT, SIDECAR_SPEC_CONTENT, CHANGES_SPEC_CONTENT, DOMAINN_SPEC_CONTENT, BLANK_SPEC_CONTENT, INNFO_V_0_7_0_SPEC_CONTENT, INNFO_V_0_8_0_SPEC_CONTENT, INNFO_V_0_9_0_SPEC_CONTENT, CANONICAL_BLUEPRINTS2;
 var init_canonical_registry = __esm({
   "iNNfo/packages/nn-core/dist/schema/canonical-registry.js"() {
     "use strict";
@@ -10088,7 +10088,7 @@ var init_canonical_registry = __esm({
     INNFO_V_0_7_0_SPEC_CONTENT = '---\nspec_version: "V_0-7-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"\nlevel: 1\nparent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"\ntitle: "iNNfo Meta-bluepriNNt Specification"\ndescription: "Level-1 meta-bluepriNNt defining the root primitives (Concept Definition, Field Definition, Matrix Definition), multi-concept targets, multi-valued fields, widgets, concept-level inheritance, per-concept storage declaration (compact or distributed), the unified address grammar, stable element identity via immutable slugs, and the unified NN syntax: `# NN` sections, `## NN` elements, and `key:: value` properties."\nauthor: "innV0 Team"\nstatus: "Draft"\n---\n\n> [!NOTE]\n> This is an **iNNfo document** \u2014 a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).\n\n# iNNfo Meta-bluepriNNt Specification\n\n## A concrete specification for semantic modeling with concepts, elements, fields, markers, and relationships, expressed through the unified NN syntax and a self-describing meta-bluepriNNt\n\n## Philosophy\n\niNNfo is designed around five principles:\n\n1. **Rich specs, lean models**: Specification documents (levels 0\u20132) are semantically rich. kNNowledge documents (level 3) carry only data and a parent pointer. The application resolves and caches the parent chain.\n2. **Self-describing**: Every iNNfo document is valid Markdown with YAML frontmatter and the unified `NN` syntax. No proprietary tooling required to read it.\n3. **Meta-bluepriNNt**: The level-1 specification is itself a *meta-bluepriNNt*. Level-2 bluepriNNts are ordinary iNNfo documents that instantiate the root primitives \u2014 `Concept Definition`, `Field Definition`, and `Matrix Definition` \u2014 as ordinary elements in their body. There is no separate declaration format.\n4. **Relationship polymorphism**: Relationships between concepts and elements are expressed through a typed system \u2014 hierarchy, evaluable matrices, graph edges, and sequences.\n5. **Stable identity via immutable slugs**: Every entity (element, concept, matrix) possesses an explicit, immutable slug identifier (`slug::`). Display names are decoupled from identity and scoped to their concept, allowing identical display names across distinct concepts. Once assigned, a slug is permanent across renames and edits.\n\n## Objectives\n\n- Define a unified, minimal syntax: `# NN <Concept>`, `## NN <Concept>: <Element>`, immutable `slug::` declarations, and `key:: value` properties.\n- Define the **Metaplantilla Nivel 1**: the root primitives that every level-2 bluepriNNt instantiates.\n- Establish immutable slugs for elements, concepts, and matrices to preserve citations and graph stability across renames (D1).\n- Support cross-concept duplicate display names while scoping sibling display names within each concept (D3).\n- Define extension-less model identity (`model_slug`) and universal `@` addressing grammar for elements, fields, and matrix cells (D4, D5).\n- Enforce slug freezing (`freeze_slugs`) on mutation and domain-wide upgrades (D19).\n- Remove the `concepts:` / `markers:` / `matrices:` frontmatter blocks from level-2 bluepriNNts; their schema is expressed as body elements.\n- Enable machine parsing, validation, and visual rendering of kNNowledge via the parent chain resolver.\n- Maintain full human readability and Git-diffability.\n- Ensure that kNNowledge files are lightweight and never duplicate specification content.\n\n## Unified Syntax\n\niNNfo uses three structural markers. The `NN` token is required and distinguishes iNNfo structure from ordinary Markdown.\n\n| Construct | Syntax | Example |\n|---|---|---|\n| Concept section | `# NN <Concept>` (H1) | `# NN Stakeholders` |\n| Element | `## NN <Concept>: <Element>` (H2) | `## NN Stakeholders: Customer` |\n| Nested Element | `#{3,6} NN <Concept>: <Element>` (H3\u2013H6) | `### NN Layer: Title` |\n| Identity slug | `slug:: <slug>` (first property line) | `slug:: customer` |\n| Property | `key:: value` (consecutive lines) | `importance:: high` |\n\nA **Concept** is a named type declared by a bluepriNNt. A Concept section is introduced by an H1 heading `# NN <Concept>`.\n\nAn **Element** is a single instance of a Concept, declared as an H2 heading `## NN <Concept>: <Element>` within the Concept section. The `<Concept>` token names the owning concept (it MUST match the enclosing section concept for top-level H2 headings).\n\n### Hierarchical Element Headings (Level-3 Documents)\n\nLevel-3 kNNowledge documents may author child elements inline beneath their parent element using deeper Markdown headings (`### NN`, `#### NN`, up to `###### NN`), without requiring separate top-level `# NN <ChildConcept>` sections.\n\n- **Nesting Rules**: A child heading `#{3,6} NN <ChildConcept>: <Element>` attaches to the nearest shallower element heading on the heading stack. The parentage relationship (`ParentConcept -> ChildConcept`) MUST be declared as a valid direct parent-child edge in the governing bluepriNNt\'s `# NN index` (`schema.taxonomy`). Disallowed nesting is rejected by validation (`INVALID_NESTED_CONCEPT`).\n- **Parent Identity**: The child element receives `parentSlug` referencing the parent element\'s slug.\n- **Prose Separation**: Any prose body authored for the parent element belongs exclusively to the parent and concludes immediately before the child\'s heading.\n- **Backward Compatibility**: Flat H2 headings in separate `# NN <ChildConcept>` sections remain 100% valid and supported.\n\nAn **Element Slug** is declared on the line immediately following the `## NN` heading via `slug:: <slug>`. The slug MUST be lowercase kebab-case conforming to `^[a-z0-9]+(?:-[a-z0-9]+)*$`. The slug is immutable: renaming an element modifies its display name in the `## NN` heading but preserves `slug::` unchanged.\n\nA **Field** is a typed key-value property of an Element. Element properties are written on consecutive `key:: value` lines immediately after the `slug::` line (or heading), before any free-form description text.\n\n```markdown\n# NN Stakeholders\n\n## NN Stakeholders: Customer\nslug:: customer\nimportance:: high\nneeds:: [speed, accuracy]\nCustomer description text follows the properties.\n```\n\nProperty values follow a small value grammar:\n\n- Plain text \u2014 `relationship_model:: Dedicated`\n- Quoted text \u2014 `brand_name:: "Acme Inc."`\n- Numbers \u2014 `weight:: 90`\n- Booleans \u2014 `published:: true`\n- Inline arrays \u2014 `options:: [Ideation, MVP, Validation]`\n- Inline objects (JSON) \u2014 `config:: {"a": 1}`\n\nThere is exactly ONE syntax. Older documents that use the legacy `_NN` markers or\nfenced ```yaml blocks are not supported and MUST be migrated to the unified syntax.\n\n## Unified Address Grammar\n\nThere is exactly ONE grammar for pointing at a model, an element, a field, a body or a matrix cell. Every typed reference, citation, change target and tool argument uses it. A title is display text and never resolves: the title of an element can change freely without breaking a single reference.\n\n```\naddress   = model-id [ "@" unit ] / relative\nrelative  = "@" unit                      ; only inside a model document, same model\nmodel-id  = head *( "/" slug )\nhead      = 1*alnum *( ( "-" / "_" ) 1*alnum )\nslug      = 1*lower-alnum *( "-" 1*lower-alnum )\nunit      = element [ "&" ( field / "#body" ) ]\n          / slug "&" slug "&" slug        ; matrix cell: matrix & row & column\n          / "concept:" Name [ "&" field ]\n          / "matrix:" slug\n```\n\n| Target | Syntax | Resolves To |\n|---|---|---|\n| Entire model | `model-id` | The model document root |\n| Element | `model-id@element-slug` | One element instance |\n| Element field | `model-id@element-slug&field` | The value of one field |\n| Element body | `model-id@element-slug&#body` | The prose body of one element |\n| Matrix | `model-id@matrix:matrix-slug` | One matrix definition and table |\n| Matrix cell | `model-id@matrix-slug&row-slug&col-slug` | The cell at row and column |\n| Concept | `model-id@concept:Name` | One concept section; `&field` addresses a concept-level field |\n| Same model | `@element-slug` | An element of the model that contains the reference |\n\n- **Model identity.** A `model-id` is hierarchical and derived, never stored. A compact model (`kNNowledge/<stem>_NN.md`) has the stem without its `_NN` suffix as its id. An instance model (see Storage Declaration) has an id made of its container chain and its own slug, for example `villabotijos-today/intro`. The same slug under two containers is two distinct models.\n- **Reserved head.** `specs` is reserved as the head of a model id: `specs/<family>@concept:<Name>` addresses a bluepriNNt definition, not a model.\n- **Typed fields.** A field whose type is `reference`, `knowledge`, `model` or `address` holds addresses only. A relative address (`@slug`) is the canonical form inside the model that holds the element; an absolute address to the same model is not canonical.\n- **Removed forms.** A model addressed by file path, a change document addressed by heading, a title-qualified wikilink (a title, `::`, then a name inside double brackets) and a bare title are not addresses. They are rejected naming the form and the address that replaces them.\n- **Raw-file citations.** A citation of a raw file under `sources/`, and of any file that is not a model (sidecars, CSV rows, JSON pointers, plain Markdown), keeps its path grammar: `<path>.<md|csv|json>@<unit>`.\n- **Prose wikilinks.** A `[[target]]` wikilink inside Markdown prose is not a typed reference. It still resolves inside its own model by element slug first, then by display name, and a display name shared by elements of different concepts is rejected as ambiguous (`AMBIGUOUS_ELEMENT_NAME`); qualify it by using the element\'s `slug`.\n- **Resolution.** An address resolves exactly or not at all. An unresolved address reports the candidate model ids that share its last segment, and a stale address names its recorded successor when the history holds one.\n\n## Root Primitives (Metaplantilla Nivel 1)\n\nA level-2 **bluepriNNt** is an iNNfo document (level 2) that instantiates the root primitives. Each primitive is a reserved Concept name whose Elements carry the schema of the bluepriNNt.\n\n| Primitive | Reserved Concept | Purpose | Instantiation |\n|---|---|---|---|\n| `Concept Definition` | `# NN Concept Definition` | Declares one Concept of the bluepriNNt | `## NN Concept Definition: <Name>` |\n| `Field Definition` | `# NN Field Definition` | Declares one typed Field of a Concept | `## NN Field Definition: <Name>` |\n| `Matrix Definition` | `# NN Matrix Definition` | Declares one evaluable Matrix | `## NN Matrix Definition: <Name>` |\n\n### Concept Definition\n\nDeclares a Concept. The Element name is the Concept name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `type` | `text` \\| `category` \\| `weight` \\| `list` \\| `steps` \\| `sequence` \\| `knowledge` \\| `model` | Representation of the Concept (required) |\n| `icon` | string | Lucide icon identifier |\n| `color` | string | Theme color |\n| `weight` | number | Display priority (higher = more prominent) |\n| `storage` | `compact` \\| `distributed` | Where the instances of the Concept live. Absent means `compact` |\n| `container` | string | Name of the distributed Concept an instance is stored under. Only for `storage:: distributed` |\n| `placement` | string | Folder template of an instance model. Required for `storage:: distributed`, forbidden otherwise |\n\n```markdown\n# NN Concept Definition\n\n## NN Concept Definition: Stakeholders\nslug:: stakeholders\nicon:: users\ntype:: weight\ncolor:: blue\nweight:: 80\n```\n\n#### Storage Declaration\n\nA Concept declares where its instances live. The declaration is per Concept, so one bluepriNNt MAY mix both forms, and it is the only source of truth: no tool infers storage from the shape of a folder.\n\n- `storage:: compact` (the default when the property is absent): the instances are elements of one kNNowledge model.\n- `storage:: distributed`: each instance is the root of its own kNNowledge model, called an **instance model**. The child Concepts of a distributed Concept remain elements of that instance model.\n\n`placement::` is a POSIX path relative to the domaiNN root, ending in `/`. It is made of kebab-case literal segments, exactly one `{slug}` token (the instance slug) and, only when `container::` is declared, `{container}` as the first segment (it expands to the container instance\'s root folder, so containment is physical nesting). A placement MUST NOT contain `..` or a `.`-prefixed segment, MUST NOT use the literals `archive`, `staging`, `specs`, `backups` or `kNNowledge`, and MUST NOT begin with the literal `sources`. A literal after `{slug}` is allowed (`proyectos/{slug}/models/`). The container of a distributed Concept MUST itself be a distributed Concept of the same bluepriNNt, and the chain of containers MUST NOT loop. Two placements of one bluepriNNt MUST NOT be able to match the same folder.\n\n```markdown\n## NN Concept Definition: Series\nslug:: series\ntype:: list\nstorage:: distributed\nplacement:: "series/{slug}/"\n\n## NN Concept Definition: Video\nslug:: video\ntype:: list\nstorage:: distributed\ncontainer:: Series\nplacement:: "{container}/assets/{slug}/"\n```\n\nStorage composes like any other Concept property: a bluepriNNt that `includes` another inherits its declarations unchanged. The declaration changes neither the scope chain nor the way values are inherited.\n\n### Field Definition\n\nDeclares a typed Field of a Concept. The Element name is the Field name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `concept` | string or array | Name of the owning Concept Definition, list of Concepts, or `*` for all non-text concepts (required) |\n| `type` | `string` \\| `number` \\| `boolean` \\| `select` \\| `reference` \\| `markdown_inline` \\| `markdown_file` \\| `image` \\| `file` \\| `video` \\| `audio` \\| `url` \\| `knowledge` \\| `model` \\| `address` \\| `citation` | Field type (required) |\n| `multiple` | boolean | Multi-valued field flag (allowed only on `type:: select`) |\n| `widget` | `boolean` \\| `cycle` \\| `scale` \\| `set` \\| `text` | Field interaction widget |\n| `widget_config` | object | Widget configuration parameters (JSON object) |\n| `options` | array | Allowed values for `select` fields |\n| `target_concepts` | array | Target concepts for `reference` fields |\n| `description` | string | Human-readable explanation |\n| `target_blueprint` | string | Required bluepriNNt name or URL for fields of type knowledge |\n\n```markdown\n# NN Field Definition\n\n## NN Field Definition: status\nconcept:: Stakeholders\ntype:: select\noptions:: [Ideation, MVP, Validation]\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\n```\n\n**Reference Fields (`type:: reference`).** Property values for fields declared with `type:: reference` MUST be formatted using WikiLink syntax `[[Target Element]]` (e.g. `location:: [[Sal\xF3n-Comedor]]`). Bare string values without WikiLink delimiters are not parsed as active element-to-element graph references.\n\n**Knowledge Fields (`type:: knowledge` or `type:: model`).** A Field of any Concept MAY be declared `type:: knowledge` or `type:: model`. Its value is a domain-relative path, a `./`-relative path, or a WikiLink wrapping either (`[[kNNowledge/acme_business_NN.md]]`). When the Field declares `target_blueprint`, the referenced kNNowledge document\'s `parent_spec` MUST identify that bluepriNNt. Knowledge fields are followed during domaiNN traversal, so a document referenced by two parents appears once in the graph with both incoming edges \u2014 a diamond is not a cycle.\n\n**Citation Fields (`type:: citation`).** A Field declared `type:: citation` is RESERVED for the changes collection: the ONE allowed citation is `changes.evidence`, the provenance of an applied change. A kNNowledge document MUST NOT declare its own citation Field, and MUST NOT write the reserved `sources::`/`source::` property: a unit declares no provenance of its own, because its history, origin and drift are derived from the applied changes. The fields `type` may take are otherwise unchanged; `address` remains valid everywhere.\n\n**Reserved `sources::`.** `sources::` (and its singular `source::`) is reserved and banned on L3. A kNNowledge document that carries it is INVALID (`SOURCES_FIELD_BANNED`); a document that declares a `type:: citation` field is INVALID (`CITATION_FIELD_BANNED`). Evidence lives in the change that set the value, never in the model.\n\n**Address Fields (`type:: address`).** A Field declared `type:: address` holds one structural address `<target>@<unit>`: `<target>` is a workspace-relative path or a `knowledge_slug`; `<unit>` is `## Heading`, `RowID&col`, `/json/pointer`, `element-slug`, `element-slug&field`, or `matrix&row&col`. Its value MUST resolve to an existing unit; a dangling address is an **error**. `address` is the base of the address grammar: `citation` is an `address` that additionally asserts derivation (evidence), and `knowledge` is an `address` that is traversed. All three share the same parser.\n\n**Qualified Cross-Knowledge References.** A `reference` or `knowledge` Field MAY target an Element in another kNNowledge document in the same domaiNN using the qualified form `[[Document Title :: Element Name]]` or `[[model_slug@element-slug]]`.\n\n### Matrix Definition\n\nDeclares an evaluable Matrix. The Element name is the Matrix name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `source` | string | Source Concept (rows) \u2014 required |\n| `target` | string | Target Concept or reserved pseudo-Concept (columns) \u2014 required |\n| `values` | array | Allowed cell values (empty cell `-` and boolean marker `X` are always accepted) |\n| `widget` | `boolean` \\| `cycle` \\| `scale` \\| `set` \\| `text` | Cell interaction widget |\n| `widget_config` | object | Widget-specific configuration \u2014 see Widget Configuration |\n| `description` | string | Human-readable explanation |\n\n```markdown\n# NN Matrix Definition\n\n## NN Matrix Definition: problems-value propositions matrix\nslug:: problems-value-propositions\nsource:: Problems\ntarget:: Value propositions\nwidget:: set\nvalues:: [Max, Very High, High]\n```\n\n### Widget Configuration\n\n`widget_config` is an OPTIONAL inline JSON object that parameterizes the cell\ninteraction widget. It MUST be valid JSON on a single line.\n\n| Widget | Key | Type | Default | Description |\n|---|---|---|---|---|\n| `scale` | `min` | number | `0` | Minimum numeric score |\n| | `max` | number | `100` | Maximum numeric score |\n| | `step` | number | `1` | Step increment |\n| | `unit` | string | `""` | Optional display suffix (e.g. `"%"` or `"pts"`) |\n| `set` | `max_selections` | number | `undefined` | Maximum number of simultaneous selections |\n| `cycle` | (none) | | | Cycle through values in order |\n| `boolean` | `true_label` | string | `"X"` | Display text when true |\n| | `false_label` | string | `"-"` | Display text when false |\n| `text` | `max_length` | number | `200` | Character limit for cell input |\n\n### Free Matrices\n\nAn evaluable relationship between two domain Concepts (e.g. `Problems` \xD7 `Value propositions`).\n\n```markdown\n# NN matrices: problems-value propositions matrix\n\n| Problems | Solution A | Solution B |\n|---|---|---|\n| High latency | Max | High |\n| Data loss | Max | Very High |\n```\n\n### Relationship Types Block (Frontmatter)\n\nLevel-2 bluepriNNts MAY declare custom graph edge types in frontmatter under\n`relationship_types:`. A relationship type defines a typed directed connection\nbetween elements.\n\n```yaml\n---\nrelationship_types:\n  depends_on:\n    directed: true\n    label: "Depends on"\n    inverse: "Required by"\n    color: "#e06c75"\n    style: "dashed"\n  influences:\n    directed: true\n    label: "Influences"\n    color: "#61afef"\n    style: "solid"\n---\n```\n\nGraph edges are written in the kNNowledge document\'s element section using `->` syntax:\n\n```markdown\n## NN Work: Deploy\ndepends_on -> [[Build]]\ninfluences -> [[Monitoring]]\n```\n\n### Custom Guidance Headings in BluepriNNts\n\nLevel-2 bluepriNNts MAY include prose documentation sections after the schema definitions.\nThese sections provide human-readable guidance for authors and AI assistants filling out\nkNNowledge documents based on the bluepriNNt.\n\nTo prevent guidance text from being parsed as model elements, bluepriNNt authors MUST use\nregular Markdown headings (without the `NN` token) for guidance sections:\n\n```markdown\n# Concept Guidance Documentation\n\n## Stakeholders\n### Summary\nStakeholders are individuals, groups, or organizations that have an interest in or are affected by the system.\n\n### Identification Strategy\n1. Identify direct users who interact with the system daily.\n2. Identify decision makers who approve funding and strategy.\n3. Identify external parties subject to compliance or regulation.\n\n### Fields Reference\n- `importance`: Relative business impact (high, medium, low).\n- `needs`: Bulleted list of explicit operational requirements.\n```\n\n- Headings starting with `# NN` or `## NN` are **structural** (parsed as schema).\n- Headings starting with `#` or `##` (without `NN`) are **descriptive** (ignored by the schema parser).\n\n## Level 2 BluepriNNt Structure\n\nA level 2 bluepriNNt MUST follow this structure:\n\nFrontmatter:\n\n```yaml\n---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/<name>/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-5-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"\ntitle: "<BluepriNNt Title>"\nblueprint_name: "<blueprint-name>"\nblueprint_version: "V_x-y-z"\nincludes:                        # OPTIONAL \u2014 additive schema composition\n  - name: "<blueprint>"\n    url: "<immutable-URL>"\nrelationship_types:              # OPTIONAL \u2014 custom graph edges\n  ...\n---\n```\n\n### Schema Composition (`includes`)\n\nA level-2 bluepriNNt MAY declare `includes:`, an array of `{name, url}` references to\npeer level-2 bluepriNNts. `includes` composes the schemas of the included bluepriNNts into\nthe including bluepriNNt additively.\n\n#### Collision Rules\n\nWhen two included bluepriNNts (or an included bluepriNNt and the including bluepriNNt) declare a\nDefinition with the same name:\n\n1. If their canonical forms are **identical**, the collision is resolved cleanly: they\n   carry a shared Definition and still compose.\n2. If their canonical forms **differ**, it is a validation ERROR that MUST name\n   both source documents and the Definition.\n\nThe **canonical form** of a Definition is its parsed body with: property order\nnormalized, surrounding whitespace in values trimmed, and set-like arrays\n(`options`, `target_concepts`) treated as order-insensitive. Every\nactual value \u2014 `type`, `source`, `target`, `values`, `weight`,\n`description`, a Concept\'s Field set, etc. \u2014 is significant. This rule applies\nacross the whole `includes` graph (transitively, depth-first, left to right); the\n`includes` cycle check is unaffected (a diamond is not a cycle).\n\nBody:\n\n```markdown\n> [!NOTE]\n> This is an **iNNfo document**...\n\n# NN index\n* [[...]]  (the blueprint\'s root concepts)\n\n# NN Concept Definition\n## NN Concept Definition: <Concept>\nslug:: <concept-slug>\nicon:: <icon>\ntype:: <type>\ncolor:: <color>\nweight:: <n>\n\n# NN Field Definition\n## NN Field Definition: <Field>\nslug:: <field-slug>\nconcept:: <Concept>\ntype:: <type>\noptions:: [...]\ntarget_concepts:: [...]\n\n# NN Matrix Definition\n## NN Matrix Definition: <Matrix>\nslug:: <matrix-slug>\nsource:: <Concept>\ntarget:: <Concept>\nvalues:: [..]\nwidget:: set\n\n# <Blueprint Name>       (prose: Philosophy, Objectives, Specification)\n# Concept Guidance Documentation   (## <Concept> with ### Summary/Description/...)\n```\n\n## Level 3 kNNowledge Structure (Lightweight)\n\n```yaml\n---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-7-0_NN.md"\nmodel_slug: "<model-slug>"\nworkspace_id: "<workspace-id>"\nlevel: 3\nparent_spec:\n  name: "<blueprint-name>"\n  url: "<immutable-url>"\nknowledge_version: "V_x-y-z"\ntitle: "..."\n---\n\n> [!NOTE]\n> ...\n# NN index\n...\n# NN Concept\ntags:: [inherited-tag]\n\n## NN Concept: Element\nslug:: <element-slug>\nkey:: value\n...\n```\n\n## DomaiNN Structure\n\nAn iNNfo DomaiNN is a workspace directory containing one or more kNNowledge documents. The entry point is a\n`domaiNN_NN.md` (or root index) file at the DomaiNN root.\n\nStandard directory conventions:\n- `knowledge_dir`: `kNNowledge/`\n- `blueprints_dir`: `specs/bluepriNNts/`\n\n## Immutable Versioning Policy\n\n- **Published specs are frozen.** Once a specification version is released, its file is\n  never modified. Corrections or improvements require a new spec version.\n- **Migrating a kNNowledge document** to a new spec version means creating a new copy of the document\n  adapted to the new version.\n- **Parent chain resolution** always resolves to the version the document was authored\n  against.\n\n## Removed Constructs\n\nThe following are NOT part of iNNfo:\n\n- **FOLDER mode / `_F` markers** \u2014 documents are single files using `NN` markers only.\n- **Hierarchy matrices** \u2014 hierarchy is expressed only through the index block.\n- **`_FORMAT.md` filenames** \u2014 the canonical suffix is `_NN.md`.\n- **`* _NN` element bullets and fenced ```yaml property blocks** \u2014 replaced by the\n  unified `## NN` headings and `key:: value` properties.\n- **Marker Definition and item-markers matrix** \u2014 replaced by typed Field Definitions and concept-level values.\n\n## Metaschema (Self-Description)\n\nThe root primitives are described by the prose tables above **and** expressed\nmechanically, in iNNfo\'s own syntax, by the metaschema below. An application MUST\nbe able to validate any level-2 bluepriNNt by resolving this metaschema and checking\nthe bluepriNNt\'s `\u2026 Definition` elements against it.\n\n### The Metaschema\n\n```markdown\n# NN Concept Definition\n\n## NN Concept Definition: Concept Definition\ntype:: list\n\n## NN Concept Definition: Field Definition\ntype:: list\n\n## NN Concept Definition: Matrix Definition\ntype:: list\n\n# NN Field Definition\n\n## NN Field Definition: type\nconcept:: Concept Definition\ntype:: select\noptions:: [text, category, weight, list, steps, sequence, knowledge, model]\ndescription:: Representation of the Concept (required).\n\n## NN Field Definition: icon\nconcept:: Concept Definition\ntype:: string\ndescription:: Lucide icon identifier.\n\n## NN Field Definition: color\nconcept:: Concept Definition\ntype:: string\ndescription:: Theme color.\n\n## NN Field Definition: weight\nconcept:: Concept Definition\ntype:: string\ndescription:: Display priority (higher = more prominent).\n\n## NN Field Definition: storage\nconcept:: Concept Definition\ntype:: select\noptions:: [compact, distributed]\ndescription:: Where the instances of the Concept live. Absent means compact.\n\n## NN Field Definition: container\nconcept:: Concept Definition\ntype:: string\ndescription:: Name of the distributed Concept an instance is stored under.\n\n## NN Field Definition: placement\nconcept:: Concept Definition\ntype:: string\ndescription:: Folder template of an instance model (required when storage is distributed).\n\n## NN Field Definition: concept\nconcept:: Field Definition\ntype:: string\ndescription:: Name of the owning Concept Definition, list of concepts, or * (required).\n\n## NN Field Definition: type\nconcept:: Field Definition\ntype:: select\noptions:: [string, number, boolean, select, reference, markdown_inline, markdown_file, image, file, video, audio, url, knowledge, model, address, citation]\ndescription:: Field type (required).\n\n## NN Field Definition: multiple\nconcept:: Field Definition\ntype:: boolean\ndescription:: Multi-valued field flag (allowed only on select fields).\n\n## NN Field Definition: widget\nconcept:: Field Definition\ntype:: select\noptions:: [boolean, cycle, scale, set, text]\ndescription:: Field interaction widget.\n\n## NN Field Definition: widget_config\nconcept:: Field Definition\ntype:: string\ndescription:: Widget-specific configuration (inline JSON object).\n\n## NN Field Definition: options\nconcept:: Field Definition\ntype:: string\ndescription:: Allowed values for select fields (inline array).\n\n## NN Field Definition: target_concepts\nconcept:: Field Definition\ntype:: string\ndescription:: Target concepts for reference fields (inline array).\n\n## NN Field Definition: target_blueprint\nconcept:: Field Definition\ntype:: string\ndescription:: Required blueprint name or URL for fields of type knowledge or model.\n\n## NN Field Definition: description\nconcept:: Field Definition\ntype:: string\ndescription:: Human-readable explanation.\n\n## NN Field Definition: source\nconcept:: Matrix Definition\ntype:: string\ndescription:: Source Concept (rows) \u2014 required.\n\n## NN Field Definition: target\nconcept:: Matrix Definition\ntype:: string\ndescription:: Target Concept or reserved pseudo-Concept (columns) \u2014 required.\n\n## NN Field Definition: values\nconcept:: Matrix Definition\ntype:: string\ndescription:: Allowed cell values (inline array). Empty cell - and boolean marker X are always accepted.\n\n## NN Field Definition: widget\nconcept:: Matrix Definition\ntype:: select\noptions:: [boolean, cycle, scale, set, text]\ndescription:: Cell interaction widget.\n\n## NN Field Definition: widget_config\nconcept:: Matrix Definition\ntype:: string\ndescription:: Widget-specific configuration (inline JSON object).\n\n## NN Field Definition: description\nconcept:: Matrix Definition\ntype:: string\ndescription:: Human-readable explanation.\n```\n\n### Bootstrap Axiom\n\nThe metaschema is written in the very syntax it constrains. Its own conformance is\nthe single irreducible axiom of the system: an application **asserts** \u2014 it does\nnot derive \u2014 that the metaschema\'s `Field Definition` elements are valid\n`Field Definition` instances. Every other conformance check in the ecosystem\n(L2 against L1, L3 against L2) is mechanical and follows from it. This mirrors MOF\nbeing defined in MOF and `Ecore.ecore` describing Ecore.\n\n## Self-Description\n\nThis document (`iNNfo_V_0-7-0_NN.md`) is itself a level 1 specification following\ndefiNNition. It declares `parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"` and defines\nthe root primitives \u2014 plus the mechanical metaschema above \u2014 that every\nlevel-2 bluepriNNt instantiates.\n';
     INNFO_V_0_8_0_SPEC_CONTENT = '---\nspec_version: "V_0-8-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-8-0_NN.md"\nlevel: 1\nparent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"\ntitle: "iNNfo Meta-bluepriNNt Specification"\ndescription: "Level-1 meta-bluepriNNt defining the root primitives (Concept Definition, Field Definition, Matrix Definition), multi-concept targets, multi-valued fields, widgets, concept-level inheritance, per-concept storage declaration (compact or distributed), per-concept write policy (mutable, append-only or read-only), the unified address grammar, stable element identity via immutable slugs, and the unified NN syntax: `# NN` sections, `## NN` elements, and `key:: value` properties."\nauthor: "innV0 Team"\nstatus: "Draft"\n---\n\n> [!NOTE]\n> This is an **iNNfo document** \u2014 a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).\n\n# iNNfo Meta-bluepriNNt Specification\n\n## A concrete specification for semantic modeling with concepts, elements, fields, markers, and relationships, expressed through the unified NN syntax and a self-describing meta-bluepriNNt\n\n## Philosophy\n\niNNfo is designed around five principles:\n\n1. **Rich specs, lean models**: Specification documents (levels 0\u20132) are semantically rich. kNNowledge documents (level 3) carry only data and a parent pointer. The application resolves and caches the parent chain.\n2. **Self-describing**: Every iNNfo document is valid Markdown with YAML frontmatter and the unified `NN` syntax. No proprietary tooling required to read it.\n3. **Meta-bluepriNNt**: The level-1 specification is itself a *meta-bluepriNNt*. Level-2 bluepriNNts are ordinary iNNfo documents that instantiate the root primitives \u2014 `Concept Definition`, `Field Definition`, and `Matrix Definition` \u2014 as ordinary elements in their body. There is no separate declaration format.\n4. **Relationship polymorphism**: Relationships between concepts and elements are expressed through a typed system \u2014 hierarchy, evaluable matrices, graph edges, and sequences.\n5. **Stable identity via immutable slugs**: Every entity (element, concept, matrix) possesses an explicit, immutable slug identifier (`slug::`). Display names are decoupled from identity and scoped to their concept, allowing identical display names across distinct concepts. Once assigned, a slug is permanent across renames and edits.\n\n## Objectives\n\n- Define a unified, minimal syntax: `# NN <Concept>`, `## NN <Concept>: <Element>`, immutable `slug::` declarations, and `key:: value` properties.\n- Define the **Metaplantilla Nivel 1**: the root primitives that every level-2 bluepriNNt instantiates.\n- Establish immutable slugs for elements, concepts, and matrices to preserve citations and graph stability across renames (D1).\n- Support cross-concept duplicate display names while scoping sibling display names within each concept (D3).\n- Define extension-less model identity (`model_slug`) and universal `@` addressing grammar for elements, fields, and matrix cells (D4, D5).\n- Enforce slug freezing (`freeze_slugs`) on mutation and domain-wide upgrades (D19).\n- Remove the `concepts:` / `markers:` / `matrices:` frontmatter blocks from level-2 bluepriNNts; their schema is expressed as body elements.\n- Enable machine parsing, validation, and visual rendering of kNNowledge via the parent chain resolver.\n- Maintain full human readability and Git-diffability.\n- Ensure that kNNowledge files are lightweight and never duplicate specification content.\n\n## Unified Syntax\n\niNNfo uses three structural markers. The `NN` token is required and distinguishes iNNfo structure from ordinary Markdown.\n\n| Construct | Syntax | Example |\n|---|---|---|\n| Concept section | `# NN <Concept>` (H1) | `# NN Stakeholders` |\n| Element | `## NN <Concept>: <Element>` (H2) | `## NN Stakeholders: Customer` |\n| Nested Element | `#{3,6} NN <Concept>: <Element>` (H3\u2013H6) | `### NN Layer: Title` |\n| Identity slug | `slug:: <slug>` (first property line) | `slug:: customer` |\n| Property | `key:: value` (consecutive lines) | `importance:: high` |\n\nA **Concept** is a named type declared by a bluepriNNt. A Concept section is introduced by an H1 heading `# NN <Concept>`.\n\nAn **Element** is a single instance of a Concept, declared as an H2 heading `## NN <Concept>: <Element>` within the Concept section. The `<Concept>` token names the owning concept (it MUST match the enclosing section concept for top-level H2 headings).\n\n### Hierarchical Element Headings (Level-3 Documents)\n\nLevel-3 kNNowledge documents may author child elements inline beneath their parent element using deeper Markdown headings (`### NN`, `#### NN`, up to `###### NN`), without requiring separate top-level `# NN <ChildConcept>` sections.\n\n- **Nesting Rules**: A child heading `#{3,6} NN <ChildConcept>: <Element>` attaches to the nearest shallower element heading on the heading stack. The parentage relationship (`ParentConcept -> ChildConcept`) MUST be declared as a valid direct parent-child edge in the governing bluepriNNt\'s `# NN index` (`schema.taxonomy`). Disallowed nesting is rejected by validation (`INVALID_NESTED_CONCEPT`).\n- **Parent Identity**: The child element receives `parentSlug` referencing the parent element\'s slug.\n- **Prose Separation**: Any prose body authored for the parent element belongs exclusively to the parent and concludes immediately before the child\'s heading.\n- **Backward Compatibility**: Flat H2 headings in separate `# NN <ChildConcept>` sections remain 100% valid and supported.\n\nAn **Element Slug** is declared on the line immediately following the `## NN` heading via `slug:: <slug>`. The slug MUST be lowercase kebab-case conforming to `^[a-z0-9]+(?:-[a-z0-9]+)*$`. The slug is immutable: renaming an element modifies its display name in the `## NN` heading but preserves `slug::` unchanged.\n\nA **Field** is a typed key-value property of an Element. Element properties are written on consecutive `key:: value` lines immediately after the `slug::` line (or heading), before any free-form description text.\n\n```markdown\n# NN Stakeholders\n\n## NN Stakeholders: Customer\nslug:: customer\nimportance:: high\nneeds:: [speed, accuracy]\nCustomer description text follows the properties.\n```\n\nProperty values follow a small value grammar:\n\n- Plain text \u2014 `relationship_model:: Dedicated`\n- Quoted text \u2014 `brand_name:: "Acme Inc."`\n- Numbers \u2014 `weight:: 90`\n- Booleans \u2014 `published:: true`\n- Inline arrays \u2014 `options:: [Ideation, MVP, Validation]`\n- Inline objects (JSON) \u2014 `config:: {"a": 1}`\n\nThere is exactly ONE syntax. Older documents that use the legacy `_NN` markers or\nfenced ```yaml blocks are not supported and MUST be migrated to the unified syntax.\n\n## Unified Address Grammar\n\nThere is exactly ONE grammar for pointing at a model, an element, a field, a body or a matrix cell. Every typed reference, citation, change target and tool argument uses it. A title is display text and never resolves: the title of an element can change freely without breaking a single reference.\n\n```\naddress   = model-id [ "@" unit ] / relative\nrelative  = "@" unit                      ; only inside a model document, same model\nmodel-id  = head *( "/" slug )\nhead      = 1*alnum *( ( "-" / "_" ) 1*alnum )\nslug      = 1*lower-alnum *( "-" 1*lower-alnum )\nunit      = element [ "&" ( field / "#body" ) ]\n          / slug "&" slug "&" slug        ; matrix cell: matrix & row & column\n          / "concept:" Name [ "&" field ]\n          / "matrix:" slug\n```\n\n| Target | Syntax | Resolves To |\n|---|---|---|\n| Entire model | `model-id` | The model document root |\n| Element | `model-id@element-slug` | One element instance |\n| Element field | `model-id@element-slug&field` | The value of one field |\n| Element body | `model-id@element-slug&#body` | The prose body of one element |\n| Matrix | `model-id@matrix:matrix-slug` | One matrix definition and table |\n| Matrix cell | `model-id@matrix-slug&row-slug&col-slug` | The cell at row and column |\n| Concept | `model-id@concept:Name` | One concept section; `&field` addresses a concept-level field |\n| Same model | `@element-slug` | An element of the model that contains the reference |\n\n- **Model identity.** A `model-id` is hierarchical and derived, never stored. A compact model (`kNNowledge/<stem>_NN.md`) has the stem without its `_NN` suffix as its id. An instance model (see Storage Declaration) has an id made of its container chain and its own slug, for example `villabotijos-today/intro`. The same slug under two containers is two distinct models.\n- **Reserved head.** `specs` is reserved as the head of a model id: `specs/<family>@concept:<Name>` addresses a bluepriNNt definition, not a model.\n- **Typed fields.** A field whose type is `reference`, `knowledge`, `model` or `address` holds addresses only. A relative address (`@slug`) is the canonical form inside the model that holds the element; an absolute address to the same model is not canonical.\n- **Removed forms.** A model addressed by file path, a change document addressed by heading, a title-qualified wikilink (a title, `::`, then a name inside double brackets) and a bare title are not addresses. They are rejected naming the form and the address that replaces them.\n- **Raw-file citations.** A citation of a raw file under `sources/`, and of any file that is not a model (sidecars, CSV rows, JSON pointers, plain Markdown), keeps its path grammar: `<path>.<md|csv|json>@<unit>`.\n- **Prose wikilinks.** A `[[target]]` wikilink inside Markdown prose is not a typed reference. It still resolves inside its own model by element slug first, then by display name, and a display name shared by elements of different concepts is rejected as ambiguous (`AMBIGUOUS_ELEMENT_NAME`); qualify it by using the element\'s `slug`.\n- **Resolution.** An address resolves exactly or not at all. An unresolved address reports the candidate model ids that share its last segment, and a stale address names its recorded successor when the history holds one.\n\n## Root Primitives (Metaplantilla Nivel 1)\n\nA level-2 **bluepriNNt** is an iNNfo document (level 2) that instantiates the root primitives. Each primitive is a reserved Concept name whose Elements carry the schema of the bluepriNNt.\n\n| Primitive | Reserved Concept | Purpose | Instantiation |\n|---|---|---|---|\n| `Concept Definition` | `# NN Concept Definition` | Declares one Concept of the bluepriNNt | `## NN Concept Definition: <Name>` |\n| `Field Definition` | `# NN Field Definition` | Declares one typed Field of a Concept | `## NN Field Definition: <Name>` |\n| `Matrix Definition` | `# NN Matrix Definition` | Declares one evaluable Matrix | `## NN Matrix Definition: <Name>` |\n\n### Concept Definition\n\nDeclares a Concept. The Element name is the Concept name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `type` | `text` \\| `category` \\| `weight` \\| `list` \\| `steps` \\| `sequence` \\| `knowledge` \\| `model` | Representation of the Concept (required) |\n| `icon` | string | Lucide icon identifier |\n| `color` | string | Theme color |\n| `weight` | number | Display priority (higher = more prominent) |\n| `storage` | `compact` \\| `distributed` | Where the instances of the Concept live. Absent means `compact` |\n| `container` | string | Name of the distributed Concept an instance is stored under. Only for `storage:: distributed` |\n| `placement` | string | Folder template of an instance model. Required for `storage:: distributed`, forbidden otherwise |\n| `write_policy` | `mutable` | `append-only` | `read-only` | Which kinds of write the instances of the Concept accept. Absent means the bluepriNNt default, else `mutable` |\n\n```markdown\n# NN Concept Definition\n\n## NN Concept Definition: Stakeholders\nslug:: stakeholders\nicon:: users\ntype:: weight\ncolor:: blue\nweight:: 80\n```\n\n#### Storage Declaration\n\nA Concept declares where its instances live. The declaration is per Concept, so one bluepriNNt MAY mix both forms, and it is the only source of truth: no tool infers storage from the shape of a folder.\n\n- `storage:: compact` (the default when the property is absent): the instances are elements of one kNNowledge model.\n- `storage:: distributed`: each instance is the root of its own kNNowledge model, called an **instance model**. The child Concepts of a distributed Concept remain elements of that instance model.\n\n`placement::` is a POSIX path relative to the domaiNN root, ending in `/`. It is made of kebab-case literal segments, exactly one `{slug}` token (the instance slug) and, only when `container::` is declared, `{container}` as the first segment (it expands to the container instance\'s root folder, so containment is physical nesting). A placement MUST NOT contain `..` or a `.`-prefixed segment, MUST NOT use the literals `archive`, `staging`, `specs`, `backups` or `kNNowledge`, and MUST NOT begin with the literal `sources`. A literal after `{slug}` is allowed (`proyectos/{slug}/models/`). The container of a distributed Concept MUST itself be a distributed Concept of the same bluepriNNt, and the chain of containers MUST NOT loop. Two placements of one bluepriNNt MUST NOT be able to match the same folder.\n\n```markdown\n## NN Concept Definition: Series\nslug:: series\ntype:: list\nstorage:: distributed\nplacement:: "series/{slug}/"\n\n## NN Concept Definition: Video\nslug:: video\ntype:: list\nstorage:: distributed\ncontainer:: Series\nplacement:: "{container}/assets/{slug}/"\n```\n\nStorage composes like any other Concept property: a bluepriNNt that `includes` another inherits its declarations unchanged. The declaration changes neither the scope chain nor the way values are inherited.\n\n#### Write Policy\n\nA Concept declares which kinds of write its instances accept. Every write to an instance is one of three kinds: adding an instance, updating one (its fields, text, name or address) or removing one.\n\n- `write_policy:: mutable`: add, update and remove. This is the behavior of a Concept that declares nothing.\n- `write_policy:: append-only`: write once. Instances are added and a value that is still empty may be filled, but a written value is never changed or removed, nor is the instance. Suited to logs, executions and readings.\n- `write_policy:: read-only`: no write. Suited to imported snapshots.\n\nThe policy cascades. A bluepriNNt MAY declare `write_policy` in its frontmatter as the default for the Concepts that declare none, and a Concept declaration overrides that default in either direction. At kNNowledge level, the domaiNN root and its `scope: true` folders MAY declare `write_policy::` in their scope document; such a declaration only keeps or tightens the policy inherited from above (`mutable` > `append-only` > `read-only`), never loosens it, and an isolated scope does not escape it. An unknown value at any level is treated as `read-only`.\n\n```markdown\n## NN Concept Definition: Procedure Execution\nslug:: procedure-execution\ntype:: list\nstorage:: distributed\nplacement:: "executions/{slug}/"\nwrite_policy:: append-only\n```\n\nChanging a Concept\'s write policy is a change to its bluepriNNt, made like any other bluepriNNt change. A tool that writes instances MUST refuse a write the resolved policy does not allow, and MUST NOT write when it cannot read a scope document that could tighten it.\n\n### Field Definition\n\nDeclares a typed Field of a Concept. The Element name is the Field name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `concept` | string or array | Name of the owning Concept Definition, list of Concepts, or `*` for all non-text concepts (required) |\n| `type` | `string` \\| `number` \\| `boolean` \\| `select` \\| `reference` \\| `markdown_inline` \\| `markdown_file` \\| `image` \\| `file` \\| `video` \\| `audio` \\| `url` \\| `knowledge` \\| `model` \\| `address` \\| `citation` | Field type (required) |\n| `multiple` | boolean | Multi-valued field flag (allowed only on `type:: select`) |\n| `widget` | `boolean` \\| `cycle` \\| `scale` \\| `set` \\| `text` | Field interaction widget |\n| `widget_config` | object | Widget configuration parameters (JSON object) |\n| `options` | array | Allowed values for `select` fields |\n| `target_concepts` | array | Target concepts for `reference` fields |\n| `description` | string | Human-readable explanation |\n| `target_blueprint` | string | Required bluepriNNt name or URL for fields of type knowledge |\n\n```markdown\n# NN Field Definition\n\n## NN Field Definition: status\nconcept:: Stakeholders\ntype:: select\noptions:: [Ideation, MVP, Validation]\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\n```\n\n**Reference Fields (`type:: reference`).** Property values for fields declared with `type:: reference` MUST be formatted using WikiLink syntax `[[Target Element]]` (e.g. `location:: [[Sal\xF3n-Comedor]]`). Bare string values without WikiLink delimiters are not parsed as active element-to-element graph references.\n\n**Knowledge Fields (`type:: knowledge` or `type:: model`).** A Field of any Concept MAY be declared `type:: knowledge` or `type:: model`. Its value is a domain-relative path, a `./`-relative path, or a WikiLink wrapping either (`[[kNNowledge/acme_business_NN.md]]`). When the Field declares `target_blueprint`, the referenced kNNowledge document\'s `parent_spec` MUST identify that bluepriNNt. Knowledge fields are followed during domaiNN traversal, so a document referenced by two parents appears once in the graph with both incoming edges \u2014 a diamond is not a cycle.\n\n**Citation Fields (`type:: citation`).** A Field declared `type:: citation` is RESERVED for the changes collection: the ONE allowed citation is `changes.evidence`, the provenance of an applied change. A kNNowledge document MUST NOT declare its own citation Field, and MUST NOT write the reserved `sources::`/`source::` property: a unit declares no provenance of its own, because its history, origin and drift are derived from the applied changes. The fields `type` may take are otherwise unchanged; `address` remains valid everywhere.\n\n**Reserved `sources::`.** `sources::` (and its singular `source::`) is reserved and banned on L3. A kNNowledge document that carries it is INVALID (`SOURCES_FIELD_BANNED`); a document that declares a `type:: citation` field is INVALID (`CITATION_FIELD_BANNED`). Evidence lives in the change that set the value, never in the model.\n\n**Address Fields (`type:: address`).** A Field declared `type:: address` holds one structural address `<target>@<unit>`: `<target>` is a workspace-relative path or a `knowledge_slug`; `<unit>` is `## Heading`, `RowID&col`, `/json/pointer`, `element-slug`, `element-slug&field`, or `matrix&row&col`. Its value MUST resolve to an existing unit; a dangling address is an **error**. `address` is the base of the address grammar: `citation` is an `address` that additionally asserts derivation (evidence), and `knowledge` is an `address` that is traversed. All three share the same parser.\n\n**Qualified Cross-Knowledge References.** A `reference` or `knowledge` Field MAY target an Element in another kNNowledge document in the same domaiNN using the qualified form `[[Document Title :: Element Name]]` or `[[model_slug@element-slug]]`.\n\n### Matrix Definition\n\nDeclares an evaluable Matrix. The Element name is the Matrix name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `source` | string | Source Concept (rows) \u2014 required |\n| `target` | string | Target Concept or reserved pseudo-Concept (columns) \u2014 required |\n| `values` | array | Allowed cell values (empty cell `-` and boolean marker `X` are always accepted) |\n| `widget` | `boolean` \\| `cycle` \\| `scale` \\| `set` \\| `text` | Cell interaction widget |\n| `widget_config` | object | Widget-specific configuration \u2014 see Widget Configuration |\n| `description` | string | Human-readable explanation |\n\n```markdown\n# NN Matrix Definition\n\n## NN Matrix Definition: problems-value propositions matrix\nslug:: problems-value-propositions\nsource:: Problems\ntarget:: Value propositions\nwidget:: set\nvalues:: [Max, Very High, High]\n```\n\n### Widget Configuration\n\n`widget_config` is an OPTIONAL inline JSON object that parameterizes the cell\ninteraction widget. It MUST be valid JSON on a single line.\n\n| Widget | Key | Type | Default | Description |\n|---|---|---|---|---|\n| `scale` | `min` | number | `0` | Minimum numeric score |\n| | `max` | number | `100` | Maximum numeric score |\n| | `step` | number | `1` | Step increment |\n| | `unit` | string | `""` | Optional display suffix (e.g. `"%"` or `"pts"`) |\n| `set` | `max_selections` | number | `undefined` | Maximum number of simultaneous selections |\n| `cycle` | (none) | | | Cycle through values in order |\n| `boolean` | `true_label` | string | `"X"` | Display text when true |\n| | `false_label` | string | `"-"` | Display text when false |\n| `text` | `max_length` | number | `200` | Character limit for cell input |\n\n### Free Matrices\n\nAn evaluable relationship between two domain Concepts (e.g. `Problems` \xD7 `Value propositions`).\n\n```markdown\n# NN matrices: problems-value propositions matrix\n\n| Problems | Solution A | Solution B |\n|---|---|---|\n| High latency | Max | High |\n| Data loss | Max | Very High |\n```\n\n### Relationship Types Block (Frontmatter)\n\nLevel-2 bluepriNNts MAY declare custom graph edge types in frontmatter under\n`relationship_types:`. A relationship type defines a typed directed connection\nbetween elements.\n\n```yaml\n---\nrelationship_types:\n  depends_on:\n    directed: true\n    label: "Depends on"\n    inverse: "Required by"\n    color: "#e06c75"\n    style: "dashed"\n  influences:\n    directed: true\n    label: "Influences"\n    color: "#61afef"\n    style: "solid"\n---\n```\n\nGraph edges are written in the kNNowledge document\'s element section using `->` syntax:\n\n```markdown\n## NN Work: Deploy\ndepends_on -> [[Build]]\ninfluences -> [[Monitoring]]\n```\n\n### Custom Guidance Headings in BluepriNNts\n\nLevel-2 bluepriNNts MAY include prose documentation sections after the schema definitions.\nThese sections provide human-readable guidance for authors and AI assistants filling out\nkNNowledge documents based on the bluepriNNt.\n\nTo prevent guidance text from being parsed as model elements, bluepriNNt authors MUST use\nregular Markdown headings (without the `NN` token) for guidance sections:\n\n```markdown\n# Concept Guidance Documentation\n\n## Stakeholders\n### Summary\nStakeholders are individuals, groups, or organizations that have an interest in or are affected by the system.\n\n### Identification Strategy\n1. Identify direct users who interact with the system daily.\n2. Identify decision makers who approve funding and strategy.\n3. Identify external parties subject to compliance or regulation.\n\n### Fields Reference\n- `importance`: Relative business impact (high, medium, low).\n- `needs`: Bulleted list of explicit operational requirements.\n```\n\n- Headings starting with `# NN` or `## NN` are **structural** (parsed as schema).\n- Headings starting with `#` or `##` (without `NN`) are **descriptive** (ignored by the schema parser).\n\n## Level 2 BluepriNNt Structure\n\nA level 2 bluepriNNt MUST follow this structure:\n\nFrontmatter:\n\n```yaml\n---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/<name>/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-5-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-8-0_NN.md"\ntitle: "<BluepriNNt Title>"\nblueprint_name: "<blueprint-name>"\nblueprint_version: "V_x-y-z"\nincludes:                        # OPTIONAL \u2014 additive schema composition\n  - name: "<blueprint>"\n    url: "<immutable-URL>"\nrelationship_types:              # OPTIONAL \u2014 custom graph edges\n  ...\n---\n```\n\n### Schema Composition (`includes`)\n\nA level-2 bluepriNNt MAY declare `includes:`, an array of `{name, url}` references to\npeer level-2 bluepriNNts. `includes` composes the schemas of the included bluepriNNts into\nthe including bluepriNNt additively.\n\n#### Collision Rules\n\nWhen two included bluepriNNts (or an included bluepriNNt and the including bluepriNNt) declare a\nDefinition with the same name:\n\n1. If their canonical forms are **identical**, the collision is resolved cleanly: they\n   carry a shared Definition and still compose.\n2. If their canonical forms **differ**, it is a validation ERROR that MUST name\n   both source documents and the Definition.\n\nThe **canonical form** of a Definition is its parsed body with: property order\nnormalized, surrounding whitespace in values trimmed, and set-like arrays\n(`options`, `target_concepts`) treated as order-insensitive. Every\nactual value \u2014 `type`, `source`, `target`, `values`, `weight`,\n`description`, a Concept\'s Field set, etc. \u2014 is significant. This rule applies\nacross the whole `includes` graph (transitively, depth-first, left to right); the\n`includes` cycle check is unaffected (a diamond is not a cycle).\n\nBody:\n\n```markdown\n> [!NOTE]\n> This is an **iNNfo document**...\n\n# NN index\n* [[...]]  (the blueprint\'s root concepts)\n\n# NN Concept Definition\n## NN Concept Definition: <Concept>\nslug:: <concept-slug>\nicon:: <icon>\ntype:: <type>\ncolor:: <color>\nweight:: <n>\n\n# NN Field Definition\n## NN Field Definition: <Field>\nslug:: <field-slug>\nconcept:: <Concept>\ntype:: <type>\noptions:: [...]\ntarget_concepts:: [...]\n\n# NN Matrix Definition\n## NN Matrix Definition: <Matrix>\nslug:: <matrix-slug>\nsource:: <Concept>\ntarget:: <Concept>\nvalues:: [..]\nwidget:: set\n\n# <Blueprint Name>       (prose: Philosophy, Objectives, Specification)\n# Concept Guidance Documentation   (## <Concept> with ### Summary/Description/...)\n```\n\n## Level 3 kNNowledge Structure (Lightweight)\n\n```yaml\n---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-8-0_NN.md"\nmodel_slug: "<model-slug>"\nworkspace_id: "<workspace-id>"\nlevel: 3\nparent_spec:\n  name: "<blueprint-name>"\n  url: "<immutable-url>"\nknowledge_version: "V_x-y-z"\ntitle: "..."\n---\n\n> [!NOTE]\n> ...\n# NN index\n...\n# NN Concept\ntags:: [inherited-tag]\n\n## NN Concept: Element\nslug:: <element-slug>\nkey:: value\n...\n```\n\n## DomaiNN Structure\n\nAn iNNfo DomaiNN is a workspace directory containing one or more kNNowledge documents. The entry point is a\n`domaiNN_NN.md` (or root index) file at the DomaiNN root.\n\nStandard directory conventions:\n- `knowledge_dir`: `kNNowledge/`\n- `blueprints_dir`: `specs/bluepriNNts/`\n\n## Immutable Versioning Policy\n\n- **Published specs are frozen.** Once a specification version is released, its file is\n  never modified. Corrections or improvements require a new spec version.\n- **Migrating a kNNowledge document** to a new spec version means creating a new copy of the document\n  adapted to the new version.\n- **Parent chain resolution** always resolves to the version the document was authored\n  against.\n\n## Removed Constructs\n\nThe following are NOT part of iNNfo:\n\n- **FOLDER mode / `_F` markers** \u2014 documents are single files using `NN` markers only.\n- **Hierarchy matrices** \u2014 hierarchy is expressed only through the index block.\n- **`_FORMAT.md` filenames** \u2014 the canonical suffix is `_NN.md`.\n- **`* _NN` element bullets and fenced ```yaml property blocks** \u2014 replaced by the\n  unified `## NN` headings and `key:: value` properties.\n- **Marker Definition and item-markers matrix** \u2014 replaced by typed Field Definitions and concept-level values.\n\n## Metaschema (Self-Description)\n\nThe root primitives are described by the prose tables above **and** expressed\nmechanically, in iNNfo\'s own syntax, by the metaschema below. An application MUST\nbe able to validate any level-2 bluepriNNt by resolving this metaschema and checking\nthe bluepriNNt\'s `\u2026 Definition` elements against it.\n\n### The Metaschema\n\n```markdown\n# NN Concept Definition\n\n## NN Concept Definition: Concept Definition\ntype:: list\n\n## NN Concept Definition: Field Definition\ntype:: list\n\n## NN Concept Definition: Matrix Definition\ntype:: list\n\n# NN Field Definition\n\n## NN Field Definition: type\nconcept:: Concept Definition\ntype:: select\noptions:: [text, category, weight, list, steps, sequence, knowledge, model]\ndescription:: Representation of the Concept (required).\n\n## NN Field Definition: icon\nconcept:: Concept Definition\ntype:: string\ndescription:: Lucide icon identifier.\n\n## NN Field Definition: color\nconcept:: Concept Definition\ntype:: string\ndescription:: Theme color.\n\n## NN Field Definition: weight\nconcept:: Concept Definition\ntype:: string\ndescription:: Display priority (higher = more prominent).\n\n## NN Field Definition: storage\nconcept:: Concept Definition\ntype:: select\noptions:: [compact, distributed]\ndescription:: Where the instances of the Concept live. Absent means compact.\n\n## NN Field Definition: container\nconcept:: Concept Definition\ntype:: string\ndescription:: Name of the distributed Concept an instance is stored under.\n\n## NN Field Definition: placement\nconcept:: Concept Definition\ntype:: string\ndescription:: Folder template of an instance model (required when storage is distributed).\n\n## NN Field Definition: write_policy\nconcept:: Concept Definition\ntype:: select\noptions:: [mutable, append-only, read-only]\ndescription:: Which kinds of write the instances accept. Absent means the bluepriNNt default, else mutable.\n\n## NN Field Definition: concept\nconcept:: Field Definition\ntype:: string\ndescription:: Name of the owning Concept Definition, list of concepts, or * (required).\n\n## NN Field Definition: type\nconcept:: Field Definition\ntype:: select\noptions:: [string, number, boolean, select, reference, markdown_inline, markdown_file, image, file, video, audio, url, knowledge, model, address, citation]\ndescription:: Field type (required).\n\n## NN Field Definition: multiple\nconcept:: Field Definition\ntype:: boolean\ndescription:: Multi-valued field flag (allowed only on select fields).\n\n## NN Field Definition: widget\nconcept:: Field Definition\ntype:: select\noptions:: [boolean, cycle, scale, set, text]\ndescription:: Field interaction widget.\n\n## NN Field Definition: widget_config\nconcept:: Field Definition\ntype:: string\ndescription:: Widget-specific configuration (inline JSON object).\n\n## NN Field Definition: options\nconcept:: Field Definition\ntype:: string\ndescription:: Allowed values for select fields (inline array).\n\n## NN Field Definition: target_concepts\nconcept:: Field Definition\ntype:: string\ndescription:: Target concepts for reference fields (inline array).\n\n## NN Field Definition: target_blueprint\nconcept:: Field Definition\ntype:: string\ndescription:: Required blueprint name or URL for fields of type knowledge or model.\n\n## NN Field Definition: description\nconcept:: Field Definition\ntype:: string\ndescription:: Human-readable explanation.\n\n## NN Field Definition: source\nconcept:: Matrix Definition\ntype:: string\ndescription:: Source Concept (rows) \u2014 required.\n\n## NN Field Definition: target\nconcept:: Matrix Definition\ntype:: string\ndescription:: Target Concept or reserved pseudo-Concept (columns) \u2014 required.\n\n## NN Field Definition: values\nconcept:: Matrix Definition\ntype:: string\ndescription:: Allowed cell values (inline array). Empty cell - and boolean marker X are always accepted.\n\n## NN Field Definition: widget\nconcept:: Matrix Definition\ntype:: select\noptions:: [boolean, cycle, scale, set, text]\ndescription:: Cell interaction widget.\n\n## NN Field Definition: widget_config\nconcept:: Matrix Definition\ntype:: string\ndescription:: Widget-specific configuration (inline JSON object).\n\n## NN Field Definition: description\nconcept:: Matrix Definition\ntype:: string\ndescription:: Human-readable explanation.\n```\n\n### Bootstrap Axiom\n\nThe metaschema is written in the very syntax it constrains. Its own conformance is\nthe single irreducible axiom of the system: an application **asserts** \u2014 it does\nnot derive \u2014 that the metaschema\'s `Field Definition` elements are valid\n`Field Definition` instances. Every other conformance check in the ecosystem\n(L2 against L1, L3 against L2) is mechanical and follows from it. This mirrors MOF\nbeing defined in MOF and `Ecore.ecore` describing Ecore.\n\n## Self-Description\n\nThis document (`iNNfo_V_0-8-0_NN.md`) is itself a level 1 specification following\ndefiNNition. It declares `parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"` and defines\nthe root primitives \u2014 plus the mechanical metaschema above \u2014 that every\nlevel-2 bluepriNNt instantiates.\n';
     INNFO_V_0_9_0_SPEC_CONTENT = '\uFEFF---\nspec_version: "V_0-9-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-9-0_NN.md"\nlevel: 1\nparent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"\ntitle: "iNNfo Meta-bluepriNNt Specification"\ndescription: "Level-1 meta-bluepriNNt defining the root primitives (Concept Definition, Field Definition, Matrix Definition), multi-concept targets, multi-valued fields, widgets, concept-level inheritance, per-concept storage declaration (compact or distributed), per-concept write policy (mutable, append-only or read-only), the unified address grammar, stable element identity via immutable slugs, and the unified NN syntax: `# NN` sections, `## NN` elements, and `key:: value` properties."\nauthor: "innV0 Team"\nstatus: "Draft"\n---\n\n> [!NOTE]\n> This is an **iNNfo document** \xE2\u20AC\u201D a plain-text Markdown file. Open it with any text editor or view and edit it with [cogNNitive](https://cognnitive.com/innfo/app/).\n\n# iNNfo Meta-bluepriNNt Specification\n\n## A concrete specification for semantic modeling with concepts, elements, fields, markers, and relationships, expressed through the unified NN syntax and a self-describing meta-bluepriNNt\n\n## Philosophy\n\niNNfo is designed around five principles:\n\n1. **Rich specs, lean models**: Specification documents (levels 0\xE2\u20AC\u201C2) are semantically rich. kNNowledge documents (level 3) carry only data and a parent pointer. The application resolves and caches the parent chain.\n2. **Self-describing**: Every iNNfo document is valid Markdown with YAML frontmatter and the unified `NN` syntax. No proprietary tooling required to read it.\n3. **Meta-bluepriNNt**: The level-1 specification is itself a *meta-bluepriNNt*. Level-2 bluepriNNts are ordinary iNNfo documents that instantiate the root primitives \xE2\u20AC\u201D `Concept Definition`, `Field Definition`, and `Matrix Definition` \xE2\u20AC\u201D as ordinary elements in their body. There is no separate declaration format.\n4. **Relationship polymorphism**: Relationships between concepts and elements are expressed through a typed system \xE2\u20AC\u201D hierarchy, evaluable matrices, graph edges, and sequences.\n5. **Stable identity via immutable slugs**: Every entity (element, concept, matrix) possesses an explicit, immutable slug identifier (`slug::`). Display names are decoupled from identity and scoped to their concept, allowing identical display names across distinct concepts. Once assigned, a slug is permanent across renames and edits.\n\n## Objectives\n\n- Define a unified, minimal syntax: `# NN <Concept>`, `## NN <Concept>: <Element>`, immutable `slug::` declarations, and `key:: value` properties.\n- Define the **Metaplantilla Nivel 1**: the root primitives that every level-2 bluepriNNt instantiates.\n- Establish immutable slugs for elements, concepts, and matrices to preserve citations and graph stability across renames (D1).\n- Support cross-concept duplicate display names while scoping sibling display names within each concept (D3).\n- Define extension-less model identity (`model_slug`) and universal `@` addressing grammar for elements, fields, and matrix cells (D4, D5).\n- Enforce slug freezing (`freeze_slugs`) on mutation and domain-wide upgrades (D19).\n- Remove the `concepts:` / `markers:` / `matrices:` frontmatter blocks from level-2 bluepriNNts; their schema is expressed as body elements.\n- Enable machine parsing, validation, and visual rendering of kNNowledge via the parent chain resolver.\n- Maintain full human readability and Git-diffability.\n- Ensure that kNNowledge files are lightweight and never duplicate specification content.\n\n## Unified Syntax\n\niNNfo uses three structural markers. The `NN` token is required and distinguishes iNNfo structure from ordinary Markdown.\n\n| Construct | Syntax | Example |\n|---|---|---|\n| Concept section | `# NN <Concept>` (H1) | `# NN Stakeholders` |\n| Element | `## NN <Concept>: <Element>` (H2) | `## NN Stakeholders: Customer` |\n| Nested Element | `#{3,6} NN <Concept>: <Element>` (H3\xE2\u20AC\u201CH6) | `### NN Layer: Title` |\n| Identity slug | `slug:: <slug>` (first property line) | `slug:: customer` |\n| Property | `key:: value` (consecutive lines) | `importance:: high` |\n\nA **Concept** is a named type declared by a bluepriNNt. A Concept section is introduced by an H1 heading `# NN <Concept>`.\n\nAn **Element** is a single instance of a Concept, declared as an H2 heading `## NN <Concept>: <Element>` within the Concept section. The `<Concept>` token names the owning concept (it MUST match the enclosing section concept for top-level H2 headings).\n\n### Hierarchical Element Headings (Level-3 Documents)\n\nLevel-3 kNNowledge documents may author child elements inline beneath their parent element using deeper Markdown headings (`### NN`, `#### NN`, up to `###### NN`), without requiring separate top-level `# NN <ChildConcept>` sections.\n\n- **Nesting Rules**: A child heading `#{3,6} NN <ChildConcept>: <Element>` attaches to the nearest shallower element heading on the heading stack. The parentage relationship (`ParentConcept -> ChildConcept`) MUST be declared as a valid direct parent-child edge in the governing bluepriNNt\'s `# NN index` (`schema.taxonomy`). Disallowed nesting is rejected by validation (`INVALID_NESTED_CONCEPT`).\n- **Parent Identity**: The child element receives `parentSlug` referencing the parent element\'s slug.\n- **Prose Separation**: Any prose body authored for the parent element belongs exclusively to the parent and concludes immediately before the child\'s heading.\n- **Backward Compatibility**: Flat H2 headings in separate `# NN <ChildConcept>` sections remain 100% valid and supported.\n\nAn **Element Slug** is declared on the line immediately following the `## NN` heading via `slug:: <slug>`. The slug MUST be lowercase kebab-case conforming to `^[a-z0-9]+(?:-[a-z0-9]+)*$`. The slug is immutable: renaming an element modifies its display name in the `## NN` heading but preserves `slug::` unchanged.\n\nA **Field** is a typed key-value property of an Element. Element properties are written on consecutive `key:: value` lines immediately after the `slug::` line (or heading), before any free-form description text.\n\n```markdown\n# NN Stakeholders\n\n## NN Stakeholders: Customer\nslug:: customer\nimportance:: high\nneeds:: [speed, accuracy]\nCustomer description text follows the properties.\n```\n\nProperty values follow a small value grammar:\n\n- Plain text \xE2\u20AC\u201D `relationship_model:: Dedicated`\n- Quoted text \xE2\u20AC\u201D `brand_name:: "Acme Inc."`\n- Numbers \xE2\u20AC\u201D `weight:: 90`\n- Booleans \xE2\u20AC\u201D `published:: true`\n- Inline arrays \xE2\u20AC\u201D `options:: [Ideation, MVP, Validation]`\n- Inline objects (JSON) \xE2\u20AC\u201D `config:: {"a": 1}`\n\nThere is exactly ONE syntax. Older documents that use the legacy `_NN` markers or\nfenced ```yaml blocks are not supported and MUST be migrated to the unified syntax.\n\n## Unified Address Grammar\n\nThere is exactly ONE grammar for pointing at a model, an element, a field, a body or a matrix cell. Every typed reference, citation, change target and tool argument uses it. A title is display text and never resolves: the title of an element can change freely without breaking a single reference.\n\n```\naddress   = model-id [ "@" unit ] / relative\nrelative  = "@" unit                      ; only inside a model document, same model\nmodel-id  = head *( "/" slug )\nhead      = 1*alnum *( ( "-" / "_" ) 1*alnum )\nslug      = 1*lower-alnum *( "-" 1*lower-alnum )\nunit      = element [ "&" ( field / "#body" ) ]\n          / slug "&" slug "&" slug        ; matrix cell: matrix & row & column\n          / "concept:" Name [ "&" field ]\n          / "matrix:" slug\n```\n\n| Target | Syntax | Resolves To |\n|---|---|---|\n| Entire model | `model-id` | The model document root |\n| Element | `model-id@element-slug` | One element instance |\n| Element field | `model-id@element-slug&field` | The value of one field |\n| Element body | `model-id@element-slug&#body` | The prose body of one element |\n| Matrix | `model-id@matrix:matrix-slug` | One matrix definition and table |\n| Matrix cell | `model-id@matrix-slug&row-slug&col-slug` | The cell at row and column |\n| Concept | `model-id@concept:Name` | One concept section; `&field` addresses a concept-level field |\n| Same model | `@element-slug` | An element of the model that contains the reference |\n\n- **Model identity.** A `model-id` is hierarchical and derived, never stored. A compact model (`kNNowledge/<stem>_NN.md`) has the stem without its `_NN` suffix as its id. An instance model (see Storage Declaration) has an id made of its container chain and its own slug, for example `villabotijos-today/intro`. The same slug under two containers is two distinct models.\n- **Reserved head.** `specs` is reserved as the head of a model id: `specs/<family>@concept:<Name>` addresses a bluepriNNt definition, not a model.\n- **Typed fields.** A field whose type is `reference`, `knowledge`, `model` or `address` holds addresses only. A relative address (`@slug`) is the canonical form inside the model that holds the element; an absolute address to the same model is not canonical.\n- **Removed forms.** A model addressed by file path, a change document addressed by heading, a title-qualified wikilink (a title, `::`, then a name inside double brackets) and a bare title are not addresses. They are rejected naming the form and the address that replaces them.\n- **Raw-file citations.** A citation of a raw file under `sources/`, and of any file that is not a model (sidecars, CSV rows, JSON pointers, plain Markdown), keeps its path grammar: `<path>.<md|csv|json>@<unit>`.\n- **Prose wikilinks.** A `[[target]]` wikilink inside Markdown prose is not a typed reference. It still resolves inside its own model by element slug first, then by display name, and a display name shared by elements of different concepts is rejected as ambiguous (`AMBIGUOUS_ELEMENT_NAME`); qualify it by using the element\'s `slug`.\n- **Resolution.** An address resolves exactly or not at all. An unresolved address reports the candidate model ids that share its last segment, and a stale address names its recorded successor when the history holds one.\n\n## Root Primitives (Metaplantilla Nivel 1)\n\nA level-2 **bluepriNNt** is an iNNfo document (level 2) that instantiates the root primitives. Each primitive is a reserved Concept name whose Elements carry the schema of the bluepriNNt.\n\n| Primitive | Reserved Concept | Purpose | Instantiation |\n|---|---|---|---|\n| `Concept Definition` | `# NN Concept Definition` | Declares one Concept of the bluepriNNt | `## NN Concept Definition: <Name>` |\n| `Field Definition` | `# NN Field Definition` | Declares one typed Field of a Concept | `## NN Field Definition: <Name>` |\n| `Matrix Definition` | `# NN Matrix Definition` | Declares one evaluable Matrix | `## NN Matrix Definition: <Name>` |\n\n### Concept Definition\n\nDeclares a Concept. The Element name is the Concept name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `type` | `text` \\| `category` \\| `weight` \\| `list` \\| `steps` \\| `sequence` \\| `knowledge` \\| `model` | Representation of the Concept (required) |\n| `icon` | string | Lucide icon identifier |\n| `color` | string | Theme color |\n| `weight` | number | Display priority (higher = more prominent) |\n| `storage` | `compact` \\| `distributed` | Where the instances of the Concept live. Absent means `compact` |\n| `container` | string | Name of the distributed Concept an instance is stored under. Only for `storage:: distributed` |\n| `placement` | string | Folder template of an instance model. Required for `storage:: distributed`, forbidden otherwise |\n| `write_policy` | `mutable` | `append-only` | `read-only` | Which kinds of write the instances of the Concept accept. Absent means the bluepriNNt default, else `mutable` |\n\n```markdown\n# NN Concept Definition\n\n## NN Concept Definition: Stakeholders\nslug:: stakeholders\nicon:: users\ntype:: weight\ncolor:: blue\nweight:: 80\n```\n\n#### Storage Declaration\n\nA Concept declares where its instances live. The declaration is per Concept, so one bluepriNNt MAY mix both forms, and it is the only source of truth: no tool infers storage from the shape of a folder.\n\n- `storage:: compact` (the default when the property is absent): the instances are elements of one kNNowledge model.\n- `storage:: distributed`: each instance is the root of its own kNNowledge model, called an **instance model**. The child Concepts of a distributed Concept remain elements of that instance model.\n\n`placement::` is a POSIX path relative to the domaiNN root, ending in `/`. It is made of kebab-case literal segments, exactly one `{slug}` token (the instance slug) and, only when `container::` is declared, `{container}` as the first segment (it expands to the container instance\'s root folder, so containment is physical nesting). A placement MUST NOT contain `..` or a `.`-prefixed segment, MUST NOT use the literals `archive`, `staging`, `specs`, `backups` or `kNNowledge`, and MUST NOT begin with the literal `sources`. A literal after `{slug}` is allowed (`proyectos/{slug}/models/`). The container of a distributed Concept MUST itself be a distributed Concept of the same bluepriNNt, and the chain of containers MUST NOT loop. Two placements of one bluepriNNt MUST NOT be able to match the same folder.\n\n```markdown\n## NN Concept Definition: Series\nslug:: series\ntype:: list\nstorage:: distributed\nplacement:: "series/{slug}/"\n\n## NN Concept Definition: Video\nslug:: video\ntype:: list\nstorage:: distributed\ncontainer:: Series\nplacement:: "{container}/assets/{slug}/"\n```\n\nStorage composes like any other Concept property: a bluepriNNt that `includes` another inherits its declarations unchanged. The declaration changes neither the scope chain nor the way values are inherited.\n\n#### Write Policy\n\nA Concept declares which kinds of write its instances accept. Every write to an instance is one of three kinds: adding an instance, updating one (its fields, text, name or address) or removing one.\n\n- `write_policy:: mutable`: add, update and remove. This is the behavior of a Concept that declares nothing.\n- `write_policy:: append-only`: write once. Instances are added and a value that is still empty may be filled, but a written value is never changed or removed, nor is the instance. Suited to logs, executions and readings.\n- `write_policy:: read-only`: no write. Suited to imported snapshots.\n\nThe policy cascades. A bluepriNNt MAY declare `write_policy` in its frontmatter as the default for the Concepts that declare none, and a Concept declaration overrides that default in either direction. At kNNowledge level, the domaiNN root and its `scope: true` folders MAY declare `write_policy::` in their scope document; such a declaration only keeps or tightens the policy inherited from above (`mutable` > `append-only` > `read-only`), never loosens it, and an isolated scope does not escape it. An unknown value at any level is treated as `read-only`.\n\n```markdown\n## NN Concept Definition: Procedure Execution\nslug:: procedure-execution\ntype:: list\nstorage:: distributed\nplacement:: "executions/{slug}/"\nwrite_policy:: append-only\n```\n\nChanging a Concept\'s write policy is a change to its bluepriNNt, made like any other bluepriNNt change. A tool that writes instances MUST refuse a write the resolved policy does not allow, and MUST NOT write when it cannot read a scope document that could tighten it.\n\n### Field Definition\n\nDeclares a typed Field of a Concept. The Element name is the Field name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `concept` | string or array | Name of the owning Concept Definition, list of Concepts, or `*` for all non-text concepts (required) |\n| `type` | `string` \\| `number` \\| `boolean` \\| `select` \\| `reference` \\| `markdown_inline` \\| `markdown_file` \\| `image` \\| `file` \\| `video` \\| `audio` \\| `url` \\| `knowledge` \\| `model` \\| `address` \\| `citation` | Field type (required) |\n| `multiple` | boolean | Multi-valued field flag (allowed only on `type:: select`) |\n| `widget` | `boolean` \\| `cycle` \\| `scale` \\| `set` \\| `text` | Field interaction widget |\n| `widget_config` | object | Widget configuration parameters (JSON object) |\n| `options` | array | Allowed values for `select` fields |\n| `transitions` | object | Declared lifecycle of a `select` field: current value (`""` = unset) to the values it may move to. Every key and target is one of `options`, and every option is a key |\n| `target_concepts` | array | Target concepts for `reference` fields |\n| `description` | string | Human-readable explanation |\n| `target_blueprint` | string | Required bluepriNNt name or URL for fields of type knowledge |\n\n```markdown\n# NN Field Definition\n\n## NN Field Definition: status\nconcept:: Stakeholders\ntype:: select\noptions:: [Ideation, MVP, Validation]\ntransitions:: {"": ["Ideation"], "Ideation": ["MVP", "Validation"], "MVP": ["Validation"], "Validation": []}\n\nA `select` field MAY declare `transitions` as an inline JSON object. The declaration is normative:\nevery key MUST be `""` or one of `options`, every target MUST be one of `options`, and every option\nMUST be a key (a terminal value states `[]` instead of being omitted). At apply, a write that changes\nthe value of such a field MUST follow a declared edge (`TRANSITION_NOT_ALLOWED` otherwise); writing\nthe value the field already holds is always allowed and never checked. An `add_element` writes its\ninitial fields from `""`. Transitions are level 2 only \u2014 no cascade and no override at kNNowledge\nlevel \u2014 and they are a validity rule over new writes, never a schema for history: a model whose\nvalue was set before the declaration stays valid. A field without `transitions` accepts any option.\n\n## NN Field Definition: tags\nconcept:: *\ntype:: select\nmultiple:: true\n```\n\n**Reference Fields (`type:: reference`).** Property values for fields declared with `type:: reference` MUST be formatted using WikiLink syntax `[[Target Element]]` (e.g. `location:: [[Sal\xC3\xB3n-Comedor]]`). Bare string values without WikiLink delimiters are not parsed as active element-to-element graph references.\n\n**Knowledge Fields (`type:: knowledge` or `type:: model`).** A Field of any Concept MAY be declared `type:: knowledge` or `type:: model`. Its value is a domain-relative path, a `./`-relative path, or a WikiLink wrapping either (`[[kNNowledge/acme_business_NN.md]]`). When the Field declares `target_blueprint`, the referenced kNNowledge document\'s `parent_spec` MUST identify that bluepriNNt. Knowledge fields are followed during domaiNN traversal, so a document referenced by two parents appears once in the graph with both incoming edges \xE2\u20AC\u201D a diamond is not a cycle.\n\n**Citation Fields (`type:: citation`).** A Field declared `type:: citation` is RESERVED for the changes collection: the ONE allowed citation is `changes.evidence`, the provenance of an applied change. A kNNowledge document MUST NOT declare its own citation Field, and MUST NOT write the reserved `sources::`/`source::` property: a unit declares no provenance of its own, because its history, origin and drift are derived from the applied changes. The fields `type` may take are otherwise unchanged; `address` remains valid everywhere.\n\n**Reserved `sources::`.** `sources::` (and its singular `source::`) is reserved and banned on L3. A kNNowledge document that carries it is INVALID (`SOURCES_FIELD_BANNED`); a document that declares a `type:: citation` field is INVALID (`CITATION_FIELD_BANNED`). Evidence lives in the change that set the value, never in the model.\n\n**Address Fields (`type:: address`).** A Field declared `type:: address` holds one structural address `<target>@<unit>`: `<target>` is a workspace-relative path or a `knowledge_slug`; `<unit>` is `## Heading`, `RowID&col`, `/json/pointer`, `element-slug`, `element-slug&field`, or `matrix&row&col`. Its value MUST resolve to an existing unit; a dangling address is an **error**. `address` is the base of the address grammar: `citation` is an `address` that additionally asserts derivation (evidence), and `knowledge` is an `address` that is traversed. All three share the same parser.\n\n**Qualified Cross-Knowledge References.** A `reference` or `knowledge` Field MAY target an Element in another kNNowledge document in the same domaiNN using the qualified form `[[Document Title :: Element Name]]` or `[[model_slug@element-slug]]`.\n\n### Matrix Definition\n\nDeclares an evaluable Matrix. The Element name is the Matrix name. Allowed properties:\n\n| Property | Type | Description |\n|---|---|---|\n| `slug` | string | Explicit kebab-case slug identifier |\n| `source` | string | Source Concept (rows) \xE2\u20AC\u201D required |\n| `target` | string | Target Concept or reserved pseudo-Concept (columns) \xE2\u20AC\u201D required |\n| `values` | array | Allowed cell values (empty cell `-` and boolean marker `X` are always accepted) |\n| `widget` | `boolean` \\| `cycle` \\| `scale` \\| `set` \\| `text` | Cell interaction widget |\n| `widget_config` | object | Widget-specific configuration \xE2\u20AC\u201D see Widget Configuration |\n| `description` | string | Human-readable explanation |\n\n```markdown\n# NN Matrix Definition\n\n## NN Matrix Definition: problems-value propositions matrix\nslug:: problems-value-propositions\nsource:: Problems\ntarget:: Value propositions\nwidget:: set\nvalues:: [Max, Very High, High]\n```\n\n### Widget Configuration\n\n`widget_config` is an OPTIONAL inline JSON object that parameterizes the cell\ninteraction widget. It MUST be valid JSON on a single line.\n\n| Widget | Key | Type | Default | Description |\n|---|---|---|---|---|\n| `scale` | `min` | number | `0` | Minimum numeric score |\n| | `max` | number | `100` | Maximum numeric score |\n| | `step` | number | `1` | Step increment |\n| | `unit` | string | `""` | Optional display suffix (e.g. `"%"` or `"pts"`) |\n| `set` | `max_selections` | number | `undefined` | Maximum number of simultaneous selections |\n| `cycle` | (none) | | | Cycle through values in order |\n| `boolean` | `true_label` | string | `"X"` | Display text when true |\n| | `false_label` | string | `"-"` | Display text when false |\n| `text` | `max_length` | number | `200` | Character limit for cell input |\n\n### Free Matrices\n\nAn evaluable relationship between two domain Concepts (e.g. `Problems` \xC3\u2014 `Value propositions`).\n\n```markdown\n# NN matrices: problems-value propositions matrix\n\n| Problems | Solution A | Solution B |\n|---|---|---|\n| High latency | Max | High |\n| Data loss | Max | Very High |\n```\n\n### Relationship Types Block (Frontmatter)\n\nLevel-2 bluepriNNts MAY declare custom graph edge types in frontmatter under\n`relationship_types:`. A relationship type defines a typed directed connection\nbetween elements.\n\n```yaml\n---\nrelationship_types:\n  depends_on:\n    directed: true\n    label: "Depends on"\n    inverse: "Required by"\n    color: "#e06c75"\n    style: "dashed"\n  influences:\n    directed: true\n    label: "Influences"\n    color: "#61afef"\n    style: "solid"\n---\n```\n\nGraph edges are written in the kNNowledge document\'s element section using `->` syntax:\n\n```markdown\n## NN Work: Deploy\ndepends_on -> [[Build]]\ninfluences -> [[Monitoring]]\n```\n\n### Custom Guidance Headings in BluepriNNts\n\nLevel-2 bluepriNNts MAY include prose documentation sections after the schema definitions.\nThese sections provide human-readable guidance for authors and AI assistants filling out\nkNNowledge documents based on the bluepriNNt.\n\nTo prevent guidance text from being parsed as model elements, bluepriNNt authors MUST use\nregular Markdown headings (without the `NN` token) for guidance sections:\n\n```markdown\n# Concept Guidance Documentation\n\n## Stakeholders\n### Summary\nStakeholders are individuals, groups, or organizations that have an interest in or are affected by the system.\n\n### Identification Strategy\n1. Identify direct users who interact with the system daily.\n2. Identify decision makers who approve funding and strategy.\n3. Identify external parties subject to compliance or regulation.\n\n### Fields Reference\n- `importance`: Relative business impact (high, medium, low).\n- `needs`: Bulleted list of explicit operational requirements.\n```\n\n- Headings starting with `# NN` or `## NN` are **structural** (parsed as schema).\n- Headings starting with `#` or `##` (without `NN`) are **descriptive** (ignored by the schema parser).\n\n## Level 2 BluepriNNt Structure\n\nA level 2 bluepriNNt MUST follow this structure:\n\nFrontmatter:\n\n```yaml\n---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/<name>/spec_NN.md"\nlevel: 2\nparent_spec:\n  name: "iNNfo_V_0-5-0"\n  url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-9-0_NN.md"\ntitle: "<BluepriNNt Title>"\nblueprint_name: "<blueprint-name>"\nblueprint_version: "V_x-y-z"\nincludes:                        # OPTIONAL \xE2\u20AC\u201D additive schema composition\n  - name: "<blueprint>"\n    url: "<immutable-URL>"\nrelationship_types:              # OPTIONAL \xE2\u20AC\u201D custom graph edges\n  ...\n---\n```\n\n### Schema Composition (`includes`)\n\nA level-2 bluepriNNt MAY declare `includes:`, an array of `{name, url}` references to\npeer level-2 bluepriNNts. `includes` composes the schemas of the included bluepriNNts into\nthe including bluepriNNt additively.\n\n#### Collision Rules\n\nWhen two included bluepriNNts (or an included bluepriNNt and the including bluepriNNt) declare a\nDefinition with the same name:\n\n1. If their canonical forms are **identical**, the collision is resolved cleanly: they\n   carry a shared Definition and still compose.\n2. If their canonical forms **differ**, it is a validation ERROR that MUST name\n   both source documents and the Definition.\n\nThe **canonical form** of a Definition is its parsed body with: property order\nnormalized, surrounding whitespace in values trimmed, and set-like arrays\n(`options`, `target_concepts`) treated as order-insensitive. Every\nactual value \xE2\u20AC\u201D `type`, `source`, `target`, `values`, `weight`,\n`description`, a Concept\'s Field set, etc. \xE2\u20AC\u201D is significant. This rule applies\nacross the whole `includes` graph (transitively, depth-first, left to right); the\n`includes` cycle check is unaffected (a diamond is not a cycle).\n\nBody:\n\n```markdown\n> [!NOTE]\n> This is an **iNNfo document**...\n\n# NN index\n* [[...]]  (the blueprint\'s root concepts)\n\n# NN Concept Definition\n## NN Concept Definition: <Concept>\nslug:: <concept-slug>\nicon:: <icon>\ntype:: <type>\ncolor:: <color>\nweight:: <n>\n\n# NN Field Definition\n## NN Field Definition: <Field>\nslug:: <field-slug>\nconcept:: <Concept>\ntype:: <type>\noptions:: [...]\ntarget_concepts:: [...]\n\n# NN Matrix Definition\n## NN Matrix Definition: <Matrix>\nslug:: <matrix-slug>\nsource:: <Concept>\ntarget:: <Concept>\nvalues:: [..]\nwidget:: set\n\n# <Blueprint Name>       (prose: Philosophy, Objectives, Specification)\n# Concept Guidance Documentation   (## <Concept> with ### Summary/Description/...)\n```\n\n## Level 3 kNNowledge Structure (Lightweight)\n\n```yaml\n---\nspec_version: "V_0-5-0"\nspec_url: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/iNNfo_V_0-9-0_NN.md"\nmodel_slug: "<model-slug>"\nworkspace_id: "<workspace-id>"\nlevel: 3\nparent_spec:\n  name: "<blueprint-name>"\n  url: "<immutable-url>"\nknowledge_version: "V_x-y-z"\ntitle: "..."\n---\n\n> [!NOTE]\n> ...\n# NN index\n...\n# NN Concept\ntags:: [inherited-tag]\n\n## NN Concept: Element\nslug:: <element-slug>\nkey:: value\n...\n```\n\n## DomaiNN Structure\n\nAn iNNfo DomaiNN is a workspace directory containing one or more kNNowledge documents. The entry point is a\n`domaiNN_NN.md` (or root index) file at the DomaiNN root.\n\nStandard directory conventions:\n- `knowledge_dir`: `kNNowledge/`\n- `blueprints_dir`: `specs/bluepriNNts/`\n\n## Immutable Versioning Policy\n\n- **Published specs are frozen.** Once a specification version is released, its file is\n  never modified. Corrections or improvements require a new spec version.\n- **Migrating a kNNowledge document** to a new spec version means creating a new copy of the document\n  adapted to the new version.\n- **Parent chain resolution** always resolves to the version the document was authored\n  against.\n\n## Removed Constructs\n\nThe following are NOT part of iNNfo:\n\n- **FOLDER mode / `_F` markers** \xE2\u20AC\u201D documents are single files using `NN` markers only.\n- **Hierarchy matrices** \xE2\u20AC\u201D hierarchy is expressed only through the index block.\n- **`_FORMAT.md` filenames** \xE2\u20AC\u201D the canonical suffix is `_NN.md`.\n- **`* _NN` element bullets and fenced ```yaml property blocks** \xE2\u20AC\u201D replaced by the\n  unified `## NN` headings and `key:: value` properties.\n- **Marker Definition and item-markers matrix** \xE2\u20AC\u201D replaced by typed Field Definitions and concept-level values.\n\n## Metaschema (Self-Description)\n\nThe root primitives are described by the prose tables above **and** expressed\nmechanically, in iNNfo\'s own syntax, by the metaschema below. An application MUST\nbe able to validate any level-2 bluepriNNt by resolving this metaschema and checking\nthe bluepriNNt\'s `\xE2\u20AC\xA6 Definition` elements against it.\n\n### The Metaschema\n\n```markdown\n# NN Concept Definition\n\n## NN Concept Definition: Concept Definition\ntype:: list\n\n## NN Concept Definition: Field Definition\ntype:: list\n\n## NN Concept Definition: Matrix Definition\ntype:: list\n\n# NN Field Definition\n\n## NN Field Definition: type\nconcept:: Concept Definition\ntype:: select\noptions:: [text, category, weight, list, steps, sequence, knowledge, model]\ndescription:: Representation of the Concept (required).\n\n## NN Field Definition: icon\nconcept:: Concept Definition\ntype:: string\ndescription:: Lucide icon identifier.\n\n## NN Field Definition: color\nconcept:: Concept Definition\ntype:: string\ndescription:: Theme color.\n\n## NN Field Definition: weight\nconcept:: Concept Definition\ntype:: string\ndescription:: Display priority (higher = more prominent).\n\n## NN Field Definition: storage\nconcept:: Concept Definition\ntype:: select\noptions:: [compact, distributed]\ndescription:: Where the instances of the Concept live. Absent means compact.\n\n## NN Field Definition: container\nconcept:: Concept Definition\ntype:: string\ndescription:: Name of the distributed Concept an instance is stored under.\n\n## NN Field Definition: placement\nconcept:: Concept Definition\ntype:: string\ndescription:: Folder template of an instance model (required when storage is distributed).\n\n## NN Field Definition: write_policy\nconcept:: Concept Definition\ntype:: select\noptions:: [mutable, append-only, read-only]\ndescription:: Which kinds of write the instances accept. Absent means the bluepriNNt default, else mutable.\n\n## NN Field Definition: concept\nconcept:: Field Definition\ntype:: string\ndescription:: Name of the owning Concept Definition, list of concepts, or * (required).\n\n## NN Field Definition: type\nconcept:: Field Definition\ntype:: select\noptions:: [string, number, boolean, select, reference, markdown_inline, markdown_file, image, file, video, audio, url, knowledge, model, address, citation]\ndescription:: Field type (required).\n\n## NN Field Definition: multiple\nconcept:: Field Definition\ntype:: boolean\ndescription:: Multi-valued field flag (allowed only on select fields).\n\n## NN Field Definition: widget\nconcept:: Field Definition\ntype:: select\noptions:: [boolean, cycle, scale, set, text]\ndescription:: Field interaction widget.\n\n## NN Field Definition: widget_config\nconcept:: Field Definition\ntype:: string\ndescription:: Widget-specific configuration (inline JSON object).\n\n## NN Field Definition: options\nconcept:: Field Definition\ntype:: string\ndescription:: Allowed values for select fields (inline array).\n\n## NN Field Definition: transitions\nconcept:: Field Definition\ntype:: string\ndescription:: Declared lifecycle of a select field (inline JSON object mapping a current value \u2014 "" for unset \u2014 to the values it may move to). Every key and every target is one of options, and every option is a key. A write that changes the value must follow a declared edge; writing the value the field already holds is always allowed. Level 2 only: no cascade and no override at kNNowledge level. A field without transitions accepts any option, as before. Transitions are a validity rule, not a concurrency guard.\n\n## NN Field Definition: target_concepts\nconcept:: Field Definition\ntype:: string\ndescription:: Target concepts for reference fields (inline array).\n\n## NN Field Definition: target_blueprint\nconcept:: Field Definition\ntype:: string\ndescription:: Required blueprint name or URL for fields of type knowledge or model.\n\n## NN Field Definition: description\nconcept:: Field Definition\ntype:: string\ndescription:: Human-readable explanation.\n\n## NN Field Definition: source\nconcept:: Matrix Definition\ntype:: string\ndescription:: Source Concept (rows) \xE2\u20AC\u201D required.\n\n## NN Field Definition: target\nconcept:: Matrix Definition\ntype:: string\ndescription:: Target Concept or reserved pseudo-Concept (columns) \xE2\u20AC\u201D required.\n\n## NN Field Definition: values\nconcept:: Matrix Definition\ntype:: string\ndescription:: Allowed cell values (inline array). Empty cell - and boolean marker X are always accepted.\n\n## NN Field Definition: widget\nconcept:: Matrix Definition\ntype:: select\noptions:: [boolean, cycle, scale, set, text]\ndescription:: Cell interaction widget.\n\n## NN Field Definition: widget_config\nconcept:: Matrix Definition\ntype:: string\ndescription:: Widget-specific configuration (inline JSON object).\n\n## NN Field Definition: description\nconcept:: Matrix Definition\ntype:: string\ndescription:: Human-readable explanation.\n```\n\n### Bootstrap Axiom\n\nThe metaschema is written in the very syntax it constrains. Its own conformance is\nthe single irreducible axiom of the system: an application **asserts** \xE2\u20AC\u201D it does\nnot derive \xE2\u20AC\u201D that the metaschema\'s `Field Definition` elements are valid\n`Field Definition` instances. Every other conformance check in the ecosystem\n(L2 against L1, L3 against L2) is mechanical and follows from it. This mirrors MOF\nbeing defined in MOF and `Ecore.ecore` describing Ecore.\n\n## Self-Description\n\nThis document (`iNNfo_V_0-9-0_NN.md`) is itself a level 1 specification following\ndefiNNition. It declares `parent: "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/defiNNition_V_0-1-0_NN.md"` and defines\nthe root primitives \xE2\u20AC\u201D plus the mechanical metaschema above \xE2\u20AC\u201D that every\nlevel-2 bluepriNNt instantiates.\n';
-    CANONICAL_BLUEPRINTS = {
+    CANONICAL_BLUEPRINTS2 = {
       procedures: {
         name: "procedures",
         version: "V_0-7-0",
@@ -11909,7 +11909,7 @@ function checkFrontmatterInvariants(model, d) {
     }
   }
   for (const concept of fm.concepts ?? []) {
-    if (RESERVED_CONCEPT_NAMES.has(concept.name)) {
+    if (RESERVED_CONCEPT_NAMES2.has(concept.name)) {
       d.error(`frontmatter.concepts.${concept.name}`, `Reserved concept name "${concept.name}" \u2014 Concepts, Elements, and Markers are reserved pseudo-concepts and MUST NOT be declared`, {
         code: "RESERVED_CONCEPT_NAME",
         promptHint: `Rename the concept (e.g. "${concept.name}" -> "${concept.name}Catalog"); Concepts, Elements, and Markers are reserved pseudo-concepts and must not be declared as normal concepts.`
@@ -11961,7 +11961,7 @@ function mapGuidanceSources(raw, resolveInclude, seen = /* @__PURE__ */ new Set(
       }
     }
   }
-  for (const concept of extractBlueprintSchema(parsed).concepts) {
+  for (const concept of extractBlueprintSchema2(parsed).concepts) {
     sources.set(concept.name.toLowerCase(), { raw, name: concept.name });
   }
   return sources;
@@ -12029,7 +12029,7 @@ function checkElementGroups(model, templateConcepts, d) {
   return known;
 }
 function checkSchemaConformance(groups, templateConcepts, d) {
-  for (const diag of checkElementsAgainstSchema(groups, templateConcepts, {
+  for (const diag of checkElementsAgainstSchema2(groups, templateConcepts, {
     unknownProperty: "ignore"
   })) {
     d.add({ ...diag, path: `elements.${diag.path}` });
@@ -12057,7 +12057,7 @@ function checkProvenanceBan(model, schema, d, l1Version) {
         }
         if (lower === "conflicts")
           continue;
-        const declared2 = schema ? findDeclaredField(schema, concept, fieldName) : void 0;
+        const declared2 = schema ? findDeclaredField2(schema, concept, fieldName) : void 0;
         if (declared2?.type === "citation" && !(isChangesDocument && lower === "evidence")) {
           d.error(path2, `a "citation" field is banned on L3 (the only allowed citation is changes.evidence): "${fieldName}::"`, { code: "CITATION_FIELD_BANNED" });
         }
@@ -12077,7 +12077,7 @@ function checkConceptFields(model, templateConcepts, d) {
       const fieldDef = fieldByName.get(key.toLowerCase());
       if (!fieldDef)
         continue;
-      const fieldDiags = validateFieldValue(fieldDef, rawVal, `concepts.${conceptDef.name}.${key}`);
+      const fieldDiags = validateFieldValue2(fieldDef, rawVal, `concepts.${conceptDef.name}.${key}`);
       for (const diag of fieldDiags) {
         d.add(diag);
       }
@@ -12231,7 +12231,7 @@ function validateKnowledge(model, template, _formatSpec, resolveIncludeOrOptions
     const { checks: checks2, summary: summary2 } = buildReportMetadata(res2);
     return { ...res2, checks: checks2, summary: summary2 };
   }
-  const composed = resolveBlueprintSchema(template.rawContent, opts.resolveInclude);
+  const composed = resolveBlueprintSchema2(template.rawContent, opts.resolveInclude);
   for (const diag of composed.errors) {
     d.add({ ...diag, path: `parent.${diag.path}` });
   }
@@ -12439,7 +12439,7 @@ function buildRules(declarations) {
   for (const [name, storage] of declarations) {
     if (storage.mode !== "distributed" || storage.placement === void 0)
       continue;
-    const result = parsePlacement(storage.placement, {
+    const result = parsePlacement2(storage.placement, {
       hasContainer: storage.container !== void 0
     });
     if (result.ok) {
@@ -12791,7 +12791,7 @@ ${url ?? ""}`;
     const group = byIdGroups.get(id);
     return group?.length === 1 ? group[0].model : void 0;
   };
-  const resolve13 = (address, from, expect) => {
+  const resolve14 = (address, from, expect) => {
     const parsed = typeof address === "string" ? parseAddress2(address) : address;
     const text = typeof address === "string" ? address.trim() : formatAddress2(address);
     const fail3 = (code, message) => ({
@@ -12874,7 +12874,7 @@ ${url ?? ""}`;
     byId,
     collection,
     byPath: (path2) => pathMap.get(path2),
-    resolve: resolve13,
+    resolve: resolve14,
     placementFor: (concept, id, blueprint) => {
       const declared2 = lookup(blueprint);
       if (!declared2) {
@@ -13135,7 +13135,7 @@ function splitSourceFieldValue2(value) {
   const cleaned = cleanSourceItem2(s);
   return cleaned ? [cleaned] : [];
 }
-function levenshteinDistance(a, b) {
+function levenshteinDistance2(a, b) {
   const an = a.length;
   const bn = b.length;
   if (an === 0)
@@ -13960,7 +13960,7 @@ function setFieldsEntries2(change) {
     return expected === void 0 ? { field, to: value } : { field, to: value, from: expected };
   });
 }
-function addElementFieldsProblems(change) {
+function addElementFieldsProblems2(change) {
   if (change.op !== "add_element" || change.to === void 0)
     return [];
   const to = parseFieldMap(change.to, "to", "add_element");
@@ -15633,7 +15633,7 @@ function unknownConceptMessage(conceptName, declaredNames) {
   let best;
   let bestDistance = Infinity;
   for (const name of declaredNames) {
-    const dist = levenshteinDistance(conceptName.toLowerCase(), name.toLowerCase());
+    const dist = levenshteinDistance2(conceptName.toLowerCase(), name.toLowerCase());
     if (dist < bestDistance) {
       bestDistance = dist;
       best = name;
@@ -15729,13 +15729,13 @@ function repinBlueprint(model, args) {
 }
 function closeModel(model) {
   const fm = model.frontmatter;
-  if (isModelClosed(fm)) {
+  if (isModelClosed2(fm)) {
     return {
       success: false,
-      errors: [{ path: MODEL_CLOSED_KEY, message: "MODEL_CLOSED: the model is already closed" }]
+      errors: [{ path: MODEL_CLOSED_KEY2, message: "MODEL_CLOSED: the model is already closed" }]
     };
   }
-  fm[MODEL_CLOSED_KEY] = true;
+  fm[MODEL_CLOSED_KEY2] = true;
   return { success: true };
 }
 function renameFieldKey(model, args) {
@@ -15872,7 +15872,7 @@ function addConcept(model, args) {
   if (!req.ok)
     return req.result;
   const { conceptName } = req.values;
-  if (RESERVED_CONCEPT_NAMES.has(conceptName)) {
+  if (RESERVED_CONCEPT_NAMES2.has(conceptName)) {
     return {
       success: false,
       errors: [
@@ -15883,7 +15883,7 @@ function addConcept(model, args) {
       ]
     };
   }
-  const defs = model.elements.get(CONCEPT_DEFINITION) ?? [];
+  const defs = model.elements.get(CONCEPT_DEFINITION2) ?? [];
   if (defs.some((c) => c.name.toLowerCase() === conceptName.toLowerCase())) {
     return {
       success: false,
@@ -15897,8 +15897,8 @@ function addConcept(model, args) {
     fields["color"] = args.color;
   if (args.weight !== void 0)
     fields["weight"] = args.weight;
-  defs.push({ type: CONCEPT_DEFINITION, name: conceptName, description: "", fields, markers: {} });
-  model.elements.set(CONCEPT_DEFINITION, defs);
+  defs.push({ type: CONCEPT_DEFINITION2, name: conceptName, description: "", fields, markers: {} });
+  model.elements.set(CONCEPT_DEFINITION2, defs);
   return { success: true };
 }
 function addField(model, args) {
@@ -15915,7 +15915,7 @@ function addField(model, args) {
       conceptVal = trimmed;
     }
   }
-  const defs = model.elements.get(CONCEPT_DEFINITION) ?? [];
+  const defs = model.elements.get(CONCEPT_DEFINITION2) ?? [];
   const declaredConceptNames = new Set(defs.map((c) => c.name.toLowerCase()));
   if (conceptVal === "*") {
   } else if (Array.isArray(conceptVal)) {
@@ -15935,7 +15935,7 @@ function addField(model, args) {
       };
     }
   }
-  const fds = model.elements.get(FIELD_DEFINITION) ?? [];
+  const fds = model.elements.get(FIELD_DEFINITION2) ?? [];
   const existingField = fds.find((f) => f.name.toLowerCase() === fieldName.toLowerCase() && JSON.stringify(f.fields["concept"]) === JSON.stringify(conceptVal));
   if (existingField) {
     return {
@@ -16035,7 +16035,7 @@ function addField(model, args) {
         ]
       };
     }
-    const allowed = WIDGET_CONFIG_KEYS[widget] || [];
+    const allowed = WIDGET_CONFIG_KEYS2[widget] || [];
     if (typeof cfg === "object" && cfg !== null) {
       for (const k of Object.keys(cfg)) {
         if (!allowed.includes(k)) {
@@ -16092,8 +16092,8 @@ function addField(model, args) {
   const previous = fds[fds.length - 1];
   if (previous && previous.trailingBlankLine === false)
     previous.trailingBlankLine = true;
-  fds.push({ type: FIELD_DEFINITION, name: fieldName, description: "", fields, markers: {} });
-  model.elements.set(FIELD_DEFINITION, fds);
+  fds.push({ type: FIELD_DEFINITION2, name: fieldName, description: "", fields, markers: {} });
+  model.elements.set(FIELD_DEFINITION2, fds);
   return { success: true };
 }
 function addElement(model, args, schema) {
@@ -16155,7 +16155,7 @@ function addElement(model, args, schema) {
     };
   }
   const initialTo = args.to === void 0 || args.to === null ? void 0 : typeof args.to === "string" ? args.to : JSON.stringify(args.to);
-  const toProblem = addElementFieldsProblems({ op: "add_element", to: initialTo })[0];
+  const toProblem = addElementFieldsProblems2({ op: "add_element", to: initialTo })[0];
   if (toProblem) {
     return {
       success: false,
@@ -16228,7 +16228,7 @@ function addElement(model, args, schema) {
   model.elements.set(conceptName, existingElements);
   return { success: true };
 }
-function matchesElement(e, target) {
+function matchesElement2(e, target) {
   const tLower = target.toLowerCase();
   if (e.name.toLowerCase() === tLower)
     return true;
@@ -16327,11 +16327,11 @@ function updateField(model, args, schema) {
         errors: [{ path: "", message: `Concept "${conceptName}" not found` }]
       };
     }
-    foundElement = existingElements.find((e) => matchesElement(e, elementName));
+    foundElement = existingElements.find((e) => matchesElement2(e, elementName));
     foundConcept = conceptName;
   } else {
     for (const [cName, elements] of model.elements.entries()) {
-      const el = elements.find((e) => matchesElement(e, elementName));
+      const el = elements.find((e) => matchesElement2(e, elementName));
       if (el) {
         foundElement = el;
         foundConcept = cName;
@@ -16377,7 +16377,7 @@ function writeFieldValue(foundElement, foundConcept, fieldName, val, schema) {
   }
   const coercedVal = coerceFieldValue(foundElement.fields[fieldName], parsedVal, fieldDef);
   if (fieldDef) {
-    const diags = validateFieldValue(fieldDef, coercedVal, `${foundConcept}.${fieldName}`);
+    const diags = validateFieldValue2(fieldDef, coercedVal, `${foundConcept}.${fieldName}`);
     const errors = diags.filter((d) => d.severity === "error");
     if (errors.length > 0) {
       return {
@@ -16645,10 +16645,10 @@ function updateElementText(model, args) {
         errors: [{ path: "", message: `Concept "${conceptName}" not found` }]
       };
     }
-    foundElement = existingElements.find((e) => matchesElement(e, elementName));
+    foundElement = existingElements.find((e) => matchesElement2(e, elementName));
   } else {
     for (const [, elements] of model.elements.entries()) {
-      const el = elements.find((e) => matchesElement(e, elementName));
+      const el = elements.find((e) => matchesElement2(e, elementName));
       if (el) {
         foundElement = el;
         break;
@@ -16768,7 +16768,7 @@ function updateConceptField(model, args, schema) {
       fieldDef = schema.fields.find((f) => f.name.toLowerCase() === fieldName.toLowerCase() && (!f.concept || f.concept === "*" || (Array.isArray(f.concept) ? f.concept.some((c) => c.toLowerCase() === targetConceptKey.toLowerCase()) : String(f.concept).toLowerCase() === targetConceptKey.toLowerCase())));
     }
     if (fieldDef) {
-      const diags = validateFieldValue(fieldDef, parsedVal, `${targetConceptKey}.${fieldName}`);
+      const diags = validateFieldValue2(fieldDef, parsedVal, `${targetConceptKey}.${fieldName}`);
       const errors = diags.filter((d) => d.severity === "error");
       if (errors.length > 0) {
         return {
@@ -16922,7 +16922,7 @@ function renameConcept(model, args) {
   if (!req.ok)
     return req.result;
   const { conceptName, newName } = req.values;
-  if (RESERVED_CONCEPT_NAMES.has(newName)) {
+  if (RESERVED_CONCEPT_NAMES2.has(newName)) {
     return {
       success: false,
       errors: [
@@ -16937,7 +16937,7 @@ function renameConcept(model, args) {
       success: false,
       errors: [{ path: "", message: "newName must differ from conceptName" }]
     };
-  const defs = model.elements.get(CONCEPT_DEFINITION) ?? [];
+  const defs = model.elements.get(CONCEPT_DEFINITION2) ?? [];
   const def = defs.find((c) => c.name.toLowerCase() === lowerOld);
   if (!def) {
     return {
@@ -16956,15 +16956,15 @@ function renameConcept(model, args) {
     };
   }
   def.name = newName;
-  const fds = model.elements.get(FIELD_DEFINITION) ?? [];
+  const fds = model.elements.get(FIELD_DEFINITION2) ?? [];
   for (const f of fds) {
     if (typeof f.fields["concept"] === "string" && f.fields["concept"].toLowerCase() === lowerOld) {
       f.fields["concept"] = newName;
     }
   }
   if (fds.length > 0)
-    model.elements.set(FIELD_DEFINITION, fds);
-  const mds = model.elements.get(MATRIX_DEFINITION) ?? [];
+    model.elements.set(FIELD_DEFINITION2, fds);
+  const mds = model.elements.get(MATRIX_DEFINITION2) ?? [];
   for (const m of mds) {
     if (typeof m.fields["source"] === "string" && m.fields["source"].toLowerCase() === lowerOld) {
       m.fields["source"] = newName;
@@ -16974,8 +16974,8 @@ function renameConcept(model, args) {
     }
   }
   if (mds.length > 0)
-    model.elements.set(MATRIX_DEFINITION, mds);
-  model.elements.set(CONCEPT_DEFINITION, defs);
+    model.elements.set(MATRIX_DEFINITION2, mds);
+  model.elements.set(CONCEPT_DEFINITION2, defs);
   const nodes = model.elements.get(conceptName);
   if (nodes) {
     for (const node of nodes)
@@ -17027,7 +17027,7 @@ function renameElement(model, args, schema) {
   const existingElements = model.elements.get(conceptName);
   if (!existingElements)
     return { success: false, errors: [{ path: "", message: `Concept "${conceptName}" not found` }] };
-  const element = existingElements.find((e) => matchesElement(e, elementName));
+  const element = existingElements.find((e) => matchesElement2(e, elementName));
   if (!element)
     return {
       success: false,
@@ -17113,7 +17113,7 @@ function generateIndex(model, args) {
       }
     }
   }
-  const conceptDefs = model.elements.get(CONCEPT_DEFINITION);
+  const conceptDefs = model.elements.get(CONCEPT_DEFINITION2);
   if (conceptDefs) {
     for (const cd of conceptDefs) {
       presentConcepts.add(cd.name);
@@ -17653,7 +17653,7 @@ function createFsSourceResolver(rootDir) {
       const maxAllowed = Math.max(1, Math.min(3, Math.floor(targetStem.length / 3)));
       const scored = files.map((name) => {
         const candStem = name.replace(/\.[^.]+$/, "");
-        return { name, dist: levenshteinDistance(targetStem, candStem) };
+        return { name, dist: levenshteinDistance2(targetStem, candStem) };
       }).filter((item) => item.dist > 0 && item.dist <= maxAllowed).sort((a, b) => a.dist - b.dist);
       if (scored.length > 0) {
         suggestions = scored.map((s) => s.name);
@@ -18821,7 +18821,7 @@ function evaluateBatchDeleteImpact(changes, loadedModels, workspaceModels) {
     let targetName = elementIdent;
     if (model?.elements) {
       for (const [, elements] of model.elements.entries()) {
-        const found = elements.find((e) => e.name.toLowerCase() === elementIdent.toLowerCase() || e.slug && e.slug.toLowerCase() === elementIdent.toLowerCase() || slugify2(e.name).toLowerCase() === elementIdent.toLowerCase());
+        const found = elements.find((e) => matchesElement2(e, elementIdent));
         if (found) {
           targetSlug = found.slug || slugify2(found.name) || found.name;
           targetName = found.name;
@@ -18848,6 +18848,7 @@ var init_impact = __esm({
   "iNNfo/packages/nn-core/dist/changeset/impact.js"() {
     "use strict";
     init_slug();
+    init_mutate();
     init_utils();
   }
 });
@@ -19166,7 +19167,7 @@ async function partitionChangeset(changes, loadedModels, changesDir, modelBaseVe
         if (change.concept && model.elements.has(change.concept)) {
           const list = model.elements.get(change.concept);
           for (const el of list) {
-            if (el.name.toLowerCase() === elementIdent.toLowerCase() || el.slug && el.slug.toLowerCase() === elementIdent.toLowerCase() || slugify2(el.name).toLowerCase() === elementIdent.toLowerCase()) {
+            if (matchesElement2(el, elementIdent)) {
               candidates.push({ concept: change.concept, element: el });
             }
           }
@@ -19176,7 +19177,7 @@ async function partitionChangeset(changes, loadedModels, changesDir, modelBaseVe
             if (change.concept && conceptName === change.concept)
               continue;
             for (const el of elements) {
-              if (el.name.toLowerCase() === elementIdent.toLowerCase() || el.slug && el.slug.toLowerCase() === elementIdent.toLowerCase() || slugify2(el.name).toLowerCase() === elementIdent.toLowerCase()) {
+              if (matchesElement2(el, elementIdent)) {
                 candidates.push({ concept: conceptName, element: el });
               }
             }
@@ -19358,6 +19359,7 @@ var init_conflicts = __esm({
     "use strict";
     init_slug();
     init_sourceRef();
+    init_mutate();
     init_sections();
     init_element_hash();
     init_history();
@@ -20299,7 +20301,7 @@ async function resolveParentChainNode(rootDir, parentUrl, parentName, options = 
       const isCanonicalRemote = isRemote && /raw\.githubusercontent\.com\/cogNNitive\/[^/]+\/(main|v[\d.]+)\//i.test(currentUrl);
       if (!isRemote || isCanonicalRemote) {
         attempted.push(`canonical fallback registry for "${currentName}"`);
-        const canonical = findCanonicalBlueprint(currentName) || (currentUrl ? findCanonicalBlueprint(currentUrl) : null);
+        const canonical = findCanonicalBlueprint2(currentName) || (currentUrl ? findCanonicalBlueprint2(currentUrl) : null);
         if (canonical) {
           content = canonical.specContent;
           resolvedFromLocalTier = true;
@@ -20380,7 +20382,7 @@ async function fetchSpecContent(name, url, specsDir, timeout, cacheDir) {
   const isRemote = url && /^https?:\/\//i.test(url);
   const isCanonicalRemote = isRemote && /raw\.githubusercontent\.com\/cogNNitive\/[^/]+\/(main|v[\d.]+)\//i.test(url);
   if (!isRemote || isCanonicalRemote) {
-    const canonical = findCanonicalBlueprint(name) || (url ? findCanonicalBlueprint(url) : null);
+    const canonical = findCanonicalBlueprint2(name) || (url ? findCanonicalBlueprint2(url) : null);
     if (canonical) return canonical.specContent;
   }
   return null;
@@ -20458,7 +20460,7 @@ async function loadDeclarations(rootDir, parent) {
   }
   if (content === null) return null;
   try {
-    const { schema } = resolveBlueprintSchema(content);
+    const { schema } = resolveBlueprintSchema2(content);
     return new Map(schema.concepts.flatMap((c) => c.storage ? [[c.name, c.storage]] : []));
   } catch {
     return null;
@@ -23720,6 +23722,18 @@ function serializeChangeset(doc) {
   return serializeStructural(doc);
 }
 
+// iNNfo/packages/nn-core/src/schema/extract.ts
+var CONCEPT_DEFINITION = "Concept Definition";
+var FIELD_DEFINITION = "Field Definition";
+var MATRIX_DEFINITION = "Matrix Definition";
+
+// iNNfo/packages/nn-core/src/schema/metaschema.ts
+var REQUIRED_BY_PRIMITIVE = {
+  [CONCEPT_DEFINITION]: ["type"],
+  [FIELD_DEFINITION]: ["concept", "type"],
+  [MATRIX_DEFINITION]: ["source", "target"]
+};
+
 // iNNfo/packages/nn-core/src/changeset/changeset-index.ts
 var import_node_crypto2 = require("node:crypto");
 var INDEX_FORMAT = 1;
@@ -23759,19 +23773,17 @@ function parseTargetAddress(target) {
 }
 function findElementInModel(model, conceptName, elementIdent) {
   if (!elementIdent) return null;
-  const lowerIdent = elementIdent.toLowerCase();
-  const matches = (el) => String(el.name ?? "").toLowerCase() === lowerIdent || el.slug !== void 0 && String(el.slug).toLowerCase() === lowerIdent;
   if (conceptName) {
     const list = model.elements.get(conceptName);
     if (list) {
       for (const el of list) {
-        if (matches(el)) return { concept: conceptName, element: el };
+        if (matchesElement2(el, elementIdent)) return { concept: conceptName, element: el };
       }
     }
   }
   for (const [concept, list] of model.elements.entries()) {
     for (const el of list) {
-      if (matches(el)) return { concept, element: el };
+      if (matchesElement2(el, elementIdent)) return { concept, element: el };
     }
   }
   return null;
@@ -23912,7 +23924,7 @@ async function resolveModelCitation(index, modelId, elementSlug) {
   if (elementSlug && !findElementInModel(model, void 0, elementSlug)) {
     return { ok: false, code: "CITATION_UNRESOLVED", detail: "which does not resolve (UNKNOWN_ANCHOR)" };
   }
-  if (!isModelClosed(model.frontmatter)) {
+  if (!isModelClosed2(model.frontmatter)) {
     return {
       ok: false,
       code: "CITATION_NOT_CLOSED",
@@ -24078,7 +24090,7 @@ init_domain_index();
 var CHANGES_SPEC_URL = "https://raw.githubusercontent.com/cogNNitive/cogNNitive-web/main/iNNfo/specs/bluepriNNts/changes/spec_NN.md";
 var CHANGESET_SPEC_VERSION = "V_0-4-0";
 function changesBlueprintVersion() {
-  return findCanonicalBlueprint("changes").version;
+  return findCanonicalBlueprint2("changes").version;
 }
 function fileSegment(value, fallback) {
   const cleaned = value.replace(/[^A-Za-z0-9._-]+/g, "_").replace(/^_+|_+$/g, "");
@@ -24438,13 +24450,11 @@ async function artifactAlreadyRecorded(rootDir, rel) {
   return false;
 }
 function elementByLabel(model, label) {
-  const wanted = String(label ?? "").trim().toLowerCase();
+  const wanted = String(label ?? "").trim();
   if (!wanted) return void 0;
   for (const [, elements] of model.elements) {
     for (const el of elements) {
-      if ((el.slug ?? "").toLowerCase() === wanted) return el;
-      if ((el.name ?? "").toLowerCase() === wanted) return el;
-      if (slugifyHeading2(el.name ?? "").toLowerCase() === wanted) return el;
+      if (matchesElement2(el, wanted)) return el;
     }
   }
   return void 0;
@@ -25155,7 +25165,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
     }
     for (const change of csDoc.changes) {
-      const problem = setFieldsProblems(change)[0] ?? addElementFieldsProblems(change)[0];
+      const problem = setFieldsProblems(change)[0] ?? addElementFieldsProblems2(change)[0];
       if (problem) {
         return rejectProposal(
           problem.code,
@@ -25448,11 +25458,10 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       if (!path2) {
         return rejectPhase1("MODEL_NOT_FOUND", id, `remove_model target "${id}" has no file`);
       }
-      const folder = (0, import_node_path21.dirname)(target.path);
+      const folder = (0, import_node_path21.resolve)(rootDir, (0, import_node_path21.dirname)(target.path));
       const children = domainIndex.models.filter((m) => {
         if (m.id === id) return false;
-        const inside = (0, import_node_path21.relative)(folder, m.path);
-        return inside !== "" && !inside.startsWith("..") && !(0, import_node_path21.isAbsolute)(inside);
+        return isInsideRoot2(folder, (0, import_node_path21.resolve)(rootDir, m.path));
       }).map((m) => m.id);
       if (children.length > 0) {
         return rejectProposal(
@@ -25468,9 +25477,9 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       if (entry.schema === void 0) {
         try {
           const { template: schemaBlueprint, resolveInclude: schemaInclude } = await resolveBlueprintForKnowledge(rootDir, entry.model);
-          entry.schema = schemaBlueprint ? resolveBlueprintSchema(schemaBlueprint.rawContent, schemaInclude).schema : null;
+          entry.schema = schemaBlueprint ? resolveBlueprintSchema2(schemaBlueprint.rawContent, schemaInclude).schema : null;
           const blueprintFm = schemaBlueprint?.frontmatter;
-          entry.blueprintWritePolicy = blueprintFm?.[WRITE_POLICY_KEY];
+          entry.blueprintWritePolicy = blueprintFm?.[WRITE_POLICY_KEY2];
         } catch {
           entry.schema = null;
         }
@@ -25495,12 +25504,12 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       const names = args.concepts.length > 0 ? [...new Set(args.concepts)] : [""];
       for (const conceptName of names) {
         const declared2 = conceptName ? schema?.concepts.find((c) => c.name.toLowerCase() === conceptName.toLowerCase()) : void 0;
-        const effective = resolveWritePolicy({
+        const effective = resolveWritePolicy2({
           blueprint: args.blueprintPolicy,
           concept: declared2?.writePolicy,
           scopes: scopes.scopes
         });
-        const violation = writePolicyViolation(
+        const violation = writePolicyViolation2(
           effective.policy,
           change.op,
           declared2?.name ?? (conceptName || modelSlug)
@@ -25539,7 +25548,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
             `change "${change.id}": bluepriNNt "${blueprintName}" could not be resolved from "${blueprintUrl}"${detail}`
           );
         }
-        const composed = resolveBlueprintSchema(
+        const composed = resolveBlueprintSchema2(
           resolvedBlueprint.template.rawContent,
           resolvedBlueprint.resolveInclude
         );
@@ -25556,7 +25565,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
             change,
             concepts: [plan.root.concept],
             schema: composed.schema,
-            blueprintPolicy: resolvedBlueprint.template.frontmatter?.[WRITE_POLICY_KEY],
+            blueprintPolicy: resolvedBlueprint.template.frontmatter?.[WRITE_POLICY_KEY2],
             scopes: writeScopesAt(plan.path),
             modelSlug: cleanId
           });
@@ -25769,7 +25778,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
     for (const [modelKey, entry] of loadedModels) {
       const schema = await schemaFor(entry);
       if (!schema) continue;
-      declaredTransitionsByModel.set(modelKey, buildDeclaredTransitions(schema.concepts));
+      declaredTransitionsByModel.set(modelKey, buildDeclaredTransitions2(schema.concepts));
     }
     const declaredTransitions = mergeTransitions(declaredTransitionsByModel);
     const partition = await partitionChangeset(
@@ -25917,7 +25926,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       const { modelSlug, parts, remainder } = parseTargetAddress(change.target);
       const entry = loadedModels.get(modelSlug.toLowerCase());
       if (!entry) continue;
-      if ((writeOperationOf(change.op) !== null || change.op === "close_model") && isModelClosed(entry.model.frontmatter)) {
+      if ((writeOperationOf2(change.op) !== null || change.op === "close_model") && isModelClosed2(entry.model.frontmatter)) {
         return recordRejection(
           [
             {
@@ -26009,7 +26018,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
             `change "${change.id}": bluepriNNt "${plan.blueprintName}" could not be resolved from "${plan.blueprintUrl}"`
           );
         }
-        const composed = resolveBlueprintSchema(
+        const composed = resolveBlueprintSchema2(
           extractedBlueprint.template.rawContent,
           extractedBlueprint.resolveInclude
         );
@@ -26096,7 +26105,7 @@ async function executeChangesetApply(rootDir, changesetPathInput) {
       }
       const mutationArgs = mutationArgsForChange(change, entry.model, renameSchema);
       if (change.op === "add_element" && change.to !== void 0) mutationArgs.to = change.to;
-      const writeOperation = writeOperationOf(change.op);
+      const writeOperation = writeOperationOf2(change.op);
       if (writeOperation !== null) {
         const policySchema = renameSchema ?? await schemaFor(entry);
         const elementIdent = String(mutationArgs.elementName ?? "") || parseTargetAddress(change.target).remainder.split("&")[0].trim();

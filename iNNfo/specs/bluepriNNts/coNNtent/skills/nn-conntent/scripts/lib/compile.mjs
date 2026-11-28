@@ -15,47 +15,61 @@
  * capped per run by `SpendGuard`; there is no approval artifact on disk.
  * ESM module.
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { SceneCompiler, ScriptValidationError, compositionIdOf, computeSceneDurations } from '../scene-compiler.mjs';
-import { loadKnowledgeModel } from './knowledge-model.mjs';
-import { CacheManager } from '../cache-manager.mjs';
-import { AssetSynthesizer } from '../asset-synthesizer.mjs';
-import { SpendGuard, resolveDefaultCacheDir, normalizeModelId, resolveWorkspace } from './video-guard.mjs';
-import { loadGuardWithVoices } from './guard-config.mjs';
-import { loadCascadeBags, findSeriesRoot, withScriptPresets, findBlueprintPackage } from './video-scope.mjs';
-import { resolve, resolveKeyed } from './cascade.mjs';
-import { resolveLibrary } from './library.mjs';
-import { applyCachedAvatars } from './avatar-jobs.mjs';
-import { buildTtsVoiceOptions } from './tts-options.mjs';
-import { buildImageOptions, imageModelsFor } from './image-options.mjs';
-import { appendTimingRow, timingRow } from './facts.mjs';
-import { assertImageSize, loadMergedCatalog } from './catalog.mjs';
-import { warnUnpricedAllowedModels } from '../asset-cost-estimator.mjs';
-import { loadFrame, emitHyperframesFrame } from './frame-tokens.mjs';
-import { groupCaptionSegments, sceneCaptionsCacheKey } from './captions.mjs';
-import { sceneAudioPath, sceneCaptionPlans } from './captions-stage.mjs';
-import { probeDuration } from './media-duration.mjs';
-import { checkMissingAsset } from './missing-asset.mjs';
-import { resolveAnimations, assertAnimationIds } from './animations.mjs';
-import { assertSlotContract, readVariableIds, SLOT_OF } from '../overlay-blocks.mjs';
-import { probeAssetSize, AssetSizeUnknownError } from './image-size.mjs';
-import { parseArgs, CliUsageError } from './cli-args.mjs';
-import { assetName, linkOrCopy } from './stage-assets.mjs';
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import {
+  SceneCompiler,
+  ScriptValidationError,
+  compositionIdOf,
+  computeSceneDurations,
+} from '../scene-compiler.mjs'
+import { loadKnowledgeModel } from './knowledge-model.mjs'
+import { CacheManager } from '../cache-manager.mjs'
+import { AssetSynthesizer } from '../asset-synthesizer.mjs'
+import {
+  SpendGuard,
+  resolveDefaultCacheDir,
+  normalizeModelId,
+  resolveWorkspace,
+} from './video-guard.mjs'
+import { loadGuardWithVoices } from './guard-config.mjs'
+import {
+  loadCascadeBags,
+  findSeriesRoot,
+  withScriptPresets,
+  findBlueprintPackage,
+} from './video-scope.mjs'
+import { resolve, resolveKeyed } from './cascade.mjs'
+import { resolveLibrary } from './library.mjs'
+import { applyCachedAvatars } from './avatar-jobs.mjs'
+import { buildTtsVoiceOptions } from './tts-options.mjs'
+import { buildImageOptions, imageModelsFor } from './image-options.mjs'
+import { appendTimingRow, timingRow } from './facts.mjs'
+import { assertImageSize, loadMergedCatalog } from './catalog.mjs'
+import { warnUnpricedAllowedModels } from '../asset-cost-estimator.mjs'
+import { loadFrame, emitHyperframesFrame } from './frame-tokens.mjs'
+import { groupCaptionSegments, sceneCaptionsCacheKey } from './captions.mjs'
+import { sceneAudioPath, sceneCaptionPlans } from './captions-stage.mjs'
+import { probeDuration } from './media-duration.mjs'
+import { checkMissingAsset } from './missing-asset.mjs'
+import { resolveAnimations, assertAnimationIds } from './animations.mjs'
+import { assertSlotContract, readVariableIds, SLOT_OF } from '../overlay-blocks.mjs'
+import { probeAssetSize, AssetSizeUnknownError } from './image-size.mjs'
+import { parseArgs, CliUsageError } from './cli-args.mjs'
+import { assetName, linkOrCopy } from './stage-assets.mjs'
 
-
-const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url));
+const SCRIPTS_DIR = path.dirname(fileURLToPath(import.meta.url))
 /** The skill's own folder: the fallback anchor for the nearest-folder walker. */
-const SKILL_DIR = path.resolve(SCRIPTS_DIR, '..', '..');
+const SKILL_DIR = path.resolve(SCRIPTS_DIR, '..', '..')
 /** The blueprint package root: its `library/` is the floor for frames and components. */
 const PACKAGE_FLOOR = (() => {
   try {
-    return findBlueprintPackage(SKILL_DIR);
+    return findBlueprintPackage(SKILL_DIR)
   } catch {
-    return path.resolve(SKILL_DIR, '..', '..');
+    return path.resolve(SKILL_DIR, '..', '..')
   }
-})();
+})()
 
 /**
  * Named error raised when the renderer cannot render and no mock was requested. Callers
@@ -63,16 +77,49 @@ const PACKAGE_FLOOR = (() => {
  */
 export class VideoRenderError extends Error {
   constructor(message, { cause } = {}) {
-    super(message);
-    this.name = 'VideoRenderError';
-    if (cause) this.cause = cause;
+    super(message)
+    this.name = 'VideoRenderError'
+    if (cause) this.cause = cause
   }
 }
 
 /** True when `target` is `root` or lives under it. */
 function isInside(root, target) {
-  const rel = path.relative(path.resolve(root), path.resolve(target));
-  return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+  const rel = path.relative(path.resolve(root), path.resolve(target))
+  return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel))
+}
+
+/**
+ * Look up an asset in the library using the canonical search order:
+ * episode > series > domain > skill / package floor.
+ */
+export function findInLibrary({
+  kind,
+  name,
+  scriptDir,
+  workspaceRoot,
+  skillDir = PACKAGE_FLOOR,
+  throwOnMiss = false,
+}) {
+  return resolveLibrary({
+    kind,
+    ref: `${kind}/${name}`,
+    fromDir: scriptDir,
+    root: workspaceRoot,
+    packageFloor: path.join(skillDir, 'library', kind),
+    throwOnMiss,
+  })
+}
+
+/**
+ * Loads a component HTML file and determines its timeline metadata.
+ */
+export function loadComponent(compPath) {
+  const componentFile = fs.statSync(compPath).isDirectory()
+    ? path.join(compPath, 'index.html')
+    : compPath
+  const html = fs.existsSync(componentFile) ? fs.readFileSync(componentFile, 'utf8') : ''
+  return { path: componentFile, html, noTimeline: /data-no-timeline/.test(html) }
 }
 
 /**
@@ -85,30 +132,37 @@ function isInside(root, target) {
  * @returns {{ name: string, source: string, path: string, tokens: object | null } | null}
  */
 export function resolveFrame({ entries, scriptDir, workspaceRoot, skillDir = PACKAGE_FLOOR }) {
-  const seen = new Set();
-  let primary = null;
+  const seen = new Set()
+  let primary = null
   for (const entry of entries || []) {
-    if (!entry || entry.value === null || entry.value === undefined || String(entry.value).trim() === '') continue;
-    const name = String(entry.value);
-    if (seen.has(name)) continue;
-    seen.add(name);
-    const { file: framePath, searched } = resolveLibrary({
+    if (
+      !entry ||
+      entry.value === null ||
+      entry.value === undefined ||
+      String(entry.value).trim() === ''
+    )
+      continue
+    const name = String(entry.value)
+    if (seen.has(name)) continue
+    seen.add(name)
+    const { file: framePath, searched } = findInLibrary({
       kind: 'frames',
-      ref: `frames/${name}`,
-      fromDir: scriptDir,
-      root: workspaceRoot,
-      packageFloor: path.join(skillDir, 'library', 'frames'),
+      name,
+      scriptDir,
+      workspaceRoot,
+      skillDir,
       throwOnMiss: false,
-    });
+    })
     if (!framePath) {
-      checkMissingAsset({ kind: 'frame', name, source: entry.source, searched });
-      continue;
+      checkMissingAsset({ kind: 'frame', name, source: entry.source, searched })
+      continue
     }
     // A frame folder resolves to `library/frames/<name>/`; read its FRAME.md.
-    const frameFile = framePath.endsWith('.md') ? framePath : path.join(framePath, 'FRAME.md');
-    if (!primary && fs.existsSync(frameFile)) primary = { name, source: entry.source, ...loadFrame(frameFile) };
+    const frameFile = framePath.endsWith('.md') ? framePath : path.join(framePath, 'FRAME.md')
+    if (!primary && fs.existsSync(frameFile))
+      primary = { name, source: entry.source, ...loadFrame(frameFile) }
   }
-  return primary;
+  return primary
 }
 
 /**
@@ -121,66 +175,67 @@ export function resolveFrame({ entries, scriptDir, workspaceRoot, skillDir = PAC
  * @param {{ slots: string[], bags: object, scriptDir: string, workspaceRoot: string, skillDir?: string }} params
  * @returns {Record<string, { name: string, path: string, noTimeline: boolean }>}
  */
-export function resolveComponents({ slots, bags, scriptDir, workspaceRoot, skillDir = PACKAGE_FLOOR }) {
-  const resolved = {};
+export function resolveComponents({
+  slots,
+  bags,
+  scriptDir,
+  workspaceRoot,
+  skillDir = PACKAGE_FLOOR,
+}) {
+  const resolved = {}
   for (const slot of slots || []) {
-    const { value: name, source } = resolveKeyed('components', slot, bags || {});
-    if (!name) continue;
-    const { file: compPath, searched } = resolveLibrary({
+    const { value: name, source } = resolveKeyed('components', slot, bags || {})
+    if (!name) continue
+    const { file: compPath, searched } = findInLibrary({
       kind: 'components',
-      ref: `components/${name}`,
-      fromDir: scriptDir,
-      root: workspaceRoot,
-      packageFloor: path.join(skillDir, 'library', 'components'),
+      name,
+      scriptDir,
+      workspaceRoot,
+      skillDir,
       throwOnMiss: false,
-    });
+    })
     if (!compPath) {
-      checkMissingAsset({ kind: 'component', name, source, searched });
-      continue;
+      checkMissingAsset({ kind: 'component', name, source, searched })
+      continue
     }
-    // A component is a folder (`library/components/<name>/index.html`); the library
-    // walk returns the folder for a folder kind, so point at its index.html.
-    const componentFile = fs.statSync(compPath).isDirectory() ? path.join(compPath, 'index.html') : compPath;
-    const contractPath = path.join(SKILL_DIR, 'slots', `${slot}.html`);
-    const contractHtml = fs.existsSync(contractPath) ? fs.readFileSync(contractPath, 'utf8') : '';
-    const compHtml = fs.readFileSync(componentFile, 'utf8');
-    assertSlotContract(slot, { path: componentFile, html: compHtml, contractHtml });
-    // A component whose root declares `data-no-timeline` is static: it never
-    // registers a sub-composition timeline, so the emitted host must say so too
-    // (otherwise HyperFrames waits its 45s readiness timeout on every render).
-    resolved[slot] = { name, path: componentFile, noTimeline: /data-no-timeline/.test(compHtml) };
+    const { path: componentFile, html: compHtml, noTimeline } = loadComponent(compPath)
+    const contractPath = path.join(SKILL_DIR, 'slots', `${slot}.html`)
+    const contractHtml = fs.existsSync(contractPath) ? fs.readFileSync(contractPath, 'utf8') : ''
+    assertSlotContract(slot, { path: componentFile, html: compHtml, contractHtml })
+    resolved[slot] = { name, path: componentFile, noTimeline }
   }
-  return resolved;
+  return resolved
 }
 
 /** A `fit:: component:<name>` that cannot be mounted: no folder, or a broken contract. */
 export class FitComponentError extends Error {
   constructor(message, { name, searched = [], missing = [] } = {}) {
-    super(message);
-    this.name = 'FitComponentError';
-    this.code = 'FIT_COMPONENT';
-    this.component = name;
-    this.searched = searched;
-    this.missing = missing;
+    super(message)
+    this.name = 'FitComponentError'
+    this.code = 'FIT_COMPONENT'
+    this.component = name
+    this.searched = searched
+    this.missing = missing
   }
 }
 
 /** The variables a `fit` component receives; it must declare every one. */
-export const FIT_COMPONENT_VARIABLES = ['src', 'width', 'height', 'asset_width', 'asset_height'];
+export const FIT_COMPONENT_VARIABLES = ['src', 'width', 'height', 'asset_width', 'asset_height']
 
 /** Every `component:<name>` any key of any layer's lowered `fit` names. */
 function fitComponentNames(scenes) {
-  const names = new Set();
+  const names = new Set()
   for (const scene of scenes || []) {
     for (const layer of Array.isArray(scene.layers) ? scene.layers : []) {
-      const fit = layer?.properties?.layer_fit;
-      if (!fit || typeof fit !== 'object') continue;
+      const fit = layer?.properties?.layer_fit
+      if (!fit || typeof fit !== 'object') continue
       for (const v of Object.values(fit)) {
-        if (typeof v === 'string' && v.startsWith('component:')) names.add(v.slice('component:'.length));
+        if (typeof v === 'string' && v.startsWith('component:'))
+          names.add(v.slice('component:'.length))
       }
     }
   }
-  return [...names];
+  return [...names]
 }
 
 /**
@@ -192,36 +247,40 @@ function fitComponentNames(scenes) {
  * @param {{ scenes: object[], scriptDir: string, workspaceRoot: string, skillDir?: string }} params
  * @returns {Record<string, { name: string, path: string, noTimeline: boolean }>}
  */
-export function resolveFitComponents({ scenes, scriptDir, workspaceRoot, skillDir = PACKAGE_FLOOR }) {
-  const resolved = {};
+export function resolveFitComponents({
+  scenes,
+  scriptDir,
+  workspaceRoot,
+  skillDir = PACKAGE_FLOOR,
+}) {
+  const resolved = {}
   for (const name of fitComponentNames(scenes)) {
-    const { file, searched } = resolveLibrary({
+    const { file, searched } = findInLibrary({
       kind: 'components',
-      ref: `components/${name}`,
-      fromDir: scriptDir,
-      root: workspaceRoot,
-      packageFloor: path.join(skillDir, 'library', 'components'),
+      name,
+      scriptDir,
+      workspaceRoot,
+      skillDir,
       throwOnMiss: false,
-    });
+    })
     if (!file) {
       throw new FitComponentError(
         `fit: component "${name}" not found; searched:\n${(searched || []).map((p) => `  - ${p}`).join('\n')}`,
         { name, searched },
-      );
+      )
     }
-    const componentFile = fs.statSync(file).isDirectory() ? path.join(file, 'index.html') : file;
-    const html = fs.existsSync(componentFile) ? fs.readFileSync(componentFile, 'utf8') : '';
-    const declared = new Set(readVariableIds(html));
-    const missing = FIT_COMPONENT_VARIABLES.filter((v) => !declared.has(v));
+    const { path: componentFile, html, noTimeline } = loadComponent(file)
+    const declared = new Set(readVariableIds(html))
+    const missing = FIT_COMPONENT_VARIABLES.filter((v) => !declared.has(v))
     if (missing.length > 0) {
       throw new FitComponentError(
         `fit: component "${name}" (${componentFile}) does not declare the fit variable(s) ${missing.join(', ')}`,
         { name, missing },
-      );
+      )
     }
-    resolved[name] = { name, path: componentFile, noTimeline: /data-no-timeline/.test(html) };
+    resolved[name] = { name, path: componentFile, noTimeline }
   }
-  return resolved;
+  return resolved
 }
 
 /**
@@ -236,24 +295,26 @@ export function resolveFitComponents({ scenes, scriptDir, workspaceRoot, skillDi
 export async function probeMediaLayerSizes(manifest, { publicDir, probe = probeAssetSize } = {}) {
   for (const scene of manifest?.tracks?.scenes || []) {
     for (const layer of scene?.props?.layers || []) {
-      const fit = layer?.layer_fit;
-      const src = layer?.layer_asset_source;
-      if (!src || !fit || typeof fit !== 'object') continue;
-      const values = [fit.native, fit.mismatch].map(String);
-      const needs = fit.native !== fit.mismatch || values.some((v) => v === 'card' || v.startsWith('component:'));
-      if (!needs) continue;
-      const size = await probe(path.join(publicDir, src));
-      if (!size) throw new AssetSizeUnknownError(src);
-      layer.layer_asset_width = size.width;
-      layer.layer_asset_height = size.height;
+      const fit = layer?.layer_fit
+      const src = layer?.layer_asset_source
+      if (!src || !fit || typeof fit !== 'object') continue
+      const values = [fit.native, fit.mismatch].map(String)
+      const needs =
+        fit.native !== fit.mismatch ||
+        values.some((v) => v === 'card' || v.startsWith('component:'))
+      if (!needs) continue
+      const size = await probe(path.join(publicDir, src))
+      if (!size) throw new AssetSizeUnknownError(src)
+      layer.layer_asset_width = size.width
+      layer.layer_asset_height = size.height
     }
   }
 }
 
 /** Overlay slots that carry enter/exit sound events (b-roll is a layer event). */
-export const SOUND_OVERLAY_SLOTS = ['title', 'lower-third', 'caption', 'quote', 'watermark'];
+export const SOUND_OVERLAY_SLOTS = ['title', 'lower-third', 'caption', 'quote', 'watermark']
 /** Layer types that carry a `layer-enter` sound event. */
-export const SOUND_LAYER_TYPES = ['b-roll', 'animation', 'presenter'];
+export const SOUND_LAYER_TYPES = ['b-roll', 'animation', 'presenter']
 
 /**
  * Every sound key the engine supports (design D12): video start/end, every scene
@@ -267,10 +328,10 @@ export const SUPPORTED_SOUND_KEYS = [
   ...SOUND_OVERLAY_SLOTS.map((s) => `overlay-enter.${s}`),
   ...SOUND_OVERLAY_SLOTS.map((s) => `overlay-exit.${s}`),
   ...SOUND_LAYER_TYPES.map((t) => `layer-enter.${t}`),
-];
+]
 
 /** Manifest `layer_type` -> the `layer-enter.<type>` sound key it fires. */
-const LAYER_ENTER_TYPE_OF = { animation: 'animation', talking_avatar: 'presenter' };
+const LAYER_ENTER_TYPE_OF = { animation: 'animation', talking_avatar: 'presenter' }
 
 /**
  * Times every sound event from a manifest (design D12). Returns a map of key to
@@ -282,38 +343,38 @@ const LAYER_ENTER_TYPE_OF = { animation: 'animation', talking_avatar: 'presenter
  * @returns {Map<string, number[]>}
  */
 export function soundEventFrames(manifest) {
-  const fps = Number(manifest?.fps) || 30;
-  const scenes = manifest?.tracks?.scenes || [];
-  const overlays = manifest?.tracks?.overlays || [];
+  const fps = Number(manifest?.fps) || 30
+  const scenes = manifest?.tracks?.scenes || []
+  const overlays = manifest?.tracks?.overlays || []
   const totalFrames =
     Number(manifest?.totalDurationInFrames) ||
-    Math.round((Number(manifest?.totalDurationInSeconds) || 0) * fps);
+    Math.round((Number(manifest?.totalDurationInSeconds) || 0) * fps)
   /** @type {Map<string, number[]>} */
-  const frames = new Map();
+  const frames = new Map()
   const add = (key, frame) => {
-    if (!frames.has(key)) frames.set(key, []);
-    frames.get(key).push(frame);
-  };
+    if (!frames.has(key)) frames.set(key, [])
+    frames.get(key).push(frame)
+  }
 
-  add('video-start', 0);
-  add('video-end', totalFrames);
-  for (let i = 1; i < scenes.length; i++) add('scene-boundary', scenes[i].fromFrame || 0);
+  add('video-start', 0)
+  add('video-end', totalFrames)
+  for (let i = 1; i < scenes.length; i++) add('scene-boundary', scenes[i].fromFrame || 0)
   for (const overlay of overlays) {
-    const slot = SLOT_OF[overlay.type];
-    if (!slot) continue;
+    const slot = SLOT_OF[overlay.type]
+    if (!slot) continue
     if (SOUND_OVERLAY_SLOTS.includes(slot)) {
-      add(`overlay-enter.${slot}`, overlay.fromFrame || 0);
-      add(`overlay-exit.${slot}`, (overlay.fromFrame || 0) + (overlay.durationInFrames || 0));
+      add(`overlay-enter.${slot}`, overlay.fromFrame || 0)
+      add(`overlay-exit.${slot}`, (overlay.fromFrame || 0) + (overlay.durationInFrames || 0))
     }
-    if (slot === 'b-roll') add('layer-enter.b-roll', overlay.fromFrame || 0);
+    if (slot === 'b-roll') add('layer-enter.b-roll', overlay.fromFrame || 0)
   }
   for (const scene of scenes) {
     for (const layer of scene?.props?.layers || []) {
-      const type = LAYER_ENTER_TYPE_OF[layer.layer_type];
-      if (type) add(`layer-enter.${type}`, scene.fromFrame || 0);
+      const type = LAYER_ENTER_TYPE_OF[layer.layer_type]
+      if (type) add(`layer-enter.${type}`, scene.fromFrame || 0)
     }
   }
-  return frames;
+  return frames
 }
 
 /**
@@ -325,25 +386,25 @@ export function soundEventFrames(manifest) {
  * @returns {Record<string, { name: string, source: string, path: string }>}
  */
 export function resolveSoundFiles({ bags, scriptDir, workspaceRoot, skillDir = PACKAGE_FLOOR }) {
-  const files = {};
+  const files = {}
   for (const key of SUPPORTED_SOUND_KEYS) {
-    const { value: name, source } = resolveKeyed('sounds', key, bags || {});
-    if (!name) continue;
-    const { file: soundPath, searched } = resolveLibrary({
+    const { value: name, source } = resolveKeyed('sounds', key, bags || {})
+    if (!name) continue
+    const { file: soundPath, searched } = findInLibrary({
       kind: 'sounds',
-      ref: `sounds/${name}`,
-      fromDir: scriptDir,
-      root: workspaceRoot,
-      packageFloor: path.join(skillDir, 'library', 'sounds'),
+      name,
+      scriptDir,
+      workspaceRoot,
+      skillDir,
       throwOnMiss: false,
-    });
+    })
     if (!soundPath) {
-      checkMissingAsset({ kind: 'sound', name, source, searched });
-      continue;
+      checkMissingAsset({ kind: 'sound', name, source, searched })
+      continue
     }
-    files[key] = { name, source, path: soundPath };
+    files[key] = { name, source, path: soundPath }
   }
-  return files;
+  return files
 }
 
 /**
@@ -353,33 +414,45 @@ export function resolveSoundFiles({ bags, scriptDir, workspaceRoot, skillDir = P
  * @param {{ manifest: object, files: Record<string, { path: string }>, scriptDir: string, publicDir: string, probe?: (file: string) => Promise<{ seconds?: number }>, stageDeps?: object }} params
  * @returns {Promise<Array<{ id: string, kind: 'sfx', assetPath: string, fromFrame: number }>>}
  */
-export async function resolveSounds({ manifest, files, scriptDir, publicDir, probe = probeDuration, stageDeps = {} }) {
-  const fps = Number(manifest?.fps) || 30;
+export async function resolveSounds({
+  manifest,
+  files,
+  scriptDir,
+  publicDir,
+  probe = probeDuration,
+  stageDeps = {},
+}) {
+  const fps = Number(manifest?.fps) || 30
   const totalFrames =
     Number(manifest?.totalDurationInFrames) ||
-    Math.round((Number(manifest?.totalDurationInSeconds) || 0) * fps);
-  const framesByKey = soundEventFrames(manifest);
-  const tracks = [];
-  let index = 0;
+    Math.round((Number(manifest?.totalDurationInSeconds) || 0) * fps)
+  const framesByKey = soundEventFrames(manifest)
+  const tracks = []
+  let index = 0
 
   for (const [key, frames] of framesByKey) {
-    const file = files?.[key];
-    if (!file) continue;
-    const staged = stageAsset(file.path, scriptDir, publicDir, stageDeps);
-    if (!staged) continue;
+    const file = files?.[key]
+    if (!file) continue
+    const staged = stageAsset(file.path, scriptDir, publicDir, stageDeps)
+    if (!staged) continue
 
-    let occurrences = frames;
+    let occurrences = frames
     if (key === 'video-end') {
-      const probed = await probe(file.path);
-      const soundFrames = Math.max(0, Math.round((Number(probed?.seconds) || 0) * fps));
-      occurrences = [Math.max(0, totalFrames - soundFrames)];
+      const probed = await probe(file.path)
+      const soundFrames = Math.max(0, Math.round((Number(probed?.seconds) || 0) * fps))
+      occurrences = [Math.max(0, totalFrames - soundFrames)]
     }
-    const idBase = key.replace(/[^a-z0-9]+/gi, '_');
+    const idBase = key.replace(/[^a-z0-9]+/gi, '_')
     for (const fromFrame of occurrences) {
-      tracks.push({ id: `sfx_${idBase}_${index++}`, kind: 'sfx', assetPath: staged.name, fromFrame });
+      tracks.push({
+        id: `sfx_${idBase}_${index++}`,
+        kind: 'sfx',
+        assetPath: staged.name,
+        fromFrame,
+      })
     }
   }
-  return tracks;
+  return tracks
 }
 
 /**
@@ -399,13 +472,13 @@ export async function resolveSounds({ manifest, files, scriptDir, publicDir, pro
  * @returns {{ name: string, staged: boolean, mode: 'link' | 'copy' } | null} null when the source is empty or missing.
  */
 export function stageAsset(src, scriptDir, publicDir, deps = {}) {
-  if (!src || typeof src !== 'string') return null;
-  const abs = path.isAbsolute(src) ? src : path.resolve(scriptDir, src);
-  if (!fs.existsSync(abs)) return null;
+  if (!src || typeof src !== 'string') return null
+  const abs = path.isAbsolute(src) ? src : path.resolve(scriptDir, src)
+  if (!fs.existsSync(abs)) return null
 
-  const name = assetName(abs);
-  const res = linkOrCopy(abs, path.join(publicDir, name), deps);
-  return { name, staged: res.staged, mode: res.mode };
+  const name = assetName(abs)
+  const res = linkOrCopy(abs, path.join(publicDir, name), deps)
+  return { name, staged: res.staged, mode: res.mode }
 }
 
 /**
@@ -423,49 +496,54 @@ export function stageAsset(src, scriptDir, publicDir, deps = {}) {
  * @returns {{ staged: number, missing: string[], escaped: string[], linkMode: 'link' | 'copy' }}
  */
 export function resolveMediaLayers(manifest, opts) {
-  const { scriptDir, publicDir, seriesRoot, scopeRoot, stageDeps = {} } = opts;
-  const missing = [];
-  const escaped = [];
-  let staged = 0;
-  let copyMode = false;
+  const { scriptDir, publicDir, seriesRoot, scopeRoot, stageDeps = {} } = opts
+  const missing = []
+  const escaped = []
+  let staged = 0
+  let copyMode = false
 
   const stageField = (obj, field) => {
-    const src = obj?.[field];
-    if (!src || typeof src !== 'string') return;
-    const res = stageAsset(src, scriptDir, publicDir, stageDeps);
+    const src = obj?.[field]
+    if (!src || typeof src !== 'string') return
+    const res = stageAsset(src, scriptDir, publicDir, stageDeps)
     if (res) {
-      obj[field] = res.name;
-      if (res.staged) staged++;
-      if (res.mode === 'copy') copyMode = true;
+      obj[field] = res.name
+      if (res.staged) staged++
+      if (res.mode === 'copy') copyMode = true
     } else {
-      missing.push(src);
+      missing.push(src)
     }
-  };
-
-  const scenes = manifest?.tracks?.scenes || [];
-  for (const scene of scenes) {
-    const layers = scene?.props?.layers;
-    if (!Array.isArray(layers)) continue;
-    for (const layer of layers) stageField(layer, 'layer_asset_source');
   }
 
-  const rootBound = scopeRoot || seriesRoot;
+  const scenes = manifest?.tracks?.scenes || []
+  for (const scene of scenes) {
+    const layers = scene?.props?.layers
+    if (!Array.isArray(layers)) continue
+    for (const layer of layers) stageField(layer, 'layer_asset_source')
+  }
+
+  const rootBound = scopeRoot || seriesRoot
   for (const track of manifest?.tracks?.audio || []) {
     // Music must stay inside the scope root tree (no-upward-escape rule). Narration is cache-produced and exempt.
-    if (track?.kind === 'music' && rootBound && typeof track.assetPath === 'string' && !isInside(rootBound, path.resolve(scriptDir, track.assetPath))) {
-      escaped.push(track.assetPath);
-      continue;
+    if (
+      track?.kind === 'music' &&
+      rootBound &&
+      typeof track.assetPath === 'string' &&
+      !isInside(rootBound, path.resolve(scriptDir, track.assetPath))
+    ) {
+      escaped.push(track.assetPath)
+      continue
     }
-    stageField(track, 'assetPath');
+    stageField(track, 'assetPath')
   }
 
   // Overlay tracks (b-roll, quote, lower-third, captions, kinetic titles) carry their media in
   // `config.assetPath`; stage it too, or a b-roll image 404s at render time.
   for (const track of manifest?.tracks?.overlays || []) {
-    if (track?.config) stageField(track.config, 'assetPath');
+    if (track?.config) stageField(track.config, 'assetPath')
   }
 
-  return { staged, missing, escaped, linkMode: copyMode ? 'copy' : 'link' };
+  return { staged, missing, escaped, linkMode: copyMode ? 'copy' : 'link' }
 }
 
 /**
@@ -528,94 +606,142 @@ export function resolveMediaLayers(manifest, opts) {
  * @param {(e: object) => void} [onProgress]
  * @param {Map<string, number>} [costByRef]
  */
-async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = () => {}, costByRef = new Map(), bags = {}, catalog = null) {
-  const audioAssets = {};
-  let cachedAssetsUsed = 0;
-  let newAssetsSynthesized = 0;
-  let spentUsd = 0;
+async function synthesizeScriptAssets(
+  parsed,
+  synthesizer,
+  models,
+  onProgress = () => {},
+  costByRef = new Map(),
+  bags = {},
+  catalog = null,
+) {
+  const audioAssets = {}
+  let cachedAssetsUsed = 0
+  let newAssetsSynthesized = 0
+  let spentUsd = 0
   /** Per-stage wall-clock windows for the timing log (capability video-run-facts). */
   const stageTimings = {
     tts: { start: null, end: null, calls: 0, hits: 0, misses: 0 },
     image: { start: null, end: null, calls: 0, hits: 0, misses: 0 },
-  };
+  }
   const mark = (stage, startedAt, fromCache) => {
-    const t = stageTimings[stage];
-    t.start = t.start === null ? startedAt : Math.min(t.start, startedAt);
-    t.end = t.end === null ? Date.now() : Math.max(t.end, Date.now());
-    t.calls++;
-    if (fromCache) t.hits++;
-    else t.misses++;
-  };
-  const ttsScenes = parsed.scenes.filter((sc) => sc.narration && sc.narration.trim().length > 0);
+    const t = stageTimings[stage]
+    t.start = t.start === null ? startedAt : Math.min(t.start, startedAt)
+    t.end = t.end === null ? Date.now() : Math.max(t.end, Date.now())
+    t.calls++
+    if (fromCache) t.hits++
+    else t.misses++
+  }
+  const ttsScenes = parsed.scenes.filter((sc) => sc.narration && sc.narration.trim().length > 0)
   const mediaTotal = parsed.scenes.reduce(
-    (n, sc) => n + (Array.isArray(sc.layers) ? sc.layers.filter((l) => l.properties?.layer_prompt || l.properties?.prompt).length : 0),
+    (n, sc) =>
+      n +
+      (Array.isArray(sc.layers)
+        ? sc.layers.filter((l) => l.properties?.layer_prompt || l.properties?.prompt).length
+        : 0),
     0,
-  );
-  let ttsDone = 0;
-  let mediaDone = 0;
+  )
+  let ttsDone = 0
+  let mediaDone = 0
   /** Real accumulated spend: cache hits cost 0, misses cost the planned estimate. */
   const charge = (ref, fromCache) => {
-    const itemCostUsd = fromCache ? 0 : Math.round((costByRef.get(ref) || 0) * 1e6) / 1e6;
-    spentUsd = Math.round((spentUsd + itemCostUsd) * 1e6) / 1e6;
-    return itemCostUsd;
-  };
+    const itemCostUsd = fromCache ? 0 : Math.round((costByRef.get(ref) || 0) * 1e6) / 1e6
+    spentUsd = Math.round((spentUsd + itemCostUsd) * 1e6) / 1e6
+    return itemCostUsd
+  }
 
   for (const sc of parsed.scenes) {
     // 1. TTS synthesis
     if (sc.narration && sc.narration.trim().length > 0) {
-      const voiceOptions = buildTtsVoiceOptions(sc, models, bags);
-      const ttsModel = normalizeModelId(sc.properties?.scene_voice_model);
-      onProgress({ phase: 'tts-start', done: ttsDone, total: ttsScenes.length, scene: sc.id, model: ttsModel });
-      const ttsStartedAt = Date.now();
-      const ttsRes = await synthesizer.synthesizeTTS(sc.narration, voiceOptions, { ref: sc.id, model: ttsModel });
+      const voiceOptions = buildTtsVoiceOptions(sc, models, bags)
+      const ttsModel = normalizeModelId(sc.properties?.scene_voice_model)
+      onProgress({
+        phase: 'tts-start',
+        done: ttsDone,
+        total: ttsScenes.length,
+        scene: sc.id,
+        model: ttsModel,
+      })
+      const ttsStartedAt = Date.now()
+      const ttsRes = await synthesizer.synthesizeTTS(sc.narration, voiceOptions, {
+        ref: sc.id,
+        model: ttsModel,
+      })
       if (!ttsRes.dryRun) {
-        mark('tts', ttsStartedAt, ttsRes.fromCache);
+        mark('tts', ttsStartedAt, ttsRes.fromCache)
         if (ttsRes.fromCache) {
-          cachedAssetsUsed++;
+          cachedAssetsUsed++
         } else {
-          newAssetsSynthesized++;
+          newAssetsSynthesized++
         }
         audioAssets[sc.id] = {
           assetPath: ttsRes.assetPath,
           sha256: ttsRes.sha256,
           durationSeconds: ttsRes.durationSeconds,
-        };
-        ttsDone++;
-        const itemCostUsd = charge(sc.id, ttsRes.fromCache);
-        onProgress({ phase: 'tts-done', done: ttsDone, total: ttsScenes.length, scene: sc.id, model: ttsModel, fromCache: ttsRes.fromCache, itemCostUsd, spentUsd });
+        }
+        ttsDone++
+        const itemCostUsd = charge(sc.id, ttsRes.fromCache)
+        onProgress({
+          phase: 'tts-done',
+          done: ttsDone,
+          total: ttsScenes.length,
+          scene: sc.id,
+          model: ttsModel,
+          fromCache: ttsRes.fromCache,
+          itemCostUsd,
+          spentUsd,
+        })
       }
     }
 
     // 2. Layer Media synthesis (WaveSpeed / AI Image Prompts). Always runs, even when the
     //    scene had narration: image costs must be planned and billed like any other call.
     for (const layer of Array.isArray(sc.layers) ? sc.layers : []) {
-      const prompt = layer.properties?.layer_prompt || layer.properties?.prompt;
-      if (!prompt) continue;
+      const prompt = layer.properties?.layer_prompt || layer.properties?.prompt
+      if (!prompt) continue
       const { image: imageModel, imageSize } = imageModelsFor({
         bags,
         parsed,
         catalog: catalog || loadMergedCatalog({ overlay: null }),
-      });
-      const mediaOptions = buildImageOptions(sc, layer, { ...models, image: imageModel, imageSize });
-      const ref = `${sc.id}/${layer.name}`;
-      onProgress({ phase: 'media-start', done: mediaDone, total: mediaTotal, scene: sc.id, model: imageModel });
-      const mediaStartedAt = Date.now();
-      const mediaRes = await synthesizer.resolveMedia(prompt, mediaOptions, { ref, model: imageModel });
-      if (mediaRes.dryRun) continue;
-      mark('image', mediaStartedAt, mediaRes.fromCache);
+      })
+      const mediaOptions = buildImageOptions(sc, layer, { ...models, image: imageModel, imageSize })
+      const ref = `${sc.id}/${layer.name}`
+      onProgress({
+        phase: 'media-start',
+        done: mediaDone,
+        total: mediaTotal,
+        scene: sc.id,
+        model: imageModel,
+      })
+      const mediaStartedAt = Date.now()
+      const mediaRes = await synthesizer.resolveMedia(prompt, mediaOptions, {
+        ref,
+        model: imageModel,
+      })
+      if (mediaRes.dryRun) continue
+      mark('image', mediaStartedAt, mediaRes.fromCache)
       if (mediaRes.fromCache) {
-        cachedAssetsUsed++;
+        cachedAssetsUsed++
       } else {
-        newAssetsSynthesized++;
+        newAssetsSynthesized++
       }
-      mediaDone++;
-      const itemCostUsd = charge(ref, mediaRes.fromCache);
-      onProgress({ phase: 'media-done', done: mediaDone, total: mediaTotal, scene: sc.id, model: imageModel, fromCache: mediaRes.fromCache, itemCostUsd, spentUsd });
+      mediaDone++
+      const itemCostUsd = charge(ref, mediaRes.fromCache)
+      onProgress({
+        phase: 'media-done',
+        done: mediaDone,
+        total: mediaTotal,
+        scene: sc.id,
+        model: imageModel,
+        fromCache: mediaRes.fromCache,
+        itemCostUsd,
+        spentUsd,
+      })
       // Update layer asset source to point to cached image
-      layer.properties.layer_asset_source = mediaRes.assetPath;
+      layer.properties.layer_asset_source = mediaRes.assetPath
     }
   }
-  return { audioAssets, cachedAssetsUsed, newAssetsSynthesized, spentUsd, stageTimings };
+  return { audioAssets, cachedAssetsUsed, newAssetsSynthesized, spentUsd, stageTimings }
 }
 
 /**
@@ -625,61 +751,91 @@ async function synthesizeScriptAssets(parsed, synthesizer, models, onProgress = 
  * from a read-only plan pass, spending and writing nothing.
  */
 export async function synthesizeEpisodeAssets(options = {}) {
-  const scriptPath = path.resolve(options.scriptPath);
+  const scriptPath = path.resolve(options.scriptPath)
   if (!fs.existsSync(scriptPath)) {
-    throw new Error(`Script file not found: ${scriptPath}`);
+    throw new Error(`Script file not found: ${scriptPath}`)
   }
-  const scriptDir = path.dirname(scriptPath);
-  const loaded = loadGuardWithVoices(scriptDir);
-  const config = loaded.config;
+  const scriptDir = path.dirname(scriptPath)
+  const loaded = loadGuardWithVoices(scriptDir)
+  const config = loaded.config
   // One merged catalog (reference + domaiNN overlay) answers `sizes`, allowlists and prices.
-  const catalog = loadMergedCatalog({ domainRoot: loaded.root });
-  const allowModels = options.allowModels || [];
-  const cacheDir = options.cacheDir || resolveDefaultCacheDir(scriptDir);
-  const bags = options.bags || loadCascadeBags(scriptDir);
+  const catalog = loadMergedCatalog({ domainRoot: loaded.root })
+  const allowModels = options.allowModels || []
+  const cacheDir = options.cacheDir || resolveDefaultCacheDir(scriptDir)
+  const bags = options.bags || loadCascadeBags(scriptDir)
   const models = options.models || {
     image: normalizeModelId(resolve('image_model', bags).value),
     tts: normalizeModelId(resolve('voice_model', bags).value),
     avatar: normalizeModelId(resolve('avatar_model', bags).value),
-  };
-  const dailyBudgetRaw = resolve('daily_budget', bags).value;
+  }
+  const dailyBudgetRaw = resolve('daily_budget', bags).value
   const dailyBudgetUsd =
-    dailyBudgetRaw === null || dailyBudgetRaw === undefined || dailyBudgetRaw === '' ? null : Number(dailyBudgetRaw);
-  const synthOptions = { defaultModels: models, bags, catalog, ...(options.synthesizerOptions || {}) };
+    dailyBudgetRaw === null || dailyBudgetRaw === undefined || dailyBudgetRaw === ''
+      ? null
+      : Number(dailyBudgetRaw)
+  const synthOptions = {
+    defaultModels: models,
+    bags,
+    catalog,
+    ...(options.synthesizerOptions || {}),
+  }
   // `loaded.config` already carries the merged catalog's voices (loadGuardWithVoices), the
   // one registry every consumer shares.
   const makeGuard = (dryRun) =>
-    new SpendGuard({ config: loaded.config, root: loaded.root, allowModels, dryRun, approval: () => ({ ok: true }), dailyBudgetUsd });
+    new SpendGuard({
+      config: loaded.config,
+      root: loaded.root,
+      allowModels,
+      dryRun,
+      approval: () => ({ ok: true }),
+      dailyBudgetUsd,
+    })
 
   const compiler = new SceneCompiler({
     fps: options.fps,
     width: options.width,
     height: options.height,
-  });
+  })
 
-  const model = options.model || loadKnowledgeModel(scriptPath, { model: options.model, modelPath: options.modelPath });
-  const scriptBags = withScriptPresets(bags, model, scriptPath);
-  const guard = compiler.checkScript(model, { ...options, bags: scriptBags, scriptDir });
-  if (!guard.ok) throw new ScriptValidationError(guard.errors);
-  const parsed = compiler.lowerKnowledgeModel(model, { bags: scriptBags, scriptDir, fps: options.fps, width: options.width, height: options.height });
+  const model =
+    options.model ||
+    loadKnowledgeModel(scriptPath, { model: options.model, modelPath: options.modelPath })
+  const scriptBags = withScriptPresets(bags, model, scriptPath)
+  const guard = compiler.checkScript(model, { ...options, bags: scriptBags, scriptDir })
+  if (!guard.ok) throw new ScriptValidationError(guard.errors)
+  const parsed = compiler.lowerKnowledgeModel(model, {
+    bags: scriptBags,
+    scriptDir,
+    fps: options.fps,
+    width: options.width,
+    height: options.height,
+  })
 
   // Pass 1: plan & preflight
-  const planGuard = makeGuard(true);
+  const planGuard = makeGuard(true)
   const planSynth = new AssetSynthesizer({
     cacheManager: new CacheManager({ baseDir: cacheDir, readOnly: true }),
     guard: planGuard,
     ...synthOptions,
-  });
-  const planned = await synthesizeScriptAssets(structuredClone(parsed), planSynth, models, () => {}, new Map(), bags, catalog);
+  })
+  const planned = await synthesizeScriptAssets(
+    structuredClone(parsed),
+    planSynth,
+    models,
+    () => {},
+    new Map(),
+    bags,
+    catalog,
+  )
   // `lookupOnly`: the scene -> cached audio map of the plan pass (read-only cache, dry-run
   // guard: nothing is spent or written). A scene whose audio is not cached is absent.
-  if (options.lookupOnly) return { audioAssets: planned.audioAssets };
-  planGuard.assertPlanAffordable();
+  if (options.lookupOnly) return { audioAssets: planned.audioAssets }
+  planGuard.assertPlanAffordable()
 
-  const costByRef = new Map();
+  const costByRef = new Map()
   for (const item of planGuard.planned) {
-    if (item.blocked) continue;
-    costByRef.set(item.ref, Math.round(((costByRef.get(item.ref) || 0) + item.estUsd) * 1e6) / 1e6);
+    if (item.blocked) continue
+    costByRef.set(item.ref, Math.round(((costByRef.get(item.ref) || 0) + item.estUsd) * 1e6) / 1e6)
   }
 
   // Pass 2: synthesize for real
@@ -687,18 +843,31 @@ export async function synthesizeEpisodeAssets(options = {}) {
     cacheManager: new CacheManager({ baseDir: cacheDir }),
     guard: makeGuard(false),
     ...synthOptions,
-  });
-  const res = await synthesizeScriptAssets(parsed, synthesizer, models, options.onProgress || (() => {}), costByRef, bags, catalog);
+  })
+  const res = await synthesizeScriptAssets(
+    parsed,
+    synthesizer,
+    models,
+    options.onProgress || (() => {}),
+    costByRef,
+    bags,
+    catalog,
+  )
 
   if (options.facts && options.recordSynthesisStages !== false) {
     for (const stage of ['tts', 'image']) {
-      const t = res.stageTimings?.[stage];
-      if (!t || t.calls === 0) continue;
-      recordStage(options.facts, { stage, start: t.start, end: t.end, cache: { hits: t.hits, misses: t.misses } });
+      const t = res.stageTimings?.[stage]
+      if (!t || t.calls === 0) continue
+      recordStage(options.facts, {
+        stage,
+        start: t.start,
+        end: t.end,
+        cache: { hits: t.hits, misses: t.misses },
+      })
     }
   }
 
-  return res;
+  return res
 }
 
 /**
@@ -710,68 +879,89 @@ export async function synthesizeEpisodeAssets(options = {}) {
  * @returns {Promise<{ manifest: import('./scene-compiler.mjs').CompositionManifest | null, cachedAssetsUsed: number, newAssetsSynthesized: number, dryRun?: boolean, plan?: any }>}
  */
 export async function compileVideo(options) {
-  const scriptPath = path.resolve(options.scriptPath);
+  const scriptPath = path.resolve(options.scriptPath)
   if (!fs.existsSync(scriptPath)) {
-    throw new Error(`Script file not found: ${scriptPath}`);
+    throw new Error(`Script file not found: ${scriptPath}`)
   }
 
-  const scriptContent = fs.readFileSync(scriptPath, 'utf8');
-  const scriptDir = path.dirname(scriptPath);
-  const loaded = loadGuardWithVoices(scriptDir);
-  const config = loaded.config;
-  warnUnpricedAllowedModels(loaded.config);
+  const scriptContent = fs.readFileSync(scriptPath, 'utf8')
+  const scriptDir = path.dirname(scriptPath)
+  const loaded = loadGuardWithVoices(scriptDir)
+  const config = loaded.config
+  warnUnpricedAllowedModels(loaded.config)
   // The engine project IS `<episode>/hyperframes/` (capability "Engine Project Lives In The
   // Episode Folder"). An authored folder that differs from it only by case would be clobbered
   // by the regeneration, so the collision is a named error before anything is written.
   for (const entry of fs.readdirSync(scriptDir, { withFileTypes: true })) {
-    if (entry.isDirectory() && entry.name !== 'hyperframes' && entry.name.toLowerCase() === 'hyperframes') {
+    if (
+      entry.isDirectory() &&
+      entry.name !== 'hyperframes' &&
+      entry.name.toLowerCase() === 'hyperframes'
+    ) {
       throw new VideoRenderError(
         `The episode folder holds an authored "${entry.name}" folder, which collides with the engine's ` +
           `"hyperframes/" project folder. Rename it; nothing was written.`,
-      );
+      )
     }
   }
   // Render is hermetic: the emitted project loads the vendored GSAP build from `vendor/`
   // (checked when the project is emitted and when a render starts).
-  const allowModels = options.allowModels || [];
+  const allowModels = options.allowModels || []
   // Default cache lives at the workspace root so it is shared across series and cwd-independent.
-  const cacheDir = options.cacheDir || resolveDefaultCacheDir(scriptDir);
+  const cacheDir = options.cacheDir || resolveDefaultCacheDir(scriptDir)
   // One cascade and no `cli` level: every model id comes from the documents
   // (layer > scene > video > kind > series > domain > blueprint). No flag and no
   // default id supplies one.
-  const bags = options.bags || loadCascadeBags(scriptDir);
+  const bags = options.bags || loadCascadeBags(scriptDir)
   const models = {
     image: normalizeModelId(resolve('image_model', bags).value),
     tts: normalizeModelId(resolve('voice_model', bags).value),
     avatar: normalizeModelId(resolve('avatar_model', bags).value),
-  };
-  const checkNow = () => ({ ok: true });
+  }
+  const checkNow = () => ({ ok: true })
   // The documents may declare a rolling 24h ceiling; the guard enforces it per call too.
-  const dailyBudgetRaw = resolve('daily_budget', bags).value;
+  const dailyBudgetRaw = resolve('daily_budget', bags).value
   const dailyBudgetUsd =
-    dailyBudgetRaw === null || dailyBudgetRaw === undefined || dailyBudgetRaw === '' ? null : Number(dailyBudgetRaw);
-  const synthOptions = { defaultModels: models, bags, ...(options.synthesizerOptions || {}) };
+    dailyBudgetRaw === null || dailyBudgetRaw === undefined || dailyBudgetRaw === ''
+      ? null
+      : Number(dailyBudgetRaw)
+  const synthOptions = { defaultModels: models, bags, ...(options.synthesizerOptions || {}) }
   // Voices come from the merged catalog (reference + domaiNN overlay), not a retired
   // video-guard.json (2b.5 / 1c.6).
   const makeGuard = (dryRun) =>
     // `produce` owns the spending decision (the applied script/preview/budget verdicts);
     // this guard enforces the per-run and rolling 24h caps and the model allow/block lists.
-    new SpendGuard({ config, root: loaded.root, allowModels, dryRun, approval: checkNow, dailyBudgetUsd });
+    new SpendGuard({
+      config,
+      root: loaded.root,
+      allowModels,
+      dryRun,
+      approval: checkNow,
+      dailyBudgetUsd,
+    })
 
   const compiler = new SceneCompiler({
     fps: options.fps,
     width: options.width,
     height: options.height,
-  });
+  })
 
   // Structured iNNfo model (read_knowledge shape or the equivalent reader) —
   // never a re-parse of the script markdown. The pre-compile guard runs before
   // any synthesis so an invalid document never spends a cent.
-  const model = options.model || loadKnowledgeModel(scriptPath, { model: options.model, modelPath: options.modelPath });
-  const scriptBags = withScriptPresets(bags, model, scriptPath);
-  const guard = compiler.checkScript(model, { ...options, bags: scriptBags, scriptDir });
-  if (!guard.ok) throw new ScriptValidationError(guard.errors);
-  const parsed = compiler.lowerKnowledgeModel(model, { bags: scriptBags, scriptDir, fps: options.fps, width: options.width, height: options.height });
+  const model =
+    options.model ||
+    loadKnowledgeModel(scriptPath, { model: options.model, modelPath: options.modelPath })
+  const scriptBags = withScriptPresets(bags, model, scriptPath)
+  const guard = compiler.checkScript(model, { ...options, bags: scriptBags, scriptDir })
+  if (!guard.ok) throw new ScriptValidationError(guard.errors)
+  const parsed = compiler.lowerKnowledgeModel(model, {
+    bags: scriptBags,
+    scriptDir,
+    fps: options.fps,
+    width: options.width,
+    height: options.height,
+  })
   // Resolve the frame cascade value to its document BEFORE any synthesis or
   // render (design D18/D21): a user-level name with no file fails here, with
   // nothing spent; a blueprint-only name is skipped with one warning.
@@ -779,22 +969,37 @@ export async function compileVideo(options) {
     entries: [parsed.frame, ...parsed.scenes.map((sc) => sc.frame)],
     scriptDir,
     workspaceRoot: loaded.root,
-  });
+  })
   // Resolve every slot component an overlay uses BEFORE any synthesis (design
   // D1/D21): a user-level name with no file fails here, with nothing spent, and a
   // component that breaks its slot contract fails before the render.
   const overlaySlots = [
     ...new Set(
-      parsed.scenes.flatMap((sc) => (Array.isArray(sc.layers) ? sc.layers : []).filter((l) => l.kind === 'overlay').map((l) => l.type)),
+      parsed.scenes.flatMap((sc) =>
+        (Array.isArray(sc.layers) ? sc.layers : [])
+          .filter((l) => l.kind === 'overlay')
+          .map((l) => l.type),
+      ),
     ),
-  ];
+  ]
   // Scenes with captions on and narration: their aligned words become `captions` overlays,
   // so the caption slot component is resolved with the others.
-  const captionPlans = sceneCaptionPlans({ model, scriptPath, bags: scriptBags }).filter((p) => p.mode !== 'off' && p.narration);
-  if (captionPlans.length > 0 && !overlaySlots.includes('caption')) overlaySlots.push('caption');
-  const components = resolveComponents({ slots: overlaySlots, bags, scriptDir, workspaceRoot: loaded.root });
+  const captionPlans = sceneCaptionPlans({ model, scriptPath, bags: scriptBags }).filter(
+    (p) => p.mode !== 'off' && p.narration,
+  )
+  if (captionPlans.length > 0 && !overlaySlots.includes('caption')) overlaySlots.push('caption')
+  const components = resolveComponents({
+    slots: overlaySlots,
+    bags,
+    scriptDir,
+    workspaceRoot: loaded.root,
+  })
   // A `fit:: component:<name>` is resolved here too, before any spend (spec S2).
-  const fitComponents = resolveFitComponents({ scenes: parsed.scenes, scriptDir, workspaceRoot: loaded.root });
+  const fitComponents = resolveFitComponents({
+    scenes: parsed.scenes,
+    scriptDir,
+    workspaceRoot: loaded.root,
+  })
   // Resolve every authored animation project BEFORE any synthesis (design D7/D8):
   // a missing project fails loudly with nothing spent, and an id that would
   // collide with a scene slug, the root composition id, a component id or another
@@ -804,42 +1009,53 @@ export async function compileVideo(options) {
     scriptDir,
     workspaceRoot: loaded.root,
     packageFloor: path.join(PACKAGE_FLOOR, 'library', 'components'),
-  });
+  })
   assertAnimationIds({
     animations,
     sceneSlugs: parsed.scenes.map((sc) => sc.slug),
     rootId: compositionIdOf(parsed.title),
-    componentIds: [...Object.entries(components).flatMap(([slot, c]) => [slot, c.name]), ...Object.keys(fitComponents)],
-  });
+    componentIds: [
+      ...Object.entries(components).flatMap(([slot, c]) => [slot, c.name]),
+      ...Object.keys(fitComponents),
+    ],
+  })
   // Resolve and D21-check every sound name BEFORE any synthesis (design D6/D21):
   // a user-level name with no file fails here, with nothing spent; a blueprint-only
   // name is skipped with one warning. The times are computed after the manifest.
-  const soundFiles = resolveSoundFiles({ bags, scriptDir, workspaceRoot: loaded.root });
-  let audioAssets = {};
-  let cachedAssetsUsed = 0;
-  let newAssetsSynthesized = 0;
-  let spentUsd = 0;
-  let plannedTotalUsd = 0;
-  const onProgress = options.onProgress || (() => {});
+  const soundFiles = resolveSoundFiles({ bags, scriptDir, workspaceRoot: loaded.root })
+  let audioAssets = {}
+  let cachedAssetsUsed = 0
+  let newAssetsSynthesized = 0
+  let spentUsd = 0
+  let plannedTotalUsd = 0
+  const onProgress = options.onProgress || (() => {})
   // Synthesis and avatar-pickup rows are queued, then written once the staging mode is known,
   // so every stage row of the run carries the real `link_mode`.
-  const stageRows = [];
+  const stageRows = []
   const queueStage = (row) => {
-    if (options.facts) stageRows.push(row);
-  };
+    if (options.facts) stageRows.push(row)
+  }
   // One merged catalog (reference + domaiNN overlay) answers `sizes`, allowlists and prices.
-  const catalog = loadMergedCatalog({ domainRoot: loaded.root });
+  const catalog = loadMergedCatalog({ domainRoot: loaded.root })
 
   if (options.synthesizeAssets !== false || options.dryRun) {
     // Pass 1: plan. Read-only cache, dry-run guard: nothing is spent or written.
-    const planGuard = makeGuard(true);
+    const planGuard = makeGuard(true)
     const planSynth = new AssetSynthesizer({
       cacheManager: new CacheManager({ baseDir: cacheDir, readOnly: true }),
       guard: planGuard,
       catalog,
       ...synthOptions,
-    });
-    const planned = await synthesizeScriptAssets(structuredClone(parsed), planSynth, models, () => {}, new Map(), bags, catalog);
+    })
+    const planned = await synthesizeScriptAssets(
+      structuredClone(parsed),
+      planSynth,
+      models,
+      () => {},
+      new Map(),
+      bags,
+      catalog,
+    )
 
     if (options.dryRun) {
       // Each scene's target duration (design D14): `measured` when narration
@@ -850,7 +1066,7 @@ export async function compileVideo(options) {
         defaultSceneDuration: compiler.defaultSceneDuration,
         audioAssets,
         animations,
-      }).map((d) => ({ slug: d.slug, seconds: d.seconds, measured: d.measured }));
+      }).map((d) => ({ slug: d.slug, seconds: d.seconds, measured: d.measured }))
       return {
         dryRun: true,
         manifest: null,
@@ -863,27 +1079,38 @@ export async function compileVideo(options) {
           dailyCapUsd: loaded.config.dailyCapUsd,
           dailySpentUsd: planGuard.dailySpentUsd,
           withinBudget: planGuard.plannedTotalUsd <= loaded.config.budgetPerRunUsd,
-          frame: frameInfo ? { name: frameInfo.name, path: frameInfo.path, source: frameInfo.source } : null,
+          frame: frameInfo
+            ? { name: frameInfo.name, path: frameInfo.path, source: frameInfo.source }
+            : null,
           scenes,
         },
-      };
+      }
     }
 
     // Pre-flight: refuse the whole run BEFORE the first charge.
-    planGuard.assertPlanAffordable();
+    planGuard.assertPlanAffordable()
 
     // Totals + models + estimated cost, BEFORE the slow work starts.
-    plannedTotalUsd = planGuard.plannedTotalUsd;
-    const costByRef = new Map();
+    plannedTotalUsd = planGuard.plannedTotalUsd
+    const costByRef = new Map()
     for (const item of planGuard.planned) {
-      if (item.blocked) continue;
-      costByRef.set(item.ref, Math.round(((costByRef.get(item.ref) || 0) + item.estUsd) * 1e6) / 1e6);
+      if (item.blocked) continue
+      costByRef.set(
+        item.ref,
+        Math.round(((costByRef.get(item.ref) || 0) + item.estUsd) * 1e6) / 1e6,
+      )
     }
-    const ttsTotal = parsed.scenes.filter((sc) => sc.narration && sc.narration.trim().length > 0).length;
+    const ttsTotal = parsed.scenes.filter(
+      (sc) => sc.narration && sc.narration.trim().length > 0,
+    ).length
     const mediaTotal = parsed.scenes.reduce(
-      (n, sc) => n + (Array.isArray(sc.layers) ? sc.layers.filter((l) => l.properties?.layer_prompt || l.properties?.prompt).length : 0),
+      (n, sc) =>
+        n +
+        (Array.isArray(sc.layers)
+          ? sc.layers.filter((l) => l.properties?.layer_prompt || l.properties?.prompt).length
+          : 0),
       0,
-    );
+    )
     onProgress({
       phase: 'plan',
       ttsTotal,
@@ -891,7 +1118,7 @@ export async function compileVideo(options) {
       plannedCount: planGuard.planned.length,
       models: [...new Set(planGuard.planned.map((p) => p.model).filter(Boolean))],
       totalUsd: plannedTotalUsd,
-    });
+    })
 
     // Pass 2: synthesize for real.
     const synthesizer = new AssetSynthesizer({
@@ -899,29 +1126,37 @@ export async function compileVideo(options) {
       guard: makeGuard(false),
       catalog,
       ...synthOptions,
-    });
-    let synthesisStages = null;
-    ({
+    })
+    let synthesisStages = null
+    ;({
       audioAssets,
       cachedAssetsUsed,
       newAssetsSynthesized,
       spentUsd,
       stageTimings: synthesisStages,
-    } = await synthesizeScriptAssets(parsed, synthesizer, models, onProgress, costByRef, bags, catalog));
+    } = await synthesizeScriptAssets(
+      parsed,
+      synthesizer,
+      models,
+      onProgress,
+      costByRef,
+      bags,
+      catalog,
+    ))
     // One row per synthesis stage, before the compile row (capability video-run-facts
     // "Stage Timing Row Schema" and the fixed stage order of video-produce-command).
     if (options.recordSynthesisStages !== false) {
       for (const stage of ['tts', 'image']) {
-        const t = synthesisStages?.[stage];
-        if (!t || t.calls === 0) continue;
-        queueStage({ stage, start: t.start, end: t.end, cache: { hits: t.hits, misses: t.misses } });
+        const t = synthesisStages?.[stage]
+        if (!t || t.calls === 0) continue
+        queueStage({ stage, start: t.start, end: t.end, cache: { hits: t.hits, misses: t.misses } })
       }
     }
   }
 
   // Avatar pickup: a lip-sync clip cached by synthesize-avatar.mjs replaces the still avatar layer
   // (cache read only: compile never synthesizes or spends on avatars).
-  const avatarStartedAt = Date.now();
+  const avatarStartedAt = Date.now()
   const avatarVideos = applyCachedAvatars({
     parsed,
     scriptDir,
@@ -930,7 +1165,7 @@ export async function compileVideo(options) {
     models,
     bags,
     catalog,
-  });
+  })
   // The avatar stage of this run: the cache pickup. Counting it keeps the fixed stage order
   // even when the episode has no avatar Layer (and records the clips still missing).
   queueStage({
@@ -938,15 +1173,15 @@ export async function compileVideo(options) {
     start: avatarStartedAt,
     end: Date.now(),
     cache: { hits: avatarVideos?.applied || 0, misses: avatarVideos?.missing || 0 },
-  });
+  })
 
   // Generate once, render N times (spec S7): everything above ran once, so the resolved
   // tree (`parsed` with its avatar pickups) and `audioAssets` are the one immutable asset
   // map. Each output format is projected from its own clone into `hyperframes/<W>x<H>/`,
   // so no pass sees another's staged names and no pass calls a provider.
-  const formats = compileFormats(parsed, options);
-  const manifests = [];
-  const linkModes = new Set();
+  const formats = compileFormats(parsed, options)
+  const manifests = []
+  const linkModes = new Set()
   for (const format of formats) {
     const projected = await projectFormat({
       parsed: structuredClone(parsed),
@@ -963,15 +1198,15 @@ export async function compileVideo(options) {
       components,
       fitComponents,
       soundFiles,
-    });
-    manifests.push(projected.manifest);
-    linkModes.add(projected.linkMode);
+    })
+    manifests.push(projected.manifest)
+    linkModes.add(projected.linkMode)
   }
-  const linkMode = linkModes.has('copy') ? 'copy' : 'link';
+  const linkMode = linkModes.has('copy') ? 'copy' : 'link'
 
   // The staging mode is known now: every queued stage row carries it.
-  if (options.facts) options.facts.linkMode = linkMode;
-  for (const row of stageRows) recordStage(options.facts, row);
+  if (options.facts) options.facts.linkMode = linkMode
+  for (const row of stageRows) recordStage(options.facts, row)
 
   return {
     manifest: manifests[0],
@@ -982,7 +1217,7 @@ export async function compileVideo(options) {
     spentUsd,
     plannedTotalUsd,
     linkMode,
-  };
+  }
 }
 
 /**
@@ -992,14 +1227,16 @@ export async function compileVideo(options) {
  */
 function compileFormats(parsed, options) {
   if (options.width && options.height) {
-    const size = `${options.width}x${options.height}`;
-    return [{ size, width: options.width, height: options.height, project: options.projectName || size }];
+    const size = `${options.width}x${options.height}`
+    return [
+      { size, width: options.width, height: options.height, project: options.projectName || size },
+    ]
   }
   const declared =
     Array.isArray(parsed.outputFormats) && parsed.outputFormats.length > 0
       ? parsed.outputFormats
-      : [{ size: `${parsed.width}x${parsed.height}`, width: parsed.width, height: parsed.height }];
-  return declared.map((f) => ({ ...f, project: options.projectName || f.size }));
+      : [{ size: `${parsed.width}x${parsed.height}`, width: parsed.width, height: parsed.height }]
+  return declared.map((f) => ({ ...f, project: options.projectName || f.size }))
 }
 
 /**
@@ -1031,7 +1268,7 @@ async function projectFormat({
     width: format.width,
     height: format.height,
     scriptSource: scriptPath,
-  });
+  })
 
   // Stage every media reference (layers + audio) into the project's asset dir and
   // rewrite the manifest to bundle-relative names. Sources resolve against the
@@ -1039,31 +1276,35 @@ async function projectFormat({
   // paths both work. A missing asset is a loud failure — never a silently dropped
   // layer. The staged entries are HARDLINKS to the sources (capability "Assets Are
   // Linked, Not Copied"), so the episode folder holds no copy of a cache entry.
-  const hyperframesDir = path.join(scriptDir, 'hyperframes', format.project);
-  const assetsDir = path.join(hyperframesDir, 'assets');
-  fs.mkdirSync(assetsDir, { recursive: true });
-  manifest.metadata.hyperframesDir = hyperframesDir;
-  manifest.metadata.assetsDir = assetsDir;
-  manifest.metadata.episodeDir = scriptDir;
-  manifest.metadata.format = `${manifest.width}x${manifest.height}`;
-  const scopeRoot = resolveWorkspace(scriptDir).root;
+  const hyperframesDir = path.join(scriptDir, 'hyperframes', format.project)
+  const assetsDir = path.join(hyperframesDir, 'assets')
+  fs.mkdirSync(assetsDir, { recursive: true })
+  manifest.metadata.hyperframesDir = hyperframesDir
+  manifest.metadata.assetsDir = assetsDir
+  manifest.metadata.episodeDir = scriptDir
+  manifest.metadata.format = `${manifest.width}x${manifest.height}`
+  const scopeRoot = resolveWorkspace(scriptDir).root
   const staging = resolveMediaLayers(manifest, {
     scriptDir,
     publicDir: assetsDir,
     seriesRoot: findSeriesRoot(scriptDir),
     scopeRoot,
     stageDeps: options.stageDeps,
-  });
-  manifest.metadata.publicDir = assetsDir;
-  manifest.metadata.linkMode = staging.linkMode;
+  })
+  manifest.metadata.publicDir = assetsDir
+  manifest.metadata.linkMode = staging.linkMode
 
   // The resolved frame (palette + type) becomes the manifest's frame contract so
   // the emitter styles overlays from brand tokens instead of hardcoded values.
   // Absent a frame, the manifest carries nothing and the emitter keeps its own
   // defaults.
   if (frameInfo) {
-    manifest.metadata.frame = { path: frameInfo.path, tokens: frameInfo.tokens };
-    emitHyperframesFrame({ frameDir: path.dirname(frameInfo.path), projectDir: hyperframesDir, outDir: hyperframesDir });
+    manifest.metadata.frame = { path: frameInfo.path, tokens: frameInfo.tokens }
+    emitHyperframesFrame({
+      frameDir: path.dirname(frameInfo.path),
+      projectDir: hyperframesDir,
+      outDir: hyperframesDir,
+    })
   }
 
   // Aligned captions, read from the cache the captions stage wrote. Writer and reader
@@ -1071,44 +1312,51 @@ async function projectFormat({
   // Each scene's words are grouped into readable segments and every segment becomes
   // one `captions` overlay (slot `caption`) inside its scene, so the emitter mounts
   // the caption component like any other overlay.
-  const allCaptions = [];
-  const fps = options.fps || parsed.fps || manifest.fps || 30;
-  const captionOverlays = [];
+  const allCaptions = []
+  const fps = options.fps || parsed.fps || manifest.fps || 30
+  const captionOverlays = []
   for (const plan of captionPlans) {
-    const sceneTrack = (manifest.tracks?.scenes || []).find((s) => s.id === plan.sceneId);
-    const audioPath = sceneAudioPath(audioAssets, plan);
-    if (!sceneTrack || !audioPath || !fs.existsSync(audioPath)) continue;
+    const sceneTrack = (manifest.tracks?.scenes || []).find((s) => s.id === plan.sceneId)
+    const audioPath = sceneAudioPath(audioAssets, plan)
+    if (!sceneTrack || !audioPath || !fs.existsSync(audioPath)) continue
     const cacheFile = path.join(
       cacheDir,
       'captions',
       `${sceneCaptionsCacheKey({ audioPath, text: plan.narration, modelName: plan.modelName, language: plan.language })}.json`,
-    );
+    )
     if (!fs.existsSync(cacheFile)) {
-      console.warn(`[compile] captions:: ${plan.mode} for scene "${plan.slug}" but no aligned captions are cached; run the captions stage (produce).`);
-      continue;
+      console.warn(
+        `[compile] captions:: ${plan.mode} for scene "${plan.slug}" but no aligned captions are cached; run the captions stage (produce).`,
+      )
+      continue
     }
-    let data;
+    let data
     try {
-      data = JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+      data = JSON.parse(fs.readFileSync(cacheFile, 'utf8'))
     } catch (err) {
-      throw new VideoRenderError(`caption-cache-corrupt: ${cacheFile} for scene "${plan.slug}" is not valid JSON (${err.message}); delete it and re-run the captions stage.`);
+      throw new VideoRenderError(
+        `caption-cache-corrupt: ${cacheFile} for scene "${plan.slug}" is not valid JSON (${err.message}); delete it and re-run the captions stage.`,
+      )
     }
-    const sceneStart = sceneTrack.fromFrame / fps;
-    const sceneEnd = (sceneTrack.fromFrame + sceneTrack.durationInFrames) / fps;
-    const timed = (plan.mode === 'lines' ? data.lines : data.words) || [];
-    const kind = plan.mode === 'lines' ? 'line' : 'word';
+    const sceneStart = sceneTrack.fromFrame / fps
+    const sceneEnd = (sceneTrack.fromFrame + sceneTrack.durationInFrames) / fps
+    const timed = (plan.mode === 'lines' ? data.lines : data.words) || []
+    const kind = plan.mode === 'lines' ? 'line' : 'word'
     const items = timed.map((item) => ({
       text: item.text,
       start: sceneStart + Number(item.start || 0),
       end: sceneStart + Number(item.end || item.start || 0),
       kind,
-    }));
-    allCaptions.push(...items);
-    const segments = plan.mode === 'lines' ? items : groupCaptionSegments(items);
+    }))
+    allCaptions.push(...items)
+    const segments = plan.mode === 'lines' ? items : groupCaptionSegments(items)
     for (const seg of segments) {
-      const fromFrame = Math.max(sceneTrack.fromFrame, Math.round(seg.start * fps));
-      const endFrame = Math.min(Math.round(sceneEnd * fps), Math.max(fromFrame + 1, Math.round(seg.end * fps)));
-      if (endFrame <= fromFrame) continue;
+      const fromFrame = Math.max(sceneTrack.fromFrame, Math.round(seg.start * fps))
+      const endFrame = Math.min(
+        Math.round(sceneEnd * fps),
+        Math.max(fromFrame + 1, Math.round(seg.end * fps)),
+      )
+      if (endFrame <= fromFrame) continue
       captionOverlays.push({
         id: `caption_${plan.slug}_${String(captionOverlays.length + 1).padStart(3, '0')}`,
         type: 'captions',
@@ -1116,20 +1364,20 @@ async function projectFormat({
         fromFrame,
         durationInFrames: endFrame - fromFrame,
         config: { text: seg.text, position: 'bottom' },
-      });
+      })
     }
   }
   if (allCaptions.length > 0) {
-    manifest.metadata.narrationCaptions = allCaptions;
-    manifest.narrationCaptions = allCaptions;
+    manifest.metadata.narrationCaptions = allCaptions
+    manifest.narrationCaptions = allCaptions
   }
   if (captionOverlays.length > 0) {
-    manifest.tracks.overlays = [...(manifest.tracks.overlays || []), ...captionOverlays];
+    manifest.tracks.overlays = [...(manifest.tracks.overlays || []), ...captionOverlays]
   }
 
   // The resolved slot components ride on the manifest so the emitter mounts the
   // right file and the render driver stages it into `<project>/components/`.
-  manifest.metadata.components = components;
+  manifest.metadata.components = components
 
   // Sound effects (design D6/D12): every resolved key that fires an event becomes a
   // root `kind:'sfx'` audio track at its event time, staged into the same public
@@ -1141,8 +1389,8 @@ async function projectFormat({
     publicDir: assetsDir,
     probe: options.soundProbe,
     stageDeps: options.stageDeps,
-  });
-  manifest.tracks.audio.push(...sfxTracks);
+  })
+  manifest.tracks.audio.push(...sfxTracks)
 
   // No audio/ handoff: the narration stays in the TTS cache, and avatar
   // synthesis reads it from there (design D7).
@@ -1150,30 +1398,30 @@ async function projectFormat({
   if (staging.escaped.length > 0) {
     throw new VideoRenderError(
       `Background audio escapes the series folder (no-upward-escape rule): ${staging.escaped.join(', ')}`,
-    );
+    )
   }
 
   if (staging.missing.length > 0) {
     throw new VideoRenderError(
       `Cannot render: ${staging.missing.length} referenced asset(s) not found ` +
         `(resolved against ${scriptDir}): ${staging.missing.join(', ')}`,
-    );
+    )
   }
 
   // Asset sizes for `fit` (spec S2): probed from the staged files, after every source is
   // known to exist, so a missing file reports as missing and an unreadable size as
   // `asset-size-unknown`. The fit components ride on the manifest for the render driver.
-  await probeMediaLayerSizes(manifest, { publicDir: assetsDir, probe: options.assetSizeProbe });
-  if (Object.keys(fitComponents).length > 0) manifest.metadata.fitComponents = fitComponents;
+  await probeMediaLayerSizes(manifest, { publicDir: assetsDir, probe: options.assetSizeProbe })
+  if (Object.keys(fitComponents).length > 0) manifest.metadata.fitComponents = fitComponents
 
   // Each format's manifest lands at hyperframes/<project>/manifest.json: it is engine
   // output, not a user-chosen file, and the HyperFrames project folder is regenerable.
-  const manifestPath = path.join(hyperframesDir, 'manifest.json');
-  fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
-  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf8');
-  manifest.metadata.manifestPath = manifestPath;
+  const manifestPath = path.join(hyperframesDir, 'manifest.json')
+  fs.mkdirSync(path.dirname(manifestPath), { recursive: true })
+  fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), 'utf8')
+  manifest.metadata.manifestPath = manifestPath
 
-  return { manifest, linkMode: staging.linkMode };
+  return { manifest, linkMode: staging.linkMode }
 }
 
 /**
@@ -1181,7 +1429,7 @@ async function projectFormat({
  * warns (capability video-run-facts), so it can never stop a render.
  */
 export function recordStage(facts, { stage, start, end, render, cache, outcome }) {
-  if (!facts || !facts.rootDir) return;
+  if (!facts || !facts.rootDir) return
   appendTimingRow(
     facts.rootDir,
     timingRow({
@@ -1196,7 +1444,7 @@ export function recordStage(facts, { stage, start, end, render, cache, outcome }
       cache,
       outcome,
     }),
-  );
+  )
 }
 
 /**
@@ -1205,44 +1453,48 @@ export function recordStage(facts, { stage, start, end, render, cache, outcome }
  * @param {object} e Progress event (see `onProgress` in VideoCompileOptions).
  */
 export function cliReporter(e) {
-  const tag = (n, t) => `[${n}/${t}]`;
-  const money = (v) => '$' + Number(v || 0).toFixed(4);
+  const tag = (n, t) => `[${n}/${t}]`
+  const money = (v) => '$' + Number(v || 0).toFixed(4)
   switch (e.phase) {
     case 'plan': {
       // The banner states the resolved models and the estimate, and never invents a provider.
       // "local (gratis)" used to print whenever the planned-model list came back empty, which
       // happens both when everything is cached and when a planned call carries no model id: the
       // author read "free" and the run then charged. Three cases, no inference.
-      const plannedModels = Array.isArray(e.models) ? e.models.filter(Boolean) : [];
+      const plannedModels = Array.isArray(e.models) ? e.models.filter(Boolean) : []
       const pending = Number.isFinite(e.plannedCount)
         ? e.plannedCount
-        : Number(e.ttsTotal || 0) + Number(e.mediaTotal || 0);
+        : Number(e.ttsTotal || 0) + Number(e.mediaTotal || 0)
       if (pending === 0) {
-        console.log(`Todo en caché: 0 llamadas al proveedor. Estimado: ${money(e.totalUsd)}.`);
+        console.log(`Todo en caché: 0 llamadas al proveedor. Estimado: ${money(e.totalUsd)}.`)
       } else if (plannedModels.length > 0) {
         console.log(
           `Hay que generar ${e.ttsTotal} audio(s) TTS y ${e.mediaTotal} imagen(es) con: ` +
             `${plannedModels.join(', ')}. Estimado: ${money(e.totalUsd)}.`,
-        );
+        )
       } else {
         console.log(
           `${pending} llamada(s) al proveedor planificadas, sin modelo resuelto que reportar. ` +
             `Estimado: ${money(e.totalUsd)}.`,
-        );
+        )
       }
-      break;
+      break
     }
     case 'tts-done':
-      console.log(`🎙️ TTS ${tag(e.done, e.total)} escena ${e.scene} con ${e.model} — ${e.fromCache ? 'cache' : 'generado'} ${money(e.itemCostUsd)} (acumulado ${money(e.spentUsd)})`);
-      break;
+      console.log(
+        `🎙️ TTS ${tag(e.done, e.total)} escena ${e.scene} con ${e.model} — ${e.fromCache ? 'cache' : 'generado'} ${money(e.itemCostUsd)} (acumulado ${money(e.spentUsd)})`,
+      )
+      break
     case 'media-done':
-      console.log(`🖼️ Media ${tag(e.done, e.total)} escena ${e.scene} con ${e.model} — ${e.fromCache ? 'cache' : 'generado'} ${money(e.itemCostUsd)} (acumulado ${money(e.spentUsd)})`);
-      break;
+      console.log(
+        `🖼️ Media ${tag(e.done, e.total)} escena ${e.scene} con ${e.model} — ${e.fromCache ? 'cache' : 'generado'} ${money(e.itemCostUsd)} (acumulado ${money(e.spentUsd)})`,
+      )
+      break
     case 'render-start':
-      console.log(`🎬 Renderizando${e.frames ? ` ${e.frames} frames` : ''}...`);
-      break;
+      console.log(`🎬 Renderizando${e.frames ? ` ${e.frames} frames` : ''}...`)
+      break
     default:
-      break;
+      break
   }
 }
 
@@ -1251,58 +1503,90 @@ export function cliReporter(e) {
  * @param {{ cachedAssetsUsed: number, plan: any }} result
  */
 function printDryRun(result) {
-  const { plan } = result;
-  console.log('Dry run: nothing was synthesized, spent or written.');
-  if (plan.frame) console.log('   frame ' + plan.frame.name + ': ' + plan.frame.path + ' (' + plan.frame.source + ')');
+  const { plan } = result
+  console.log('Dry run: nothing was synthesized, spent or written.')
+  if (plan.frame)
+    console.log(
+      '   frame ' + plan.frame.name + ': ' + plan.frame.path + ' (' + plan.frame.source + ')',
+    )
   for (const scene of plan.scenes || []) {
-    console.log('   scene ' + scene.slug + ': ' + scene.seconds + 's (' + (scene.measured ? 'measured' : 'estimated') + ')');
+    console.log(
+      '   scene ' +
+        scene.slug +
+        ': ' +
+        scene.seconds +
+        's (' +
+        (scene.measured ? 'measured' : 'estimated') +
+        ')',
+    )
   }
-  console.log('   Cached assets (free): ' + result.cachedAssetsUsed);
-  console.log('   Uncached billable calls: ' + plan.items.length);
+  console.log('   Cached assets (free): ' + result.cachedAssetsUsed)
+  console.log('   Uncached billable calls: ' + plan.items.length)
   for (const item of plan.items) {
-    const flag = item.blocked ? '  [BLOCKED: ' + item.blocked + ']' : '';
-    console.log('   - ' + item.kind + ' ' + item.model + ' ~$' + item.estUsd.toFixed(4) + (item.ref ? ' (' + item.ref + ')' : '') + flag);
+    const flag = item.blocked ? '  [BLOCKED: ' + item.blocked + ']' : ''
+    console.log(
+      '   - ' +
+        item.kind +
+        ' ' +
+        item.model +
+        ' ~$' +
+        item.estUsd.toFixed(4) +
+        (item.ref ? ' (' + item.ref + ')' : '') +
+        flag,
+    )
   }
-  console.log('   Estimated total: $' + plan.totalUsd.toFixed(4) + ' (budget per run: $' + plan.budgetUsd.toFixed(2) + (plan.withinBudget ? '' : ' - OVER BUDGET') + ')');
-  console.log('   Spent in the last 24h: $' + plan.dailySpentUsd.toFixed(4) + ' (daily cap: $' + plan.dailyCapUsd.toFixed(2) + ')');
-
+  console.log(
+    '   Estimated total: $' +
+      plan.totalUsd.toFixed(4) +
+      ' (budget per run: $' +
+      plan.budgetUsd.toFixed(2) +
+      (plan.withinBudget ? '' : ' - OVER BUDGET') +
+      ')',
+  )
+  console.log(
+    '   Spent in the last 24h: $' +
+      plan.dailySpentUsd.toFixed(4) +
+      ' (daily cap: $' +
+      plan.dailyCapUsd.toFixed(2) +
+      ')',
+  )
 }
 const FLAG_SPEC = {
   boolean: ['dry-run'],
   value: ['script', 'fps', 'cache-dir'],
   repeatable: ['allow-model'],
-};
+}
 
 const USAGE = [
   'Usage: node lib/compile.mjs compile <script.md> [options]',
   '  compile <script.md> [--fps n] [--cache-dir dir] [--allow-model name]...',
   '  --dry-run: list uncached billable work and the estimated total; spends and writes nothing.',
   '  --allow-model unlocks a blocked model in the estimate. Values may also be given as --flag=value.',
-].join('\n');
+].join('\n')
 
 /** Parses argv strictly; returns `{ _, ...flags, allowModels }` or exits with the usage banner. */
 function parseCliArgs(argv) {
   try {
-    const { _, flags } = parseArgs(argv, FLAG_SPEC);
-    return { _, ...flags, allowModels: flags['allow-model'] };
+    const { _, flags } = parseArgs(argv, FLAG_SPEC)
+    return { _, ...flags, allowModels: flags['allow-model'] }
   } catch (err) {
-    if (!(err instanceof CliUsageError)) throw err;
-    console.error(`❌ [compile] ${err.message}\n${USAGE}`);
-    process.exit(1);
+    if (!(err instanceof CliUsageError)) throw err
+    console.error(`❌ [compile] ${err.message}\n${USAGE}`)
+    process.exit(1)
   }
 }
 
 async function main() {
-  const args = parseCliArgs(process.argv.slice(2));
-  const command = args._[0];
+  const args = parseCliArgs(process.argv.slice(2))
+  const command = args._[0]
   if (command !== 'compile') {
-    console.error(USAGE);
-    process.exit(1);
+    console.error(USAGE)
+    process.exit(1)
   }
-  const scriptPath = args._[1] || args.script;
+  const scriptPath = args._[1] || args.script
   if (!scriptPath) {
-    console.error(USAGE);
-    process.exit(1);
+    console.error(USAGE)
+    process.exit(1)
   }
   try {
     const result = await compileVideo({
@@ -1312,26 +1596,32 @@ async function main() {
       dryRun: Boolean(args['dry-run']),
       allowModels: args.allowModels,
       onProgress: cliReporter,
-    });
+    })
     if (result.dryRun) {
-      printDryRun(result);
-      return;
+      printDryRun(result)
+      return
     }
-    console.log(`✅ [compile] Compiled manifest (${result.manifest.totalDurationInFrames} frames, ${result.manifest.totalDurationInSeconds.toFixed(2)}s) for ${result.manifests.length} format(s): ${result.manifests.map((m) => `${m.width}x${m.height}`).join(', ')}`);
-    console.log(`   Cached assets: ${result.cachedAssetsUsed}, New assets: ${result.newAssetsSynthesized}, Spent: $${result.spentUsd.toFixed(4)} of $${result.plannedTotalUsd.toFixed(4)} estimated`);
+    console.log(
+      `✅ [compile] Compiled manifest (${result.manifest.totalDurationInFrames} frames, ${result.manifest.totalDurationInSeconds.toFixed(2)}s) for ${result.manifests.length} format(s): ${result.manifests.map((m) => `${m.width}x${m.height}`).join(', ')}`,
+    )
+    console.log(
+      `   Cached assets: ${result.cachedAssetsUsed}, New assets: ${result.newAssetsSynthesized}, Spent: $${result.spentUsd.toFixed(4)} of $${result.plannedTotalUsd.toFixed(4)} estimated`,
+    )
     if (result.avatarVideos.applied + result.avatarVideos.missing > 0) {
-      console.log(`   Avatar clips: ${result.avatarVideos.applied} picked up from cache, ${result.avatarVideos.missing} still missing (run synthesize-avatar.mjs; never ad-hoc API calls). If clips exist but were not found, check that the episode and its Series declare the same avatar_model and voice_model that the synthesize-avatar run resolved.`);
+      console.log(
+        `   Avatar clips: ${result.avatarVideos.applied} picked up from cache, ${result.avatarVideos.missing} still missing (run synthesize-avatar.mjs; never ad-hoc API calls). If clips exist but were not found, check that the episode and its Series declare the same avatar_model and voice_model that the synthesize-avatar run resolved.`,
+      )
     }
   } catch (err) {
-    console.error(`❌ [compile] ${err.message}`);
-    process.exit(1);
+    console.error(`❌ [compile] ${err.message}`)
+    process.exit(1)
   }
 }
 
 const isMain =
   process.argv[1] &&
-  fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url));
+  fs.realpathSync(process.argv[1]) === fs.realpathSync(fileURLToPath(import.meta.url))
 
 if (isMain) {
-  main();
+  main()
 }
